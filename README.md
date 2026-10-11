@@ -11,6 +11,8 @@ MCP client.
 Apple Docs 2.0 MCP is a fork of [Apple Docs MCP](https://github.com/kimsungwhee/apple-docs-mcp) by
 [kimsungwhee](https://github.com/kimsungwhee), improved with additions, fixes and a new tool.
 
+**English** | [日本語](README.ja.md) | [한국어](README.ko.md) | [简体中文](README.zh-CN.md)
+
 ## 🆕 What's New in 2.0
 
 Apple Docs 2.0 MCP keeps every tool of Apple Docs MCP 1.0.26 and fixes what stopped working or came back incomplete,
