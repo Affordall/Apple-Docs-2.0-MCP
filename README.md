@@ -16,16 +16,7 @@ Apple Docs 2.0 MCP is a fork of [Apple Docs MCP](https://github.com/kimsungwhee/
 ## 🆕 What's New in 2.0
 
 Apple Docs 2.0 MCP keeps every tool of Apple Docs MCP 1.0.26 and fixes what stopped working or came back incomplete,
-so your assistant answers from Apple's own documentation instead of guessing. Measured with the original's own usage
-examples:
-
-| | Apple Docs MCP 1.0.26 | Apple Docs 2.0 MCP |
-|---|---|---|
-| Results for the six search examples in its README | 0 each | 18–23 each |
-| Links on the `NSManagedObjectContext` page | 2 (See Also only) | 96, including 78 members with their declarations and 15 relationships |
-| WWDC sessions | 1,266 (2014–2025) | 1,700 (2014–2026) |
-| WWDC sessions with code | 626 | 715 |
-| Find a page by its exact name, offline | — | `search_docs_map`, 336,629 pages |
+so your assistant answers from Apple's own documentation instead of guessing.
 
 ### 🔍 Search that returns results
 

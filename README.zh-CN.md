@@ -11,15 +11,7 @@ Apple Docs 2.0 MCP 是 [kimsungwhee](https://github.com/kimsungwhee) 开发的 [
 
 ## 🆕 2.0 版本新特性
 
-Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复了失效或返回不完整内容的问题，让你的助手能够依据 Apple 官方文档进行回答，而非凭空猜测。基于原版自身的使用示例测试对比：
-
-| | Apple Docs MCP 1.0.26 | Apple Docs 2.0 MCP |
-|---|---|---|
-| 其 README 中 6 个搜索示例的结果数 | 各 0 个 | 各 18–23 个 |
-| `NSManagedObjectContext` 页面上的链接数 | 2 个（仅 See Also） | 96 个，包含 78 个成员及其声明和 15 个关联关系 |
-| WWDC 演讲视频 | 1,266 场（2014–2025） | 1,700 场（2014–2026） |
-| 包含代码的 WWDC 演讲视频 | 626 场 | 715 场 |
-| 离线按精确名称查找页面 | — | `search_docs_map`，336,629 个页面 |
+Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复了失效或返回不完整内容的问题，让你的助手能够依据 Apple 官方文档进行回答，而非凭空猜测。
 
 ### 🔍 真正能返回结果的搜索
 
