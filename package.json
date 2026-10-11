@@ -1,0 +1,42 @@
+{
+  "name": "apple-dev-docs-mcp",
+  "version": "1.0.26",
+  "description": "MCP server for Apple Developer Documentation - Search iOS/macOS/SwiftUI/UIKit docs, WWDC videos, Swift/Objective-C APIs & code examples in Claude, Cursor & AI assistants",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && cp -r data dist/",
+    "clean": "rm -rf dist",
+    "lint": "eslint src scripts",
+    "test": "vitest run",
+    "types:docc": "openapi-typescript https://raw.githubusercontent.com/swiftlang/swift-docc/main/Sources/SwiftDocC/SwiftDocC.docc/Resources/RenderNode.spec.json --default-non-nullable false -o src/types/docc/render-node.d.ts && openapi-typescript https://raw.githubusercontent.com/swiftlang/swift-docc/main/Sources/SwiftDocC/SwiftDocC.docc/Resources/RenderIndex.spec.json --default-non-nullable false -o src/types/docc/render-index.d.ts",
+    "types:captured": "tsx scripts/capture-responses.ts && npm run -s types:captured:generate",
+    "types:captured:generate": "quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level SearchStream --out src/types/captured/search-stream.ts api-map/responses/*.messages.json && quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level SearchDocument --out src/types/captured/search-document.ts api-map/responses/*.document.json && quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level TechnologiesPage --out src/types/captured/technologies.ts api-map/responses/technologies.json"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "bottleneck": "^2.19.5",
+    "header-generator": "^2.1.88",
+    "jsdom": "^30.1.2",
+    "lru-cache": "^11.5.3",
+    "p-retry": "^8.0.1",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^24.19.1",
+    "@types/turndown": "^5.0.6",
+    "eslint": "^10.12.0",
+    "openapi-typescript": "^7.13.0",
+    "playwright": "1.63.0",
+    "quicktype": "^26.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}
