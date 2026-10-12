@@ -1,6 +1,7 @@
 # Apple Docs 2.0 MCP - Apple 개발자 문서 Model Context Protocol 서버
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/apple-docs-2.0-mcp)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
 [![Fork of Apple Docs MCP](https://img.shields.io/badge/fork%20of-kimsungwhee%2Fapple--docs--mcp-blue)](https://github.com/kimsungwhee/apple-docs-mcp)
 
 Model Context Protocol을 통해 AI 어시스턴트에게 Apple 개발자 문서를 제공합니다: Claude, Cursor, VS Code 또는 모든 MCP 클라이언트에서 API 레퍼런스, 아티클, 샘플 코드, 튜토리얼, Human Interface Guidelines, App Store Connect 도움말, 웹 서비스 API(App Store Connect API, App Store Server API 등), 그리고 자막과 코드가 포함된 1,700개의 WWDC 세션을 활용할 수 있습니다.
@@ -53,7 +54,7 @@ WWDC26을 포함한 1,700개 세션이 내장되어 있어 오프라인에서 �
 
 최신 의존성 유지, 일반 브라우저처럼 보이면서 순서를 기다리는 요청 방식(Apple은 요청이 너무 빠르면 빈 검색 결과를 반환함), 요청 실패 시 자동 재시도, 그리고 255개의 자동화된 테스트를 갖추고 있습니다. 원본 README의 63개 사용 예시가 모두 오류 없이 실행됩니다.
 
-빌드 외에 추가로 설정할 사항이 없습니다: API 키나 계정이 필요하지 않습니다.
+추가로 설정할 사항이 없습니다: API 키나 계정이 필요하지 않습니다.
 
 ## ✨ 기능
 
@@ -73,19 +74,11 @@ WWDC26을 포함한 1,700개 세션이 내장되어 있어 오프라인에서 �
 
 ## 🚀 빠른 시작
 
-요구 사항: jsdom 30에 필요한 Node.js 22(22.22.2 이상), 24(24.15 이상) 또는 26 이상, 그리고 git.
+요구 사항: jsdom 30에 필요한 Node.js 22(22.22.2 이상), 24(24.15 이상) 또는 26 이상.
 
 ```bash
-git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
-cd Apple-Docs-2.0-MCP
-npx pnpm@10 install
-npx pnpm@10 run build
-```
-
-그 다음 `dist/index.js`의 전체 경로를 사용하여 MCP 클라이언트에 서버를 추가합니다(Claude Code 기준):
-
-```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+# Claude Code
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 ## 📦 설치
@@ -102,8 +95,8 @@ Claude Desktop 설정에 추가하세요:
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -117,7 +110,7 @@ Claude Desktop을 재시작하세요.
 <summary><strong>📱 Claude Code</strong></summary>
 
 ```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 [📖 Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp)
@@ -133,8 +126,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -153,8 +146,8 @@ VS Code의 이식 가능한 형식인 워크스페이스 루트의 `.mcp.json`�
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -173,8 +166,8 @@ Zed의 `settings.json`에 추가하세요:
 {
   "context_servers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"],
       "env": {}
     }
   }
@@ -182,24 +175,6 @@ Zed의 `settings.json`에 추가하세요:
 ```
 
 [📖 Zed MCP docs](https://zed.dev/docs/ai/mcp)
-
-</details>
-
-<details>
-<summary><strong>🪟 Windows</strong></summary>
-
-`dist\index.js`의 Windows 경로를 사용하세요:
-
-```json
-{
-  "mcpServers": {
-    "apple-docs": {
-      "command": "node",
-      "args": ["C:\\path\\to\\Apple-Docs-2.0-MCP\\dist\\index.js"]
-    }
-  }
-}
-```
 
 </details>
 
@@ -358,8 +333,13 @@ WWDC 세션은 `data/wwdc/`에 번들로 포함되어 있어, WWDC 도구가 오
 ## 🧪 개발
 
 ```bash
+git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
+cd Apple-Docs-2.0-MCP
 npx pnpm@10 install
 npx pnpm@10 run build          # tsc into dist/, then the WWDC data into dist/data/
+
+# Run your build in Claude Code in place of the npm package
+claude mcp add apple-docs -- node "$PWD/dist/index.js"
 
 # Checks: types (server and scripts), lint and tests
 npx tsc --noEmit && npx tsc -p scripts && npx eslint src scripts && npx vitest run

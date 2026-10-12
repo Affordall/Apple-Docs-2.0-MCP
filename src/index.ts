@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'fs';
+import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { searchStreams } from './tools/search-api.js';
@@ -20,6 +22,9 @@ import { isValidAppleDeveloperUrl } from './utils/url-converter.js';
 import { validateInput, ErrorType, createStandardErrorResponse, createErrorResponse } from './utils/error-handler.js';
 import { logger } from './utils/logger.js';
 import { API_LIMITS } from './utils/constants.js';
+
+const PACKAGE = z.object({ name: z.string(), version: z.string() })
+  .parse(JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')));
 
 /**
  * The server's instructions, which Claude Code adds to its system prompt cut at 2,048 characters: how to search with
@@ -66,7 +71,7 @@ export default class AppleDeveloperDocsMCPServer {
   }
 
   constructor() {
-    this.server = new McpServer({ name: 'apple-docs-mcp', version: '1.0.0' }, { instructions: SEARCH_GUIDE });
+    this.server = new McpServer(PACKAGE, { instructions: SEARCH_GUIDE });
     registerTools(this.server, this);
     this.setupErrorHandling();
   }

@@ -1,8 +1,50 @@
 {
-  "name": "apple-dev-docs-mcp",
-  "version": "1.0.26",
-  "description": "MCP server for Apple Developer Documentation - Search iOS/macOS/SwiftUI/UIKit docs, WWDC videos, Swift/Objective-C APIs & code examples in Claude, Cursor & AI assistants",
+  "name": "apple-docs-2.0-mcp",
+  "version": "2.0.0",
+  "description": "MCP server for Apple Developer Documentation: API reference, Human Interface Guidelines, App Store Connect Help, sample code and 1,700 WWDC sessions with transcripts and code. A fork of Apple Docs MCP.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "apple",
+    "apple-developer",
+    "documentation",
+    "swift",
+    "swiftui",
+    "uikit",
+    "wwdc",
+    "xcode",
+    "ios",
+    "macos",
+    "claude",
+    "cursor"
+  ],
+  "homepage": "https://github.com/mishafyi/Apple-Docs-2.0-MCP#readme",
+  "bugs": {
+    "url": "https://github.com/mishafyi/Apple-Docs-2.0-MCP/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mishafyi/Apple-Docs-2.0-MCP.git"
+  },
+  "license": "MIT",
+  "author": "mishafyi (https://github.com/mishafyi)",
+  "contributors": [
+    "kimsungwhee (https://github.com/kimsungwhee)"
+  ],
+  "mcpName": "io.github.mishafyi/apple-docs-2.0-mcp",
   "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "apple-docs-2.0-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "api-map/apple-docs-map.tsv"
+  ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "tsc && cp -r data dist/",
     "clean": "rm -rf dist",
@@ -10,9 +52,9 @@
     "test": "vitest run",
     "types:docc": "openapi-typescript https://raw.githubusercontent.com/swiftlang/swift-docc/main/Sources/SwiftDocC/SwiftDocC.docc/Resources/RenderNode.spec.json --default-non-nullable false -o src/types/docc/render-node.d.ts && openapi-typescript https://raw.githubusercontent.com/swiftlang/swift-docc/main/Sources/SwiftDocC/SwiftDocC.docc/Resources/RenderIndex.spec.json --default-non-nullable false -o src/types/docc/render-index.d.ts",
     "types:captured": "tsx scripts/capture-responses.ts && npm run -s types:captured:generate",
-    "types:captured:generate": "quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level SearchStream --out src/types/captured/search-stream.ts api-map/responses/*.messages.json && quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level SearchDocument --out src/types/captured/search-document.ts api-map/responses/*.document.json && quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level TechnologiesPage --out src/types/captured/technologies.ts api-map/responses/technologies.json"
+    "types:captured:generate": "quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level SearchStream --out src/types/captured/search-stream.ts api-map/responses/*.messages.json && quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level SearchDocument --out src/types/captured/search-document.ts api-map/responses/*.document.json && quicktype --lang ts --src-lang json --just-types --no-enums --no-date-times --no-uuids --no-integer-strings --no-boolean-strings --top-level TechnologiesPage --out src/types/captured/technologies.ts api-map/responses/technologies.json",
+    "prepublishOnly": "npm run clean && npm run build"
   },
-  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
     "bottleneck": "^2.19.5",

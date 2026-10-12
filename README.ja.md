@@ -1,6 +1,7 @@
 # Apple Docs 2.0 MCP - Apple 開発者ドキュメント Model Context Protocol サーバー
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/apple-docs-2.0-mcp)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
 [![Fork of Apple Docs MCP](https://img.shields.io/badge/fork%20of-kimsungwhee%2Fapple--docs--mcp-blue)](https://github.com/kimsungwhee/apple-docs-mcp)
 
 Model Context Protocol を通じて AI アシスタントに提供される Apple Developer Documentation: Claude、Cursor、VS Code、またはその他の MCP クライアント内で、API リファレンス、記事、サンプルコード、チュートリアル、Human Interface Guidelines、App Store Connect ヘルプ、Web サービス API（App Store Connect API、App Store Server API など）、そしてトランスクリプトやコードを含む 1,700 件の WWDC セッションを利用できます。
@@ -53,7 +54,7 @@ WWDC26 を含む 1,700 のセッションが組み込まれており、オフラ
 
 最新の依存関係、通常のブラウザのように動作しリクエスト間隔を空ける仕組み（Apple はリクエストが速すぎると空の検索結果を返します）、リクエスト失敗時の自動リトライ、および 255 件の自動テストを備えています。オリジナル版の README にある 63 件の使用例はすべてエラーなく実行されます。
 
-ビルド以外の追加設定は不要です。API キーやアカウントも必要ありません。
+追加設定は不要です。API キーやアカウントも必要ありません。
 
 ## ✨ 特徴
 
@@ -73,19 +74,11 @@ WWDC26 を含む 1,700 のセッションが組み込まれており、オフラ
 
 ## 🚀 クイックスタート
 
-要件: jsdom 30 の要件に準拠する Node.js 22（22.22.2 以降）、24（24.15 以降）、または 26 以降、および git。
+要件: jsdom 30 の要件に準拠する Node.js 22（22.22.2 以降）、24（24.15 以降）、または 26 以降。
 
 ```bash
-git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
-cd Apple-Docs-2.0-MCP
-npx pnpm@10 install
-npx pnpm@10 run build
-```
-
-次に、Claude Code 向けなどに、`dist/index.js` のフルパスを指定して MCP クライアントにサーバーを追加します:
-
-```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+# Claude Code
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 ## 📦 インストール
@@ -102,8 +95,8 @@ Claude Desktop の設定ファイルに追加します:
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -117,7 +110,7 @@ Claude Desktop を再起動します。
 <summary><strong>📱 Claude Code</strong></summary>
 
 ```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 [📖 Claude Code MCP ドキュメント](https://docs.anthropic.com/en/docs/claude-code/mcp)
@@ -133,8 +126,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -153,8 +146,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -173,8 +166,8 @@ Zed の `settings.json` に追加します:
 {
   "context_servers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"],
       "env": {}
     }
   }
@@ -182,24 +175,6 @@ Zed の `settings.json` に追加します:
 ```
 
 [📖 Zed MCP ドキュメント](https://zed.dev/docs/ai/mcp)
-
-</details>
-
-<details>
-<summary><strong>🪟 Windows</strong></summary>
-
-`dist\index.js` の Windows パスを使用します:
-
-```json
-{
-  "mcpServers": {
-    "apple-docs": {
-      "command": "node",
-      "args": ["C:\\path\\to\\Apple-Docs-2.0-MCP\\dist\\index.js"]
-    }
-  }
-}
-```
 
 </details>
 
@@ -358,8 +333,13 @@ WWDC セッションは `data/wwdc/` にバンドルされているため、WWDC
 ## 🧪 開発
 
 ```bash
+git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
+cd Apple-Docs-2.0-MCP
 npx pnpm@10 install
 npx pnpm@10 run build          # tsc into dist/, then the WWDC data into dist/data/
+
+# Run your build in Claude Code in place of the npm package
+claude mcp add apple-docs -- node "$PWD/dist/index.js"
 
 # Checks: types (server and scripts), lint and tests
 npx tsc --noEmit && npx tsc -p scripts && npx eslint src scripts && npx vitest run

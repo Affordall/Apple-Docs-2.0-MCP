@@ -1,6 +1,7 @@
 # Apple Docs 2.0 MCP - Apple Developer Documentation Model Context Protocol Server
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/apple-docs-2.0-mcp)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
 [![Fork of Apple Docs MCP](https://img.shields.io/badge/fork%20of-kimsungwhee%2Fapple--docs--mcp-blue)](https://github.com/kimsungwhee/apple-docs-mcp)
 
 Apple Developer Documentation for AI assistants, through the Model Context Protocol: API reference, articles, sample
@@ -72,7 +73,7 @@ Up-to-date dependencies, requests that look like a normal browser's and wait the
 when they come too fast), automatic retries when a request fails, and 255 automated tests. All 63 usage examples in
 the original's README run without errors.
 
-Nothing to set up beyond the build: no API key or account.
+Nothing to set up: no API key or account.
 
 ## ✨ Features
 
@@ -94,19 +95,11 @@ Nothing to set up beyond the build: no API key or account.
 
 ## 🚀 Quick Start
 
-Requirements: Node.js 22 (22.22.2 or later), 24 (24.15 or later) or 26 and later, as jsdom 30 needs, and git.
+Requirements: Node.js 22 (22.22.2 or later), 24 (24.15 or later) or 26 and later, as jsdom 30 needs.
 
 ```bash
-git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
-cd Apple-Docs-2.0-MCP
-npx pnpm@10 install
-npx pnpm@10 run build
-```
-
-Then add the server to your MCP client with the full path of `dist/index.js`, for Claude Code:
-
-```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+# Claude Code
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 ## 📦 Installation
@@ -123,8 +116,8 @@ Add to your Claude Desktop configuration:
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -138,7 +131,7 @@ Restart Claude Desktop.
 <summary><strong>📱 Claude Code</strong></summary>
 
 ```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 [📖 Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp)
@@ -154,8 +147,8 @@ Add to `~/.cursor/mcp.json`:
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -174,8 +167,8 @@ Add to `.mcp.json` at the root of your workspace, VS Code's portable format:
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -194,8 +187,8 @@ Add to your Zed `settings.json`:
 {
   "context_servers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"],
       "env": {}
     }
   }
@@ -203,24 +196,6 @@ Add to your Zed `settings.json`:
 ```
 
 [📖 Zed MCP docs](https://zed.dev/docs/ai/mcp)
-
-</details>
-
-<details>
-<summary><strong>🪟 Windows</strong></summary>
-
-Use the Windows path of `dist\index.js`:
-
-```json
-{
-  "mcpServers": {
-    "apple-docs": {
-      "command": "node",
-      "args": ["C:\\path\\to\\Apple-Docs-2.0-MCP\\dist\\index.js"]
-    }
-  }
-}
-```
 
 </details>
 
@@ -385,8 +360,13 @@ call. `npx tsx scripts/build-docs-map.ts api-map/apple-docs-map.tsv` rebuilds it
 ## 🧪 Development
 
 ```bash
+git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
+cd Apple-Docs-2.0-MCP
 npx pnpm@10 install
 npx pnpm@10 run build          # tsc into dist/, then the WWDC data into dist/data/
+
+# Run your build in Claude Code in place of the npm package
+claude mcp add apple-docs -- node "$PWD/dist/index.js"
 
 # Checks: types (server and scripts), lint and tests
 npx tsc --noEmit && npx tsc -p scripts && npx eslint src scripts && npx vitest run

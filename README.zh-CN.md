@@ -1,6 +1,7 @@
 # Apple Docs 2.0 MCP - Apple 开发者文档 Model Context Protocol 服务器
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/apple-docs-2.0-mcp)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
 [![Fork of Apple Docs MCP](https://img.shields.io/badge/fork%20of-kimsungwhee%2Fapple--docs--mcp-blue)](https://github.com/kimsungwhee/apple-docs-mcp)
 
 通过 Model Context Protocol 为 AI 助手提供 Apple 开发者文档：API 参考、技术文章、示例代码、教程、《人机界面指南》（Human Interface Guidelines）、App Store Connect 帮助、Web 服务 API（App Store Connect API、App Store Server API 等），以及包含文字转写与代码的 1,700 场 WWDC 演讲视频，支持 Claude、Cursor、VS Code 或任何 MCP 客户端。
@@ -53,7 +54,7 @@ Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复�
 
 采用最新的依赖库，请求模拟正常浏览器行为并排队等待（Apple 在请求过快时会返回空搜索结果），请求失败时自动重试，并包含 255 个自动化测试。原版 README 中的全部 63 个使用示例均可无报错运行。
 
-除构建外无需任何额外配置：无需 API 密钥或账户。
+无需任何额外配置：无需 API 密钥或账户。
 
 ## ✨ 功能特性
 
@@ -73,19 +74,11 @@ Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复�
 
 ## 🚀 快速入门
 
-环境要求：Node.js 22（22.22.2 或更高）、24（24.15 或更高）或 26 及更高版本（满足 jsdom 30 所需），以及 git。
+环境要求：Node.js 22（22.22.2 或更高）、24（24.15 或更高）或 26 及更高版本（满足 jsdom 30 所需）。
 
 ```bash
-git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
-cd Apple-Docs-2.0-MCP
-npx pnpm@10 install
-npx pnpm@10 run build
-```
-
-然后使用 `dist/index.js` 的完整路径将服务器添加到你的 MCP 客户端中，以 Claude Code 为例：
-
-```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+# Claude Code
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 ## 📦 安装说明
@@ -102,8 +95,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -117,7 +110,7 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 <summary><strong>📱 Claude Code</strong></summary>
 
 ```bash
-claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 ```
 
 [📖 Claude Code MCP 文档](https://docs.anthropic.com/en/docs/claude-code/mcp)
@@ -133,8 +126,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -153,8 +146,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "mcpServers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
     }
   }
 }
@@ -173,8 +166,8 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 {
   "context_servers": {
     "apple-docs": {
-      "command": "node",
-      "args": ["/absolute/path/to/Apple-Docs-2.0-MCP/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"],
       "env": {}
     }
   }
@@ -182,24 +175,6 @@ claude mcp add apple-docs -- node /absolute/path/to/Apple-Docs-2.0-MCP/dist/inde
 ```
 
 [📖 Zed MCP 文档](https://zed.dev/docs/ai/mcp)
-
-</details>
-
-<details>
-<summary><strong>🪟 Windows</strong></summary>
-
-使用 `dist\index.js` 的 Windows 路径：
-
-```json
-{
-  "mcpServers": {
-    "apple-docs": {
-      "command": "node",
-      "args": ["C:\\path\\to\\Apple-Docs-2.0-MCP\\dist\\index.js"]
-    }
-  }
-}
-```
 
 </details>
 
@@ -358,8 +333,13 @@ WWDC 演讲数据打包在 `data/wwdc/` 目录下，因此 WWDC 工具可离线�
 ## 🧪 开发
 
 ```bash
+git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
+cd Apple-Docs-2.0-MCP
 npx pnpm@10 install
 npx pnpm@10 run build          # tsc into dist/, then the WWDC data into dist/data/
+
+# Run your build in Claude Code in place of the npm package
+claude mcp add apple-docs -- node "$PWD/dist/index.js"
 
 # Checks: types (server and scripts), lint and tests
 npx tsc --noEmit && npx tsc -p scripts && npx eslint src scripts && npx vitest run

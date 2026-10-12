@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mishafyi/apple-docs-2.0-mcp",
+  "title": "Apple Docs 2.0 MCP",
+  "description": "Apple developer docs, Human Interface Guidelines and 1,700 WWDC sessions with code for AI assistants",
+  "repository": {
+    "url": "https://github.com/mishafyi/Apple-Docs-2.0-MCP",
+    "source": "github"
+  },
+  "version": "2.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "apple-docs-2.0-mcp",
+      "version": "2.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
