@@ -1,4 +1,4 @@
-![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](assets/banner.png)
+![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](https://raw.githubusercontent.com/mishafyi/Apple-Docs-2.0-MCP/main/assets/banner.png)
 
 # Apple Docs 2.0 MCP - Apple Developer Documentation Model Context Protocol Server
 
