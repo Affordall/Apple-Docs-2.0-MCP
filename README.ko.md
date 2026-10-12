@@ -1,3 +1,5 @@
+![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](assets/banner.png)
+
 # Apple Docs 2.0 MCP - Apple 개발자 문서 Model Context Protocol 서버
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
@@ -76,19 +78,11 @@ WWDC26을 포함한 1,700개 세션이 내장되어 있어 오프라인에서 �
 
 요구 사항: jsdom 30에 필요한 Node.js 22(22.22.2 이상), 24(24.15 이상) 또는 26 이상.
 
-```bash
-# Claude Code
-claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
-```
+### Claude Desktop (권장)
 
-## 📦 설치
+Claude Desktop 구성 파일에 다음을 추가하세요:
 
-<details>
-<summary><strong>🤖 Claude Desktop</strong></summary>
-
-Claude Desktop 설정에 추가하세요:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -102,9 +96,20 @@ Claude Desktop 설정에 추가하세요:
 }
 ```
 
-Claude Desktop을 재시작하세요.
+> **참고**: 이전 버전이 사용되는 문제가 발생하면 `@latest`를 추가하여 최신 버전을 강제합니다:
+> ```json
+> "args": ["-y", "apple-docs-2.0-mcp@latest"]
+> ```
 
-</details>
+Claude Desktop을 재시작하고 Apple API에 대해 질문해보세요!
+
+### Claude Code
+
+```bash
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
+```
+
+## 📦 설치
 
 <details>
 <summary><strong>📱 Claude Code</strong></summary>

@@ -1,3 +1,5 @@
+![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](assets/banner.png)
+
 # Apple Docs 2.0 MCP - Apple 开发者文档 Model Context Protocol 服务器
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
@@ -76,19 +78,11 @@ Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复�
 
 环境要求：Node.js 22（22.22.2 或更高）、24（24.15 或更高）或 26 及更高版本（满足 jsdom 30 所需）。
 
-```bash
-# Claude Code
-claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
-```
+### Claude Desktop（推荐）
 
-## 📦 安装说明
+将此配置添加到你的 Claude Desktop 配置文件中：
 
-<details>
-<summary><strong>🤖 Claude Desktop</strong></summary>
-
-添加到你的 Claude Desktop 配置文件中：
-
-**macOS**：`~/Library/Application Support/Claude/claude_desktop_config.json`
+**macOS**：`~/Library/Application Support/Claude/claude_desktop_config.json`  
 **Windows**：`%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -102,9 +96,20 @@ claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
 }
 ```
 
-重启 Claude Desktop。
+> **注意**：如果遇到使用旧版本的问题，添加 `@latest` 以强制使用最新版本：
+> ```json
+> "args": ["-y", "apple-docs-2.0-mcp@latest"]
+> ```
 
-</details>
+重启 Claude Desktop 并开始询问 Apple API！
+
+### Claude Code
+
+```bash
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
+```
+
+## 📦 安装说明
 
 <details>
 <summary><strong>📱 Claude Code</strong></summary>

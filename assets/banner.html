@@ -1,0 +1,91 @@
+<!doctype html>
+<!-- README banner; the terminal shows real results of the two calls, the logos are skills.sh's agent list. Render:
+     chrome --headless=new --force-device-scale-factor=2 --window-size=1280,640 --screenshot=banner.png file://…/banner.html -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Apple Docs 2.0 MCP banner</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    width: 1280px; height: 640px; overflow: hidden; position: relative; background: #000; color: #f5f5f7;
+    font: 17px/24px "SF Pro Text", system-ui, sans-serif; letter-spacing: -0.374px; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2 { font-family: "SF Pro Display", system-ui, sans-serif; }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; letter-spacing: 0; }
+  h1 { position: absolute; left: 72px; top: 36px; font-size: 68px; line-height: 76px; font-weight: 700; letter-spacing: -1px; }
+  .left { position: absolute; left: 72px; top: 176px; width: 640px; display: flex; flex-direction: column; }
+  h2 { margin-top: 16px; font-size: 38px; line-height: 46px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: center; gap: 22px; }
+  h2::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: #f5f5f7; }
+  h2:first-child { margin-top: 0; }
+  .pill { margin-top: 40px; align-self: flex-start; border-radius: 980px; padding: 8px 24px; background: #1d1d1f; }
+  .pill span { color: #a1a1a6; }
+
+  .term { position: absolute; left: 716px; top: 44px; width: 508px; border-radius: 16px; background: #1c1c1e; border: 1px solid #2c2c2e; box-shadow: 0 30px 60px rgba(0, 0, 0, .5); overflow: hidden; }
+  .term .lights { height: 36px; display: flex; gap: 8px; align-items: center; padding: 0 14px; border-bottom: 1px solid #2c2c2e; }
+  .term .lights i { width: 12px; height: 12px; border-radius: 50%; }
+  .term pre { padding: 16px 20px; font: 13px/19px "SF Mono", ui-monospace, Menlo, monospace; white-space: pre; }
+  .d { color: #8e8e93; } .g { color: #28c840; } .t { color: #6bdfff; } b { font-weight: 600; }
+  .agents { position: absolute; left: 72px; right: 72px; bottom: 48px; display: flex; align-items: center; justify-content: space-between; }
+  .agents span { font-size: 15px; }
+  .agents .logo { width: 32px; height: 32px; overflow: hidden; position: relative; }
+  .agents img { position: absolute; width: 80px; height: 80px; left: -24px; top: -24px; }  /* the tiles pad each mark to a third */
+  .k { color: #ff7ab2; } .ty { color: #5dd8ff; } .pt { color: #9ef1dd; } .fn { color: #67b7a4; } .s { color: #fc6a5d; }
+</style>
+</head>
+<body>
+<h1>Apple Docs 2.0 MCP</h1>
+<div class="left">
+  <h2>Doc search optimized for agents</h2>
+  <h2>Complete index of 336,629 pages</h2>
+  <h2>Sample Code, WWDC included</h2>
+  <p class="pill mono"><span>$</span> npx -y apple-docs-2.0-mcp</p>
+</div>
+
+<div class="term">
+  <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+<pre><span class="d">&gt;</span> How do I push views in SwiftUI?
+
+<span class="g">⏺</span> <b>apple-docs · search_apple_docs</b>
+  <span class="d">query: "NavigationStack"</span>
+  <span class="d">⎿</span> <span class="t">NavigationStack</span> <span class="d">· SwiftUI</span>
+    <span class="d">A view that displays a root view and enables you
+    to present additional views over the root view.</span>
+    <span class="t">NavigationPath</span> <span class="d">· SwiftUI</span>
+
+<span class="g">⏺</span> <b>apple-docs · get_wwdc_code_examples</b>
+  <span class="d">framework: "NavigationStack", year: "2022"</span>
+  <span class="d">⎿</span> <span class="t">Pushable Stack</span> <span class="d">· WWDC22 · 6:05</span>
+    <span class="ty">NavigationStack</span>(path: $path) {
+      <span class="ty">List</span>(<span class="pt">Category</span>.allCases) { category <span class="k">in</span> … }
+      .<span class="fn">navigationTitle</span>(<span class="s">"Categories"</span>)
+      .<span class="fn">navigationDestination</span>(for: <span class="pt">Recipe</span>.<span class="k">self</span>) { recipe <span class="k">in</span>
+        <span class="pt">RecipeDetail</span>(recipe: recipe)
+      }
+    }</pre>
+</div>
+<div class="agents">
+  <span>Works with</span>
+  <span class="logo"><img src="https://www.skills.sh/agents/claude-code.svg" alt="Claude Code"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/cursor.svg" alt="Cursor"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/codex.svg" alt="Codex"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/copilot.svg" alt="GitHub Copilot"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/windsurf.svg" alt="Windsurf"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/gemini.svg" alt="Gemini"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/cline.svg" alt="Cline"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/amp.svg" alt="Amp"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/antigravity.svg" alt="Antigravity"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/openclaw.svg" alt="OpenClaw"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/droid.svg" alt="Droid"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/goose.svg" alt="Goose"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/kilo.svg" alt="Kilo"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/kiro-cli.svg" alt="Kiro CLI"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/nous-research.svg" alt="Nous Research"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/opencode.svg" alt="OpenCode"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/roo.svg" alt="Roo"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/trae.svg" alt="Trae"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/vscode.svg" alt="VS Code"></span>
+  <span class="logo"><img src="https://www.skills.sh/agents/zed.svg" alt="Zed"></span>
+</div>
+</body>
+</html>

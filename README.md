@@ -1,3 +1,5 @@
+![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](assets/banner.png)
+
 # Apple Docs 2.0 MCP - Apple Developer Documentation Model Context Protocol Server
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
@@ -97,19 +99,11 @@ Nothing to set up: no API key or account.
 
 Requirements: Node.js 22 (22.22.2 or later), 24 (24.15 or later) or 26 and later, as jsdom 30 needs.
 
-```bash
-# Claude Code
-claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
-```
+### Claude Desktop (Recommended)
 
-## 📦 Installation
+Add this to your Claude Desktop configuration:
 
-<details>
-<summary><strong>🤖 Claude Desktop</strong></summary>
-
-Add to your Claude Desktop configuration:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -123,9 +117,20 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-Restart Claude Desktop.
+> **Note**: If you encounter issues with an old version being used, add `@latest` to force the latest version:
+> ```json
+> "args": ["-y", "apple-docs-2.0-mcp@latest"]
+> ```
 
-</details>
+Restart Claude Desktop and start asking about Apple APIs!
+
+### Claude Code
+
+```bash
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
+```
+
+## 📦 Installation
 
 <details>
 <summary><strong>📱 Claude Code</strong></summary>

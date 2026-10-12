@@ -1,3 +1,5 @@
+![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](assets/banner.png)
+
 # Apple Docs 2.0 MCP - Apple 開発者ドキュメント Model Context Protocol サーバー
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
@@ -76,19 +78,11 @@ WWDC26 を含む 1,700 のセッションが組み込まれており、オフラ
 
 要件: jsdom 30 の要件に準拠する Node.js 22（22.22.2 以降）、24（24.15 以降）、または 26 以降。
 
-```bash
-# Claude Code
-claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
-```
+### Claude Desktop（推奨）
 
-## 📦 インストール
+Claude Desktop 設定ファイルに以下を追加してください：
 
-<details>
-<summary><strong>🤖 Claude Desktop</strong></summary>
-
-Claude Desktop の設定ファイルに追加します:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
@@ -102,9 +96,20 @@ Claude Desktop の設定ファイルに追加します:
 }
 ```
 
-Claude Desktop を再起動します。
+> **注意**: 古いバージョンが使用される問題が発生した場合、`@latest` を追加して最新バージョンを強制します：
+> ```json
+> "args": ["-y", "apple-docs-2.0-mcp@latest"]
+> ```
 
-</details>
+Claude Desktop を再起動して Apple API について質問を始めましょう！
+
+### Claude Code
+
+```bash
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
+```
+
+## 📦 インストール
 
 <details>
 <summary><strong>📱 Claude Code</strong></summary>
