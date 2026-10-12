@@ -7,12 +7,12 @@
     "url": "https://github.com/mishafyi/Apple-Docs-2.0-MCP",
     "source": "github"
   },
-  "version": "2.0.0",
+  "version": "2.0.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "apple-docs-2.0-mcp",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "transport": {
         "type": "stdio"
       }
