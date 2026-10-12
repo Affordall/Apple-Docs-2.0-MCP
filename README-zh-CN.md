@@ -10,7 +10,7 @@
 
 Apple Docs 2.0 MCP 是 [kimsungwhee](https://github.com/kimsungwhee) 开发的 [Apple Docs MCP](https://github.com/kimsungwhee/apple-docs-mcp) 的分支项目，通过新增功能、缺陷修复和全新工具进行了全面改进。
 
-[English](README.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | **简体中文**
+[English](README.md) | [日本語](README-ja.md) | [한국어](README-ko.md) | **简体中文**
 
 ## 🆕 2.0 版本新特性
 

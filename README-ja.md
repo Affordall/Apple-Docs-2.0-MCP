@@ -10,7 +10,7 @@ Model Context Protocol を通じて AI アシスタントに提供される Appl
 
 Apple Docs 2.0 MCP は、[kimsungwhee](https://github.com/kimsungwhee) 氏による [Apple Docs MCP](https://github.com/kimsungwhee/apple-docs-mcp) のフォークであり、機能追加、不具合修正、および新しいツールの導入によって改善されています。
 
-[English](README.md) | **日本語** | [한국어](README.ko.md) | [简体中文](README.zh-CN.md)
+[English](README.md) | **日本語** | [한국어](README-ko.md) | [简体中文](README-zh-CN.md)
 
 ## 🆕 2.0 の新機能
 
