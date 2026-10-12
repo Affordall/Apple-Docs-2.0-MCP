@@ -97,8 +97,6 @@ Nothing to set up: no API key or account.
 
 ## 🚀 Quick Start
 
-Requirements: Node.js 22 (22.22.2 or later), 24 (24.15 or later) or 26 and later, as jsdom 30 needs.
-
 ### Claude Desktop (Recommended)
 
 Add this to your Claude Desktop configuration:

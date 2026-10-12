@@ -76,8 +76,6 @@ Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复�
 
 ## 🚀 快速入门
 
-环境要求：Node.js 22（22.22.2 或更高）、24（24.15 或更高）或 26 及更高版本（满足 jsdom 30 所需）。
-
 ### Claude Desktop（推荐）
 
 将此配置添加到你的 Claude Desktop 配置文件中：
