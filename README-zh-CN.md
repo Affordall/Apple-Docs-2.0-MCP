@@ -11,11 +11,9 @@
 [![npm version](https://img.shields.io/npm/v/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
 [![MCP tools](https://img.shields.io/badge/MCP-19_tools-5c4ee5?style=flat-square)](#️-可用工具)
 [![Node.js](https://img.shields.io/node/v/apple-docs-2.0-mcp?style=flat-square&logo=nodedotjs&logoColor=white&label=Node.js&color=339933)](https://nodejs.org/en/download)
-[![npm downloads](https://img.shields.io/npm/dm/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-0d1117?style=flat-square)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.mishafyi/apple-docs-2.0-mcp)
-[![skills.sh](https://skills.sh/b/mishafyi/Apple-Docs-2.0-MCP?style=flat-square)](https://skills.sh/mishafyi/Apple-Docs-2.0-MCP)
+[![skills.sh](https://skills.sh/b/mishafyi/apple-docs-2.0-mcp?style=flat-square)](https://skills.sh/mishafyi/apple-docs-2.0-mcp)
 [![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
-[![Fork of Apple Docs MCP](https://img.shields.io/badge/fork_of-kimsungwhee%2Fapple--docs--mcp-blue?style=flat-square)](https://github.com/kimsungwhee/apple-docs-mcp)
 
 [快速入门](#-快速入门) · [新特性](#-20-版本新特性) · [安装说明](#-安装说明) · [使用示例](#-使用示例) · [工具](#️-可用工具) · [架构](#️-架构) · [开发](#-开发)
 
