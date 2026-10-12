@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- 400×400 logo in the banner's style (Cline's marketplace asks for a 400×400 PNG). Render: chrome --headless=new
+     --force-device-scale-factor=1 --window-size=400,400 --screenshot=logo.png file://…/logo.html -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Apple Docs 2.0 MCP logo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 400px; height: 400px; overflow: hidden; background: #000; display: grid; place-items: center; -webkit-font-smoothing: antialiased; }
+  .term { width: 340px; height: 340px; border-radius: 44px; background: #1c1c1e; border: 2px solid #2c2c2e; display: flex; flex-direction: column; overflow: hidden; }
+  .lights { height: 58px; display: flex; gap: 12px; align-items: center; padding: 0 26px; border-bottom: 2px solid #2c2c2e; }
+  .lights i { width: 18px; height: 18px; border-radius: 50%; }
+  .body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #f5f5f7; font-family: "SF Pro Display", system-ui, sans-serif; font-weight: 700; }
+  .version { font-size: 132px; line-height: 132px; letter-spacing: -5px; }
+  .name { margin-top: 8px; font-size: 34px; line-height: 40px; letter-spacing: -0.5px; }
+</style>
+</head>
+<body>
+<div class="term">
+  <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+  <div class="body"><p class="version">2.0</p><p class="name">Apple Docs MCP</p></div>
+</div>
+</body>
+</html>

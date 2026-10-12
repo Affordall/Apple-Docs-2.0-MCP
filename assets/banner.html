@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- README banner; the terminal shows real results of the two calls, the logos are skills.sh's agent list. Render:
+<!-- README banner and social preview; everything sits inside GitHub's 80 px safe border. The terminal shows real results of the two calls, the logos are skills.sh's agent list. Render:
      chrome --headless=new --force-device-scale-factor=2 --window-size=1280,640 --screenshot=banner.png file://…/banner.html -->
 <html lang="en">
 <head>
@@ -13,20 +13,20 @@
   }
   h1, h2 { font-family: "SF Pro Display", system-ui, sans-serif; }
   .mono { font-family: "SF Mono", ui-monospace, Menlo, monospace; letter-spacing: 0; }
-  h1 { position: absolute; left: 72px; top: 36px; font-size: 68px; line-height: 76px; font-weight: 700; letter-spacing: -1px; }
-  .left { position: absolute; left: 72px; top: 176px; width: 640px; display: flex; flex-direction: column; }
+  h1 { position: absolute; left: 80px; top: 80px; font-size: 68px; line-height: 76px; font-weight: 700; letter-spacing: -1px; }
+  .left { position: absolute; left: 80px; top: 184px; width: 640px; display: flex; flex-direction: column; }
   h2 { margin-top: 16px; font-size: 38px; line-height: 46px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: center; gap: 22px; }
   h2::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: #f5f5f7; }
   h2:first-child { margin-top: 0; }
-  .pill { margin-top: 40px; align-self: flex-start; border-radius: 980px; padding: 8px 24px; background: #1d1d1f; }
+  .pill { margin-top: 28px; align-self: flex-start; border-radius: 980px; padding: 8px 24px; background: #1d1d1f; }
   .pill span { color: #a1a1a6; }
 
-  .term { position: absolute; left: 716px; top: 44px; width: 508px; border-radius: 16px; background: #1c1c1e; border: 1px solid #2c2c2e; box-shadow: 0 30px 60px rgba(0, 0, 0, .5); overflow: hidden; }
+  .term { position: absolute; left: 720px; top: 80px; width: 480px; border-radius: 16px; background: #1c1c1e; border: 1px solid #2c2c2e; box-shadow: 0 30px 60px rgba(0, 0, 0, .5); overflow: hidden; }
   .term .lights { height: 36px; display: flex; gap: 8px; align-items: center; padding: 0 14px; border-bottom: 1px solid #2c2c2e; }
   .term .lights i { width: 12px; height: 12px; border-radius: 50%; }
-  .term pre { padding: 16px 20px; font: 13px/19px "SF Mono", ui-monospace, Menlo, monospace; white-space: pre; }
+  .term pre { padding: 14px 18px; font: 12px/18px "SF Mono", ui-monospace, Menlo, monospace; white-space: pre; }
   .d { color: #8e8e93; } .g { color: #28c840; } .t { color: #6bdfff; } b { font-weight: 600; }
-  .agents { position: absolute; left: 72px; right: 72px; bottom: 48px; display: flex; align-items: center; justify-content: space-between; }
+  .agents { position: absolute; left: 80px; right: 80px; bottom: 80px; display: flex; align-items: center; justify-content: space-between; }
   .agents span { font-size: 15px; }
   .agents .logo { width: 32px; height: 32px; overflow: hidden; position: relative; }
   .agents img { position: absolute; width: 80px; height: 80px; left: -24px; top: -24px; }  /* the tiles pad each mark to a third */
