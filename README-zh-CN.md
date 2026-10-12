@@ -1,16 +1,76 @@
-![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](https://cdn.jsdelivr.net/gh/mishafyi/Apple-Docs-2.0-MCP@main/assets/banner.png)
+<div align="center">
 
-# Apple Docs 2.0 MCP - Apple 开发者文档 Model Context Protocol 服务器
+[English](README.md) · [日本語](README-ja.md) · [한국어](README-ko.md) · **简体中文**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
-[![npm](https://img.shields.io/npm/v/apple-docs-2.0-mcp)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
-[![Fork of Apple Docs MCP](https://img.shields.io/badge/fork%20of-kimsungwhee%2Fapple--docs--mcp-blue)](https://github.com/kimsungwhee/apple-docs-mcp)
+# Apple Docs 2.0 MCP
+
+### 一个 MCP，汇集 Apple 开发者文档、设计指南和 WWDC 会议。
+
+**用智能体开发下一个 iOS 应用？先让它读 Apple 官方文档：更少返工，更少中断。**
+
+[![npm version](https://img.shields.io/npm/v/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
+[![MCP tools](https://img.shields.io/badge/MCP-19_tools-5c4ee5?style=flat-square)](#️-可用工具)
+[![Node.js](https://img.shields.io/node/v/apple-docs-2.0-mcp?style=flat-square&logo=nodedotjs&logoColor=white&label=Node.js&color=339933)](https://nodejs.org/en/download)
+[![npm downloads](https://img.shields.io/npm/dm/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-0d1117?style=flat-square)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.mishafyi/apple-docs-2.0-mcp)
+[![skills.sh](https://skills.sh/b/mishafyi/Apple-Docs-2.0-MCP?style=flat-square)](https://skills.sh/mishafyi/Apple-Docs-2.0-MCP)
+[![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
+[![Fork of Apple Docs MCP](https://img.shields.io/badge/fork_of-kimsungwhee%2Fapple--docs--mcp-blue?style=flat-square)](https://github.com/kimsungwhee/apple-docs-mcp)
+
+[快速入门](#-快速入门) · [新特性](#-20-版本新特性) · [安装说明](#-安装说明) · [使用示例](#-使用示例) · [工具](#️-可用工具) · [架构](#️-架构) · [开发](#-开发)
+
+<code>npx -y apple-docs-2.0-mcp</code>
+
+<br />
+
+<img src="https://cdn.jsdelivr.net/gh/mishafyi/Apple-Docs-2.0-MCP@main/assets/banner.png" alt="Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included" width="1200" />
+
+</div>
+
+---
 
 通过 Model Context Protocol 为 AI 助手提供 Apple 开发者文档：API 参考、技术文章、示例代码、教程、《人机界面指南》（Human Interface Guidelines）、App Store Connect 帮助、Web 服务 API（App Store Connect API、App Store Server API 等），以及包含文字转写与代码的 1,700 场 WWDC 演讲视频，支持 Claude、Cursor、VS Code 或任何 MCP 客户端。
 
 Apple Docs 2.0 MCP 是 [kimsungwhee](https://github.com/kimsungwhee) 开发的 [Apple Docs MCP](https://github.com/kimsungwhee/apple-docs-mcp) 的分支项目，通过新增功能、缺陷修复和全新工具进行了全面改进。
 
-[English](README.md) | [日本語](README-ja.md) | [한국어](README-ko.md) | **简体中文**
+## 🚀 快速入门
+
+### Claude Desktop（推荐）
+
+将此配置添加到你的 Claude Desktop 配置文件中：
+
+**macOS**：`~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**：`%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "apple-docs": {
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
+    }
+  }
+}
+```
+
+> **注意**：如果遇到使用旧版本的问题，添加 `@latest` 以强制使用最新版本：
+> ```json
+> "args": ["-y", "apple-docs-2.0-mcp@latest"]
+> ```
+
+重启 Claude Desktop 并开始询问 Apple API！
+
+### Claude Code
+
+```bash
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
+```
+
+### 向智能体提问
+
+```text
+在 Apple 文档中查找 NavigationStack，然后给我看使用它的 WWDC 代码。
+```
 
 ## 🆕 2.0 版本新特性
 
@@ -73,39 +133,6 @@ Apple Docs 2.0 MCP 保留了 Apple Docs MCP 1.0.26 的所有工具，并修复�
 - 🎯 **技术概述**：Apple 关于应用设计、游戏、AI 与机器学习、数据等方面的指南
 - 💻 **示例代码**：Apple 示例项目及其摘要和下载链接
 - 🎥 **WWDC 资料库**：2014 至 2026 年的 1,700 场演讲，支持离线查看文本记录、时间轴代码示例、相关资源和关联演讲
-
-## 🚀 快速入门
-
-### Claude Desktop（推荐）
-
-将此配置添加到你的 Claude Desktop 配置文件中：
-
-**macOS**：`~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**：`%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "apple-docs": {
-      "command": "npx",
-      "args": ["-y", "apple-docs-2.0-mcp"]
-    }
-  }
-}
-```
-
-> **注意**：如果遇到使用旧版本的问题，添加 `@latest` 以强制使用最新版本：
-> ```json
-> "args": ["-y", "apple-docs-2.0-mcp@latest"]
-> ```
-
-重启 Claude Desktop 并开始询问 Apple API！
-
-### Claude Code
-
-```bash
-claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
-```
 
 ## 📦 安装说明
 

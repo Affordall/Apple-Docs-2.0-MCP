@@ -1,10 +1,33 @@
-![Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included](https://cdn.jsdelivr.net/gh/mishafyi/Apple-Docs-2.0-MCP@main/assets/banner.png)
+<div align="center">
 
-# Apple Docs 2.0 MCP - Apple Developer Documentation Model Context Protocol Server
+**English** · [日本語](README-ja.md) · [한국어](README-ko.md) · [简体中文](README-zh-CN.md)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
-[![npm](https://img.shields.io/npm/v/apple-docs-2.0-mcp)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
-[![Fork of Apple Docs MCP](https://img.shields.io/badge/fork%20of-kimsungwhee%2Fapple--docs--mcp-blue)](https://github.com/kimsungwhee/apple-docs-mcp)
+# Apple Docs 2.0 MCP
+
+### One MCP for Apple's developer documentation, design guidelines and WWDC sessions.
+
+**Building your next iOS app with an agent? Let it read Apple's own docs first: fewer rewrites, fewer interruptions.**
+
+[![npm version](https://img.shields.io/npm/v/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
+[![MCP tools](https://img.shields.io/badge/MCP-19_tools-5c4ee5?style=flat-square)](#️-available-tools)
+[![Node.js](https://img.shields.io/node/v/apple-docs-2.0-mcp?style=flat-square&logo=nodedotjs&logoColor=white&label=Node.js&color=339933)](https://nodejs.org/en/download)
+[![npm downloads](https://img.shields.io/npm/dm/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-0d1117?style=flat-square)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.mishafyi/apple-docs-2.0-mcp)
+[![skills.sh](https://skills.sh/b/mishafyi/Apple-Docs-2.0-MCP?style=flat-square)](https://skills.sh/mishafyi/Apple-Docs-2.0-MCP)
+[![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
+[![Fork of Apple Docs MCP](https://img.shields.io/badge/fork_of-kimsungwhee%2Fapple--docs--mcp-blue?style=flat-square)](https://github.com/kimsungwhee/apple-docs-mcp)
+
+[Quick Start](#-quick-start) · [What's New](#-whats-new-in-20) · [Installation](#-installation) · [Usage](#-usage-examples) · [Tools](#️-available-tools) · [Architecture](#️-architecture) · [Development](#-development)
+
+<code>npx -y apple-docs-2.0-mcp</code>
+
+<br />
+
+<img src="https://cdn.jsdelivr.net/gh/mishafyi/Apple-Docs-2.0-MCP@main/assets/banner.png" alt="Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included" width="1200" />
+
+</div>
+
+---
 
 Apple Developer Documentation for AI assistants, through the Model Context Protocol: API reference, articles, sample
 code, tutorials, the Human Interface Guidelines, App Store Connect Help, the web-service APIs (App Store Connect API, App
@@ -14,7 +37,44 @@ MCP client.
 Apple Docs 2.0 MCP is a fork of [Apple Docs MCP](https://github.com/kimsungwhee/apple-docs-mcp) by
 [kimsungwhee](https://github.com/kimsungwhee), improved with additions, fixes and a new tool.
 
-**English** | [日本語](README-ja.md) | [한국어](README-ko.md) | [简体中文](README-zh-CN.md)
+## 🚀 Quick Start
+
+### Claude Desktop (Recommended)
+
+Add this to your Claude Desktop configuration:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "apple-docs": {
+      "command": "npx",
+      "args": ["-y", "apple-docs-2.0-mcp"]
+    }
+  }
+}
+```
+
+> **Note**: If you encounter issues with an old version being used, add `@latest` to force the latest version:
+> ```json
+> "args": ["-y", "apple-docs-2.0-mcp@latest"]
+> ```
+
+Restart Claude Desktop and start asking about Apple APIs!
+
+### Claude Code
+
+```bash
+claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
+```
+
+### Ask your agent
+
+```text
+Look up NavigationStack in Apple's docs, then show me the WWDC code that uses it.
+```
 
 ## 🆕 What's New in 2.0
 
@@ -94,39 +154,6 @@ Nothing to set up: no API key or account.
 - 💻 **Sample code**: Apple's sample projects with their summaries and Download links
 - 🎥 **WWDC library**: 1,700 sessions from 2014 to 2026 with transcripts, timed code examples, resources and related
   sessions, offline
-
-## 🚀 Quick Start
-
-### Claude Desktop (Recommended)
-
-Add this to your Claude Desktop configuration:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "apple-docs": {
-      "command": "npx",
-      "args": ["-y", "apple-docs-2.0-mcp"]
-    }
-  }
-}
-```
-
-> **Note**: If you encounter issues with an old version being used, add `@latest` to force the latest version:
-> ```json
-> "args": ["-y", "apple-docs-2.0-mcp@latest"]
-> ```
-
-Restart Claude Desktop and start asking about Apple APIs!
-
-### Claude Code
-
-```bash
-claude mcp add apple-docs -- npx -y apple-docs-2.0-mcp
-```
 
 ## 📦 Installation
 
