@@ -7,25 +7,34 @@ import type { components as RenderIndexSpec } from './docc/render-index.js';
 
 type Schemas = RenderNodeSpec['schemas'];
 
-/** A documentation page: an API symbol or an article */
-export type RenderNode = Schemas['DocumentationRenderNode'];
+/** A documentation page: an API symbol or an article, its sections as Apple's JSON carries them */
+export type RenderNode = Omit<Schemas['DocumentationRenderNode'], 'primaryContentSections'> & {
+  primaryContentSections?: DocumentationPrimaryRenderSection[];
+};
 export type RenderReference = Schemas['RenderReference'];
 export type TopicRenderReference = Schemas['TopicRenderReference'];
 export type RenderInlineContent = Schemas['RenderInlineContent'];
 export type TasksGroupSection = Schemas['TasksGroupSection'];
 export type RelationshipsGroupSection = Schemas['RelationshipsGroupSection'];
 export type PlatformAvailability = Schemas['PlatformAvailability'];
-/**
- * A tutorials page's parts (an overview's volumes, a tutorial's tasks); documentation pages have none. Apple's heroes
- * also name the tutorial's project download, `projectFiles`, which the spec leaves out (2026-10-10).
- */
 /** A web-service page's parts: a property, parameter or body field, its type's tokens, and a property's attribute */
 export type TypedProperty = Schemas['TypedProperty'];
 export type DeclarationToken = Schemas['DeclarationToken'];
 export type Attribute = Schemas['Attribute'];
-export type DocumentationPrimaryRenderSection = Schemas['DocumentationPrimaryRenderSection'];
-export type RenderSection = Exclude<Schemas['RenderSection'], Schemas['IntroRenderSection']>
-  | (Schemas['IntroRenderSection'] & { projectFiles?: string });
+export type DetailsSection = Schemas['DetailsSection'];
+export type CodeExample = Schemas['CodeExample'];
+/** A page's sections. Apple's "Mentioned in" carries `kind: "mentions"`, which the spec leaves out (2026-10-12). */
+export type DocumentationPrimaryRenderSection =
+  | Exclude<Schemas['DocumentationPrimaryRenderSection'], Schemas['MentionsRenderSection']>
+  | (Schemas['MentionsRenderSection'] & { kind: 'mentions' });
+/**
+ * A tutorials page's parts (an overview's volumes, a tutorial's tasks); documentation pages have none. Apple's heroes
+ * also name the tutorial's project download, `projectFiles`, and an overview's "Get started" link, `action`, and its
+ * Resources open with a paragraph, `content`; the spec leaves these out (2026-10-10, 2026-10-12).
+ */
+export type RenderSection = Exclude<Schemas['RenderSection'], Schemas['IntroRenderSection'] | Schemas['ResourcesRenderSection']>
+  | (Schemas['IntroRenderSection'] & { projectFiles?: string; action?: RenderInlineContent })
+  | (Schemas['ResourcesRenderSection'] & { content?: RenderBlockContent[] });
 
 /** A navigator index (index/<framework>, index/updates, index/technologyoverviews) and one node of its tree */
 export type RenderIndex = RenderIndexSpec['schemas']['RenderIndex'];

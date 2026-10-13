@@ -9,7 +9,8 @@ import { APPLE_URLS } from '../utils/constants.js';
 type References = RenderNode['references'];
 
 /**
- * Format inline content: text, code voice, links and references, keeping strong and emphasized runs
+ * Format inline content: text, code voice, links and references, keeping strong and emphasized runs. A new term is
+ * emphasized and an inline head strong, as swift-docc-render draws them; superscript and subscript keep their HTML.
  */
 export function formatInlineContent(inlineContent: RenderInlineContent[], references: References): string {
   return inlineContent
@@ -20,20 +21,43 @@ export function formatInlineContent(inlineContent: RenderInlineContent[], refere
         case 'codeVoice':
           return `\`${inline.code}\``;
         case 'strong':
+        case 'inlineHead':
           return `**${formatInlineContent(inline.inlineContent, references)}**`;
         case 'emphasis':
+        case 'italic':
+        case 'newTerm':
           return `*${formatInlineContent(inline.inlineContent, references)}*`;
+        case 'superscript':
+          return `<sup>${formatInlineContent(inline.inlineContent, references)}</sup>`;
+        case 'subscript':
+          return `<sub>${formatInlineContent(inline.inlineContent, references)}</sub>`;
         case 'link':
           return `[${inline.title}](${inline.destination})`;
         case 'reference':
           return formatReference(inline, references);
         case 'image':
           return formatImage(inline.identifier, references);
-        default:
-          return '';
+        default: {
+          // A spec type without a case fails the build here; one Apple ships before the spec lists it keeps its words
+          const unlisted: never = inline;
+          return formatUnlistedInline(unlisted, references);
+        }
       }
     })
     .join('');
+}
+
+/** Whether a value is a list of inline content, as a type the spec doesn't list yet carries it */
+function isInlineList(value: unknown): value is RenderInlineContent[] {
+  return Array.isArray(value);
+}
+
+/** An inline type the spec doesn't list yet, such as `strikethrough`: its words, or the whole of it as its JSON */
+function formatUnlistedInline(inline: object, references: References): string {
+  if ('inlineContent' in inline && isInlineList(inline.inlineContent)) {
+    return formatInlineContent(inline.inlineContent, references);
+  }
+  return 'text' in inline && typeof inline.text === 'string' ? inline.text : `\`${JSON.stringify(inline)}\``;
 }
 
 /**
@@ -77,11 +101,12 @@ export function docUrl(identifier: string): string {
 }
 
 /**
- * An image as Markdown: Apple's alt text, which carries what the image shows, and its light 2x file
+ * An image or a video as Markdown, as Apple's Markdown writes both: Apple's alt text, which carries what it shows, and
+ * its light 2x file
  */
 export function formatImage(identifier: string, references: References): string {
   const image = references?.[identifier];
-  if (image?.type !== 'image') {
+  if (image?.type !== 'image' && image?.type !== 'video') {
     return '';
   }
   const file = image.variants.find((variant) => variant.traits.includes('light')) ?? image.variants[0];

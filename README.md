@@ -304,7 +304,7 @@ Add to your Zed `settings.json`:
 |------|---------|
 | `search_apple_docs` | Apple's search results as links, each with its title, framework, type and one-line summary, grouped into documentation, design, sample code, App Store Connect Help and WWDC sessions |
 | `search_docs_map` 🆕 | The pages whose title contains the text, in any case, shortest titles first and optionally within given technologies, each with its kind, technology and link |
-| `get_apple_doc_content` | One documentation page as Markdown, rendered from its JSON: summary, declaration, overview, code, Topics with each member's declaration and summary, Relationships, See Also and availability; a web-service endpoint with its URL, parameters, body and responses; a tutorial with each step's code and its project files; a sample's Download; an App Store Connect Help article |
+| `get_apple_doc_content` | One documentation page as Markdown, rendered from its JSON: summary, declaration, overview, code, the articles that mention it, a property list key's details, Topics with each member's declaration and summary, Relationships, See Also and availability; a web-service endpoint with its URL, parameters, body and responses; a tutorial with each step's code and its project files; a sample's Download; an App Store Connect Help article |
 | `search_framework_symbols` | The symbols of one framework whose names match a wildcard, each with its kind and link |
 | `get_related_apis` | What one API inherits from and conforms to, plus its See Also and the first APIs of each Topics group, each with a summary |
 | `find_similar_apis` | Alternatives to one API, led for a deprecated one by the replacements its deprecation note names, then its See Also and Topics |

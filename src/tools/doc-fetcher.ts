@@ -2,8 +2,8 @@ import { apiCache, generateEnhancedCacheKey } from '../utils/cache.js';
 import { convertToJsonApiUrl } from '../utils/url-converter.js';
 import { httpClient } from '../utils/http-client.js';
 import type {
-  Attribute, DeclarationToken, DocumentationPrimaryRenderSection, PlatformAvailability, RenderBlockContent, RenderNode,
-  RenderSection, TypedProperty,
+  Attribute, CodeExample, DeclarationToken, DetailsSection, DocumentationPrimaryRenderSection, PlatformAvailability,
+  RenderBlockContent, RenderNode, RenderSection, TasksGroupSection, TypedProperty,
 } from '../types/docc.js';
 import { isDeprecated, isTopicReference } from '../types/docc.js';
 import { logger } from '../utils/logger.js';
@@ -41,6 +41,7 @@ function formatJsonDocumentation(
 
   // Add abstract
   content += formatDocumentAbstract(jsonData);
+  content += formatDeprecationSummary(jsonData);
   content += formatSampleDownload(jsonData);
 
   // Check if this is a specific API/symbol or an API collection
@@ -50,6 +51,7 @@ function formatJsonDocumentation(
     content += formatAPICollectionContent(jsonData);
   }
   content += formatTutorialSections(jsonData);
+  content += formatDefaultImplementations(jsonData);
   content += formatRelationshipsSection(jsonData);
 
   // Add platform availability
@@ -111,11 +113,19 @@ function formatAnalysisSections(jsonData: RenderNode, options: EnhancedAnalysisO
 }
 
 /**
- * A sample's Download button: a reference to the project's zip, linked like any reference
+ * A sample's Download button, a reference to the project's zip linked like any reference, or Apple's words on why it
+ * has none
  */
 function formatSampleDownload(jsonData: RenderNode): string {
   const action = jsonData.sampleCodeDownload?.action;
-  return action ? `${formatInlineContent([action], jsonData.references)}\n\n` : '';
+  return (action ? `${formatInlineContent([action], jsonData.references)}\n\n` : '') +
+    formatContentItems(jsonData.downloadNotAvailableSummary ?? [], jsonData.references);
+}
+
+/** A deprecated API's message, which names its replacement, in the Deprecated note Apple's pages show under the summary */
+function formatDeprecationSummary(jsonData: RenderNode): string {
+  const summary = jsonData.deprecationSummary ?? [];
+  return summary.length > 0 ? formatAside('Deprecated', summary, jsonData.references) : '';
 }
 
 /**
@@ -125,38 +135,48 @@ function formatSpecificAPIContent(jsonData: RenderNode): string {
   let content = '';
 
   for (const section of jsonData.primaryContentSections ?? []) {
-    if (!('kind' in section)) {
-      continue;
-    }
-    switch (section.kind) {
-      case 'declarations': {
-        const declaration = section.declarations[0]?.tokens.map((token) => token.text).join('') ?? '';
-        content += `## Declaration\n\n\`\`\`swift\n${declaration.trimEnd()}\n\`\`\`\n\n`;
-        break;
-      }
-      case 'parameters':
-        content += '## Parameters\n\n';
-        for (const param of section.parameters) {
-          content += `**${param.name}**: ${formatContentItems(param.content, jsonData.references).trim()}\n\n`;
-        }
-        break;
-      case 'content':
-        content += formatContentItems(section.content, jsonData.references);
-        break;
-      default:
-        content += formatWebServiceSection(section, jsonData.references);
-    }
+    content += formatPrimarySection(section, jsonData.references);
   }
 
   return content + formatTopicsSection(jsonData);
 }
 
 /**
+ * One of a page's sections, in the order the page gives them: a declaration, parameters, the overview's blocks, the
+ * articles that mention it, and a property list key's details and attributes; a web-service page's go on to
+ * `formatWebServiceSection`
+ */
+function formatPrimarySection(section: DocumentationPrimaryRenderSection, references: References): string {
+  switch (section.kind) {
+    case 'declarations': {
+      const declaration = section.declarations[0]?.tokens.map((token) => token.text).join('') ?? '';
+      return `## Declaration\n\n\`\`\`swift\n${declaration.trimEnd()}\n\`\`\`\n\n`;
+    }
+    case 'parameters':
+      return `## Parameters\n\n${section.parameters.map((param) =>
+        `**${param.name}**: ${formatContentItems(param.content, references).trim()}\n\n`).join('')}`;
+    case 'content':
+      return formatContentItems(section.content, references);
+    case 'mentions':
+      // swift-docc-render's `mentioned-in` heading
+      return `## Mentioned in\n\n${section.mentions.map((identifier) => formatIdentifierLine(identifier, references)).join('')}\n`;
+    case 'details':
+      return formatDetails(section.title, section.details);
+    case 'attributes':
+      return `## ${section.title}\n\n${(section.attributes ?? []).map((attribute) =>
+        `- ${formatAttribute(attribute, references)}\n`).join('')}\n`;
+    default:
+      return formatWebServiceSection(section, references);
+  }
+}
+
+/**
  * A web-service page's sections: an endpoint's URL, parameters, body and responses; an object's properties; a type's
- * possible values. Other kinds (mentions, details) are left out.
+ * possible values
  */
 function formatWebServiceSection(
-  section: Extract<DocumentationPrimaryRenderSection, { kind: string }>,
+  section: Exclude<DocumentationPrimaryRenderSection,
+    { kind: 'declarations' | 'parameters' | 'content' | 'mentions' | 'details' | 'attributes' }>,
   references: References,
 ): string {
   const fields = (items: TypedProperty[]): string => items.map((item) => formatTypedProperty(item, references)).join('');
@@ -181,9 +201,35 @@ function formatWebServiceSection(
         const about = formatOneLine(value.content ?? [], references);
         return `- \`${value.name}\`${about ? `: ${about}` : ''}\n`;
       }).join('')}\n`;
-    default:
-      return '';
+    default: {
+      // A spec kind without a case fails the build here; one Apple ships before the spec lists it keeps its words
+      const unlisted: never = section;
+      return formatUnlistedBlock(unlisted);
+    }
   }
+}
+
+/**
+ * A property list key's Details as swift-docc-render's PropertyListKeyDetails shows them: its name in Xcode or its key,
+ * then its type in words
+ */
+function formatDetails(title: string, details: DetailsSection): string {
+  const lines = [
+    details.ideTitle && details.titleStyle === 'symbol' ? `- Name: ${details.ideTitle}` : '',
+    details.ideTitle && details.titleStyle === 'title' ? `- Key: ${details.name}` : '',
+    `- Type: ${formatKeyTypes(details.value)}`,
+  ].filter(Boolean);
+  return `## ${title}\n\n${lines.join('\n')}\n\n`;
+}
+
+/** swift-docc-render's PropertyListKeyType: "array of strings", "string or number", "string, number, or boolean" */
+function formatKeyTypes(types: DetailsSection['value']): string {
+  const plurals: Record<string, string> = { dictionary: 'dictionaries', array: 'arrays', number: 'numbers', string: 'strings' };
+  const words = types.map(({ arrayMode, baseType }) => {
+    const base = baseType?.trim() ?? '*';
+    return arrayMode ? `array of ${plurals[base] ?? base}` : base;
+  });
+  return words.length > 2 ? `${words.slice(0, -1).join(', ')}, or ${words[words.length - 1]}` : words.join(' or ');
 }
 
 /**
@@ -242,19 +288,25 @@ function formatOneLine(blocks: RenderBlockContent[], references: References): st
  * Apple's renderer gives them, swift-docc-render's `sections.topics` string; the page's JSON has only each group's title.
  */
 function formatTopicsSection(jsonData: RenderNode): string {
-  const topics = formatTopicGroups(jsonData);
+  const topics = formatTopicGroups(jsonData.topicSections ?? [], jsonData.references);
   return topics ? `## Topics\n\n${topics}` : '';
 }
 
+/** A protocol requirement's Default Implementations, under swift-docc-render's `sections.default-implementations` heading */
+function formatDefaultImplementations(jsonData: RenderNode): string {
+  const groups = formatTopicGroups(jsonData.defaultImplementationsSections ?? [], jsonData.references);
+  return groups ? `## Default Implementations\n\n${groups}` : '';
+}
+
 /**
- * Each Topics group's title, its description when it has one, and the pages in it, as links
+ * Each group's title when it has one, its description when it has one, and the pages in it, as links
  */
-function formatTopicGroups(jsonData: RenderNode): string {
-  return (jsonData.topicSections ?? [])
-    .filter((section) => section.title && section.identifiers.length > 0)
-    .map((section) => `### ${section.title}\n\n` +
-      (section.abstract ? `${formatInlineContent(section.abstract, jsonData.references).trim()}\n\n` : '') +
-      `${section.identifiers.map((identifier) => formatIdentifierLine(identifier, jsonData.references)).join('')}\n`)
+function formatTopicGroups(groups: TasksGroupSection[], references: References): string {
+  return groups
+    .filter((section) => section.identifiers.length > 0)
+    .map((section) => (section.title ? `### ${section.title}\n\n` : '') +
+      (section.abstract ? `${formatInlineContent(section.abstract, references).trim()}\n\n` : '') +
+      `${section.identifiers.map((identifier) => formatIdentifierLine(identifier, references)).join('')}\n`)
     .join('');
 }
 
@@ -274,8 +326,9 @@ type References = RenderNode['references'];
 
 /**
  * Format one block, including the blocks that hold other blocks: a code listing's language tabs (Swift, Objective-C),
- * notes, lists, side-by-side columns, tables, link lists (a HIG page's videos) and tutorial layouts. Blocks of any
- * other type are left out.
+ * notes, lists, term lists, side-by-side columns, tables, link lists (a HIG page's videos), tutorial layouts and steps,
+ * videos as Apple's Markdown writes them, and a web-service page's request, response and object examples. A type the
+ * spec doesn't list yet keeps its words.
  */
 function formatBlock(block: RenderBlockContent, references: References): string {
   if (!('type' in block)) {
@@ -292,10 +345,8 @@ function formatBlock(block: RenderBlockContent, references: References): string 
       return `\`\`\`${block.syntax ?? 'swift'}\n${block.code.join('\n')}\n\`\`\`\n\n`;
     case 'tabNavigator':
       return block.tabs.map((tab) => `**${tab.title}**\n\n${formatContentItems(tab.content, references)}`).join('');
-    case 'aside': {
-      const body = formatContentItems(block.content, references).trim().replace(/\n/g, '\n> ');
-      return `> **${block.name ?? 'Note'}:** ${body}\n\n`;
-    }
+    case 'aside':
+      return formatAside(block.name ?? 'Note', block.content, references);
     case 'unorderedList':
     case 'orderedList': {
       const lines = block.items.map((item, index) => {
@@ -311,8 +362,68 @@ function formatBlock(block: RenderBlockContent, references: References): string 
     case 'links':
       return `${block.items.map((identifier) => formatIdentifierLine(identifier, references)).join('')}\n`;
     default:
-      return '';
+      return formatOtherBlock(block, references);
   }
+}
+
+/**
+ * The blocks `formatBlock` passes on: term lists, tutorial steps, videos, breaks, small print, and a web-service page's
+ * request, response and object examples
+ */
+function formatOtherBlock(
+  block: Extract<RenderBlockContent,
+    { type: 'termList' | 'step' | 'video' | 'thematicBreak' | 'small' | 'endpointExample' | 'dictionaryExample' }>,
+  references: References,
+): string {
+  switch (block.type) {
+    case 'termList': {
+      // As Apple's Markdown writes it: "- term: definition", the definition's further lines indented under it
+      const lines = block.items.map((item) => `- ${formatInlineContent(item.term.inlineContent, references).trim()}: ${
+        formatContentItems(item.definition.content, references).trim().replace(/\n/g, '\n  ')}`);
+      return `${lines.join('\n')}\n\n`;
+    }
+    case 'step':
+      return formatStep(block, references);
+    case 'video': {
+      const video = formatImage(block.identifier, references);
+      return video ? `${video}\n\n` : '';
+    }
+    case 'thematicBreak':
+      return '---\n\n';
+    case 'small': {
+      const text = formatInlineContent(block.inlineContent, references);
+      return text.trim() ? `${text}\n\n` : '';
+    }
+    case 'endpointExample':
+      // swift-docc-render's Request and Response tabs
+      return `${formatContentItems(block.summary ?? [], references)}**Request**\n\n${formatCodeExample(block.request)}` +
+        `**Response**\n\n${formatCodeExample(block.response)}`;
+    case 'dictionaryExample':
+      return formatContentItems(block.summary ?? [], references) + formatCodeExample(block.example);
+    default: {
+      // A spec type without a case fails the build here; one Apple ships before the spec lists it keeps its words
+      const unlisted: never = block;
+      return formatUnlistedBlock(unlisted);
+    }
+  }
+}
+
+/** A request, response or object example: its code, collapsed parts included */
+function formatCodeExample(example: CodeExample): string {
+  return `\`\`\`${example.syntax ?? ''}\n${example.content.flatMap((part) => part.code).join('\n')}\n\`\`\`\n\n`;
+}
+
+/** A note, tip, warning or other aside as a quote under its name */
+function formatAside(name: string, content: RenderBlockContent[], references: References): string {
+  return `> **${name}:** ${formatContentItems(content, references).trim().replace(/\n/g, '\n> ')}\n\n`;
+}
+
+/**
+ * A block or section type the spec doesn't list yet (Apple ships some before the spec does), shown whole as its JSON,
+ * so nothing on the page goes missing
+ */
+function formatUnlistedBlock(block: object): string {
+  return `\`\`\`json\n${JSON.stringify(block, null, 1)}\n\`\`\`\n\n`;
 }
 
 /**
@@ -353,8 +464,9 @@ function formatCodeFile(identifier: string | null | undefined, references: Refer
 }
 
 /**
- * A tutorials page's sections, which documentation pages leave empty: an overview's volumes, a tutorial's tasks and an
- * article's body; its questions and the link to what comes next are left out. The page header gives the hero's title.
+ * A tutorials page's sections, which documentation pages leave empty: an overview's volumes and resources, a tutorial's
+ * tasks and an article's body; its questions and the link to what comes next are left out. The page header gives the
+ * hero's title.
  */
 function formatTutorialSections(jsonData: RenderNode): string {
   return (jsonData.sections ?? []).map((section) => formatTutorialSection(section, jsonData.references)).join('');
@@ -363,11 +475,8 @@ function formatTutorialSections(jsonData: RenderNode): string {
 function formatTutorialSection(section: RenderSection, references: References): string {
   switch (section.kind) {
     case 'hero':
-    case 'intro': {
-      // "Project files": swift-docc-render's `project-files` string for the download
-      const projectFiles = section.projectFiles ? referenceUrl(references?.[section.projectFiles]) : undefined;
-      return formatContentItems(section.content ?? [], references) + (projectFiles ? `[Project files](${projectFiles})\n\n` : '');
-    }
+    case 'intro':
+      return formatHero(section, references);
     case 'articleBody':
       return formatContentItems(section.content, references);
     case 'volume':
@@ -377,9 +486,36 @@ function formatTutorialSection(section: RenderSection, references: References): 
     case 'tasks':
       return section.tasks.map((task) => `## ${task.title}\n\n${formatContentItems(task.contentSection, references)}` +
         task.stepsSection.map((block) => formatStep(block, references)).join('')).join('');
-    default:
+    case 'resources':
+      return formatResources(section, references);
+    case 'assessments':
+    case 'callToAction':
+      // Left out: a tutorial's questions and its link to what comes next (the user, 2026-10-11)
       return '';
+    default: {
+      // A spec kind without a case fails the build here; one Apple ships before the spec lists it keeps its words
+      const unlisted: never = section;
+      return formatUnlistedBlock(unlisted);
+    }
   }
+}
+
+/**
+ * A tutorial's or an overview's opening: its words, an overview's "Get started" link, and a tutorial's download under
+ * swift-docc-render's `project-files` string
+ */
+function formatHero(section: Extract<RenderSection, { kind: 'hero' | 'intro' }>, references: References): string {
+  const projectFiles = section.projectFiles ? referenceUrl(references?.[section.projectFiles]) : undefined;
+  return formatContentItems(section.content ?? [], references) +
+    (section.action ? `${formatInlineContent([section.action], references)}\n\n` : '') +
+    (projectFiles ? `[Project files](${projectFiles})\n\n` : '');
+}
+
+/** An overview's Resources, under swift-docc-render's `sections.resources` heading: each tile's title, words and link */
+function formatResources(section: Extract<RenderSection, { kind: 'resources' }>, references: References): string {
+  const tiles = section.tiles.map((tile) => `### ${tile.title}\n\n${formatContentItems(tile.content, references)}` +
+    (tile.action ? `${formatInlineContent([tile.action], references)}\n\n` : ''));
+  return `## Resources\n\n${formatContentItems(section.content ?? [], references)}${tiles.join('')}`;
 }
 
 function formatContentItems(items: RenderBlockContent[], references: References): string {
@@ -401,18 +537,18 @@ function formatTable(table: Extract<RenderBlockContent, { type: 'table' }>, refe
 }
 
 /**
- * Format API collection content (overview + API lists)
+ * An article or a collection: its sections, the overview headed "Overview" unless it opens with its own heading, then
+ * its Topics
  */
 function formatAPICollectionContent(jsonData: RenderNode): string {
   let content = '';
 
-  // Add primary content sections (Overview); an article that opens with its own heading keeps it
   for (const section of jsonData.primaryContentSections ?? []) {
-    if ('kind' in section && section.kind === 'content') {
+    if (section.kind === 'content') {
       const first = section.content[0];
       content += first && 'type' in first && first.type === 'heading' ? '' : '## Overview\n\n';
-      content += formatContentItems(section.content, jsonData.references);
     }
+    content += formatPrimarySection(section, jsonData.references);
   }
 
   return content + formatTopicsSection(jsonData);
