@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10166/",
   "title": "Explore App Tracking Transparency",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials",
@@ -13,8 +12,364 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ instrumental hip hop music ♪ ♪ Hi, I'm Julia from Privacy Engineering, and welcome to \"Explore App Tracking Transparency.\" At Apple, we believe privacy is a fundamental human right.\n\nPart of engineering great privacy is giving people choices and control over how their data is used.\n\nWhen people have these choices and understand how their data will be linked or shared, they are more likely to trust and engage with your app.\n\nThat's why, beginning last year, App Store policy requires apps to receive users' permission before tracking users across apps and websites owned by other companies by adopting the AppTrackingTransparency framework.\n\nToday, I'm going to talk to you about when and how to adopt App Tracking Transparency.\n\nFirst, I'll start with some background on tracking to help you understand if and when your app needs to adopt the AppTrackingTransparency framework.\n\nThen, I'll highlight some key things to keep in mind when adopting the framework in practice.\n\nLet's get started with some background on tracking.\n\nSo, how is tracking defined for App Tracking Transparency? Tracking refers to linking user or device data collected from your app with user or device data collected from other companies' apps, websites, or offline properties for targeted advertising or advertising-measurement purposes.\n\nTracking also refers to sharing user or device data with data brokers.\n\nLet's talk through some example scenarios to better understand how tracking is defined.\n\nFirst, let's look at an advertising scenario that doesn't involve tracking.\n\nSuppose I download an app called Pal About, and the Pal About app has a feature that lets me search for places and events that are happening nearby.\n\nNow suppose I use Pal About to search for places that serve waffles near me, which results in Pal About storing waffles as an interest of mine.\n\nPal About later wants to show an ad for breakfast places targeting people who like breakfast foods.\n\nUsing the data Pal About stores about me from my searches, Pal About shows me the breakfast ad.\n\nIn this example, Pal About doesn't link my data with any data from an app or website owned by another company to show me the breakfast ad, so this scenario would not be considered tracking.\n\nFor another example that wouldn't be considered tracking, suppose the company that owns Pal About -- Pal About Inc. -- has another app that I use called Pal About Plus.\n\nAnd Pal About's server links together data collected about me in Pal About Plus, like my interest in tacos, with data collected about me in Pal About.\n\nAfter linking this data, Pal About shows me an ad for a taco truck using the fact I like tacos collected from Pal About Plus.\n\nIn this example, the Pal About app doesn't need to get my permission to track because it isn't tracking.\n\nPal About doesn't link my data from Pal About with any data from an app or website owned by another company.\n\nLet's now consider a scenario that would require Pal About to get permission to track.\n\nSuppose there's a food delivery app I use that's owned by a different company than Pal About.\n\nAnd I've used the food delivery app to place orders late at night.\n\nWhen I signed up for the food delivery app, I gave the app my email address -- the same email address I used to sign up for Pal About and that Pal About stores for my account.\n\nThe food delivery app includes code that shares my email address and the fact I often order at night with Pal About.\n\nThe Pal About server uses my email address to link together my interest in waffles, collected by the Pal About app, to the fact I order at night, collected in the food delivery app.\n\nFinally, Pal About uses the combination of my ordering habits and my interest in waffles to show me an ad for a restaurant that serves all-day breakfast.\n\nThis scenario would require Pal About to request permission to track because it linked user data from Pal About -- my email address -- with another company's user data -- my email and habit of ordering at night -- for advertising purposes.\n\nIn this example, data is linked together across apps with an email address.\n\nEven if the email address or another user identifier is hashed before it is used to link data, it would still require permission to track because it would still be linking data about a user from the app with another company's data about that user.\n\nThe type of identifier and whether or not it is hashed doesn't change the fact it is being used for tracking, which is what requires permission.\n\nAnother thing you'll need to consider to determine if your app needs to request permission to track is how third-party SDKs use and share data from your app.\n\nAs a developer, you're responsible for the behavior of your whole app.\n\nReturning to our example, suppose the Pal About developer hasn't written any code themselves that would require permission to track, but would like to include a third-party SDK in their app for advertising-measurement purposes.\n\nWhether Pal About needs permission to track in order to include the SDK depends on whether or not the SDK combines user data from Pal About with user data from other companies' apps or websites.\n\nFor example, if the SDK shares user data from Pal About to provide analytics about ads in Pal About, but doesn't link the user data it collects from Pal About with user data from other companies, it doesn't require permission to track.\n\nNow suppose instead, the SDK shares user data from Pal About with an ad network, and the ad network links the data it receives about how I use Pal About with data about ads I saw in other companies' apps to compare the impact of ad campaigns in those apps.\n\nThis requires Pal About to request users' permission to track because this SDK is tracking.\n\nThis is considered tracking regardless of whether Pal About uses the SDK for those purposes, or even if Pal About only gets aggregate reporting after Pal About users' data is linked with other companies' users' data.\n\nIf you're unsure about whether an SDK you want to use would contain code that would require App Tracking Transparency, you should ask the developer of that SDK.\n\nThis responsibility applies not just to SDKs, but to any libraries or third-party code your app uses.\n\nSo far, we've looked at examples that involve linking user data.\n\nNow let's look at another scenario that's considered tracking: sharing user or device data with data brokers.\n\nFirst, how are data brokers defined? Data brokers are defined by law in some jurisdictions.\n\nBut in general, a data broker is a company that regularly collects and sells, licenses, or otherwise discloses to third parties the personal information of particular end users with whom the business does not have a direct relationship.\n\nLet's look at sharing data with a data broker in an example.\n\nSuppose the Pal About app includes client code that sends my interest in waffles and an account identifier to a data broker.\n\nThis scenario counts as tracking whether or not the data that is shared is linked with data from other companies for advertising or advertising measurement.\n\nSharing of user data with a data broker requires permission to track.\n\nAnd even if Pal About client code doesn't directly send my account identifier and my interest in waffles to the data broker, but instead this interest is sent to Pal About's server and the server later shares accounts interested in waffles with the data broker, this would require getting permission to track even though my device isn't communicating with the data broker directly.\n\nWe've now talked through how the definition of tracking applies to some example scenarios.\n\nFor more information about how App Tracking Transparency defines tracking, you can visit the User Privacy and Data Use page.\n\nNow, if you've determined that your app would like to track users, you'll need to ask for and obtain the user's permission before you do so.\n\nHere's how.\n\nTo ask for permission for your app to track, you'll need to present the app tracking authorization request prompt by calling the requestTrackingAuthorization method.\n\nCalling this method will cause a system permission alert -- like this one for Pal About -- to appear over your app.\n\nThis is a one-time prompt.\n\nThe system will remember the user's choice and won't prompt again unless the app is uninstalled and reinstalled.\n\nThe next thing you'll need to do is provide a NSUserTrackingUsageDescription key in your app's info.plist.\n\nThe string provided here will be shown in the system prompt and informs the user why the app is requesting permission to use data for tracking the user or the device.\n\nA great purpose string is clear, concise, and helps users understand why they are being asked to allow tracking.\n\nThis string doesn't need to include the app's name, because the system will automatically identify the requesting app and display the app name in the system prompt.\n\nIf you don't include a usage-description string, your app will crash when the system prompt is shown.\n\nFinally, use trackingAuthorizationStatus to determine the user's app-tracking permission status for your app.\n\nIf a user has selected Allow for this app, then you have their permission to link their activity in that app across other apps and websites as long as their tracking authorization status remains authorized.\n\nUsers can change and grant or revoke their tracking authorization at any time, so make sure your app checks the tracking authorization status each time it is launched and only continues to track when the value of the tracking authorization status is authorized.\n\nUsers can control whether apps have their permission to track on a per-app basis.\n\nJust because a user has given one of your apps permission to track doesn't mean you have their permission to track in another app owned by the same company.\n\nDifferent apps must each individually request permission from the user for that particular app before data from that app can be linked to apps or websites owned by other companies for marketing or advertising.\n\nIf your app doesn't have tracking authorization for a user, there are a couple things to keep in mind.\n\nFirst, per the App Store review guidelines, your app must not gate any of its functionality on whether the user agrees to allow tracking.\n\nSecond, the IDFA API will return all zeros if the user has asked your app not to track.\n\nIf a user has opted out of tracking, there are nontracking alternatives for advertising or advertising measurement for your app.\n\nFor example, your app could choose to serve first-party ads or contextual ads.\n\nAnd for advertising measurement, we continue to build and improve privacy preserving ad-attribution technologies that ad networks can adopt.\n\nFor more information about recent improvements to SKAdNetwork and private click measurement, you can refer to \"Meet privacy preserving ad attribution\" and \"What's new in SKAdNetwork.\" You'll also need to declare what data your app uses to track for display in your app's privacy nutrition label.\n\nFilling out your privacy nutrition label when submitting your app to the App Store and getting permission to track using the AppTrackingTransparency framework are two separate steps that are both required if your app would like to use data for tracking.\n\nFor more information about nutrition labels and how to fill them out for your app, see \"Create your Privacy Nutrition Label.\" Finally, let's talk about fingerprinting.\n\nWith permission, tracking is allowed.\n\nBut fingerprinting is never allowed.\n\nRegardless of whether a user gives your app permission to track, fingerprinting -- or using signals from the device to try to identify the device or user -- is not allowed per the Apple Developer Program License Agreement.\n\nSome examples of user or device data used for fingerprinting include properties of a user's web browser and its configuration, the user's device and its configuration, the user's location, or the user's network connection.\n\nCollecting any data solely for the purpose of generating a fingerprint is also not allowed.\n\nIt's important people have transparency and control over how their data is used for tracking.\n\nWe hope that by tuning in to this session, you now have the tools you need to determine when and how to give people that control by adopting the AppTrackingTransparency framework.\n\nThanks for watching.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ instrumental hip hop music ♪ ♪ Hi, I'm Julia from Privacy Engineering, and welcome to \"Explore App Tracking Transparency.\" At Apple, we believe privacy is a fundamental human right."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "Part of engineering great privacy is giving people choices and control over how their data is used."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "When people have these choices and understand how their data will be linked or shared, they are more likely to trust and engage with your app."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "That's why, beginning last year, App Store policy requires apps to receive users' permission before tracking users across apps and websites owned by other companies by adopting the AppTrackingTransparency framework."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "Today, I'm going to talk to you about when and how to adopt App Tracking Transparency."
+      },
+      {
+        "timestamp": "0:57",
+        "text": "First, I'll start with some background on tracking to help you understand if and when your app needs to adopt the AppTrackingTransparency framework."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "Then, I'll highlight some key things to keep in mind when adopting the framework in practice."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Let's get started with some background on tracking."
+      },
+      {
+        "timestamp": "1:14",
+        "text": "So, how is tracking defined for App Tracking Transparency? Tracking refers to linking user or device data collected from your app with user or device data collected from other companies' apps, websites, or offline properties for targeted advertising or advertising-measurement purposes."
+      },
+      {
+        "timestamp": "1:32",
+        "text": "Tracking also refers to sharing user or device data with data brokers."
+      },
+      {
+        "timestamp": "1:39",
+        "text": "Let's talk through some example scenarios to better understand how tracking is defined."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "First, let's look at an advertising scenario that doesn't involve tracking."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "Suppose I download an app called Pal About, and the Pal About app has a feature that lets me search for places and events that are happening nearby."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "Now suppose I use Pal About to search for places that serve waffles near me, which results in Pal About storing waffles as an interest of mine."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "Pal About later wants to show an ad for breakfast places targeting people who like breakfast foods."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "Using the data Pal About stores about me from my searches, Pal About shows me the breakfast ad."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "In this example, Pal About doesn't link my data with any data from an app or website owned by another company to show me the breakfast ad, so this scenario would not be considered tracking."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "For another example that wouldn't be considered tracking, suppose the company that owns Pal About -- Pal About Inc. -- has another app that I use called Pal About Plus."
+      },
+      {
+        "timestamp": "2:44",
+        "text": "And Pal About's server links together data collected about me in Pal About Plus, like my interest in tacos, with data collected about me in Pal About."
+      },
+      {
+        "timestamp": "2:55",
+        "text": "After linking this data, Pal About shows me an ad for a taco truck using the fact I like tacos collected from Pal About Plus."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "In this example, the Pal About app doesn't need to get my permission to track because it isn't tracking."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "Pal About doesn't link my data from Pal About with any data from an app or website owned by another company."
+      },
+      {
+        "timestamp": "3:17",
+        "text": "Let's now consider a scenario that would require Pal About to get permission to track."
+      },
+      {
+        "timestamp": "3:23",
+        "text": "Suppose there's a food delivery app I use that's owned by a different company than Pal About."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "And I've used the food delivery app to place orders late at night."
+      },
+      {
+        "timestamp": "3:32",
+        "text": "When I signed up for the food delivery app, I gave the app my email address -- the same email address I used to sign up for Pal About and that Pal About stores for my account."
+      },
+      {
+        "timestamp": "3:45",
+        "text": "The food delivery app includes code that shares my email address and the fact I often order at night with Pal About."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "The Pal About server uses my email address to link together my interest in waffles, collected by the Pal About app, to the fact I order at night, collected in the food delivery app."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "Finally, Pal About uses the combination of my ordering habits and my interest in waffles to show me an ad for a restaurant that serves all-day breakfast."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "This scenario would require Pal About to request permission to track because it linked user data from Pal About -- my email address -- with another company's user data -- my email and habit of ordering at night -- for advertising purposes."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "In this example, data is linked together across apps with an email address."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "Even if the email address or another user identifier is hashed before it is used to link data, it would still require permission to track because it would still be linking data about a user from the app with another company's data about that user."
+      },
+      {
+        "timestamp": "4:52",
+        "text": "The type of identifier and whether or not it is hashed doesn't change the fact it is being used for tracking, which is what requires permission."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "Another thing you'll need to consider to determine if your app needs to request permission to track is how third-party SDKs use and share data from your app."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "As a developer, you're responsible for the behavior of your whole app."
+      },
+      {
+        "timestamp": "5:17",
+        "text": "Returning to our example, suppose the Pal About developer hasn't written any code themselves that would require permission to track, but would like to include a third-party SDK in their app for advertising-measurement purposes."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "Whether Pal About needs permission to track in order to include the SDK depends on whether or not the SDK combines user data from Pal About with user data from other companies' apps or websites."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "For example, if the SDK shares user data from Pal About to provide analytics about ads in Pal About, but doesn't link the user data it collects from Pal About with user data from other companies, it doesn't require permission to track."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "Now suppose instead, the SDK shares user data from Pal About with an ad network, and the ad network links the data it receives about how I use Pal About with data about ads I saw in other companies' apps to compare the impact of ad campaigns in those apps."
+      },
+      {
+        "timestamp": "6:20",
+        "text": "This requires Pal About to request users' permission to track because this SDK is tracking."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "This is considered tracking regardless of whether Pal About uses the SDK for those purposes, or even if Pal About only gets aggregate reporting after Pal About users' data is linked with other companies' users' data."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "If you're unsure about whether an SDK you want to use would contain code that would require App Tracking Transparency, you should ask the developer of that SDK."
+      },
+      {
+        "timestamp": "6:52",
+        "text": "This responsibility applies not just to SDKs, but to any libraries or third-party code your app uses."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "So far, we've looked at examples that involve linking user data."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "Now let's look at another scenario that's considered tracking: sharing user or device data with data brokers."
+      },
+      {
+        "timestamp": "7:09",
+        "text": "First, how are data brokers defined? Data brokers are defined by law in some jurisdictions."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "But in general, a data broker is a company that regularly collects and sells, licenses, or otherwise discloses to third parties the personal information of particular end users with whom the business does not have a direct relationship."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "Let's look at sharing data with a data broker in an example."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "Suppose the Pal About app includes client code that sends my interest in waffles and an account identifier to a data broker."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "This scenario counts as tracking whether or not the data that is shared is linked with data from other companies for advertising or advertising measurement."
+      },
+      {
+        "timestamp": "7:53",
+        "text": "Sharing of user data with a data broker requires permission to track."
+      },
+      {
+        "timestamp": "7:59",
+        "text": "And even if Pal About client code doesn't directly send my account identifier and my interest in waffles to the data broker, but instead this interest is sent to Pal About's server and the server later shares accounts interested in waffles with the data broker, this would require getting permission to track even though my device isn't communicating with the data broker directly."
+      },
+      {
+        "timestamp": "8:22",
+        "text": "We've now talked through how the definition of tracking applies to some example scenarios."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "For more information about how App Tracking Transparency defines tracking, you can visit the User Privacy and Data Use page."
+      },
+      {
+        "timestamp": "8:35",
+        "text": "Now, if you've determined that your app would like to track users, you'll need to ask for and obtain the user's permission before you do so."
+      },
+      {
+        "timestamp": "8:43",
+        "text": "Here's how."
+      },
+      {
+        "timestamp": "8:45",
+        "text": "To ask for permission for your app to track, you'll need to present the app tracking authorization request prompt by calling the requestTrackingAuthorization method."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "Calling this method will cause a system permission alert -- like this one for Pal About -- to appear over your app."
+      },
+      {
+        "timestamp": "9:05",
+        "text": "This is a one-time prompt."
+      },
+      {
+        "timestamp": "9:07",
+        "text": "The system will remember the user's choice and won't prompt again unless the app is uninstalled and reinstalled."
+      },
+      {
+        "timestamp": "9:14",
+        "text": "The next thing you'll need to do is provide a NSUserTrackingUsageDescription key in your app's info.plist."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "The string provided here will be shown in the system prompt and informs the user why the app is requesting permission to use data for tracking the user or the device."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "A great purpose string is clear, concise, and helps users understand why they are being asked to allow tracking."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "This string doesn't need to include the app's name, because the system will automatically identify the requesting app and display the app name in the system prompt."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "If you don't include a usage-description string, your app will crash when the system prompt is shown."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "Finally, use trackingAuthorizationStatus to determine the user's app-tracking permission status for your app."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "If a user has selected Allow for this app, then you have their permission to link their activity in that app across other apps and websites as long as their tracking authorization status remains authorized."
+      },
+      {
+        "timestamp": "10:19",
+        "text": "Users can change and grant or revoke their tracking authorization at any time, so make sure your app checks the tracking authorization status each time it is launched and only continues to track when the value of the tracking authorization status is authorized."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "Users can control whether apps have their permission to track on a per-app basis."
+      },
+      {
+        "timestamp": "10:43",
+        "text": "Just because a user has given one of your apps permission to track doesn't mean you have their permission to track in another app owned by the same company."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "Different apps must each individually request permission from the user for that particular app before data from that app can be linked to apps or websites owned by other companies for marketing or advertising."
+      },
+      {
+        "timestamp": "11:07",
+        "text": "If your app doesn't have tracking authorization for a user, there are a couple things to keep in mind."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "First, per the App Store review guidelines, your app must not gate any of its functionality on whether the user agrees to allow tracking."
+      },
+      {
+        "timestamp": "11:23",
+        "text": "Second, the IDFA API will return all zeros if the user has asked your app not to track."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "If a user has opted out of tracking, there are nontracking alternatives for advertising or advertising measurement for your app."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "For example, your app could choose to serve first-party ads or contextual ads."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "And for advertising measurement, we continue to build and improve privacy preserving ad-attribution technologies that ad networks can adopt."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "For more information about recent improvements to SKAdNetwork and private click measurement, you can refer to \"Meet privacy preserving ad attribution\" and \"What's new in SKAdNetwork.\" You'll also need to declare what data your app uses to track for display in your app's privacy nutrition label."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "Filling out your privacy nutrition label when submitting your app to the App Store and getting permission to track using the AppTrackingTransparency framework are two separate steps that are both required if your app would like to use data for tracking."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "For more information about nutrition labels and how to fill them out for your app, see \"Create your Privacy Nutrition Label.\" Finally, let's talk about fingerprinting."
+      },
+      {
+        "timestamp": "12:37",
+        "text": "With permission, tracking is allowed."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "But fingerprinting is never allowed."
+      },
+      {
+        "timestamp": "12:43",
+        "text": "Regardless of whether a user gives your app permission to track, fingerprinting -- or using signals from the device to try to identify the device or user -- is not allowed per the Apple Developer Program License Agreement."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "Some examples of user or device data used for fingerprinting include properties of a user's web browser and its configuration, the user's device and its configuration, the user's location, or the user's network connection."
+      },
+      {
+        "timestamp": "13:11",
+        "text": "Collecting any data solely for the purpose of generating a fingerprint is also not allowed."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "It's important people have transparency and control over how their data is used for tracking."
+      },
+      {
+        "timestamp": "13:23",
+        "text": "We hope that by tuning in to this session, you now have the tools you need to determine when and how to give people that control by adopting the AppTrackingTransparency framework."
+      },
+      {
+        "timestamp": "13:33",
+        "text": "Thanks for watching."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [
@@ -58,5 +413,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10085"
     }
   ],
-  "extractedAt": "2026-10-11T16:41:14.680Z"
+  "extractedAt": "2026-10-17T18:51:12.065Z"
 }

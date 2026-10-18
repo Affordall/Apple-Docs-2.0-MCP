@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/220/",
   "title": "Refine accessibility for custom controls",
-  "speakers": [],
-  "duration": "",
+  "duration": "16:25",
   "topics": [
     "Accessibility & Inclusion",
     "SwiftUI & UI Frameworks"
@@ -12,8 +11,252 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Khin, a software engineer on the accessibility team.\n\nCustom UI controls empower people to do unique and creative things in your app. They let people use gestures and interactions that go beyond standard controls.\n\nAt Apple, we believe that technology works best when it works for everyone. That means bringing a great experience to people using assistive technologies like VoiceOver, Switch Control, and more.\n\nMaking control accessible ensures that everyone gets access to the very thing your app was built to do.\n\nIn this session, I'll explore how you can make any control in your app accessible. First, I'll start by explaining some guiding principles you can use. And then I'll show you how those get applied to a few complex controls.\n\nNow let's talk about the guiding principles. Consider this slider. It's a standard slider from SwiftUI.\n\nEven if this is your first time encountering it, you may already know a lot about it from its appearance.\n\nIt contains a track and on top of it, a handle. The handle appears about halfway along its track. The handle also seems like someone can grab it, so it can be moved by dragging. Using this visual information, you gather a lot of implicit cues about this control. You can tell that this control represents a continuous value.\n\nYou also know what the current value is. In this case, about half of the maximum.\n\nYou can also identify the gesture for actions, like changing its value.\n\nThe handle appears to be draggable, and when you do, the feedback is immediate, the track fills, and the handle moves, giving clear feedback that something happened. Nobody had to explain any of that. It was understood at a glance. Your brain processed the shape, the position, the expected behavior, all in a fraction of a second.\n\nThat's how powerful visual information is.\n\nNow, what if someone can't see the screen? The track, the handle, the position, none of it is known. Not everyone will have access to visual information, so it's important to consider how people using assistive technologies will interact with controls like these.\n\nHere's how VoiceOver describes this slider. VoiceOver is a built-in screen reader on Apple platforms. It lets people who are blind or low vision use gestures to interact with their device. \"Brightness, 50%, adjustable.\" \"Swipe up or down with one finger to adjust the value.\" Using VoiceOver, someone is able to understand what the slider controls, says the label, \"Brightness\". It also indicates that this control has a value and it's currently set to 50%. It's also clear what actions someone can take. It reads adjustable and provides a hint on how to adjust the value. As the value changes, announces the new value in real time. That's the feedback someone gets.\n\nSomeone using VoiceOver can get a great experience, even without access to the control 's visuals.\n\nConsider the information people get from the visual form of a control. Use each of these as your guiding principle for your own accessibility experience. Ensure that the purpose of the control is understood. If it expresses a value, make that value available to assistive technologies. Make it clear what action someone can take and how they get feedback as they use the control.\n\nHere's another example, a custom control for my coffee maker's app. Some mornings are full cup mornings, some mornings are half. Depends if I wake up to my alarm or to screaming cats. So, I build an app that lets me control the amount of coffee brewed in with one simple gesture. I drug up for more coffee and drug down for less. The fill level represents how many ounces to be brewed.\n\nCurrently, this control doesn't provide any additional information for accessibility. As I swipe right to select the control, VoiceOver doesn't describe what it does or how someone changes its value. \"Settings.\" \"Button.\" \"6 ounces.\" \"Drag up or down on the cup.\" It's not clear how to interact with this control yet.\n\nBut don't worry. This can be proved in a few simple steps.\n\nTo do this, I'll revisit the guiding principles I explored earlier.\n\nHere's the implementation for the CoffeeDispenserView. Currently, it just declares a coffee level as a State and passes it to the slider. First, I'll mark the slider as an accessibility element. To give it a clear purpose, I use the accessibilityLabel modifier to call it \"Coffee Dispenser\". And then I'll use the accessibilityValue modifier to announce the current fill level.\n\nI also want to give VoiceOver the ability to adjust the coffee slider the same way a built-in slider does. I'll add the same interaction to this control. I start by adding a trait call .adjustable.\n\nThis tells VoiceOver that this control can be adjusted with a swipe. Then I define what each swipe does with the .accessibilityAdjustableAction Modifier. The closure provides a direction parameter, either .increment or .decrement. The closure should handle each case.\n\nWith those changes, here's the new VoiceOver experience.\n\nI'll swipe right to select the control and then swipe up and down to adjust the amount of coffee I want.\n\n\"Coffee dispenser, 6 ounces, adjustable.\" \"Swipe up or down with one finger to adjust the value.\" \"7 ounces.\" \"8 ounces.\" \"7 ounces.\" \"6 ounces.\" People can now adjust the coffee level using VoiceOver one ounce at a time.\n\nBut what if someone is feeling particular and wants to adjust by half an ounce? For precise control, VoiceOver has that build-in capability called the passthrough gesture.\n\nTo perform a passthrough gesture, someone using VoiceOver can double tap and hold to activate. The gesture starts at your control's accessibilityActivationPoint. As the person's finger moves around, VoiceOver sends touch events directly to the control.\n\nThis gives someone more precise, fine-grained control over their value.\n\nFor the coffee slider, the accessibility activation point is at the center by default. I'll set it to match the current fill level. This way, the gesture always starts right at the coffee level, giving room to adjust whichever direction makes sense.\n\nIt's also important to give people feedback during the passthrough gesture.\n\nTo do this, I post the accessibility announcement when the value changes. But not every change though. That would get noisy. Instead, I track what was last spoken and when. If the value has actually changed, and at least .3 seconds have passed, then I announce. Otherwise, I skip it.\n\nThis way, people using VoiceOver can hear meaningful updates.\n\nNow I'll double tap and hold, then move my finger up to try a passthrough gesture to fill my coffee level up to 9.5 ounces. \"Coffee dispenser, 6 ounces, adjustable.\" \"Swipe up or down with one finger to adjust the value.\" \"Six... 6.4 ounces.\" \"Six... Six... Se... Se... Seve... 8.3 oun... 8.4 ounces.\" \"8.5 oun... 8.6 ounces.\" \"8.7 ounces.\" \"8.8 ou... 9... 9.5 ounces.\" That's great. The controller is now draggable and gives meaningful updates. The experience now delivers on the guiding principles I shared earlier with the label, value, actions and announcements.\n\nNow that I've explored basic custom control, let's take a look at a few more complex examples.\n\nHere is one of my favorite features on iOS, Background Sounds. Let's me play ambient audio, like rain or ocean waves, to help me focus and relax.\n\nYou can find it right in the Accessibility Settings.\n\nInside settings, there is an equalizer control. It's a two-dimensional pad. You can move the handle at the center anywhere on the surface.\n\nThis pad has two dimensions you can move around to adjust the sound's tone. Visually, there are frequency and amplitude symbols for each axis. When you grab the handle, you can actually explore the space of these two values at the same time.\n\nWith the slider, the adjustable traits provide two actions, increment and decrement, on a single axis.\n\nBut with this control, there are two axes, horizontal and vertical. Adding the adjustable trait would only cover one direction, so it's not the ideal solution.\n\nThis is where custom actions come in. Custom actions let you expose common actions of a control.\n\nEach action has a label that VoiceOver reads out loud and a closure that runs when activated. Unlike the adjustable action, custom actions support any operation that you defined, not limited to a single axis.\n\nFor this equalizer pad, here's how custom actions are added. On the equalizer pad view, the accessibilityAction modifier is added four times. Each action has a descriptive name. Move up, move right, move down, move left.\n\nEach one moves a single axis by a fixed step clamped within this range. These actions make it possible to explore the space really just by performing actions that are already familiar to people who rely on assistive technologies.\n\nHere's the experience of using equalizer pad with custom actions. I'll swipe up and down to select an action and double tap to perform it. \"Filter chart, frequency 0, amplitude 10.\" \"Double tap and hold, then drag to adjust filters.\" \"The bounds of the chart axis are set to -100 to 100.\" \"Swipe up or down to select a custom action.\" \"Then double tap to activate.\" \"Move down.\" \"Move up.\" \"Move right.\" \"Move left.\" \"Move right.\" \"Move up.\" \"Frequency 0, amplitude 20.\" \"Frequency 0, amplitude 30.\" \"Frequency 0, amplitude 40.\" Someone can navigate to 2D space through actions, and the sound itself provides clear feedback.\n\nThe equalizer pad is a great example of how the platform applies each of the guiding principles to its own experiences.\n\nNow, I want to show you an app that I've been working on with its own custom control.\n\nIf you're anything like me, you love your pets and when you're away at work, you really miss them. To keep me company during the day, I built an app that lets me play with my cat right from my screen. Pet it, and it purrs. Tap it, and get a meow. Pinch it, and well, it's a cat — so it hisses right back at you! Just like the real thing. I haven't added any accessibility support for this control yet. I'll check out the default experience with VoiceOver. \"Cat fill. Space. Image.\" \"Touch the cat to interact.\" It just says an image on the screen. Patting, tapping, and pinching are all the gestures that this control supports, but VoiceOver doesn't know they exist.\n\nAll of that charm, the purring, the kneading, the angry meow, it's all there, waiting to be shared with people who rely on assistive technologies. VirtualCat is a Swift UI view containing the interactive cat surface. To express the control purpose, I add an accessibility label that reads \"Virtual Cat\". Then I set the accessibility value to the cat's current reaction.\n\nNow I need a way to explore the gestures for interacting with a cat to VoiceOver. People could use the pass-through gesture, but it might not be the best fit here. For example, people might want to do this action over and over again or use multiple gestures. So for this control, I'll use direct touch. The direct touch API marks a region of the screen as a direct touch area. When you add the allowsDirectInteraction trait, touch events pass straight to the control, rather than being processed by VoiceOver. This way, people can interact with the control directly, allowing them to use all the gestures it supports. You can customize this behavior with direct touch options. First option is .requiresActivation. When set, the control won't respond to direct touch until someone double taps.\n\nThis allows someone to drag their finger across the screen without accidentally activating it.\n\nAnd unlike the passthrough gesture, direct touch stays active until focus moves to another element.\n\nAnother option is .silentOnTouch. When set, VoiceOver stays completely silent when someone touches the area. This is for controls that provide their own audio feedback where VoiceOver speech would talk over the audio from the control itself.\n\nTo make this control interactive, I'll add the .accessibilityDirectTouch modifier with .requiresActivation option.\n\nKeep in mind, not everyone is going to be able to perform direct touch gestures. So whenever possible, try to expose other ways to interact with the control. For example, using custom actions.\n\nHere's the updated experience with VoiceOver. I can double tap to activate the direct touch and then I'll try patting, tapping, and pinching the cat.\n\n\"Virtual cat, sleeping.\" \"Activate to start direct touch interaction.\" \"Actions available.\" \"Virtual cat.\" \"Sleeping.\" With these changes, someone using VoiceOver knows the description of the control and gestures to perform a direct touch. They also get feedback from the interactions. This brings everything that's delightful about this app to people using assistive technologies.\n\nMake your own custom interactive controls accessible to everyone. Turn on VoiceOver, open your app to find opportunities for improvement. When building custom controls, consider whether people can understand the control purpose, value, actions, and feedback. Think about direct touch when your controls rely on gestures which pass-through isn't best supported for, and provide custom actions whenever possible.\n\nThis way, people using Switch Control, Voice Control, and other assistive technologies can access the same interactions.\n\nThanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm Khin, a software engineer on the accessibility team."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "Custom UI controls empower people to do unique and creative things in your app. They let people use gestures and interactions that go beyond standard controls."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "At Apple, we believe that technology works best when it works for everyone. That means bringing a great experience to people using assistive technologies like VoiceOver, Switch Control, and more."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "Making control accessible ensures that everyone gets access to the very thing your app was built to do."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "In this session, I'll explore how you can make any control in your app accessible. First, I'll start by explaining some guiding principles you can use. And then I'll show you how those get applied to a few complex controls."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "Now let's talk about the guiding principles. Consider this slider. It's a standard slider from SwiftUI."
+      },
+      {
+        "timestamp": "1:10",
+        "text": "Even if this is your first time encountering it, you may already know a lot about it from its appearance."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "It contains a track and on top of it, a handle. The handle appears about halfway along its track. The handle also seems like someone can grab it, so it can be moved by dragging. Using this visual information, you gather a lot of implicit cues about this control. You can tell that this control represents a continuous value."
+      },
+      {
+        "timestamp": "1:40",
+        "text": "You also know what the current value is. In this case, about half of the maximum."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "You can also identify the gesture for actions, like changing its value."
+      },
+      {
+        "timestamp": "1:51",
+        "text": "The handle appears to be draggable, and when you do, the feedback is immediate, the track fills, and the handle moves, giving clear feedback that something happened. Nobody had to explain any of that. It was understood at a glance. Your brain processed the shape, the position, the expected behavior, all in a fraction of a second."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "That's how powerful visual information is."
+      },
+      {
+        "timestamp": "2:17",
+        "text": "Now, what if someone can't see the screen? The track, the handle, the position, none of it is known. Not everyone will have access to visual information, so it's important to consider how people using assistive technologies will interact with controls like these."
+      },
+      {
+        "timestamp": "2:36",
+        "text": "Here's how VoiceOver describes this slider. VoiceOver is a built-in screen reader on Apple platforms. It lets people who are blind or low vision use gestures to interact with their device. \"Brightness, 50%, adjustable.\" \"Swipe up or down with one finger to adjust the value.\" Using VoiceOver, someone is able to understand what the slider controls, says the label, \"Brightness\". It also indicates that this control has a value and it's currently set to 50%. It's also clear what actions someone can take. It reads adjustable and provides a hint on how to adjust the value. As the value changes, announces the new value in real time. That's the feedback someone gets."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "Someone using VoiceOver can get a great experience, even without access to the control 's visuals."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "Consider the information people get from the visual form of a control. Use each of these as your guiding principle for your own accessibility experience. Ensure that the purpose of the control is understood. If it expresses a value, make that value available to assistive technologies. Make it clear what action someone can take and how they get feedback as they use the control."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "Here's another example, a custom control for my coffee maker's app. Some mornings are full cup mornings, some mornings are half. Depends if I wake up to my alarm or to screaming cats. So, I build an app that lets me control the amount of coffee brewed in with one simple gesture. I drug up for more coffee and drug down for less. The fill level represents how many ounces to be brewed."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "Currently, this control doesn't provide any additional information for accessibility. As I swipe right to select the control, VoiceOver doesn't describe what it does or how someone changes its value. \"Settings.\" \"Button.\" \"6 ounces.\" \"Drag up or down on the cup.\" It's not clear how to interact with this control yet."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "But don't worry. This can be proved in a few simple steps."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "To do this, I'll revisit the guiding principles I explored earlier."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "Here's the implementation for the CoffeeDispenserView. Currently, it just declares a coffee level as a State and passes it to the slider. First, I'll mark the slider as an accessibility element. To give it a clear purpose, I use the accessibilityLabel modifier to call it \"Coffee Dispenser\". And then I'll use the accessibilityValue modifier to announce the current fill level."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "I also want to give VoiceOver the ability to adjust the coffee slider the same way a built-in slider does. I'll add the same interaction to this control. I start by adding a trait call .adjustable."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "This tells VoiceOver that this control can be adjusted with a swipe. Then I define what each swipe does with the .accessibilityAdjustableAction Modifier. The closure provides a direction parameter, either .increment or .decrement. The closure should handle each case."
+      },
+      {
+        "timestamp": "6:00",
+        "text": "With those changes, here's the new VoiceOver experience."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "I'll swipe right to select the control and then swipe up and down to adjust the amount of coffee I want."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "\"Coffee dispenser, 6 ounces, adjustable.\" \"Swipe up or down with one finger to adjust the value.\" \"7 ounces.\" \"8 ounces.\" \"7 ounces.\" \"6 ounces.\" People can now adjust the coffee level using VoiceOver one ounce at a time."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "But what if someone is feeling particular and wants to adjust by half an ounce? For precise control, VoiceOver has that build-in capability called the passthrough gesture."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "To perform a passthrough gesture, someone using VoiceOver can double tap and hold to activate. The gesture starts at your control's accessibilityActivationPoint. As the person's finger moves around, VoiceOver sends touch events directly to the control."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "This gives someone more precise, fine-grained control over their value."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "For the coffee slider, the accessibility activation point is at the center by default. I'll set it to match the current fill level. This way, the gesture always starts right at the coffee level, giving room to adjust whichever direction makes sense."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "It's also important to give people feedback during the passthrough gesture."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "To do this, I post the accessibility announcement when the value changes. But not every change though. That would get noisy. Instead, I track what was last spoken and when. If the value has actually changed, and at least .3 seconds have passed, then I announce. Otherwise, I skip it."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "This way, people using VoiceOver can hear meaningful updates."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "Now I'll double tap and hold, then move my finger up to try a passthrough gesture to fill my coffee level up to 9.5 ounces. \"Coffee dispenser, 6 ounces, adjustable.\" \"Swipe up or down with one finger to adjust the value.\" \"Six... 6.4 ounces.\" \"Six... Six... Se... Se... Seve... 8.3 oun... 8.4 ounces.\" \"8.5 oun... 8.6 ounces.\" \"8.7 ounces.\" \"8.8 ou... 9... 9.5 ounces.\" That's great. The controller is now draggable and gives meaningful updates. The experience now delivers on the guiding principles I shared earlier with the label, value, actions and announcements."
+      },
+      {
+        "timestamp": "8:42",
+        "text": "Now that I've explored basic custom control, let's take a look at a few more complex examples."
+      },
+      {
+        "timestamp": "8:49",
+        "text": "Here is one of my favorite features on iOS, Background Sounds. Let's me play ambient audio, like rain or ocean waves, to help me focus and relax."
+      },
+      {
+        "timestamp": "9:00",
+        "text": "You can find it right in the Accessibility Settings."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "Inside settings, there is an equalizer control. It's a two-dimensional pad. You can move the handle at the center anywhere on the surface."
+      },
+      {
+        "timestamp": "9:13",
+        "text": "This pad has two dimensions you can move around to adjust the sound's tone. Visually, there are frequency and amplitude symbols for each axis. When you grab the handle, you can actually explore the space of these two values at the same time."
+      },
+      {
+        "timestamp": "9:30",
+        "text": "With the slider, the adjustable traits provide two actions, increment and decrement, on a single axis."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "But with this control, there are two axes, horizontal and vertical. Adding the adjustable trait would only cover one direction, so it's not the ideal solution."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "This is where custom actions come in. Custom actions let you expose common actions of a control."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "Each action has a label that VoiceOver reads out loud and a closure that runs when activated. Unlike the adjustable action, custom actions support any operation that you defined, not limited to a single axis."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "For this equalizer pad, here's how custom actions are added. On the equalizer pad view, the accessibilityAction modifier is added four times. Each action has a descriptive name. Move up, move right, move down, move left."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "Each one moves a single axis by a fixed step clamped within this range. These actions make it possible to explore the space really just by performing actions that are already familiar to people who rely on assistive technologies."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "Here's the experience of using equalizer pad with custom actions. I'll swipe up and down to select an action and double tap to perform it. \"Filter chart, frequency 0, amplitude 10.\" \"Double tap and hold, then drag to adjust filters.\" \"The bounds of the chart axis are set to -100 to 100.\" \"Swipe up or down to select a custom action.\" \"Then double tap to activate.\" \"Move down.\" \"Move up.\" \"Move right.\" \"Move left.\" \"Move right.\" \"Move up.\" \"Frequency 0, amplitude 20.\" \"Frequency 0, amplitude 30.\" \"Frequency 0, amplitude 40.\" Someone can navigate to 2D space through actions, and the sound itself provides clear feedback."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "The equalizer pad is a great example of how the platform applies each of the guiding principles to its own experiences."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "Now, I want to show you an app that I've been working on with its own custom control."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "If you're anything like me, you love your pets and when you're away at work, you really miss them. To keep me company during the day, I built an app that lets me play with my cat right from my screen. Pet it, and it purrs. Tap it, and get a meow. Pinch it, and well, it's a cat — so it hisses right back at you! Just like the real thing. I haven't added any accessibility support for this control yet. I'll check out the default experience with VoiceOver. \"Cat fill. Space. Image.\" \"Touch the cat to interact.\" It just says an image on the screen. Patting, tapping, and pinching are all the gestures that this control supports, but VoiceOver doesn't know they exist."
+      },
+      {
+        "timestamp": "12:36",
+        "text": "All of that charm, the purring, the kneading, the angry meow, it's all there, waiting to be shared with people who rely on assistive technologies. VirtualCat is a Swift UI view containing the interactive cat surface. To express the control purpose, I add an accessibility label that reads \"Virtual Cat\". Then I set the accessibility value to the cat's current reaction."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "Now I need a way to explore the gestures for interacting with a cat to VoiceOver. People could use the pass-through gesture, but it might not be the best fit here. For example, people might want to do this action over and over again or use multiple gestures. So for this control, I'll use direct touch. The direct touch API marks a region of the screen as a direct touch area. When you add the allowsDirectInteraction trait, touch events pass straight to the control, rather than being processed by VoiceOver. This way, people can interact with the control directly, allowing them to use all the gestures it supports. You can customize this behavior with direct touch options. First option is .requiresActivation. When set, the control won't respond to direct touch until someone double taps."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "This allows someone to drag their finger across the screen without accidentally activating it."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "And unlike the passthrough gesture, direct touch stays active until focus moves to another element."
+      },
+      {
+        "timestamp": "14:11",
+        "text": "Another option is .silentOnTouch. When set, VoiceOver stays completely silent when someone touches the area. This is for controls that provide their own audio feedback where VoiceOver speech would talk over the audio from the control itself."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "To make this control interactive, I'll add the .accessibilityDirectTouch modifier with .requiresActivation option."
+      },
+      {
+        "timestamp": "14:35",
+        "text": "Keep in mind, not everyone is going to be able to perform direct touch gestures. So whenever possible, try to expose other ways to interact with the control. For example, using custom actions."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "Here's the updated experience with VoiceOver. I can double tap to activate the direct touch and then I'll try patting, tapping, and pinching the cat."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "\"Virtual cat, sleeping.\" \"Activate to start direct touch interaction.\" \"Actions available.\" \"Virtual cat.\" \"Sleeping.\" With these changes, someone using VoiceOver knows the description of the control and gestures to perform a direct touch. They also get feedback from the interactions. This brings everything that's delightful about this app to people using assistive technologies."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "Make your own custom interactive controls accessible to everyone. Turn on VoiceOver, open your app to find opportunities for improvement. When building custom controls, consider whether people can understand the control purpose, value, actions, and feedback. Think about direct touch when your controls rely on gestures which pass-through isn't best supported for, and provide custom actions whenever possible."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "This way, people using Switch Control, Voice Control, and other assistive technologies can access the same interactions."
+      },
+      {
+        "timestamp": "16:15",
+        "text": "Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -47,6 +290,23 @@
       "code": "// Customize accessibility for the interactive cat surface\n\nimport SwiftUI\n\nstruct VirtualCat: View {\n    var cat: CatModel\n    var body: some View {\n        InteractiveCatSurface()\n            .accessibilityLabel(\"Virtual Cat\")\n            .accessibilityValue(cat.currentReaction.description)\n            .accessibilityDirectTouch([.requiresActivation])\n     }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:01",
+      "title": "Introduction",
+      "duration": "1:01"
+    },
+    {
+      "timestamp": "1:02",
+      "title": "Guiding principles",
+      "duration": "7:39"
+    },
+    {
+      "timestamp": "8:41",
+      "title": "Complex controls",
+      "duration": "7:44"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -77,5 +337,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10073"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:53.795Z"
+  "extractedAt": "2026-10-17T18:42:48.108Z"
 }

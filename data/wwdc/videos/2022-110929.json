@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110929/",
   "title": "WWDC22 Day 1 recap",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,148 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Bass-heavy electronic music ♪ Serenity Caldwell: Welcome to HQ.\n\nI'm Serenity Caldwell; here's your day one debrief of WWDC.\n\niOS 16 is now mission-ready, starting with the reimagined Lock Screen.\n\nChoose from countless fonts, colors, and widgets to personalize your iPhone.\n\nWant to set boundaries between work and home life? Activate Personal Focus.\n\nAnd if you've ever sent an embarrassing message, now you can fix that.\n\nOr better still, erase it before anyone spots it. With SharePlay you can actually watch movies and shows with friends while messaging. Ted Lasso: Oh, I like this.\n\nSerenity: Want to send a picture of your best friend without the background? Just touch, lift, and send. Sharing photos with family just got a lot easier with...\n\nCraig Federighi: ...iCloud Shared Photo Library.\n\nSerenity: We also got a sneak peek at the future of CarPlay.\n\n♪ And arriving in Maps, at last, the ability to plan up to 15 stops.\n\nSay hello to some new Apple Watch features.\n\nThere are new Workout views like heart rate zones.\n\nWe made it easier to customize your workout and added reminders to take your meds.\n\nAnd there's a range of new watch faces: Astronomy, Lunar, Playtime, Metropolitan, and of course, we can't forget  Buddy! The next generation of Apple silicon is here.\n\nMeet the mighty M2.\n\nWe took all this power and used it to supercharge the new MacBook Air.\n\nIt's thinner, lighter, and faster than ever.\n\nWe're even bringing M2 to 13-inch MacBook Pro.\n\nWe launched the newest macOS, Ventura, with big upgrades to Spotlight like Enhanced Image Search, and we introduced... Craig: ...Stage Manager.\n\nSerenity: Now working between different windows and apps is faster and easier.\n\nAnd you can Schedule Send and Undo Send emails.\n\nYou asked, we delivered.\n\nIntroducing Continuity Camera.\n\nNow you can use your iPhone as a webcam in ways that were never possible before.\n\nDon't look now, it's... Craig: ...iPadOS 16.\n\nSerenity: For the first time, you can work on multiple overlapping windows with Stage Manager.\n\nCraig: And it gets even better.\n\nSerenity: We made collaborating easier across different apps and devices, and coming later this year, a new app for live collaboration.\n\nWe added new APIs to all Apple platforms, brought in top-notch weather data with WeatherKit, gave developers more power to build games with Metal 3, Made SwiftUI more powerful and flexible, raised the bar with Swift Charts, Introduced Swift Regex, and opened Xcode Cloud to all developers.\n\nAnd congrats to the 12 winners of the Apple Design Awards and all our finalists.\n\nHere's a look at day two.\n\n♪ That's all for now.\n\nBe sure to report back tomorrow.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass-heavy electronic music ♪ Serenity Caldwell: Welcome to HQ."
+      },
+      {
+        "timestamp": "0:07",
+        "text": "I'm Serenity Caldwell; here's your day one debrief of WWDC."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "iOS 16 is now mission-ready, starting with the reimagined Lock Screen."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "Choose from countless fonts, colors, and widgets to personalize your iPhone."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "Want to set boundaries between work and home life? Activate Personal Focus."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "And if you've ever sent an embarrassing message, now you can fix that."
+      },
+      {
+        "timestamp": "0:29",
+        "text": "Or better still, erase it before anyone spots it. With SharePlay you can actually watch movies and shows with friends while messaging. Ted Lasso: Oh, I like this."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "Serenity: Want to send a picture of your best friend without the background? Just touch, lift, and send. Sharing photos with family just got a lot easier with..."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "Craig Federighi: ...iCloud Shared Photo Library."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Serenity: We also got a sneak peek at the future of CarPlay."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "♪ And arriving in Maps, at last, the ability to plan up to 15 stops."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "Say hello to some new Apple Watch features."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "There are new Workout views like heart rate zones."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "We made it easier to customize your workout and added reminders to take your meds."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "And there's a range of new watch faces: Astronomy, Lunar, Playtime, Metropolitan, and of course, we can't forget Buddy! The next generation of Apple silicon is here."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "Meet the mighty M2."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "We took all this power and used it to supercharge the new MacBook Air."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "It's thinner, lighter, and faster than ever."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "We're even bringing M2 to 13-inch MacBook Pro."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "We launched the newest macOS, Ventura, with big upgrades to Spotlight like Enhanced Image Search, and we introduced... Craig: ...Stage Manager."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "Serenity: Now working between different windows and apps is faster and easier."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "And you can Schedule Send and Undo Send emails."
+      },
+      {
+        "timestamp": "1:50",
+        "text": "You asked, we delivered."
+      },
+      {
+        "timestamp": "1:53",
+        "text": "Introducing Continuity Camera."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "Now you can use your iPhone as a webcam in ways that were never possible before."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "Don't look now, it's... Craig: ...iPadOS 16."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "Serenity: For the first time, you can work on multiple overlapping windows with Stage Manager."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Craig: And it gets even better."
+      },
+      {
+        "timestamp": "2:07",
+        "text": "Serenity: We made collaborating easier across different apps and devices, and coming later this year, a new app for live collaboration."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "We added new APIs to all Apple platforms, brought in top-notch weather data with WeatherKit, gave developers more power to build games with Metal 3, Made SwiftUI more powerful and flexible, raised the bar with Swift Charts, Introduced Swift Regex, and opened Xcode Cloud to all developers."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "And congrats to the 12 winners of the Apple Design Awards and all our finalists."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "Here's a look at day two."
+      },
+      {
+        "timestamp": "2:41",
+        "text": "♪ That's all for now."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "Be sure to report back tomorrow."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -99,5 +238,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110933"
     }
   ],
-  "extractedAt": "2026-10-11T16:39:18.065Z"
+  "extractedAt": "2026-10-17T18:49:14.721Z"
 }

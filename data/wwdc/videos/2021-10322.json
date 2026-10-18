@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10322/",
   "title": "Tuesday@WWDC21",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,76 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Buckle up! Your day two recap starts now.\n\n♪ \"Better Days (Instrumental)\" by DARKMINDS ♪ We learned how to analyze and classify sounds while sharing a cup of tea with Jon.\n\n- The demo app is using my Mac's built-in microphone to listen to sounds in the environment.\n\n- And discovered how to recognize custom audio with ShazamKit.\n\n- What if you could play a video on your Apple TV and have a companion app that displays questions at exactly the right time? - At lunchtime, aerospace engineer Tiera Fletcher took us to space.\n\n- We are voyagers collecting data beyond our solar system.\n\n- Then we explored Screen Time API with Nolan...\n\n- Homework encourages good habits by restricting a child's access to certain apps.\n\n- ...designed inclusive apps with Cynthia, and learned how to quickly implement in-app subscriptions with StoreKit 2.\n\nWe found out how you can use Nearby Interaction with third-party accessories...\n\n- For example, you can create a nearby peer configuration when you want to start a session between two iPhones that are running your app.\n\n- ...and discovered how to build a simplified sign-on process for tvOS.\n\nNo. Password. Needed.\n\nWhat a packed day! I think I need to go visit the Health & Fitness pavilion and check out today's Mindful Cooldown.\n\nAnd here's a quick preview of what's coming tomorrow.\n\n♪ Pretty cool stuff, eh? See you along the way.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "",
+        "text": "Buckle up! Your day two recap starts now."
+      },
+      {
+        "timestamp": "",
+        "text": "♪ \"Better Days (Instrumental)\" by DARKMINDS ♪ We learned how to analyze and classify sounds while sharing a cup of tea with Jon."
+      },
+      {
+        "timestamp": "",
+        "text": "- The demo app is using my Mac's built-in microphone to listen to sounds in the environment."
+      },
+      {
+        "timestamp": "",
+        "text": "- And discovered how to recognize custom audio with ShazamKit."
+      },
+      {
+        "timestamp": "",
+        "text": "- What if you could play a video on your Apple TV and have a companion app that displays questions at exactly the right time? - At lunchtime, aerospace engineer Tiera Fletcher took us to space."
+      },
+      {
+        "timestamp": "",
+        "text": "- We are voyagers collecting data beyond our solar system."
+      },
+      {
+        "timestamp": "",
+        "text": "- Then we explored Screen Time API with Nolan..."
+      },
+      {
+        "timestamp": "",
+        "text": "- Homework encourages good habits by restricting a child's access to certain apps."
+      },
+      {
+        "timestamp": "",
+        "text": "- ...designed inclusive apps with Cynthia, and learned how to quickly implement in-app subscriptions with StoreKit 2."
+      },
+      {
+        "timestamp": "",
+        "text": "We found out how you can use Nearby Interaction with third-party accessories..."
+      },
+      {
+        "timestamp": "",
+        "text": "- For example, you can create a nearby peer configuration when you want to start a session between two iPhones that are running your app."
+      },
+      {
+        "timestamp": "",
+        "text": "- ...and discovered how to build a simplified sign-on process for tvOS."
+      },
+      {
+        "timestamp": "",
+        "text": "No. Password. Needed."
+      },
+      {
+        "timestamp": "",
+        "text": "What a packed day! I think I need to go visit the Health & Fitness pavilion and check out today's Mindful Cooldown."
+      },
+      {
+        "timestamp": "",
+        "text": "And here's a quick preview of what's coming tomorrow."
+      },
+      {
+        "timestamp": "",
+        "text": "♪ Pretty cool stuff, eh? See you along the way."
+      },
+      {
+        "timestamp": "",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [

@@ -3,8 +3,7 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10172/",
   "title": "Break into the RealityKit debugger",
-  "speakers": [],
-  "duration": "",
+  "duration": "24:10",
   "topics": [
     "Developer Tools",
     "Graphics & Games",
@@ -13,8 +12,336 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hey, I’m Jeremiah! I make developer tools that help you make awesome spatial apps and games. Today, I want to talk about some of the common bugs that might creep into your RealityKit apps. And in the process, I’ll introduce you to the RealityKit debugger - a new tool that helps you catch them. We’ll begin with a quick tour of the RealityKit Debugger, which we will then use to inspect an app and track down some bugs.\n\nWe’ll traverse entity hierarchies, in search of unexpected transformations; address bad behaviors in our systems, by exposing the mistakes in our components; we’ll find missing content, when we overcome some rendering pitfalls; and finally, I’ll share some tips & tricks for adapting the RealityKit Debugger to the uniqueness of your app.\n\nAre you ready? Then let’s begin! With RealityKit you can build jaw-dropping 3D apps, and deploy them to iOS, macOS and visionOS. Like the Botanist sample you might have seen with those cute robots tending to plants. But rushing around all day, carrying those big backpacks... That’s hard work! And sometimes... Even a robot needs a spot to just kick back and chill. A space to meet friends, enjoy premium oils, have a dance, the robot of course, and generally just let off some steam. So, for this session, we’ll be extending the BOTanist sample with a chill out mode. I’ve been working on a prototype that transforms the garden into a club. But I’m not quite ready to open the doors, as there’s still a bunch of bugs running amok. Let’s use the RealityKit debugger to track them down.\n\nThe RealityKit Debugger takes a 3D snapshot of your running app, and loads it in Xcode for you to explore. From the debug area, on the bottom of your screen, click the “Capture Entity Hierarchy” button to begin.\n\nWhen the snapshot completes, captured RealityKit scenes are listed in the debug navigator on the left.\n\nSelecting a scene, displays its entity hierarchy in an adjacent outline view.\n\nIt also reconstructs the content in a 3D viewport.\n\nSelecting an entity in the hierarchy or the viewport, displays its properties, and those of its components, in an inspector on the right.\n\nThere’s also an inspector to show statistics about the currently selected hierarchy. The RealityKit Debugger fits into your existing Xcode workflow, and exposes new insights that make your 3D development experience more productive, and enjoyable. Now, with our new tool in hand, let’s go and fix up this club.\n\nThe code patch for transforming the sample is pretty big.\n\nSo, if you want to follow along, download the ClubView Swift file, drag it into your Xcode project, and include it in your target. We then need to make two small changes.\n\nFirst, we define a new volumetric scene for the club. And add this to the body of the BOTanistApp.\n\nSecond, we need a button to open the club. I added it to the body of the RobotView, next to the existing button to “Start Planting”. We can now build and run our app to the visionOS simulator.\n\nOnce the app launches, it will open on the Robot View. Rather than create a robot, we click the disco ball, to sneak into the club.\n\nWe can use the camera controls to move in closer.\n\nI’ve modified many of the existing assets in the scene, like transforming planters into teleporters. I’ve also generated some new entities from scratch, like the disco ball. That’s currently looking a little wonky. Let’s inspect our scene and find out why.\n\nIn Xcode, launch the RealityKit Debugger, using the button in the debug area.\n\nBefore we dive in, let’s take a moment to consider, how Transformation hierarchies work. When you place content in a 3D scene, you set a position, orientation and scale.\n\nOne of the common bugs you might encounter, is having that content not appear, where you set it.\n\nThis usually happens because, the final placement of an entity is actually a combination of its own transformations and those of all of its ancestors. This often leads to an entity exhibiting a transform that you only wanted applied to a single entity. I suspect, this is what is happening with our Disco Ball. Let’s confirm that using the RealityKit Debugger.\n\nIn the debug navigator, expand the scene wrapper and select the RealityKit content. This will open that scene in the Debugger.\n\nAt this point, we can hide the navigators and debug area to give us some more space to work with.\n\nIn the viewport, double click on the Disco Ball to select and center it.\n\nThe main viewport shows us entities, as they appear in our scene, with the transformations from their ancestors applied. Selecting an entity in the viewport, also selects it in the Entity Hierarchy, and the entity inspector. Our currently selected entity is named Outline. This entity displays the lines on the disco ball. In the Entity Inspector, there is a smaller secondary viewport. This viewport, previews the ModelComponent of the entity without any transformations applied. The Outline entity is undistorted in the preview, so the problem is not caused by its mesh. Also, the Transform component for this entity, visible below the preview window, has uniform scale values of 1. So the entity is not distorting itself. The problem is likely inherited from its ancestors. Lets traverse the hierarchy to find the rogue transformation.\n\nIn the entity hierarchy click on the parent, the Background entity. In the inspector, both the preview viewport and the Transform component, show that this entity is also not producing the distortion. In the hierarchy, let’s click on its parent, the Support entity.\n\nIn the inspector, notice the Support entity has a large scale value along the Y axis of its Transform component. The fact that we’re scaling this entity to achieve a desired shape is not wrong. The mistake here, is that we’re unintentionally, applying this scaling to all of its descendants.\n\nMaking the Support and the “Background” siblings, rather than parent and child, will fix the problem.\n\nThey will still look connected in the scene but the transform of the support will no longer affect the ball. Let’s re-run our app, enter the club, and check out the result.\n\nUsing the RealityKit Debugger to traverse our scene hierarchy, we were able to find the rogue transformation that was squishing our entity. And fix it by changing its parent. Now we can have a ball. The transformed club is starting to look the part. And now it’s time to bring some of these objects to life. RealityKit uses an Entity Component System, ECS approach to object and behavior management. We characterize entities by assigning them various components, that can hold data. We then make systems that perform updates on entities that have specific components. If an entity’s components are misconfigured or missing, then the behavior of the system is unpredictable. Let’s head back to the club, so I can show you an example.\n\nI’ve transformed all the planters in the club into teleporters. The Teleportation System should have started spawning robots but nobody is showing up. Let's break into the debugger to work out why.\n\nLet me first explain how the Teleportation System works.\n\nThe system stores its data in a Control Center Component. Every update, our system decreases a countdown value. When the countdown value reaches 0, it finds all entities in the scene with a TeleporterComponent. And picks a random one. It then spawns a robot at that position. The counter is reset, and the process repeats until the club is at capacity. Let’s switch over to the Debugger, and inspect these components.\n\nMy first suspicion is that I’ve forgotten to add Teleporter Components to the Teleporter Entities. This would cause us to never find a teleporter and so have nowhere to spawn from. With the RealityKit Debugger this is easy to confirm. In the entity hierarchy, expand the Bot Club and the Teleportation Center, and double-click the first Teleporter.\n\nIn the Entity inspector, notice that there is actually a Teleporter Component. Let’s check the other two teleporters to be sure.\n\nThey also have their Teleporter components. So, maybe the problem is the Control Center. In the hierarchy, select the parent entity, the Teleportation Center.\n\nLet’s examine the properties of the control center component, what sticks out to me, is the countdown value. Notice that it matches the initial value. The RealityKit debugger captures the app state at the moment you hit pause, so this value should have changed if our system was working. For some reason, the control center component is not being updated. Let’s inspect the code and work out why.\n\nIn each update, I decrease the countdown value in the control center component. I then... Ah, I was going to say I saved the updated component back to the entity, but looks like I forgot that step. Let’s add the missing step and re-run the app. This is a common mistake. Modified components need to be assigned back to their entity. Let’s switch over to the simulator and find out if that solved it.\n\nWith the RealityKit debugger, we tracked down and fixed a badly behaving system. We can now return to the club, and wait for a visitor.\n\nI really hope we get some customers soon. The rent on this place? Astronomical! Hey! Our first guest just phased in.\n\nWe now have robots teleporting in, but there’a a problem! There are supposed to be bottles of oil on the counter, but they aren’t in sight. I thought I restocked them. If we don’t find them soon, these bots will stop dancing, and this place is going to grind to a halt. I suspect they’ve been hidden by the renderer. Let me explain! 3D renderers like RealityKit achieve their performance in part, by being selective of what they spend time rendering. For example, something might be far away or maybe it’s too close, occluded by other content, or have its opacity set too low. It might be looking for an ARKit anchor, or even missing its assets entirely. In all these cases, and many others, our content will not be rendered. And working out why, is often a process of elimination.\n\nUsing Reality Compose Pro to prepare, test and package our assets, can help to avoid these issues. But if you still end up losing content, then the RealityKit debugger can help you find it. Let’s switch over to it now, and try to solve the case of the missing bottles.\n\nDouble-click the counter in the viewport, and adjust your camera to get a nice close up.\n\nYeah, that looks good. On the counter, there should be nine green bottles of the finest oil. But there’s currently only one, and even that is not rendering correctly. Lets work out why. In the entity hierarchy, expand the Counter and BottleGroup, and select the first bottle.\n\nAn entity’s selection highlight is visible even when the entity itself is occluded by other entities, In this case, it reveals that this bottle is there, but it is under the counter. This is confirmed by the inspector, where the bottle’s Transform component, has a negative value in the Y direction. This is an easy fix that we’ll make later. For now, let’s move on and investigate the next problem.\n\nPick bottle 2 in the hierarchy.\n\nNotice that there is no selection highlight in view. If we double-click the entity in the hierarchy, it will focus the camera on it.\n\nOh, it’s really far out. So far in fact, that it exceeds our scene’s bounds, as indicated by the yellow box. Because of this, it will be clipped by the renderer, and never shown. Like the first bottle, the solution here, will be to correct the translation.\n\nLet’s continue. In the hierarchy, double-click the third bottle to select and focus it.\n\nWow! The bottle is so big, that we were actually inside it. The triangles that make up a mesh, are usually only visible on one side. So from inside the mesh, it is often not visible at all. Reducing the scale of this object will fix our problem. We’re quite far from the counter now, so in the hierarchy, let’s double-click on bottle number 4, to fly back in.\n\nNotice, that in the hierarchy, alongside bottle 4, there is an icon. This lets us know that the entity is not active. Entities that are not active will not be rendered. Inspecting its components can help us discover what's wrong.\n\nUnlike the previous bottles, this one has an OutOfStock component. I use this component to tag out of stock items, and hide them. So, this not being rendered is actually the intended behavior.\n\nLet’s continue on to bottle 5.\n\nThe inspector for this bottle, reveals another unexpected component. An Anchoring component. This is actually some legacy code from an early prototype where I wanted to add dinner service at the club. Looks like I forgot to remove the component, when I removed the feature. The presence of an Anchoring component without a matching ARKit anchor in the scene, stops the entity from being rendered.\n\nLet’s move on to bottle 6.\n\nIn the viewport, there is no selection outline, just an axis. This means there is no model component on the entity, which we can also confirm in the inspector. Maybe it failed to load, or maybe we attached it to the wrong entity. We can’t tell which from here, so we’d need to check our code later. But we know what the problems is and where to focus.\n\nMoving on to Bottle 7.\n\nThis is not visible in the main viewport, nor the preview viewport - this means, it is likely a ModelComponent issue. The selection shape in the main viewport looks accurate. This leads me to suspect that the mesh is ok, and the issue is with the material. Let’s expand and inspect the properties of the material in the ModelComponent This material is setup to be semi-transparent, but also has an opacity threshold of 1.\n\nMy misconfiguration is effectively telling the engine that any parts of the model with an opacity less than 1 should not be rendered, but to also set all parts of the model to have an opacity less than one. The result is that the whole bottle is invisible.\n\nThe next bottle, number 8, is actually visible. Well, part of it.\n\nIn the inspector, I don’t notice anything obviously wrong. For situations like this, the RealityKit debugger gives us some additional displays that help us spot problems we might otherwise miss.\n\nIn the preview viewport, use the far right dropdown to change the rendering mode. Lets select the first option to visualize Normals.\n\nThis colors the object using the normal value at each point. The normal value indicates the direction a surface faces, and is used in lighting and rendering calculations. This might seem intimidating at first, but if we switch between this and a known good bottle like Bottle 1, we can observe that something is, a mess in our mesh.\n\nErrors like this are usually found in imported assets and need to be fixed in a 3D content creation tool.\n\nOk, one more to go. Select bottle 9. Oh, there is no bottle 9. I probably forgot to add it to the scene. I can confirm this by using the filter bar at the bottom of the hierarchy view, and showing only entities whose name contains BT.\n\nAs expected, it’s not in the scene.\n\nWe sped through a lot of issues here, so I’ll quickly recap. The first few bottles we couldn’t see because their transforms caused them to be occluded, clipped or inside out. One bottle was hidden because we disabled it, while another bottle was hidden because it was missing its anchor. We had a bottle with a broken mesh, one missing its mesh, and one was being made invisible by a misconfigured material. And one we just forgot to add to the scene. My bottle creation code included a lot of errors due to copy and pasting.\n\nSo I’m going to replace it with a single creation loop. Positioning and setting up 3D assets directly in code is challenging, so I would recommend preparing scene layout in Reality Composer Pro whenever possible.\n\nLet’s re-run the app and enter the club.\n\nUsing the various tools in the debugger, we were able to find our missing bottles. Our counter is now fully stocked with oil. And we can move smoothly on.\n\nFrom rogue transformations, through to misconfigured components, and rendering gotchas, we’ve already covered many of the common problems you might encounter when building your own apps. But many parts of an app are unique. And as they grow in complexity, so too do the challenges in debugging them. However, you can leverage the flexibility of ECS, to customize the RealityKit Debugger experience. Let me show you how. This is our Dance System. It works through a collection of invisible attractor entities, that are positioned around the dance floor. When a Newcomer teleports into the club, it is targeted by a vacant attractor. And each update it is driven closer in. Once our friend reaches an attractor, the motivator kicks in and they begin to dance.\n\nBut you may have noticed that something is up. A Robot teleports in, but they just stand there, not moving towards our attractors. Let's build some RealityKit debug-ability into this system.\n\nFirst, we’ll add basic model entities to the scene to visualize the invisible attractors. We’ll give each a custom component to store the values we want to present in the inspector, such as the attractor state. And we’ll group these under a single invisible entity, so none of this shows up during play. We’ll also give this parent entity a custom component, to display information about the system as a whole.\n\nThis is a simplified version of the code, with the full version already included in the ClubView swift file. It seems like a lot, but it’s just using standard RealityKit. Entities, components and systems. The only odd thing you might notice is that I’ve placed all this inside a debug compilation block. This ensures that the code will be complied out of the released app, and means I don’t need to worry about the performance implications. With our new debug system in place, let’s now run the app, wait for a robot to appear, and break into the debugger.\n\nIn the hierarchy, find and select the \" Dance System entity\".\n\nNotice that the properties of our debug component appear in the inspector. The RealityKit debugger can display most of the types you’ll regularly use in your apps. You can utilize this in straightforward ways such as displaying counters or more creative ways such as display a swift chart by saving it as a UIImage property. This new debug component helps us spot the problem in our dance system. All of our attractors are in the attracting state, which shouldn’t be possible. Another way we can observe this, is with our visualizations. In the entity hierarchy, secondary-click the \" Dance System entity\" to open the context menu and toggle visibility.\n\nOur visualization shows us the state of each attractor. And indeed, they are all orange, which is the color we used to indicate the attracting state. A robot is only meant to be targeted by a single attractor. When a robot teleports in, we tag it with a Newcomer component, and remove that tag when it is targeted by an attractor. Let’s select one of our debug visualizations to inspect its debug component.\n\nWe set up this component to store a reference to the target robot, which the RealityKit debugger converts into a link. Let’s click on it to find our target.\n\nInspecting the Robot’s components reveals the problem. It still has its newcomer component, which should have been removed when it was first targeted. Since it wasn’t, every attractor finds this same robot, and attempts to attract it, and the robot, overwhelmed by choice, is frozen. With the problem identified, we can now head to the code to fix it.\n\nIn the dance system when the target is set, I should be removing the Newcomer component, but I’m not. Let’s add the code to do that. Then re-run our app.\n\nThis type of bug is easy to fix, but can be tricky to track down, especially as we increase the complexity of our systems and the scale of the app. But by leveraging those same systems to build visualizations, and using custom components to add inspectors, we can ensure that our developer experience is just as enjoyable as the experiences we build for our players, and our robots. With that, let’s finally open up our club and enjoy our success.\n\nWith the help of the RealityKit debugger, we were able to track down and fix issues in our entity hierarchies and components. And Leveraging the flexibility of ECS, we added visualizations and custom inspectors. So that we could better debug the unique parts of our app.\n\nWe’ve covered a lot in this session! So now, like our robot friends, I’m off to go and chill.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hey, I’m Jeremiah! I make developer tools that help you make awesome spatial apps and games. Today, I want to talk about some of the common bugs that might creep into your RealityKit apps. And in the process, I’ll introduce you to the RealityKit debugger - a new tool that helps you catch them. We’ll begin with a quick tour of the RealityKit Debugger, which we will then use to inspect an app and track down some bugs."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "We’ll traverse entity hierarchies, in search of unexpected transformations; address bad behaviors in our systems, by exposing the mistakes in our components; we’ll find missing content, when we overcome some rendering pitfalls; and finally, I’ll share some tips & tricks for adapting the RealityKit Debugger to the uniqueness of your app."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "Are you ready? Then let’s begin! With RealityKit you can build jaw-dropping 3D apps, and deploy them to iOS, macOS and visionOS. Like the Botanist sample you might have seen with those cute robots tending to plants. But rushing around all day, carrying those big backpacks... That’s hard work! And sometimes... Even a robot needs a spot to just kick back and chill. A space to meet friends, enjoy premium oils, have a dance, the robot of course, and generally just let off some steam. So, for this session, we’ll be extending the BOTanist sample with a chill out mode. I’ve been working on a prototype that transforms the garden into a club. But I’m not quite ready to open the doors, as there’s still a bunch of bugs running amok. Let’s use the RealityKit debugger to track them down."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "The RealityKit Debugger takes a 3D snapshot of your running app, and loads it in Xcode for you to explore. From the debug area, on the bottom of your screen, click the “Capture Entity Hierarchy” button to begin."
+      },
+      {
+        "timestamp": "1:57",
+        "text": "When the snapshot completes, captured RealityKit scenes are listed in the debug navigator on the left."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "Selecting a scene, displays its entity hierarchy in an adjacent outline view."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "It also reconstructs the content in a 3D viewport."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "Selecting an entity in the hierarchy or the viewport, displays its properties, and those of its components, in an inspector on the right."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "There’s also an inspector to show statistics about the currently selected hierarchy. The RealityKit Debugger fits into your existing Xcode workflow, and exposes new insights that make your 3D development experience more productive, and enjoyable. Now, with our new tool in hand, let’s go and fix up this club."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "The code patch for transforming the sample is pretty big."
+      },
+      {
+        "timestamp": "2:51",
+        "text": "So, if you want to follow along, download the ClubView Swift file, drag it into your Xcode project, and include it in your target. We then need to make two small changes."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "First, we define a new volumetric scene for the club. And add this to the body of the BOTanistApp."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "Second, we need a button to open the club. I added it to the body of the RobotView, next to the existing button to “Start Planting”. We can now build and run our app to the visionOS simulator."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Once the app launches, it will open on the Robot View. Rather than create a robot, we click the disco ball, to sneak into the club."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "We can use the camera controls to move in closer."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "I’ve modified many of the existing assets in the scene, like transforming planters into teleporters. I’ve also generated some new entities from scratch, like the disco ball. That’s currently looking a little wonky. Let’s inspect our scene and find out why."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "In Xcode, launch the RealityKit Debugger, using the button in the debug area."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "Before we dive in, let’s take a moment to consider, how Transformation hierarchies work. When you place content in a 3D scene, you set a position, orientation and scale."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "One of the common bugs you might encounter, is having that content not appear, where you set it."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "This usually happens because, the final placement of an entity is actually a combination of its own transformations and those of all of its ancestors. This often leads to an entity exhibiting a transform that you only wanted applied to a single entity. I suspect, this is what is happening with our Disco Ball. Let’s confirm that using the RealityKit Debugger."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "In the debug navigator, expand the scene wrapper and select the RealityKit content. This will open that scene in the Debugger."
+      },
+      {
+        "timestamp": "4:53",
+        "text": "At this point, we can hide the navigators and debug area to give us some more space to work with."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "In the viewport, double click on the Disco Ball to select and center it."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "The main viewport shows us entities, as they appear in our scene, with the transformations from their ancestors applied. Selecting an entity in the viewport, also selects it in the Entity Hierarchy, and the entity inspector. Our currently selected entity is named Outline. This entity displays the lines on the disco ball. In the Entity Inspector, there is a smaller secondary viewport. This viewport, previews the ModelComponent of the entity without any transformations applied. The Outline entity is undistorted in the preview, so the problem is not caused by its mesh. Also, the Transform component for this entity, visible below the preview window, has uniform scale values of 1. So the entity is not distorting itself. The problem is likely inherited from its ancestors. Lets traverse the hierarchy to find the rogue transformation."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "In the entity hierarchy click on the parent, the Background entity. In the inspector, both the preview viewport and the Transform component, show that this entity is also not producing the distortion. In the hierarchy, let’s click on its parent, the Support entity."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "In the inspector, notice the Support entity has a large scale value along the Y axis of its Transform component. The fact that we’re scaling this entity to achieve a desired shape is not wrong. The mistake here, is that we’re unintentionally, applying this scaling to all of its descendants."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "Making the Support and the “Background” siblings, rather than parent and child, will fix the problem."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "They will still look connected in the scene but the transform of the support will no longer affect the ball. Let’s re-run our app, enter the club, and check out the result."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "Using the RealityKit Debugger to traverse our scene hierarchy, we were able to find the rogue transformation that was squishing our entity. And fix it by changing its parent. Now we can have a ball. The transformed club is starting to look the part. And now it’s time to bring some of these objects to life. RealityKit uses an Entity Component System, ECS approach to object and behavior management. We characterize entities by assigning them various components, that can hold data. We then make systems that perform updates on entities that have specific components. If an entity’s components are misconfigured or missing, then the behavior of the system is unpredictable. Let’s head back to the club, so I can show you an example."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "I’ve transformed all the planters in the club into teleporters. The Teleportation System should have started spawning robots but nobody is showing up. Let's break into the debugger to work out why."
+      },
+      {
+        "timestamp": "8:14",
+        "text": "Let me first explain how the Teleportation System works."
+      },
+      {
+        "timestamp": "8:19",
+        "text": "The system stores its data in a Control Center Component. Every update, our system decreases a countdown value. When the countdown value reaches 0, it finds all entities in the scene with a TeleporterComponent. And picks a random one. It then spawns a robot at that position. The counter is reset, and the process repeats until the club is at capacity. Let’s switch over to the Debugger, and inspect these components."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "My first suspicion is that I’ve forgotten to add Teleporter Components to the Teleporter Entities. This would cause us to never find a teleporter and so have nowhere to spawn from. With the RealityKit Debugger this is easy to confirm. In the entity hierarchy, expand the Bot Club and the Teleportation Center, and double-click the first Teleporter."
+      },
+      {
+        "timestamp": "9:11",
+        "text": "In the Entity inspector, notice that there is actually a Teleporter Component. Let’s check the other two teleporters to be sure."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "They also have their Teleporter components. So, maybe the problem is the Control Center. In the hierarchy, select the parent entity, the Teleportation Center."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "Let’s examine the properties of the control center component, what sticks out to me, is the countdown value. Notice that it matches the initial value. The RealityKit debugger captures the app state at the moment you hit pause, so this value should have changed if our system was working. For some reason, the control center component is not being updated. Let’s inspect the code and work out why."
+      },
+      {
+        "timestamp": "10:05",
+        "text": "In each update, I decrease the countdown value in the control center component. I then... Ah, I was going to say I saved the updated component back to the entity, but looks like I forgot that step. Let’s add the missing step and re-run the app. This is a common mistake. Modified components need to be assigned back to their entity. Let’s switch over to the simulator and find out if that solved it."
+      },
+      {
+        "timestamp": "10:32",
+        "text": "With the RealityKit debugger, we tracked down and fixed a badly behaving system. We can now return to the club, and wait for a visitor."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "I really hope we get some customers soon. The rent on this place? Astronomical! Hey! Our first guest just phased in."
+      },
+      {
+        "timestamp": "10:53",
+        "text": "We now have robots teleporting in, but there’a a problem! There are supposed to be bottles of oil on the counter, but they aren’t in sight. I thought I restocked them. If we don’t find them soon, these bots will stop dancing, and this place is going to grind to a halt. I suspect they’ve been hidden by the renderer. Let me explain! 3D renderers like RealityKit achieve their performance in part, by being selective of what they spend time rendering. For example, something might be far away or maybe it’s too close, occluded by other content, or have its opacity set too low. It might be looking for an ARKit anchor, or even missing its assets entirely. In all these cases, and many others, our content will not be rendered. And working out why, is often a process of elimination."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "Using Reality Compose Pro to prepare, test and package our assets, can help to avoid these issues. But if you still end up losing content, then the RealityKit debugger can help you find it. Let’s switch over to it now, and try to solve the case of the missing bottles."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "Double-click the counter in the viewport, and adjust your camera to get a nice close up."
+      },
+      {
+        "timestamp": "12:09",
+        "text": "Yeah, that looks good. On the counter, there should be nine green bottles of the finest oil. But there’s currently only one, and even that is not rendering correctly. Lets work out why. In the entity hierarchy, expand the Counter and BottleGroup, and select the first bottle."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "An entity’s selection highlight is visible even when the entity itself is occluded by other entities, In this case, it reveals that this bottle is there, but it is under the counter. This is confirmed by the inspector, where the bottle’s Transform component, has a negative value in the Y direction. This is an easy fix that we’ll make later. For now, let’s move on and investigate the next problem."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "Pick bottle 2 in the hierarchy."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "Notice that there is no selection highlight in view. If we double-click the entity in the hierarchy, it will focus the camera on it."
+      },
+      {
+        "timestamp": "13:11",
+        "text": "Oh, it’s really far out. So far in fact, that it exceeds our scene’s bounds, as indicated by the yellow box. Because of this, it will be clipped by the renderer, and never shown. Like the first bottle, the solution here, will be to correct the translation."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "Let’s continue. In the hierarchy, double-click the third bottle to select and focus it."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "Wow! The bottle is so big, that we were actually inside it. The triangles that make up a mesh, are usually only visible on one side. So from inside the mesh, it is often not visible at all. Reducing the scale of this object will fix our problem. We’re quite far from the counter now, so in the hierarchy, let’s double-click on bottle number 4, to fly back in."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "Notice, that in the hierarchy, alongside bottle 4, there is an icon. This lets us know that the entity is not active. Entities that are not active will not be rendered. Inspecting its components can help us discover what's wrong."
+      },
+      {
+        "timestamp": "14:18",
+        "text": "Unlike the previous bottles, this one has an OutOfStock component. I use this component to tag out of stock items, and hide them. So, this not being rendered is actually the intended behavior."
+      },
+      {
+        "timestamp": "14:31",
+        "text": "Let’s continue on to bottle 5."
+      },
+      {
+        "timestamp": "14:37",
+        "text": "The inspector for this bottle, reveals another unexpected component. An Anchoring component. This is actually some legacy code from an early prototype where I wanted to add dinner service at the club. Looks like I forgot to remove the component, when I removed the feature. The presence of an Anchoring component without a matching ARKit anchor in the scene, stops the entity from being rendered."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "Let’s move on to bottle 6."
+      },
+      {
+        "timestamp": "15:05",
+        "text": "In the viewport, there is no selection outline, just an axis. This means there is no model component on the entity, which we can also confirm in the inspector. Maybe it failed to load, or maybe we attached it to the wrong entity. We can’t tell which from here, so we’d need to check our code later. But we know what the problems is and where to focus."
+      },
+      {
+        "timestamp": "15:28",
+        "text": "Moving on to Bottle 7."
+      },
+      {
+        "timestamp": "15:33",
+        "text": "This is not visible in the main viewport, nor the preview viewport - this means, it is likely a ModelComponent issue. The selection shape in the main viewport looks accurate. This leads me to suspect that the mesh is ok, and the issue is with the material. Let’s expand and inspect the properties of the material in the ModelComponent This material is setup to be semi-transparent, but also has an opacity threshold of 1."
+      },
+      {
+        "timestamp": "16:03",
+        "text": "My misconfiguration is effectively telling the engine that any parts of the model with an opacity less than 1 should not be rendered, but to also set all parts of the model to have an opacity less than one. The result is that the whole bottle is invisible."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "The next bottle, number 8, is actually visible. Well, part of it."
+      },
+      {
+        "timestamp": "16:25",
+        "text": "In the inspector, I don’t notice anything obviously wrong. For situations like this, the RealityKit debugger gives us some additional displays that help us spot problems we might otherwise miss."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "In the preview viewport, use the far right dropdown to change the rendering mode. Lets select the first option to visualize Normals."
+      },
+      {
+        "timestamp": "16:46",
+        "text": "This colors the object using the normal value at each point. The normal value indicates the direction a surface faces, and is used in lighting and rendering calculations. This might seem intimidating at first, but if we switch between this and a known good bottle like Bottle 1, we can observe that something is, a mess in our mesh."
+      },
+      {
+        "timestamp": "17:09",
+        "text": "Errors like this are usually found in imported assets and need to be fixed in a 3D content creation tool."
+      },
+      {
+        "timestamp": "17:18",
+        "text": "Ok, one more to go. Select bottle 9. Oh, there is no bottle 9. I probably forgot to add it to the scene. I can confirm this by using the filter bar at the bottom of the hierarchy view, and showing only entities whose name contains BT."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "As expected, it’s not in the scene."
+      },
+      {
+        "timestamp": "17:43",
+        "text": "We sped through a lot of issues here, so I’ll quickly recap. The first few bottles we couldn’t see because their transforms caused them to be occluded, clipped or inside out. One bottle was hidden because we disabled it, while another bottle was hidden because it was missing its anchor. We had a bottle with a broken mesh, one missing its mesh, and one was being made invisible by a misconfigured material. And one we just forgot to add to the scene. My bottle creation code included a lot of errors due to copy and pasting."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "So I’m going to replace it with a single creation loop. Positioning and setting up 3D assets directly in code is challenging, so I would recommend preparing scene layout in Reality Composer Pro whenever possible."
+      },
+      {
+        "timestamp": "18:28",
+        "text": "Let’s re-run the app and enter the club."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "Using the various tools in the debugger, we were able to find our missing bottles. Our counter is now fully stocked with oil. And we can move smoothly on."
+      },
+      {
+        "timestamp": "18:45",
+        "text": "From rogue transformations, through to misconfigured components, and rendering gotchas, we’ve already covered many of the common problems you might encounter when building your own apps. But many parts of an app are unique. And as they grow in complexity, so too do the challenges in debugging them. However, you can leverage the flexibility of ECS, to customize the RealityKit Debugger experience. Let me show you how. This is our Dance System. It works through a collection of invisible attractor entities, that are positioned around the dance floor. When a Newcomer teleports into the club, it is targeted by a vacant attractor. And each update it is driven closer in. Once our friend reaches an attractor, the motivator kicks in and they begin to dance."
+      },
+      {
+        "timestamp": "19:31",
+        "text": "But you may have noticed that something is up. A Robot teleports in, but they just stand there, not moving towards our attractors. Let's build some RealityKit debug-ability into this system."
+      },
+      {
+        "timestamp": "19:45",
+        "text": "First, we’ll add basic model entities to the scene to visualize the invisible attractors. We’ll give each a custom component to store the values we want to present in the inspector, such as the attractor state. And we’ll group these under a single invisible entity, so none of this shows up during play. We’ll also give this parent entity a custom component, to display information about the system as a whole."
+      },
+      {
+        "timestamp": "20:12",
+        "text": "This is a simplified version of the code, with the full version already included in the ClubView swift file. It seems like a lot, but it’s just using standard RealityKit. Entities, components and systems. The only odd thing you might notice is that I’ve placed all this inside a debug compilation block. This ensures that the code will be complied out of the released app, and means I don’t need to worry about the performance implications. With our new debug system in place, let’s now run the app, wait for a robot to appear, and break into the debugger."
+      },
+      {
+        "timestamp": "20:50",
+        "text": "In the hierarchy, find and select the \" Dance System entity\"."
+      },
+      {
+        "timestamp": "20:56",
+        "text": "Notice that the properties of our debug component appear in the inspector. The RealityKit debugger can display most of the types you’ll regularly use in your apps. You can utilize this in straightforward ways such as displaying counters or more creative ways such as display a swift chart by saving it as a UIImage property. This new debug component helps us spot the problem in our dance system. All of our attractors are in the attracting state, which shouldn’t be possible. Another way we can observe this, is with our visualizations. In the entity hierarchy, secondary-click the \" Dance System entity\" to open the context menu and toggle visibility."
+      },
+      {
+        "timestamp": "21:39",
+        "text": "Our visualization shows us the state of each attractor. And indeed, they are all orange, which is the color we used to indicate the attracting state. A robot is only meant to be targeted by a single attractor. When a robot teleports in, we tag it with a Newcomer component, and remove that tag when it is targeted by an attractor. Let’s select one of our debug visualizations to inspect its debug component."
+      },
+      {
+        "timestamp": "22:06",
+        "text": "We set up this component to store a reference to the target robot, which the RealityKit debugger converts into a link. Let’s click on it to find our target."
+      },
+      {
+        "timestamp": "22:18",
+        "text": "Inspecting the Robot’s components reveals the problem. It still has its newcomer component, which should have been removed when it was first targeted. Since it wasn’t, every attractor finds this same robot, and attempts to attract it, and the robot, overwhelmed by choice, is frozen. With the problem identified, we can now head to the code to fix it."
+      },
+      {
+        "timestamp": "22:42",
+        "text": "In the dance system when the target is set, I should be removing the Newcomer component, but I’m not. Let’s add the code to do that. Then re-run our app."
+      },
+      {
+        "timestamp": "22:53",
+        "text": "This type of bug is easy to fix, but can be tricky to track down, especially as we increase the complexity of our systems and the scale of the app. But by leveraging those same systems to build visualizations, and using custom components to add inspectors, we can ensure that our developer experience is just as enjoyable as the experiences we build for our players, and our robots. With that, let’s finally open up our club and enjoy our success."
+      },
+      {
+        "timestamp": "23:34",
+        "text": "With the help of the RealityKit debugger, we were able to track down and fix issues in our entity hierarchies and components. And Leveraging the flexibility of ECS, we added visualizations and custom inspectors. So that we could better debug the unique parts of our app."
+      },
+      {
+        "timestamp": "23:50",
+        "text": "We’ve covered a lot in this session! So now, like our robot friends, I’m off to go and chill."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -60,6 +387,58 @@
       "code": "// 4. Untag them as a Newcomer\nvisitor.components[Newcomer.self] = nil"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "0:23"
+    },
+    {
+      "timestamp": "0:23",
+      "title": "Agenda",
+      "duration": "0:30"
+    },
+    {
+      "timestamp": "0:53",
+      "title": "Prepare for the Journey",
+      "duration": "0:48"
+    },
+    {
+      "timestamp": "1:41",
+      "title": "Meet the RealityKit debugger",
+      "duration": "0:59"
+    },
+    {
+      "timestamp": "2:40",
+      "title": "Transform the BOTanist",
+      "duration": "1:22"
+    },
+    {
+      "timestamp": "4:02",
+      "title": "Traverse hierarchy issues",
+      "duration": "3:18"
+    },
+    {
+      "timestamp": "7:20",
+      "title": "Address bad behaviors",
+      "duration": "3:32"
+    },
+    {
+      "timestamp": "10:52",
+      "title": "Find what's missing",
+      "duration": "7:52"
+    },
+    {
+      "timestamp": "18:44",
+      "title": "Embrace uniqueness",
+      "duration": "3:50"
+    },
+    {
+      "timestamp": "22:34",
+      "title": "Wrap up",
+      "duration": "1:36"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -78,5 +457,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10103"
     }
   ],
-  "extractedAt": "2026-10-11T16:35:01.844Z"
+  "extractedAt": "2026-10-17T18:45:01.725Z"
 }

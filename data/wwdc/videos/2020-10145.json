@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10145/",
   "title": "Design for Game Center",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Design",
@@ -12,8 +11,388 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\n-Hey, everyone. I'm Joe. -And I'm Michael. And we're both designers on the Game Center design team. We're here today to talk to you about the new Game Center experience and a whole lot of enhancements we've made to make it more engaging and beautiful for players. This session will give you an overview of how to design your game to make the most of Game Center's features.\n\nThere are a number of reasons to add Game Center to your game, including social features, where players can add friends and manage their gaming identity. Achievements and leaderboards to encourage competition within your game and keep your players coming back for more. And a rich multiplayer experience for real time and turn-based games. To help you take advantage of all of this, we'll be talking in detail about a number of things, starting with the access point, a consistent and recognizable way for players to access Game Center from within your game.\n\nLet's take a look at this feature by launching a game. This is The Coast, an indie game where you have to carefully direct ships away from the shore so they don't crash and lose their precious cargo. When your game launches, the first thing you'll see is the Game Center welcome banner. When this goes away, you'll notice a new UI element appear. This is the access point, a clear and easy way for players to access their Game Center information on any game.\n\nThe player's avatar serves as the access point for Game Center. Tapping or clicking it at any point will launch the new Game Center dashboard. It's where players can check out their profile, achievements, leaderboards and other useful information related to your game. But we'll get to that in a minute.\n\nYou can choose to present just the player's avatar or pair it with bits of helpful information we call \"highlights.\" These highlights surface a player's Game Center data, like achievement progress and leaderboard positions.\n\nThe access point is pretty flexible. You can place it in any corner of the screen that works for your game's UI. However, we'd recommend placing it at top left, if possible.\n\nAnd it works with how your game's designed in both landscape and portrait.\n\nYou'll just want to make sure none of your game's UI encroaches upon the area the access point takes at its maximum size.\n\nOn iPhone 11 Pro, the access point on portrait games is 62 by 335 points. We'd recommend leaving a safe area of 114 points from the top or bottom of the screen that spans the full width.\n\nAnd for landscape games, it's 62 by 280 points. It's best to leave a safe area of 91 points from the top or bottom of the screen that spans the full width.\n\nThe access point is available across other platforms. You can find full details on safe areas for other devices in the Human Interface Guidelines.\n\nWhenever possible, display your access point at your game's main menu. Placing it here gives players quick access before they dive into your game. Just be sure it appears at the right moment within your game's launch sequence. Let any splash screens or cinematics finish before displaying the access point, along with your game's main menu.\n\nIf you can't place the access point on your main menu, you could find another place for it that players return to in your game, like on a level select screen or in Settings. As you can see, the access point is designed to adapt to your game, but think about how to design your game's UI to feel complementary and fit naturally into the experience.\n\nWhen the game starts, it's a good idea to hide the access point so players can focus on game play and allow space for any critical in-game controls.\n\nThe access point is the best, most consistent way for users to access Game Center from within your game. However, you can also link to Game Center using your own custom UI. We've provided different icon options to be used within your game-- full color, white and black variants in a variety of formats, all of which you can find in the Apple Design Resources. Please use the iconography as provided and don't alter it in any way.\n\nIf your custom deep link includes text, please use the correct terminology, Game Center, and don't localize this term. And that's the new access point. Just a few things to remember: Place the access point on your main menu where possible.\n\nFind the best corner to display your access point.\n\nSurface player information with highlights. And ensure safe areas around your access point.\n\nJoe, you're up. Thanks, Michael. Now let's move on to the dashboard and profile.\n\nTapping the access point will reveal the dashboard, a jumping-off point into each of the key areas that make up the new Game Center experience. The dashboard is presented as a transparent layer on top of your game, and it shows through the color of the screen behind it. We recommend that you pause your game or minimize any overly distracting animations when the dashboard is presented. The dashboard, along with the rest of the Game Center UI, supports both landscape and portrait orientation, to respect the way your game has been designed.\n\nIt has also been designed to feel consistent across iOS, iPadOS, macOS and tvOS.\n\nOn tvOS, you can also optionally display artwork on the dashboard. This really helps brand the experience and makes it feel more integrated into your game. When choosing the artwork to display here, please make sure that it comfortably contrasts with the Game Center UI. Consider using transparency to let the background show through.\n\nMake sure that the artwork is simple, clear and reads well at a distance. The artwork you use here shouldn't be your app icon. Instead, use something different. For example, your game's logo or word mark. Dashboard artwork is not focusable. Here are the specifications for uploading your dashboard artwork.\n\nIt must be a TIFF or a PNG file to support transparency.\n\nThe image size should be 923 by 150 pixels at 1x...\n\n1846 by 300 pixels at 2x, at least 72 DPI and in the sRGB color space.\n\nThe first section of the dashboard provides access to the profile.\n\nTapping on this shows players a holistic overview of their Game Center profile-- their friends, friend suggestions and the ability to access their achievements across all of the games they have played.\n\nThe profile is always accessible from the dashboard. However, you can also optionally provide a button inside your game to link players directly to the profile page.\n\nThis could be useful if you want to encourage players to add more friends so that they can better enjoy your game's leaderboard or multiplayer experience.\n\nIf you want to provide a link directly to the profile, please use this icon. You can style it to work with your game, but do not alter the shape in any way. To avoid confusion with the design of the access point, please don't use the player's Game Center avatar for this purpose.\n\nIf pairing the link with text, please use the correct language-- Game Center Profile and not \"profile\" on its own, \"account\" or anything else. And as mentioned before, the term Game Center should not be localized.\n\nHowever, you can localize the term \"profile.\" The accompanying tech session for Game Center will go into detail about how to link to the profile.\n\nAnd that's the new dashboard and profile. Let's review what we just talked about.\n\nRemember to pause your game when the Game Center user interface is open. You can optionally provide dashboard artwork for tvOS.\n\nAnd if needed, you can link directly to the Game Center profile from your game.\n\nNow over to Michael for the next section. And now on to my personal favorite update to Game Center, achievements, which you'll find in the second section of the dashboard.\n\nI used to love collecting trading cards. You just want to get them all, and there's nothing like getting the ones that are hard to find. That's exactly why we've redesigned achievements as a collectible card format.\n\nHere, in the redesigned achievements section, players will see a lineup of these cards, representing your game's achievements, which are now grouped by \"completed\" and \"locked.\" There are different kinds of achievements. Standard, which are earned straightaway once the requirements are met.\n\nProgressive, which give players a sense of how far away they are from unlocking an achievement. And hidden, in which the details remain a mystery until the moment they're unlocked.\n\nThink about how to make the most of these achievement types to improve the experience of playing your game.\n\nAnd when a player completes any achievement, an image appears in the top portion of the card.\n\nMake sure these images look awesome. The Coast has all these great lighthouses from around the world. I got this one in Level 5. The Passage Lighthouse is in the Great Lakes near Mackinac Island. This should be eye-catching, complement your game's look and feel, and make players feel rewarded by getting something special. It's a big step in keeping players engaged in your game.\n\nStay away from using text inside your artwork and upload custom images for each achievement. Players love earning unique achievements that remind them of each accomplishment.\n\nAnd provide an opaque image for each achievement. The system automatically crops the image into a circle, so make sure any primary content is centered. Achievement images are for display only, so they're not focusable.\n\nOrder your achievements in a way that reflects the progress of your game play. You're allowed up to 100 achievements in a game. Be selective about how many you provide. It's good to only use what you need to make your game challenging, so earning every one feels rewarding.\n\nAnd rather than offer all 100 in version one of your game, leave room to add more in later releases to give players a reason to come back. There's just a few rules to consider around achievement images. It must be a JPEG, TIFF or PNG file, 512 by 512 pixels at 1x, 1024 by 1024 pixels at 2x, at least 72 DPI and in the sRGB color space.\n\nYou'll also need to include a title and description text for each of your achievements. Make sure they're as clear and succinct as possible so players understand how to earn an achievement at a glance.\n\nAnd since achievement cards show two lines of your title and description before truncating, try to keep your text under 30 characters to guarantee it will work well across devices. Keep your titles initial caps, your description sentence case and avoid using all caps.\n\nAnd for those final touches to copy, include a second description for when an achievement's been completed. And make sure all copy is localized depending on the country or region.\n\nYou can also choose to present in-game achievement notifications that give your players an immediate sense of accomplishment. We definitely recommend you work these into your game. Time these to display right at that moment of completion. Like here, in The Coast, as soon as players clear the level.\n\nIf you'd like to give players more direct access, you can also provide a custom link into the achievement section of Game Center. If you'd like to use iconography, use this, which features the card representation. You can style it to work with your game's UI, but don't alter the shape in any way.\n\nAlso just be consistent in how you refer to them, using the term \"achievements\" and not \"trophies\" or \"awards\" or anything else. That's the new achievement experience.\n\nLet's recap.\n\nUse achievement types to work with your game. Design unique, eye-catching images. Keep those descriptions clear and succinct.\n\nAnd incorporate in-game notifications for some of that immediate reward.\n\nBack over to you, Joe. Thanks, Michael. The next section of the dashboard features your game's leaderboards.\n\nA great place to encourage a player to compete with their friends and keep them coming back for more.\n\nTapping into this section provides an overview of all the leaderboards in your game. We recommend that you create leaderboards that best represent the core mechanics of your game play. They could be tied to a specific score in your game. For example, the longest distance traveled or the total number of coins collected, or alternatively, like in The Coast, each of the leaderboards are tied to a specific geographic region in the game.\n\nLet's focus on the first leaderboard, Crater Lake.\n\nWhen designing your leaderboard imagery, you should provide unique, eye-catching artwork that is recognizable at a glance.\n\nEnsure that you use different artwork for each leaderboard so that players can differentiate between them.\n\nAnd also consider how your leaderboards look alongside each other, so that they feel complementary as a set.\n\nFor leaderboard image specifications, images must be a JPEG, a TIFF or a PNG file, at 512 by 512 pixels at 1x, 1024 by 1024 pixels at 2x, at least 72 DPI and in the sRGB color space.\n\nOn tvOS, leaderboards have a 16-by-9 aspect ratio. They're also focusable and support between one and three multilayer images to provide a parallax effect.\n\nDuring focus on parallax, content around the edges of some layers may be cropped or difficult to see clearly as the image scales and moves. To ensure that your primary content is always visible, please don't place it close to the edges.\n\ntvOS leaderboard images have different upload specifications. Images must be a PNG file, at 659 by 371 pixels at 1x, 1318 by 742 pixels at 2x, at least 72 DPI and in the sRGB color space.\n\nYou can find a more detailed overview of how to design focusable layered images for tvOS in the Human Interface Guidelines.\n\nLeaderboards can only show a maximum of two lines before truncating. We recommend keeping your leaderboard titles under 30 characters to guarantee that it will work well across all devices and accessibility settings.\n\nKeep titles for your leaderboards initial caps and please avoid using all caps.\n\nTapping into one of these reveals the scores for the specific leaderboard. We have redesigned leaderboards to be focused on friends, the players you care about competing with the most.\n\nSpeaking of which, Michael, you've got a bit of catching up to do.\n\nYou can also embed the information from your leaderboards directly into your game to give players visibility when it matters the most.\n\nFor example, you can give your players a chance to see their position before they start a level, or at the end after they beat their friends' top score.\n\nThe Game Center tech session will go into detail about how to embed leaderboard data into your game.\n\nYou can also choose to link directly into the leaderboard section of Game Center, or even directly into a specific leaderboard if you want to.\n\nIf you'd like to do this, please use the icon that we have provided. You can style it to work with your game's UI, but please do not alter the shape in any way.\n\nIf accompanying the icon with text, please use the correct language-- \"leaderboards,\" and not \"rankings\" or \"scores\" or anything else.\n\nAnd that's leaderboards. As a summary of what we just covered, please design unique, eye-catching artwork for each leaderboard. tvOS requires a custom 16-by-9 layered artwork. Keep your descriptions short and succinct. And you can optionally embed leaderboard data into your game and also provide direct links to specific leaderboards. Now back to Michael.\n\nLet's touch on multiplayer.\n\nGame Center lets you easily take advantage of its robust set of multiplayer features for real time and turn-based games.\n\nAll you'll need is a button as a clear way for players to open the multiplayer lobby.\n\nThe new, redesigned lobby makes it simple and easy to jump into a game. When the lobby opens, you may want to pause any distracting animation in the background so players can focus on inviting friends. Tapping \"add\" reveals the player picker.\n\nFrom here, you can see nearby players, friends, recent players and contacts.\n\nTap a player to add them to the lobby.\n\nAnd when you're ready, just tap \"Invite and Start.\" And if you'd like, you can also implement our multiplayer features without using our UI by building it directly into your game. Check out the tech session for more details.\n\nBack over to you, Joe.\n\nThanks, Michael. And now on to the final section.\n\nGame Center is now closely integrated into the App Store. Visitors to the store will now be able to access their Game Center profile, see their achievements, add friends and browse the games their friends are playing.\n\nYour friends' avatars will now show up on app icons and feature prominently in the game's tab.\n\nFriends playing will also be highlighted on your game's product page. You can see them here at the top of the page and also in more detail further down. All of this will be enabled by simply integrating your game with Game Center, giving your game a great chance to be featured on the App Store. And that takes us to the end. Now back to Michael for a summary of everything we've just talked about.\n\nThanks, Joe. And that's the new Game Center experience.\n\nA new way to access Game Center with in-game highlights, the fully redesigned dashboard, our beautiful collectible achievements, our engaging leaderboards and a whole lot more. Please remember that everything we discussed can be found in more detail in the Human Interface Guidelines.\n\nWe're looking forward to see what you do with Game Center, and we can't wait to play all the games you design. Thank you. Thanks a lot.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:09",
+        "text": "-Hey, everyone. I'm Joe. -And I'm Michael. And we're both designers on the Game Center design team. We're here today to talk to you about the new Game Center experience and a whole lot of enhancements we've made to make it more engaging and beautiful for players. This session will give you an overview of how to design your game to make the most of Game Center's features."
+      },
+      {
+        "timestamp": "0:29",
+        "text": "There are a number of reasons to add Game Center to your game, including social features, where players can add friends and manage their gaming identity. Achievements and leaderboards to encourage competition within your game and keep your players coming back for more. And a rich multiplayer experience for real time and turn-based games. To help you take advantage of all of this, we'll be talking in detail about a number of things, starting with the access point, a consistent and recognizable way for players to access Game Center from within your game."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "Let's take a look at this feature by launching a game. This is The Coast, an indie game where you have to carefully direct ships away from the shore so they don't crash and lose their precious cargo. When your game launches, the first thing you'll see is the Game Center welcome banner. When this goes away, you'll notice a new UI element appear. This is the access point, a clear and easy way for players to access their Game Center information on any game."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "The player's avatar serves as the access point for Game Center. Tapping or clicking it at any point will launch the new Game Center dashboard. It's where players can check out their profile, achievements, leaderboards and other useful information related to your game. But we'll get to that in a minute."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "You can choose to present just the player's avatar or pair it with bits of helpful information we call \"highlights.\" These highlights surface a player's Game Center data, like achievement progress and leaderboard positions."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "The access point is pretty flexible. You can place it in any corner of the screen that works for your game's UI. However, we'd recommend placing it at top left, if possible."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "And it works with how your game's designed in both landscape and portrait."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "You'll just want to make sure none of your game's UI encroaches upon the area the access point takes at its maximum size."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "On iPhone 11 Pro, the access point on portrait games is 62 by 335 points. We'd recommend leaving a safe area of 114 points from the top or bottom of the screen that spans the full width."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "And for landscape games, it's 62 by 280 points. It's best to leave a safe area of 91 points from the top or bottom of the screen that spans the full width."
+      },
+      {
+        "timestamp": "2:41",
+        "text": "The access point is available across other platforms. You can find full details on safe areas for other devices in the Human Interface Guidelines."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "Whenever possible, display your access point at your game's main menu. Placing it here gives players quick access before they dive into your game. Just be sure it appears at the right moment within your game's launch sequence. Let any splash screens or cinematics finish before displaying the access point, along with your game's main menu."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "If you can't place the access point on your main menu, you could find another place for it that players return to in your game, like on a level select screen or in Settings. As you can see, the access point is designed to adapt to your game, but think about how to design your game's UI to feel complementary and fit naturally into the experience."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "When the game starts, it's a good idea to hide the access point so players can focus on game play and allow space for any critical in-game controls."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "The access point is the best, most consistent way for users to access Game Center from within your game. However, you can also link to Game Center using your own custom UI. We've provided different icon options to be used within your game-- full color, white and black variants in a variety of formats, all of which you can find in the Apple Design Resources. Please use the iconography as provided and don't alter it in any way."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "If your custom deep link includes text, please use the correct terminology, Game Center, and don't localize this term. And that's the new access point. Just a few things to remember: Place the access point on your main menu where possible."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "Find the best corner to display your access point."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "Surface player information with highlights. And ensure safe areas around your access point."
+      },
+      {
+        "timestamp": "4:29",
+        "text": "Joe, you're up. Thanks, Michael. Now let's move on to the dashboard and profile."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "Tapping the access point will reveal the dashboard, a jumping-off point into each of the key areas that make up the new Game Center experience. The dashboard is presented as a transparent layer on top of your game, and it shows through the color of the screen behind it. We recommend that you pause your game or minimize any overly distracting animations when the dashboard is presented. The dashboard, along with the rest of the Game Center UI, supports both landscape and portrait orientation, to respect the way your game has been designed."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "It has also been designed to feel consistent across iOS, iPadOS, macOS and tvOS."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "On tvOS, you can also optionally display artwork on the dashboard. This really helps brand the experience and makes it feel more integrated into your game. When choosing the artwork to display here, please make sure that it comfortably contrasts with the Game Center UI. Consider using transparency to let the background show through."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "Make sure that the artwork is simple, clear and reads well at a distance. The artwork you use here shouldn't be your app icon. Instead, use something different. For example, your game's logo or word mark. Dashboard artwork is not focusable. Here are the specifications for uploading your dashboard artwork."
+      },
+      {
+        "timestamp": "5:49",
+        "text": "It must be a TIFF or a PNG file to support transparency."
+      },
+      {
+        "timestamp": "5:54",
+        "text": "The image size should be 923 by 150 pixels at 1x..."
+      },
+      {
+        "timestamp": "5:59",
+        "text": "1846 by 300 pixels at 2x, at least 72 DPI and in the sRGB color space."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "The first section of the dashboard provides access to the profile."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "Tapping on this shows players a holistic overview of their Game Center profile-- their friends, friend suggestions and the ability to access their achievements across all of the games they have played."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "The profile is always accessible from the dashboard. However, you can also optionally provide a button inside your game to link players directly to the profile page."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "This could be useful if you want to encourage players to add more friends so that they can better enjoy your game's leaderboard or multiplayer experience."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "If you want to provide a link directly to the profile, please use this icon. You can style it to work with your game, but do not alter the shape in any way. To avoid confusion with the design of the access point, please don't use the player's Game Center avatar for this purpose."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "If pairing the link with text, please use the correct language-- Game Center Profile and not \"profile\" on its own, \"account\" or anything else. And as mentioned before, the term Game Center should not be localized."
+      },
+      {
+        "timestamp": "7:13",
+        "text": "However, you can localize the term \"profile.\" The accompanying tech session for Game Center will go into detail about how to link to the profile."
+      },
+      {
+        "timestamp": "7:23",
+        "text": "And that's the new dashboard and profile. Let's review what we just talked about."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "Remember to pause your game when the Game Center user interface is open. You can optionally provide dashboard artwork for tvOS."
+      },
+      {
+        "timestamp": "7:37",
+        "text": "And if needed, you can link directly to the Game Center profile from your game."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "Now over to Michael for the next section. And now on to my personal favorite update to Game Center, achievements, which you'll find in the second section of the dashboard."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "I used to love collecting trading cards. You just want to get them all, and there's nothing like getting the ones that are hard to find. That's exactly why we've redesigned achievements as a collectible card format."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "Here, in the redesigned achievements section, players will see a lineup of these cards, representing your game's achievements, which are now grouped by \"completed\" and \"locked.\" There are different kinds of achievements. Standard, which are earned straightaway once the requirements are met."
+      },
+      {
+        "timestamp": "8:22",
+        "text": "Progressive, which give players a sense of how far away they are from unlocking an achievement. And hidden, in which the details remain a mystery until the moment they're unlocked."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "Think about how to make the most of these achievement types to improve the experience of playing your game."
+      },
+      {
+        "timestamp": "8:39",
+        "text": "And when a player completes any achievement, an image appears in the top portion of the card."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "Make sure these images look awesome. The Coast has all these great lighthouses from around the world. I got this one in Level 5. The Passage Lighthouse is in the Great Lakes near Mackinac Island. This should be eye-catching, complement your game's look and feel, and make players feel rewarded by getting something special. It's a big step in keeping players engaged in your game."
+      },
+      {
+        "timestamp": "9:07",
+        "text": "Stay away from using text inside your artwork and upload custom images for each achievement. Players love earning unique achievements that remind them of each accomplishment."
+      },
+      {
+        "timestamp": "9:18",
+        "text": "And provide an opaque image for each achievement. The system automatically crops the image into a circle, so make sure any primary content is centered. Achievement images are for display only, so they're not focusable."
+      },
+      {
+        "timestamp": "9:31",
+        "text": "Order your achievements in a way that reflects the progress of your game play. You're allowed up to 100 achievements in a game. Be selective about how many you provide. It's good to only use what you need to make your game challenging, so earning every one feels rewarding."
+      },
+      {
+        "timestamp": "9:46",
+        "text": "And rather than offer all 100 in version one of your game, leave room to add more in later releases to give players a reason to come back. There's just a few rules to consider around achievement images. It must be a JPEG, TIFF or PNG file, 512 by 512 pixels at 1x, 1024 by 1024 pixels at 2x, at least 72 DPI and in the sRGB color space."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "You'll also need to include a title and description text for each of your achievements. Make sure they're as clear and succinct as possible so players understand how to earn an achievement at a glance."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "And since achievement cards show two lines of your title and description before truncating, try to keep your text under 30 characters to guarantee it will work well across devices. Keep your titles initial caps, your description sentence case and avoid using all caps."
+      },
+      {
+        "timestamp": "10:42",
+        "text": "And for those final touches to copy, include a second description for when an achievement's been completed. And make sure all copy is localized depending on the country or region."
+      },
+      {
+        "timestamp": "10:53",
+        "text": "You can also choose to present in-game achievement notifications that give your players an immediate sense of accomplishment. We definitely recommend you work these into your game. Time these to display right at that moment of completion. Like here, in The Coast, as soon as players clear the level."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "If you'd like to give players more direct access, you can also provide a custom link into the achievement section of Game Center. If you'd like to use iconography, use this, which features the card representation. You can style it to work with your game's UI, but don't alter the shape in any way."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "Also just be consistent in how you refer to them, using the term \"achievements\" and not \"trophies\" or \"awards\" or anything else. That's the new achievement experience."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "Let's recap."
+      },
+      {
+        "timestamp": "11:40",
+        "text": "Use achievement types to work with your game. Design unique, eye-catching images. Keep those descriptions clear and succinct."
+      },
+      {
+        "timestamp": "11:49",
+        "text": "And incorporate in-game notifications for some of that immediate reward."
+      },
+      {
+        "timestamp": "11:53",
+        "text": "Back over to you, Joe. Thanks, Michael. The next section of the dashboard features your game's leaderboards."
+      },
+      {
+        "timestamp": "12:02",
+        "text": "A great place to encourage a player to compete with their friends and keep them coming back for more."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "Tapping into this section provides an overview of all the leaderboards in your game. We recommend that you create leaderboards that best represent the core mechanics of your game play. They could be tied to a specific score in your game. For example, the longest distance traveled or the total number of coins collected, or alternatively, like in The Coast, each of the leaderboards are tied to a specific geographic region in the game."
+      },
+      {
+        "timestamp": "12:32",
+        "text": "Let's focus on the first leaderboard, Crater Lake."
+      },
+      {
+        "timestamp": "12:36",
+        "text": "When designing your leaderboard imagery, you should provide unique, eye-catching artwork that is recognizable at a glance."
+      },
+      {
+        "timestamp": "12:43",
+        "text": "Ensure that you use different artwork for each leaderboard so that players can differentiate between them."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "And also consider how your leaderboards look alongside each other, so that they feel complementary as a set."
+      },
+      {
+        "timestamp": "12:56",
+        "text": "For leaderboard image specifications, images must be a JPEG, a TIFF or a PNG file, at 512 by 512 pixels at 1x, 1024 by 1024 pixels at 2x, at least 72 DPI and in the sRGB color space."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "On tvOS, leaderboards have a 16-by-9 aspect ratio. They're also focusable and support between one and three multilayer images to provide a parallax effect."
+      },
+      {
+        "timestamp": "13:25",
+        "text": "During focus on parallax, content around the edges of some layers may be cropped or difficult to see clearly as the image scales and moves. To ensure that your primary content is always visible, please don't place it close to the edges."
+      },
+      {
+        "timestamp": "13:38",
+        "text": "tvOS leaderboard images have different upload specifications. Images must be a PNG file, at 659 by 371 pixels at 1x, 1318 by 742 pixels at 2x, at least 72 DPI and in the sRGB color space."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "You can find a more detailed overview of how to design focusable layered images for tvOS in the Human Interface Guidelines."
+      },
+      {
+        "timestamp": "14:04",
+        "text": "Leaderboards can only show a maximum of two lines before truncating. We recommend keeping your leaderboard titles under 30 characters to guarantee that it will work well across all devices and accessibility settings."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "Keep titles for your leaderboards initial caps and please avoid using all caps."
+      },
+      {
+        "timestamp": "14:23",
+        "text": "Tapping into one of these reveals the scores for the specific leaderboard. We have redesigned leaderboards to be focused on friends, the players you care about competing with the most."
+      },
+      {
+        "timestamp": "14:34",
+        "text": "Speaking of which, Michael, you've got a bit of catching up to do."
+      },
+      {
+        "timestamp": "14:38",
+        "text": "You can also embed the information from your leaderboards directly into your game to give players visibility when it matters the most."
+      },
+      {
+        "timestamp": "14:45",
+        "text": "For example, you can give your players a chance to see their position before they start a level, or at the end after they beat their friends' top score."
+      },
+      {
+        "timestamp": "14:53",
+        "text": "The Game Center tech session will go into detail about how to embed leaderboard data into your game."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "You can also choose to link directly into the leaderboard section of Game Center, or even directly into a specific leaderboard if you want to."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "If you'd like to do this, please use the icon that we have provided. You can style it to work with your game's UI, but please do not alter the shape in any way."
+      },
+      {
+        "timestamp": "15:17",
+        "text": "If accompanying the icon with text, please use the correct language-- \"leaderboards,\" and not \"rankings\" or \"scores\" or anything else."
+      },
+      {
+        "timestamp": "15:27",
+        "text": "And that's leaderboards. As a summary of what we just covered, please design unique, eye-catching artwork for each leaderboard. tvOS requires a custom 16-by-9 layered artwork. Keep your descriptions short and succinct. And you can optionally embed leaderboard data into your game and also provide direct links to specific leaderboards. Now back to Michael."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "Let's touch on multiplayer."
+      },
+      {
+        "timestamp": "15:54",
+        "text": "Game Center lets you easily take advantage of its robust set of multiplayer features for real time and turn-based games."
+      },
+      {
+        "timestamp": "16:02",
+        "text": "All you'll need is a button as a clear way for players to open the multiplayer lobby."
+      },
+      {
+        "timestamp": "16:07",
+        "text": "The new, redesigned lobby makes it simple and easy to jump into a game. When the lobby opens, you may want to pause any distracting animation in the background so players can focus on inviting friends. Tapping \"add\" reveals the player picker."
+      },
+      {
+        "timestamp": "16:22",
+        "text": "From here, you can see nearby players, friends, recent players and contacts."
+      },
+      {
+        "timestamp": "16:28",
+        "text": "Tap a player to add them to the lobby."
+      },
+      {
+        "timestamp": "16:31",
+        "text": "And when you're ready, just tap \"Invite and Start.\" And if you'd like, you can also implement our multiplayer features without using our UI by building it directly into your game. Check out the tech session for more details."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "Back over to you, Joe."
+      },
+      {
+        "timestamp": "16:47",
+        "text": "Thanks, Michael. And now on to the final section."
+      },
+      {
+        "timestamp": "16:50",
+        "text": "Game Center is now closely integrated into the App Store. Visitors to the store will now be able to access their Game Center profile, see their achievements, add friends and browse the games their friends are playing."
+      },
+      {
+        "timestamp": "17:03",
+        "text": "Your friends' avatars will now show up on app icons and feature prominently in the game's tab."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Friends playing will also be highlighted on your game's product page. You can see them here at the top of the page and also in more detail further down. All of this will be enabled by simply integrating your game with Game Center, giving your game a great chance to be featured on the App Store. And that takes us to the end. Now back to Michael for a summary of everything we've just talked about."
+      },
+      {
+        "timestamp": "17:30",
+        "text": "Thanks, Joe. And that's the new Game Center experience."
+      },
+      {
+        "timestamp": "17:34",
+        "text": "A new way to access Game Center with in-game highlights, the fully redesigned dashboard, our beautiful collectible achievements, our engaging leaderboards and a whole lot more. Please remember that everything we discussed can be found in more detail in the Human Interface Guidelines."
+      },
+      {
+        "timestamp": "17:51",
+        "text": "We're looking forward to see what you do with Game Center, and we can't wait to play all the games you design. Thank you. Thanks a lot."
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [
@@ -75,5 +454,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10619"
     }
   ],
-  "extractedAt": "2026-10-11T16:45:05.180Z"
+  "extractedAt": "2026-10-17T18:54:59.270Z"
 }

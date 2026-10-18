@@ -3,7 +3,6 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10296/",
   "title": "Meet the presenter: Write Swift macros",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Swift"
@@ -21,5 +20,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10166"
     }
   ],
-  "extractedAt": "2026-10-11T16:36:57.996Z"
+  "extractedAt": "2026-10-17T18:46:56.284Z"
 }

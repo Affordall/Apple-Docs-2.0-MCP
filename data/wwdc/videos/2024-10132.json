@@ -3,16 +3,167 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10132/",
   "title": "Evolve your document launch experience",
-  "speakers": [],
-  "duration": "",
+  "duration": "10:08",
   "topics": [
     "SwiftUI & UI Frameworks"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello! My name is Julia, and I am an engineer on the SwiftUI team.\n\nIn this video, I will talk about document-based applications, and new ways to make them stand out.\n\nShowcase your document-based app and its unique identity by adopting the new, customizable launch experience. The new design gracefully guides people to creating their first document, providing great customization options and first-class support for document creation from templates.\n\nToday, I will highlight some of the key features of the new document launch experience.\n\nYou’ll learn  how to integrate the new design into your existing application.\n\nAnd finally, I will introduce some of the new APIs that enable you to showcase your app’s uniqueness.\n\nLet's get started with an overview of the design.\n\nA great example of an app that has adopted the new launch experience is Playgrounds for iPadOS. Let me take you through the features and show how Playgrounds used them for this design.\n\nMeet Byte, a character from Swift Playgrounds.\n\nIt guides and encourages developers as they learn Swift! Byte, along with other decorative views in front of and behind the title view are foreground and background accessories.\n\nThey allow you to bring elements unique to your app into the launch experience. The app’s name is displayed front and center.\n\nPlaygrounds opens a selection of coding tutorials when the primary button is tapped. On tap of the secondary button, Playgrounds creates a new app and opens the editor. The browser is configured to display documents with file formats that are supported by the app. The background can be replaced with a plain color, a gradient, an image, or a custom view of your choosing. I love this new experience, and want to adopt it in one of my apps. And I have a great candidate! I have a storytelling app that I built for my niece, Yael. She loves composing stories, and I want to make her writing experience even better.\n\nI have used a document group scene to specify the document providing closure and the view that displays the open document.\n\nWhen compiled with the iOS 17 SDK, the writing app displays the system document browser on launch.\n\nNow, if I recompile it with the iOS 18 SDK the app launches to the all-new design. The “Create Document\" button in the center of the title view is displayed automatically because the app supports document creation. The same functionality is available to UIKit document-based applications. It is supported for apps with UIDocumentViewController set as the window's root view controller.\n\nIf your app uses UIDocumentViewController to display documents, it is likely presented from a UIDocumentBrowserViewController which is the root of the window’s view controller hierarchy.\n\nYou needed to specify the browser view controller’s delegate to present  the document upon selection. The new launch experience already contains its own browser, so to enable the new design in your app simply replace the root with the UIDocumentViewController. For a detailed overview of UIDocumentViewController, be sure to check out the Build better document-based apps video from WWDC23. Let’s pause and recap.\n\nSo far, we have covered how to incorporate the new design into your app It’s a great start! Now, I would like to introduce new API that will enable you to further enhance your app’s launch experience.\n\nMy niece’s favorite color is pink. I think that a pink alien jungle image will be a great background for the Writing app launch experience.\n\nTo specify the background, in my SwiftUI app definition I declare DocumentGroupLaunchScene, new to iOS 18.\n\nNext, I can change the title of the “Create Document” button by providing a NewDocumentButton with the title I like.\n\nNow, I want to bring into the launch experience some elements that are specific to my app. Another thing that my niece likes, and is excited about, is robots.\n\nMaybe I can inspire her to write her own stories about robots? I’ll add one to the design. I want to position the robot image along the leading edge of the title view and an alien flower along the trailing edge. To provide accessories, I'll use the accessory view builder parameter. Think of the accessory view as a canvas on which you put all the images and views, and position them relative to the scene bounds and the title view’s frame.\n\nThe accessory view builders provide a geometry parameter, which contains the frame of the scene, and of the title view.\n\nLay out accessories using modifiers like position() or offset().\n\nI want to add two accessory views, one along the leading edge of the title view, and another one, an alien flower, next to the trailing edge.\n\nIf your app uses UIDocumentViewController to display documents, make your customizations using the new launchOptions property.\n\nviewDidLoad is a great place to configure your document view controller’s launch options.\n\nNow you know how to add decorative views to your design. Images of the robot and an alien flower complete, liven up the view, and make it truly unique. Yael will be thrilled to see it! Many apps offer the ability to create documents from app-defined templates.\n\nTemplates act as a great starting point for documents that need to adhere to a consistent format, layout, or style. The Playgrounds app on iPadOS offers a rich set of templates that guide developers on how to animate views, recognize gestures, and play sounds. The templates can be stored on disk, or downloaded from web, like in Playgrounds.\n\nI know my niece would love to choose from a few templates, with some starting material for her stories. Let’s add the option to create a new document from a template now! For that, I need to add one more action button. I’ll title the button Choose a Template.\n\nWhen the button is tapped, SwiftUI calls an async closure asking you to return a document created from a template.\n\nIf you want to return a document later, after presenting a template picker view, create a continuation in the closure and save it. Present a sheet or a full screen cover with your custom view to choose a template. You can pass the continuation to the TemplatePicker, and resume it from there. After a user chooses a template, the app creates a document with this template, and returns it to SwiftUI by calling the continuation. SwiftUI will create a new document by copying the given template. For UIKit apps, first define a UIDocument.CreationIntent to represent your document template.\n\nThen, in your UIDocumentViewController subclass, assign the launch option's primary or secondary action to be a create document action with this intent. To handle requests for new documents, assign the delegate of the launch option's browser view controller. Finally, read the browser’s active document creation intent to determine which document to create.\n\nAnd here it is. After adding a few lines of code, the app supports creating stories with predefined structure and plot type! You should build your template picker with a custom design that suits your app best. The new launch experience is great, and I am so excited to see it incorporated into your apps.\n\nGet started adopting it by recompiling your SwiftUI apps with the iOS 18 SDK.\n\nThen, add a DocumentGroupLaunchScene to customize the launch experience, and showcase your app’s unique identity.\n\nFor UIKit apps, make UIDocumentViewController the root view controller and apply your customizations to the launch options. Every application has something special about it. Emphasize your app's uniqueness, and make it recognizable on first sight by adopting the new API. Thanks for watching this video! And tell your app’s story through the document launch experience!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hello! My name is Julia, and I am an engineer on the SwiftUI team."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "In this video, I will talk about document-based applications, and new ways to make them stand out."
+      },
+      {
+        "timestamp": "0:19",
+        "text": "Showcase your document-based app and its unique identity by adopting the new, customizable launch experience. The new design gracefully guides people to creating their first document, providing great customization options and first-class support for document creation from templates."
+      },
+      {
+        "timestamp": "0:39",
+        "text": "Today, I will highlight some of the key features of the new document launch experience."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "You’ll learn how to integrate the new design into your existing application."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "And finally, I will introduce some of the new APIs that enable you to showcase your app’s uniqueness."
+      },
+      {
+        "timestamp": "1:01",
+        "text": "Let's get started with an overview of the design."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "A great example of an app that has adopted the new launch experience is Playgrounds for iPadOS. Let me take you through the features and show how Playgrounds used them for this design."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "Meet Byte, a character from Swift Playgrounds."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "It guides and encourages developers as they learn Swift! Byte, along with other decorative views in front of and behind the title view are foreground and background accessories."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "They allow you to bring elements unique to your app into the launch experience. The app’s name is displayed front and center."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "Playgrounds opens a selection of coding tutorials when the primary button is tapped. On tap of the secondary button, Playgrounds creates a new app and opens the editor. The browser is configured to display documents with file formats that are supported by the app. The background can be replaced with a plain color, a gradient, an image, or a custom view of your choosing. I love this new experience, and want to adopt it in one of my apps. And I have a great candidate! I have a storytelling app that I built for my niece, Yael. She loves composing stories, and I want to make her writing experience even better."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "I have used a document group scene to specify the document providing closure and the view that displays the open document."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "When compiled with the iOS 17 SDK, the writing app displays the system document browser on launch."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "Now, if I recompile it with the iOS 18 SDK the app launches to the all-new design. The “Create Document\" button in the center of the title view is displayed automatically because the app supports document creation. The same functionality is available to UIKit document-based applications. It is supported for apps with UIDocumentViewController set as the window's root view controller."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "If your app uses UIDocumentViewController to display documents, it is likely presented from a UIDocumentBrowserViewController which is the root of the window’s view controller hierarchy."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "You needed to specify the browser view controller’s delegate to present the document upon selection. The new launch experience already contains its own browser, so to enable the new design in your app simply replace the root with the UIDocumentViewController. For a detailed overview of UIDocumentViewController, be sure to check out the Build better document-based apps video from WWDC23. Let’s pause and recap."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "So far, we have covered how to incorporate the new design into your app It’s a great start! Now, I would like to introduce new API that will enable you to further enhance your app’s launch experience."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "My niece’s favorite color is pink. I think that a pink alien jungle image will be a great background for the Writing app launch experience."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "To specify the background, in my SwiftUI app definition I declare DocumentGroupLaunchScene, new to iOS 18."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "Next, I can change the title of the “Create Document” button by providing a NewDocumentButton with the title I like."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "Now, I want to bring into the launch experience some elements that are specific to my app. Another thing that my niece likes, and is excited about, is robots."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "Maybe I can inspire her to write her own stories about robots? I’ll add one to the design. I want to position the robot image along the leading edge of the title view and an alien flower along the trailing edge. To provide accessories, I'll use the accessory view builder parameter. Think of the accessory view as a canvas on which you put all the images and views, and position them relative to the scene bounds and the title view’s frame."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "The accessory view builders provide a geometry parameter, which contains the frame of the scene, and of the title view."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "Lay out accessories using modifiers like position() or offset()."
+      },
+      {
+        "timestamp": "5:59",
+        "text": "I want to add two accessory views, one along the leading edge of the title view, and another one, an alien flower, next to the trailing edge."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "If your app uses UIDocumentViewController to display documents, make your customizations using the new launchOptions property."
+      },
+      {
+        "timestamp": "6:20",
+        "text": "viewDidLoad is a great place to configure your document view controller’s launch options."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "Now you know how to add decorative views to your design. Images of the robot and an alien flower complete, liven up the view, and make it truly unique. Yael will be thrilled to see it! Many apps offer the ability to create documents from app-defined templates."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "Templates act as a great starting point for documents that need to adhere to a consistent format, layout, or style. The Playgrounds app on iPadOS offers a rich set of templates that guide developers on how to animate views, recognize gestures, and play sounds. The templates can be stored on disk, or downloaded from web, like in Playgrounds."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "I know my niece would love to choose from a few templates, with some starting material for her stories. Let’s add the option to create a new document from a template now! For that, I need to add one more action button. I’ll title the button Choose a Template."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "When the button is tapped, SwiftUI calls an async closure asking you to return a document created from a template."
+      },
+      {
+        "timestamp": "7:45",
+        "text": "If you want to return a document later, after presenting a template picker view, create a continuation in the closure and save it. Present a sheet or a full screen cover with your custom view to choose a template. You can pass the continuation to the TemplatePicker, and resume it from there. After a user chooses a template, the app creates a document with this template, and returns it to SwiftUI by calling the continuation. SwiftUI will create a new document by copying the given template. For UIKit apps, first define a UIDocument.CreationIntent to represent your document template."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "Then, in your UIDocumentViewController subclass, assign the launch option's primary or secondary action to be a create document action with this intent. To handle requests for new documents, assign the delegate of the launch option's browser view controller. Finally, read the browser’s active document creation intent to determine which document to create."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "And here it is. After adding a few lines of code, the app supports creating stories with predefined structure and plot type! You should build your template picker with a custom design that suits your app best. The new launch experience is great, and I am so excited to see it incorporated into your apps."
+      },
+      {
+        "timestamp": "9:16",
+        "text": "Get started adopting it by recompiling your SwiftUI apps with the iOS 18 SDK."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "Then, add a DocumentGroupLaunchScene to customize the launch experience, and showcase your app’s unique identity."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "For UIKit apps, make UIDocumentViewController the root view controller and apply your customizations to the launch options. Every application has something special about it. Emphasize your app's uniqueness, and make it recognizable on first sight by adopting the new API. Thanks for watching this video! And tell your app’s story through the document launch experience!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -118,6 +269,38 @@
       "code": "launchOptions.secondaryAction = LaunchOptions.createDocumentAction(with: .template) \nlaunchOptions.browserViewController.delegate = self\n\n// MARK: UIDocumentBrowserViewControllerDelegate\n\nfunc documentBrowser(\n    _ browser: UIDocumentBrowserViewController, \n    didRequestDocumentCreationWithHandler importHandler: @escaping (URL?, ImportMode) -> Void) \n{\n    switch browser.activeDocumentCreationIntent {\n    case .template: \n        presentTemplatePicker(with: importHandler)\n    default:\n        let newDocumentURL = // ...\n        importHandler(newDocumentURL, .copy)\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:01"
+    },
+    {
+      "timestamp": "1:01",
+      "title": "Design overview",
+      "duration": "1:17"
+    },
+    {
+      "timestamp": "2:18",
+      "title": "Getting started with SwiftUI",
+      "duration": "0:55"
+    },
+    {
+      "timestamp": "3:13",
+      "title": "Getting started with UIKit",
+      "duration": "0:58"
+    },
+    {
+      "timestamp": "4:11",
+      "title": "Customization",
+      "duration": "2:31"
+    },
+    {
+      "timestamp": "6:42",
+      "title": "Adding template support to your app",
+      "duration": "3:26"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -150,5 +333,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10039"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:54.599Z"
+  "extractedAt": "2026-10-17T18:44:53.426Z"
 }

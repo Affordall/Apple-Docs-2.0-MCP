@@ -3,7 +3,6 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/111534/",
   "title": "Q&A: AVFoundation",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video"
@@ -21,5 +20,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10071"
     }
   ],
-  "extractedAt": "2026-10-11T16:37:23.978Z"
+  "extractedAt": "2026-10-17T18:47:26.684Z"
 }

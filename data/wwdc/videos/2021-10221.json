@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10221/",
   "title": "Streamline your localized strings",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Accessibility & Inclusion",
@@ -14,8 +13,964 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Thomas Naudet: Hello, and welcome to WWDC.\n\nI'm Thomas from the localization team at Apple, and today I'll be showing you how to streamline your localized strings.\n\nYou will see the easiest way to make your app work in many languages.\n\nWe'll start by writing UI code.\n\nThen we'll see how to organize strings in your targets.\n\nAfter that we'll let Xcode do the heavy lifting for us.\n\nLastly, we'll learn new techniques for advanced strings.\n\nWith all this, we'll guarantee your app is prepared for great translations.\n\nThis is super important because text is everywhere in our lives.\n\nWe use text to communicate and get information in the real world.\n\nIt's obviously all the more true on our connected devices with all the apps, notifications, and articles we read every day.\n\nMore than ever, it's crucial the text can be read, be accurate, and be accessible.\n\nImagine being completely lost in this street trying to find a small shop among all those signs.\n\nIt could be the same for users of your app.\n\nText is such a core feature -- it guides users and brings familiarity.\n\nIn that way, localizing your app is an opportunity to reach all users around the world, especially in all the markets the App Store provides.\n\nAs a developer, you are already familiar with text, since us developers enjoy naming things.\n\nWe called text \"strings.\" Strings are everywhere: titles, buttons, user content, online content, search queries, graphics, accessibility labels, and so on.\n\nThink about all the strings in your app as movie subtitles.\n\nIn the movie you watch, you want all subtitles to be in the right language, at the right time, with the right context, and consistent throughout the movie.\n\nThis is the exact same here.\n\nYour strings convey meaning to your visual content and help the user navigate through the streets of your app.\n\nLet's see now, from a developer perspective, what the localization process is.\n\nYour user interface presents strings in views.\n\nThose strings live in their own files.\n\nThis helps separate the concerns between your visual content -- which is generic for all languages -- and your specific translations.\n\nIn between, the Foundation framework links your user interface and all your strings.\n\nIn this talk I'll go into details about each of these components.\n\nThat looks like a lot, but we'll uncover everything step by step.\n\nThen let's start by defining strings in your user interface.\n\nDisplaying localized strings is easy by combining the latest Apple technologies.\n\nI encourage you to use these techniques in your app, so that you never have to think twice about localization again! Well, any string you define in UI needs to be localized.\n\nThere are two types of visible strings.\n\nOne is directly defined as you create your view.\n\nHere, I've defined a label in SwiftUI and Storyboard.\n\nAnd yes! Both are localizable.\n\nI told you it was easy! The second type of strings is more general and can be found in model code in SwiftUI but also in AppKit or UIKit.\n\nYou might need to store a string in a variable, or return it from a function.\n\nIn all these cases, you can use NSLocalizedString.\n\nNew in iOS 15 and macOS Monterey, you can use our refined method for Swift, String(localized:).\n\nLet's focus on the first method in SwiftUI for a moment.\n\nEverything you present in the interface is indeed a view, whether this a text label or a button, it's all localizable by default, ready to host your future translated strings.\n\nSince this is enabled by default, if you have mock content such as previews, make sure you opt out by using verbatim.\n\nThis will avoid unnecessary work for translators.\n\nYou can learn more techniques in this related session.\n\nNow that we've covered the basics, let's learn how to make this string more dynamic.\n\nI'm currently showing a localized button to place an order.\n\nYou might not know I love concerts, and I love seeing artists live with friends even more! In this app, it's not obvious how many tickets I'm ordering for all my friends.\n\nSo let's improve that button to include the number of tickets I've selected.\n\nThat was easy.\n\nI just inserted a variable in the string like I'm used to in Swift.\n\nHere, count will be replaced at runtime by the actual number, 3.\n\nNow that we've seen all our options, I want to call out a common pitfall: String with (format:).\n\nString with (format:) is great, but it's not intended to be used for localized strings.\n\nLet's see why with an example in Arabic where the text direction and the digits can be different.\n\nThe good news is both are managed automatically when you use String(localized:).\n\nNow, the number \"three\" is correctly written in Arabic in the button, according to the user's preferred digits in Settings.\n\nString(localized:) also supports plurals, and isolation of each part of the string, meaning words are not shuffled around in bidirectional text.\n\nLastly, be careful not to overuse variables.\n\nGluing strings together is handy but could lead to translation problems.\n\nHere the word “Order\" could be written differently in some languages whether you order now or order later.\n\nIt's safer to use two separate strings.\n\nAll right. There's one major, final aspect we need to see that I secretly kept from you until now.\n\nThe strings you've defined will need to be translated by somebody other than you.\n\nTranslators don't have the full app UI in front of them while they translate string by string, and they need to stay consistent in all strings.\n\nSo you need to help them, just like you help your coworkers understand your code by adding code comments.\n\nI insist, no matter the string, you should always define a comment.\n\nAnd don't forget your Storyboard files; they have a comment field in the identity inspector.\n\nLet me share some tips to help translators.\n\nFirst, comments should explain where the string is visible.\n\nFor instance, is this a button? A label? Some VoiceOver text? Knowing if this is an action -- to order -- or a statement -- an order -- is critical.\n\nSecond, they should explain the context.\n\nIf I press Order, am I completing a transaction or sorting a list? Lastly, comments should explain variables.\n\nWhen localizers see your strings, they don't see your code, so they don't see the name of your variables to get a clue, only a generic placeholder instead.\n\nSo for the last example here, what does the number before “Ordered\" represent? Is this the number of past orders? The number of tickets I've just ordered? Yes! Thanks to the comment, I know it' s the total number of tickets.\n\nTranslators in lots of languages will be able to correctly translate according to the gender of the word \"tickets.\" Sometimes the easiest is also to write an example value of the variable in the comment.\n\nWith that in mind, there it is.\n\nYou have your UI code ready for localization.\n\nNow, we'll learn how you can maintain your UI code separately from your strings.\n\nBasically, you'll be able to organize where your strings will live.\n\nIn order to do this, let's see how Foundation will make sure that your code loads the correct localized strings files.\n\nOf course, localization starts with a language.\n\nYou can head into your project settings to add a new one.\n\nLet's take a look at Xcode.\n\nSelect your project and click the plus(+) button to add a localization.\n\nYou will see the menu gained lots of new languages in the latest version.\n\nLet's see... In our app list of localizations, it starts with Base at the top.\n\nIndeed, this where the UI elements live because they are shared across languages.\n\nFor instance, a Storyboard file is shared; a Siri Intents file is shared too.\n\nThen they need to be added to Base.\n\nSo make sure you click the Localize button for all shared assets.\n\nOK but your strings, on the other hand, are not shared.\n\nStrings belongs to one language.\n\nSo you will have your strings in English and all your strings in Arabic.\n\nTo test your app with strings in a certain language, you can change the preview environment in SwiftUI or change the app scheme settings.\n\nIf the device is in a language your app doesn't support, Foundation tries to find the best alternative.\n\nIf my phone is in Mexican Spanish, Foundation will try to fallback on Latin American Spanish, then to Spanish, then to your app development language -- for instance, English.\n\nLastly, when strings come from a server, make sure you respect the user's preferred language.\n\nGreat.\n\nWe've seen that each language has a collection of strings.\n\nThose strings can be further organized into files called \"tables.\" You can use this feature to organize every string as you'd like.\n\nFor instance, you could have a table for each feature, or each screen.\n\nSince this is optional by default, all strings are put in a table named Localizable.\n\nConcretely, this means all strings are stored in a file named Localizable.strings.\n\nLet's look at an example to recap what we've learned so far.\n\nI have the following code declaring a string with a variable, a customized table name, and a comment.\n\nLet's say my app supports French.\n\nIn Xcode, you will then need a UserProfile.strings file containing the French translation from English.\n\nIt will be stored in a French resource folder named by convention, fr.lproj.\n\nThe comment was very useful for the French translator.\n\nThey used an \"e\" to mark the feminine, as \"places;\" French for tickets is feminine.\n\nLet's spice things up a little bit and talk about bundle.\n\nThis parameter allows loading strings across targets.\n\nThe bundle parameter is main by default.\n\nIn your own app, you don't need it.\n\nMain is that app.\n\nIn your app extension, main refers to your own extension, so you don't need it either.\n\nBut let's say you want to share a string between your app and its extension.\n\nIn your extension, you will need to provide the bundle of the main app.\n\nDoing so avoids duplicating the strings between the two.\n\nYou could also get your strings from a framework.\n\nIn that case, either you tap directly into the framework's strings by specifying its bundle in your app code, or the framework vends you variables you can directly use.\n\nThose localized string variables have been defined in the framework by specifying the framework's own bundle.\n\nLet's look back at our model, only now we'll update it to make our app load the string provided by the framework.\n\nThe framework defines the string and informs Foundation the translation is stored inside its own bundle in a strings file.\n\nWithout this parameter, the string would be fetched from the hosting app instead and not found.\n\nIn practice, it looks like this.\n\nYou supply the bundle where your text is stored.\n\nThe framework will look for the strings into its own bundle.\n\nThen it's easy for your app.\n\nThe string can be used in a simple line of code.\n\nMoreover, if you implement localization in your frameworks this way, you won't even have to create the strings file presented here containing “Complete.” Let's now see why.\n\nWe've seen everything you can do in code to declare and organize strings.\n\nBut we haven't seen how to actually create the files that will hold your translations.\n\nIt turns out you actually don't need to create those strings files.\n\nXcode can take care of creating all the .strings files for you.\n\nWhen you use Export Localizations it reads your code and extracts all your strings.\n\nThis is great because you don't have to maintain strings files.\n\nIf you used to forget to localize the string you've just coded in your UI, this is for you.\n\nIf you struggle with ‘genstrings,’ this is for you too.\n\nThis year, in Xcode 13, we've added compiler support for Swift strings extraction.\n\nAlso, workspaces are now fully supported.\n\nThis further separates the concerns between your logic and your translations.\n\nXcode will detect and extract text from the Swift and Foundation methods we've seen earlier.\n\nPlease be aware, if you have custom code that wraps those APIs, this will not work by default.\n\nYou shouldn't have to use a method or macro usually, but if you really need to, you can add them to your build settings under Localized String Macro Names.\n\nFor the rest, Xcode will extract for localization your app name and privacy descriptions defined in Info.plist, and in general all assets marked as Localized in Xcode's inspector.\n\nIf you have existing localizations, you can already transition to Xcode's export for your new UIs.\n\nThe new strings will be automatically added to your existing files.\n\nThis is great if you want to convert your project at your own pace.\n\nAs a bonus, screenshots from your UI tests are now included.\n\nIt's great for your localizers so that they get context where a string is, and it's awesome for you to showcase localized screenshots of your app on the App Store.\n\nAll right, Xcode extracted all the localization catalogs, so you'd think it's the translators' turn to work now.\n\nActually, you can do it too! New in Xcode 13, exported localization catalogs can be viewed and edited directly in Xcode.\n\nYou can see each generated file -- so each table -- in their bundles on the left.\n\nAnd for your selection, you can see all the contained strings, images, and files.\n\nYou can filter strings, sort them, see comments, screenshots, and even translate! This is very convenient if you develop and translate your own app.\n\nIt lets you review and bugfix strings yourself, too.\n\nWhen translators send you back the translated string catalogs, you can import them into your project using the Product menu in Xcode.\n\nAnd boom! Your strings files, stringsdicts, and other assets will be created and updated.\n\nUsing the command line equivalents, you can run an automated export and import on a continuous integration system.\n\nBy calling them regularly, your project gets the most up-to-date strings, and a fast turnaround at getting your new UI translated.\n\nYou can see the enhanced workflow in action in this year's session, \"Localize your SwiftUI app\" and learn more in the introductry session.\n\nThat's it! You've witnessed how strings are born and live in your app.\n\nTo conclude, I'll show you how to deal with some more complex strings.\n\nAnd I'm sure you'll love the new features we have in store.\n\nLet's start with a great one! We've improved attributed strings to have built-in localization.\n\nIt's now possible with the support of the Markdown syntax! You can now localize your strings without losing any formatting.\n\nNo more risky character operations, just to make one word in bold.\n\nSpeaking of which, here I use asterisks to put a strong emphasis on “complete.” I encourage you to check \"What's new in Foundation\" to learn how you can add a link, an emphasis, monospace text, and so on.\n\nWe've seen that one string you define in code will have one translation in a strings file.\n\nBut sometimes you need your string to have multiple representations.\n\nThis is possible with a stringsdict file, a collection of strings adapting to rules you define.\n\nFor instance, remember our example where we would like to order several tickets? In English, we would add an \"s\" as a suffix if there are multiple tickets and no \"s\" for one ticket.\n\nTo keep your code simple and correct, you need to define this plural rule using a stringsdict.\n\nBecause if you localize your app, those rules will be different for each language.\n\nLook at some of the cases in Russian.\n\nYou don't want to deal with that in code, it's rather something localization should take care of.\n\nLet's see how we would implement that.\n\nNo code change needed; we will still use our existing code above.\n\nFirst, compared to strings files being made for you, stringsdict is a manual opt-in.\n\nSo create one using the Xcode template, and make sure you clicked Localize in the inspector.\n\nAll right, it all starts with the string you've defined in code.\n\nIf you have multiple plural strings in code, you can add this root entry here for each of them.\n\nInside, you define the actual value presented.\n\nThis value follows a search-replace mechanism.\n\nHere in this example I've defined one token named \"tickets.\" It will hold the fulll final string.\n\nIt's best to include most of the text inside tokens, but that field will be localizable in case translators need to add a prefix, a suffix, or move the tokens around in case you have multiple variables.\n\nOK, that token will vary according to your one variable in code.\n\nThen let's define that tickets token.\n\nFirst, we just confirm that we're doing some pluralization.\n\nThen we indicate the variable is a number with the C-style formatter d.\n\nAnd finally, we can write the plural rules.\n\nIn English, we can just declare the rule \"one\" and \"other\" and \"zero\", if you'd like.\n\nFor each entry, we write the actual value of the tickets token.\n\nThen, if we have three tickets, in English it will use \"other\" and generate “Order 3 Tickets\".\n\nby replacing %d with the number 3.\n\nIf a language needs more cases, don't worry.\n\nXcode will add them for you at export time.\n\nIn Russian it will add “few” and “many” on top of the existing ones.\n\nThat's it! Our string will be pluralized at runtime.\n\nBefore we move on, I want to call out one case.\n\nAlthough stringsdict should be used for plurals, it's meant for strings containing a number.\n\nWe've seen earlier the case \"one\" for singular in English.\n\nIt is indeed for the number one in Russian as well, but, it's also used for 21, 31, and so on.\n\nThen in that case, using stringsdict would not be correct as you just want equals to one only.\n\nIn this example, the plural varies on this, both, or all.\n\nThere is no number; please don't use a stringsdict.\n\nImagine me booking 21 tickets for all my friends, and I would see in Russian, \"Order This Ticket\" instead of \"Order All Tickets.\" I would ask you, \"Where's my money?\" Instead use this simple but effective if/else for correct pluralization of each of the three strings, in all languages.\n\nAnd that was plural support, but stringsdict can handle many more variant types of a string.\n\nI invite you to watch the related sessions to learn more.\n\nThis is great, but we wanted to provide you a simpler way.\n\nYes, Foundation learned this year how to do grammar for you! With Markdown support added to attributed strings, use this new format with the inflect attribute, and you'll get the right value computed at runtime, like on this button.\n\nThis is a great new addition to iOS 15 and macOS Monterey, currently available in select languages.\n\nIf you want more control, you can use a stringsdict.\n\nWe didn't stop at adding plural support.\n\nWe wanted our software strings to be more inclusive.\n\nFor instance, when an app welcomes users, it's pretty straightforward in English.\n\nBut it is not in Spanish because it depends on the user's term of address.\n\nUp to now, you had to present a nonpersonalized string, which is correct but stilted to most Spanish users.\n\nLiterally, \"We give you our welcome.\" So what if we could personalize the string for the user? With our new Markdown notation, you can do that now! The string will now follow the term of address you select in the language settings of your device.\n\nSo “Bienvenida\" for users who want to be referred to in the feminine, “Bienvenido\" in the masculine, and if we do not know, we'll use the existing inflection alternative.\n\nInline inflections for plural and term of address can be defined either in your code or your translations.\n\nWe are super excited about this new addition to select languages, and we can't wait to see your app use it.\n\nFinally, we've seen today all the ways you can write localizable strings.\n\nBut if you want to present data, you should actually let the frameworks write them for you.\n\nOur formatters handle hundreds of combinations of languages and regions, and a variety of types and units.\n\nSo don't hardcode; let us do the hard work.\n\nAnd this is easier than ever starting this year to adopt formatters in Swift.\n\nWe made them easy to use inline in your string interpolation.\n\nCheck this year's \"What's new in Foundation\" to find your new favorite API and get details about all those we've seen today.\n\nIf you need to deploy to previous releases or want details on formatters, check last year's session.\n\nAll right, what I want you to take away today is that if you write code using modern APIs, Xcode will generate all the strings for you.\n\nWe saw how you can organize your strings across bundles, and we discovered new APIs to make grammar and formatting easy for you.\n\nIf you follow all these techniques, adding a new language won't require any code changes! Lastly, always test.\n\nNo matter how much effort you put into localizing your strings, you should test your app to make sure it runs great in all languages.\n\nWith that, I can't wait to book concerts with your fully localized app.\n\nEnjoy the rest of WWDC, thank you for watching.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Thomas Naudet: Hello, and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "I'm Thomas from the localization team at Apple, and today I'll be showing you how to streamline your localized strings."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "You will see the easiest way to make your app work in many languages."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "We'll start by writing UI code."
+      },
+      {
+        "timestamp": "0:28",
+        "text": "Then we'll see how to organize strings in your targets."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "After that we'll let Xcode do the heavy lifting for us."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "Lastly, we'll learn new techniques for advanced strings."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "With all this, we'll guarantee your app is prepared for great translations."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "This is super important because text is everywhere in our lives."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "We use text to communicate and get information in the real world."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "It's obviously all the more true on our connected devices with all the apps, notifications, and articles we read every day."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "More than ever, it's crucial the text can be read, be accurate, and be accessible."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "Imagine being completely lost in this street trying to find a small shop among all those signs."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "It could be the same for users of your app."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "Text is such a core feature -- it guides users and brings familiarity."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "In that way, localizing your app is an opportunity to reach all users around the world, especially in all the markets the App Store provides."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "As a developer, you are already familiar with text, since us developers enjoy naming things."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "We called text \"strings.\" Strings are everywhere: titles, buttons, user content, online content, search queries, graphics, accessibility labels, and so on."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "Think about all the strings in your app as movie subtitles."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "In the movie you watch, you want all subtitles to be in the right language, at the right time, with the right context, and consistent throughout the movie."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "This is the exact same here."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "Your strings convey meaning to your visual content and help the user navigate through the streets of your app."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "Let's see now, from a developer perspective, what the localization process is."
+      },
+      {
+        "timestamp": "2:31",
+        "text": "Your user interface presents strings in views."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "Those strings live in their own files."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "This helps separate the concerns between your visual content -- which is generic for all languages -- and your specific translations."
+      },
+      {
+        "timestamp": "2:48",
+        "text": "In between, the Foundation framework links your user interface and all your strings."
+      },
+      {
+        "timestamp": "2:54",
+        "text": "In this talk I'll go into details about each of these components."
+      },
+      {
+        "timestamp": "2:58",
+        "text": "That looks like a lot, but we'll uncover everything step by step."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "Then let's start by defining strings in your user interface."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "Displaying localized strings is easy by combining the latest Apple technologies."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "I encourage you to use these techniques in your app, so that you never have to think twice about localization again! Well, any string you define in UI needs to be localized."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "There are two types of visible strings."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "One is directly defined as you create your view."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "Here, I've defined a label in SwiftUI and Storyboard."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "And yes! Both are localizable."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "I told you it was easy! The second type of strings is more general and can be found in model code in SwiftUI but also in AppKit or UIKit."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "You might need to store a string in a variable, or return it from a function."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "In all these cases, you can use NSLocalizedString."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "New in iOS 15 and macOS Monterey, you can use our refined method for Swift, String(localized:)."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "Let's focus on the first method in SwiftUI for a moment."
+      },
+      {
+        "timestamp": "4:17",
+        "text": "Everything you present in the interface is indeed a view, whether this a text label or a button, it's all localizable by default, ready to host your future translated strings."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "Since this is enabled by default, if you have mock content such as previews, make sure you opt out by using verbatim."
+      },
+      {
+        "timestamp": "4:40",
+        "text": "This will avoid unnecessary work for translators."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "You can learn more techniques in this related session."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "Now that we've covered the basics, let's learn how to make this string more dynamic."
+      },
+      {
+        "timestamp": "4:54",
+        "text": "I'm currently showing a localized button to place an order."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "You might not know I love concerts, and I love seeing artists live with friends even more! In this app, it's not obvious how many tickets I'm ordering for all my friends."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "So let's improve that button to include the number of tickets I've selected."
+      },
+      {
+        "timestamp": "5:18",
+        "text": "That was easy."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "I just inserted a variable in the string like I'm used to in Swift."
+      },
+      {
+        "timestamp": "5:24",
+        "text": "Here, count will be replaced at runtime by the actual number, 3."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "Now that we've seen all our options, I want to call out a common pitfall: String with (format:)."
+      },
+      {
+        "timestamp": "5:38",
+        "text": "String with (format:) is great, but it's not intended to be used for localized strings."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "Let's see why with an example in Arabic where the text direction and the digits can be different."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "The good news is both are managed automatically when you use String(localized:)."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "Now, the number \"three\" is correctly written in Arabic in the button, according to the user's preferred digits in Settings."
+      },
+      {
+        "timestamp": "6:07",
+        "text": "String(localized:) also supports plurals, and isolation of each part of the string, meaning words are not shuffled around in bidirectional text."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "Lastly, be careful not to overuse variables."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "Gluing strings together is handy but could lead to translation problems."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "Here the word “Order\" could be written differently in some languages whether you order now or order later."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "It's safer to use two separate strings."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "All right. There's one major, final aspect we need to see that I secretly kept from you until now."
+      },
+      {
+        "timestamp": "6:52",
+        "text": "The strings you've defined will need to be translated by somebody other than you."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "Translators don't have the full app UI in front of them while they translate string by string, and they need to stay consistent in all strings."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "So you need to help them, just like you help your coworkers understand your code by adding code comments."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "I insist, no matter the string, you should always define a comment."
+      },
+      {
+        "timestamp": "7:20",
+        "text": "And don't forget your Storyboard files; they have a comment field in the identity inspector."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "Let me share some tips to help translators."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "First, comments should explain where the string is visible."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "For instance, is this a button? A label? Some VoiceOver text? Knowing if this is an action -- to order -- or a statement -- an order -- is critical."
+      },
+      {
+        "timestamp": "7:51",
+        "text": "Second, they should explain the context."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "If I press Order, am I completing a transaction or sorting a list? Lastly, comments should explain variables."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "When localizers see your strings, they don't see your code, so they don't see the name of your variables to get a clue, only a generic placeholder instead."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "So for the last example here, what does the number before “Ordered\" represent? Is this the number of past orders? The number of tickets I've just ordered? Yes! Thanks to the comment, I know it' s the total number of tickets."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "Translators in lots of languages will be able to correctly translate according to the gender of the word \"tickets.\" Sometimes the easiest is also to write an example value of the variable in the comment."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "With that in mind, there it is."
+      },
+      {
+        "timestamp": "8:53",
+        "text": "You have your UI code ready for localization."
+      },
+      {
+        "timestamp": "8:59",
+        "text": "Now, we'll learn how you can maintain your UI code separately from your strings."
+      },
+      {
+        "timestamp": "9:05",
+        "text": "Basically, you'll be able to organize where your strings will live."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "In order to do this, let's see how Foundation will make sure that your code loads the correct localized strings files."
+      },
+      {
+        "timestamp": "9:18",
+        "text": "Of course, localization starts with a language."
+      },
+      {
+        "timestamp": "9:22",
+        "text": "You can head into your project settings to add a new one."
+      },
+      {
+        "timestamp": "9:27",
+        "text": "Let's take a look at Xcode."
+      },
+      {
+        "timestamp": "9:29",
+        "text": "Select your project and click the plus(+) button to add a localization."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "You will see the menu gained lots of new languages in the latest version."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "Let's see... In our app list of localizations, it starts with Base at the top."
+      },
+      {
+        "timestamp": "9:46",
+        "text": "Indeed, this where the UI elements live because they are shared across languages."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "For instance, a Storyboard file is shared; a Siri Intents file is shared too."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "Then they need to be added to Base."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "So make sure you click the Localize button for all shared assets."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "OK but your strings, on the other hand, are not shared."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "Strings belongs to one language."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "So you will have your strings in English and all your strings in Arabic."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "To test your app with strings in a certain language, you can change the preview environment in SwiftUI or change the app scheme settings."
+      },
+      {
+        "timestamp": "10:30",
+        "text": "If the device is in a language your app doesn't support, Foundation tries to find the best alternative."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "If my phone is in Mexican Spanish, Foundation will try to fallback on Latin American Spanish, then to Spanish, then to your app development language -- for instance, English."
+      },
+      {
+        "timestamp": "10:50",
+        "text": "Lastly, when strings come from a server, make sure you respect the user's preferred language."
+      },
+      {
+        "timestamp": "10:57",
+        "text": "Great."
+      },
+      {
+        "timestamp": "10:58",
+        "text": "We've seen that each language has a collection of strings."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "Those strings can be further organized into files called \"tables.\" You can use this feature to organize every string as you'd like."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "For instance, you could have a table for each feature, or each screen."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "Since this is optional by default, all strings are put in a table named Localizable."
+      },
+      {
+        "timestamp": "11:25",
+        "text": "Concretely, this means all strings are stored in a file named Localizable.strings."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "Let's look at an example to recap what we've learned so far."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "I have the following code declaring a string with a variable, a customized table name, and a comment."
+      },
+      {
+        "timestamp": "11:45",
+        "text": "Let's say my app supports French."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "In Xcode, you will then need a UserProfile.strings file containing the French translation from English."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "It will be stored in a French resource folder named by convention, fr.lproj."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "The comment was very useful for the French translator."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "They used an \"e\" to mark the feminine, as \"places;\" French for tickets is feminine."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "Let's spice things up a little bit and talk about bundle."
+      },
+      {
+        "timestamp": "12:19",
+        "text": "This parameter allows loading strings across targets."
+      },
+      {
+        "timestamp": "12:24",
+        "text": "The bundle parameter is main by default."
+      },
+      {
+        "timestamp": "12:27",
+        "text": "In your own app, you don't need it."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "Main is that app."
+      },
+      {
+        "timestamp": "12:32",
+        "text": "In your app extension, main refers to your own extension, so you don't need it either."
+      },
+      {
+        "timestamp": "12:39",
+        "text": "But let's say you want to share a string between your app and its extension."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "In your extension, you will need to provide the bundle of the main app."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "Doing so avoids duplicating the strings between the two."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "You could also get your strings from a framework."
+      },
+      {
+        "timestamp": "12:58",
+        "text": "In that case, either you tap directly into the framework's strings by specifying its bundle in your app code, or the framework vends you variables you can directly use."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "Those localized string variables have been defined in the framework by specifying the framework's own bundle."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "Let's look back at our model, only now we'll update it to make our app load the string provided by the framework."
+      },
+      {
+        "timestamp": "13:31",
+        "text": "The framework defines the string and informs Foundation the translation is stored inside its own bundle in a strings file."
+      },
+      {
+        "timestamp": "13:41",
+        "text": "Without this parameter, the string would be fetched from the hosting app instead and not found."
+      },
+      {
+        "timestamp": "13:49",
+        "text": "In practice, it looks like this."
+      },
+      {
+        "timestamp": "13:51",
+        "text": "You supply the bundle where your text is stored."
+      },
+      {
+        "timestamp": "13:55",
+        "text": "The framework will look for the strings into its own bundle."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "Then it's easy for your app."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "The string can be used in a simple line of code."
+      },
+      {
+        "timestamp": "14:06",
+        "text": "Moreover, if you implement localization in your frameworks this way, you won't even have to create the strings file presented here containing “Complete.” Let's now see why."
+      },
+      {
+        "timestamp": "14:19",
+        "text": "We've seen everything you can do in code to declare and organize strings."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "But we haven't seen how to actually create the files that will hold your translations."
+      },
+      {
+        "timestamp": "14:30",
+        "text": "It turns out you actually don't need to create those strings files."
+      },
+      {
+        "timestamp": "14:34",
+        "text": "Xcode can take care of creating all the .strings files for you."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "When you use Export Localizations it reads your code and extracts all your strings."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "This is great because you don't have to maintain strings files."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "If you used to forget to localize the string you've just coded in your UI, this is for you."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "If you struggle with ‘genstrings,’ this is for you too."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "This year, in Xcode 13, we've added compiler support for Swift strings extraction."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "Also, workspaces are now fully supported."
+      },
+      {
+        "timestamp": "15:11",
+        "text": "This further separates the concerns between your logic and your translations."
+      },
+      {
+        "timestamp": "15:17",
+        "text": "Xcode will detect and extract text from the Swift and Foundation methods we've seen earlier."
+      },
+      {
+        "timestamp": "15:23",
+        "text": "Please be aware, if you have custom code that wraps those APIs, this will not work by default."
+      },
+      {
+        "timestamp": "15:30",
+        "text": "You shouldn't have to use a method or macro usually, but if you really need to, you can add them to your build settings under Localized String Macro Names."
+      },
+      {
+        "timestamp": "15:41",
+        "text": "For the rest, Xcode will extract for localization your app name and privacy descriptions defined in Info.plist, and in general all assets marked as Localized in Xcode's inspector."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "If you have existing localizations, you can already transition to Xcode's export for your new UIs."
+      },
+      {
+        "timestamp": "16:03",
+        "text": "The new strings will be automatically added to your existing files."
+      },
+      {
+        "timestamp": "16:08",
+        "text": "This is great if you want to convert your project at your own pace."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "As a bonus, screenshots from your UI tests are now included."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "It's great for your localizers so that they get context where a string is, and it's awesome for you to showcase localized screenshots of your app on the App Store."
+      },
+      {
+        "timestamp": "16:31",
+        "text": "All right, Xcode extracted all the localization catalogs, so you'd think it's the translators' turn to work now."
+      },
+      {
+        "timestamp": "16:41",
+        "text": "Actually, you can do it too! New in Xcode 13, exported localization catalogs can be viewed and edited directly in Xcode."
+      },
+      {
+        "timestamp": "16:51",
+        "text": "You can see each generated file -- so each table -- in their bundles on the left."
+      },
+      {
+        "timestamp": "16:56",
+        "text": "And for your selection, you can see all the contained strings, images, and files."
+      },
+      {
+        "timestamp": "17:03",
+        "text": "You can filter strings, sort them, see comments, screenshots, and even translate! This is very convenient if you develop and translate your own app."
+      },
+      {
+        "timestamp": "17:14",
+        "text": "It lets you review and bugfix strings yourself, too."
+      },
+      {
+        "timestamp": "17:19",
+        "text": "When translators send you back the translated string catalogs, you can import them into your project using the Product menu in Xcode."
+      },
+      {
+        "timestamp": "17:30",
+        "text": "And boom! Your strings files, stringsdicts, and other assets will be created and updated."
+      },
+      {
+        "timestamp": "17:37",
+        "text": "Using the command line equivalents, you can run an automated export and import on a continuous integration system."
+      },
+      {
+        "timestamp": "17:45",
+        "text": "By calling them regularly, your project gets the most up-to-date strings, and a fast turnaround at getting your new UI translated."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "You can see the enhanced workflow in action in this year's session, \"Localize your SwiftUI app\" and learn more in the introductry session."
+      },
+      {
+        "timestamp": "18:05",
+        "text": "That's it! You've witnessed how strings are born and live in your app."
+      },
+      {
+        "timestamp": "18:10",
+        "text": "To conclude, I'll show you how to deal with some more complex strings."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "And I'm sure you'll love the new features we have in store."
+      },
+      {
+        "timestamp": "18:18",
+        "text": "Let's start with a great one! We've improved attributed strings to have built-in localization."
+      },
+      {
+        "timestamp": "18:25",
+        "text": "It's now possible with the support of the Markdown syntax! You can now localize your strings without losing any formatting."
+      },
+      {
+        "timestamp": "18:34",
+        "text": "No more risky character operations, just to make one word in bold."
+      },
+      {
+        "timestamp": "18:40",
+        "text": "Speaking of which, here I use asterisks to put a strong emphasis on “complete.” I encourage you to check \"What's new in Foundation\" to learn how you can add a link, an emphasis, monospace text, and so on."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "We've seen that one string you define in code will have one translation in a strings file."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "But sometimes you need your string to have multiple representations."
+      },
+      {
+        "timestamp": "19:09",
+        "text": "This is possible with a stringsdict file, a collection of strings adapting to rules you define."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "For instance, remember our example where we would like to order several tickets? In English, we would add an \"s\" as a suffix if there are multiple tickets and no \"s\" for one ticket."
+      },
+      {
+        "timestamp": "19:31",
+        "text": "To keep your code simple and correct, you need to define this plural rule using a stringsdict."
+      },
+      {
+        "timestamp": "19:37",
+        "text": "Because if you localize your app, those rules will be different for each language."
+      },
+      {
+        "timestamp": "19:43",
+        "text": "Look at some of the cases in Russian."
+      },
+      {
+        "timestamp": "19:46",
+        "text": "You don't want to deal with that in code, it's rather something localization should take care of."
+      },
+      {
+        "timestamp": "19:53",
+        "text": "Let's see how we would implement that."
+      },
+      {
+        "timestamp": "19:55",
+        "text": "No code change needed; we will still use our existing code above."
+      },
+      {
+        "timestamp": "20:01",
+        "text": "First, compared to strings files being made for you, stringsdict is a manual opt-in."
+      },
+      {
+        "timestamp": "20:08",
+        "text": "So create one using the Xcode template, and make sure you clicked Localize in the inspector."
+      },
+      {
+        "timestamp": "20:15",
+        "text": "All right, it all starts with the string you've defined in code."
+      },
+      {
+        "timestamp": "20:20",
+        "text": "If you have multiple plural strings in code, you can add this root entry here for each of them."
+      },
+      {
+        "timestamp": "20:27",
+        "text": "Inside, you define the actual value presented."
+      },
+      {
+        "timestamp": "20:30",
+        "text": "This value follows a search-replace mechanism."
+      },
+      {
+        "timestamp": "20:34",
+        "text": "Here in this example I've defined one token named \"tickets.\" It will hold the fulll final string."
+      },
+      {
+        "timestamp": "20:44",
+        "text": "It's best to include most of the text inside tokens, but that field will be localizable in case translators need to add a prefix, a suffix, or move the tokens around in case you have multiple variables."
+      },
+      {
+        "timestamp": "20:59",
+        "text": "OK, that token will vary according to your one variable in code."
+      },
+      {
+        "timestamp": "21:04",
+        "text": "Then let's define that tickets token."
+      },
+      {
+        "timestamp": "21:08",
+        "text": "First, we just confirm that we're doing some pluralization."
+      },
+      {
+        "timestamp": "21:13",
+        "text": "Then we indicate the variable is a number with the C-style formatter d."
+      },
+      {
+        "timestamp": "21:20",
+        "text": "And finally, we can write the plural rules."
+      },
+      {
+        "timestamp": "21:24",
+        "text": "In English, we can just declare the rule \"one\" and \"other\" and \"zero\", if you'd like."
+      },
+      {
+        "timestamp": "21:31",
+        "text": "For each entry, we write the actual value of the tickets token."
+      },
+      {
+        "timestamp": "21:37",
+        "text": "Then, if we have three tickets, in English it will use \"other\" and generate “Order 3 Tickets\"."
+      },
+      {
+        "timestamp": "21:45",
+        "text": "by replacing %d with the number 3."
+      },
+      {
+        "timestamp": "21:49",
+        "text": "If a language needs more cases, don't worry."
+      },
+      {
+        "timestamp": "21:52",
+        "text": "Xcode will add them for you at export time."
+      },
+      {
+        "timestamp": "21:55",
+        "text": "In Russian it will add “few” and “many” on top of the existing ones."
+      },
+      {
+        "timestamp": "22:02",
+        "text": "That's it! Our string will be pluralized at runtime."
+      },
+      {
+        "timestamp": "22:07",
+        "text": "Before we move on, I want to call out one case."
+      },
+      {
+        "timestamp": "22:10",
+        "text": "Although stringsdict should be used for plurals, it's meant for strings containing a number."
+      },
+      {
+        "timestamp": "22:18",
+        "text": "We've seen earlier the case \"one\" for singular in English."
+      },
+      {
+        "timestamp": "22:21",
+        "text": "It is indeed for the number one in Russian as well, but, it's also used for 21, 31, and so on."
+      },
+      {
+        "timestamp": "22:31",
+        "text": "Then in that case, using stringsdict would not be correct as you just want equals to one only."
+      },
+      {
+        "timestamp": "22:42",
+        "text": "In this example, the plural varies on this, both, or all."
+      },
+      {
+        "timestamp": "22:47",
+        "text": "There is no number; please don't use a stringsdict."
+      },
+      {
+        "timestamp": "22:51",
+        "text": "Imagine me booking 21 tickets for all my friends, and I would see in Russian, \"Order This Ticket\" instead of \"Order All Tickets.\" I would ask you, \"Where's my money?\" Instead use this simple but effective if/else for correct pluralization of each of the three strings, in all languages."
+      },
+      {
+        "timestamp": "23:15",
+        "text": "And that was plural support, but stringsdict can handle many more variant types of a string."
+      },
+      {
+        "timestamp": "23:21",
+        "text": "I invite you to watch the related sessions to learn more."
+      },
+      {
+        "timestamp": "23:26",
+        "text": "This is great, but we wanted to provide you a simpler way."
+      },
+      {
+        "timestamp": "23:32",
+        "text": "Yes, Foundation learned this year how to do grammar for you! With Markdown support added to attributed strings, use this new format with the inflect attribute, and you'll get the right value computed at runtime, like on this button."
+      },
+      {
+        "timestamp": "23:49",
+        "text": "This is a great new addition to iOS 15 and macOS Monterey, currently available in select languages."
+      },
+      {
+        "timestamp": "23:57",
+        "text": "If you want more control, you can use a stringsdict."
+      },
+      {
+        "timestamp": "24:02",
+        "text": "We didn't stop at adding plural support."
+      },
+      {
+        "timestamp": "24:05",
+        "text": "We wanted our software strings to be more inclusive."
+      },
+      {
+        "timestamp": "24:10",
+        "text": "For instance, when an app welcomes users, it's pretty straightforward in English."
+      },
+      {
+        "timestamp": "24:15",
+        "text": "But it is not in Spanish because it depends on the user's term of address."
+      },
+      {
+        "timestamp": "24:23",
+        "text": "Up to now, you had to present a nonpersonalized string, which is correct but stilted to most Spanish users."
+      },
+      {
+        "timestamp": "24:31",
+        "text": "Literally, \"We give you our welcome.\" So what if we could personalize the string for the user? With our new Markdown notation, you can do that now! The string will now follow the term of address you select in the language settings of your device."
+      },
+      {
+        "timestamp": "24:49",
+        "text": "So “Bienvenida\" for users who want to be referred to in the feminine, “Bienvenido\" in the masculine, and if we do not know, we'll use the existing inflection alternative."
+      },
+      {
+        "timestamp": "25:04",
+        "text": "Inline inflections for plural and term of address can be defined either in your code or your translations."
+      },
+      {
+        "timestamp": "25:11",
+        "text": "We are super excited about this new addition to select languages, and we can't wait to see your app use it."
+      },
+      {
+        "timestamp": "25:19",
+        "text": "Finally, we've seen today all the ways you can write localizable strings."
+      },
+      {
+        "timestamp": "25:25",
+        "text": "But if you want to present data, you should actually let the frameworks write them for you."
+      },
+      {
+        "timestamp": "25:32",
+        "text": "Our formatters handle hundreds of combinations of languages and regions, and a variety of types and units."
+      },
+      {
+        "timestamp": "25:39",
+        "text": "So don't hardcode; let us do the hard work."
+      },
+      {
+        "timestamp": "25:44",
+        "text": "And this is easier than ever starting this year to adopt formatters in Swift."
+      },
+      {
+        "timestamp": "25:49",
+        "text": "We made them easy to use inline in your string interpolation."
+      },
+      {
+        "timestamp": "25:55",
+        "text": "Check this year's \"What's new in Foundation\" to find your new favorite API and get details about all those we've seen today."
+      },
+      {
+        "timestamp": "26:03",
+        "text": "If you need to deploy to previous releases or want details on formatters, check last year's session."
+      },
+      {
+        "timestamp": "26:10",
+        "text": "All right, what I want you to take away today is that if you write code using modern APIs, Xcode will generate all the strings for you."
+      },
+      {
+        "timestamp": "26:21",
+        "text": "We saw how you can organize your strings across bundles, and we discovered new APIs to make grammar and formatting easy for you."
+      },
+      {
+        "timestamp": "26:30",
+        "text": "If you follow all these techniques, adding a new language won't require any code changes! Lastly, always test."
+      },
+      {
+        "timestamp": "26:40",
+        "text": "No matter how much effort you put into localizing your strings, you should test your app to make sure it runs great in all languages."
+      },
+      {
+        "timestamp": "26:49",
+        "text": "With that, I can't wait to book concerts with your fully localized app."
+      },
+      {
+        "timestamp": "26:54",
+        "text": "Enjoy the rest of WWDC, thank you for watching."
+      },
+      {
+        "timestamp": "26:58",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -187,5 +1142,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/403"
     }
   ],
-  "extractedAt": "2026-10-11T16:44:26.198Z"
+  "extractedAt": "2026-10-17T18:54:21.777Z"
 }

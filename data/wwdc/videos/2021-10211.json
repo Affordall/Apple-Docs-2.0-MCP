@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10211/",
   "title": "Symbolication: Beyond the basics",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools"
@@ -11,8 +10,1384 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Alejandro Lucena: Hello, everyone.\n\nThank you for attending this session on symbolication.\n\nWhile symbolication may seem like a vague term, we'll see the instrumental role it plays in helping you to quickly identify the root causes of bugs, crashes, and performance bottlenecks.\n\nWe'll gain a deeper intuition as to how symbolication works and cover several tools that you have at your disposal to follow along firsthand.\n\nAlong the way, we'll discuss the various sources of debug information that are necessary for a rich symbolication experience and how you can configure your app to best utilize this information.\n\nLet's get started by familiarizing ourselves with a concrete definition and example of symbolication.\n\nFundamentally, symbolication is a mechanism to convert or translate how our devices see our apps at runtime — which is in terms of memory addresses and instructions — back to how we as developers see our apps — which is in terms of functions, names, and files.\n\nWithout this bridging layer, it vastly complicates diagnosing a bug even for a few lines of code.\n\nAs an example, let's consider this Swift code.\n\nHere I have a function, `generateMagicNumber()`, that selects a particular number from a list of candidate numbers.\n\nTo do this, we first call into `numberChoices()` that returns an array of 10 randomly generated numbers.\n\nThen, we pass that array into `selectMagicNumber(choices:)`, which returns the number at a particular index.\n\nThis seems like a reasonable program, but I encounter a crash when I first run it.\n\nMy first recourse is to check the crash log, which is rather unfruitful.\n\nAll I can tell from the thread backtrace is that my MagicNumbers app crashed somewhere.\n\nThanks, but I already knew that.\n\nI have no idea what any of the registers are referring to either.\n\nI can try to step through the app with the debugger and identify the crash, but what if this only happens in particular circumstances that I can't reproduce? Using the debugger won't necessarily pinpoint the problem for me in that case.\n\nOr I can try to look at the disassembly, but it's much more difficult to keep track of things.\n\nThis clearly isn't a viable way to diagnose the problem, and more importantly, with the help of symbolication, we don't have to debug from this starting point.\n\nThe Xcode Organizer tells me I can download the dSYM for this app, which will reprocess the crash log.\n\nIn doing so, Xcode applies the concepts of symbolication so that I can diagnose the issue with a much nicer crash log, where I can not only see all of my functions actually being called, but I can also determine the file and line number to refer back to in my code.\n\nThis updated crash log also tells me that we tried to access an index out of range.\n\nAlternatively, If I already have the dSYM, I can use the `atos` command to get the same information.\n\nLooking back at my code, I come to realize that `MAGIC_CHOICE` is far outside the bounds of our 10-element array.\n\nOops.\n\nIn another instance, I'm interested in profiling my app to deliver the fastest user experience.\n\nHere, Instruments shows me that the app cycles through periods of high utilization and low utilization.\n\nIf we focus on a period of low utilization, Instruments tells us that the app was writing some content to a file.\n\nHowever, when I inspect a period of high utilization, I get the same exact backtrace.\n\nHow is this possible? Isn't this executing the same exact code? As we'll see, this Instruments trace is only partially symbolicated.\n\nFor instance, I don't see any file names or line numbers in the backtrace as I did with the updated crash log.\n\nAs a result, it's missing some information.\n\nWith that in mind, I can similarly locate my dSYM in Instruments.\n\nAfter doing this, my new Instruments trace shows that the high-utilization regions were indeed writing to a file, but they were specifically within a debug code path that I left in the program.\n\nThe low-utilization areas avoid this and represent how my app behaves in production.\n\nJust as Xcode utilized the dSYM to symbolicate a rather uninformative crash log, Instruments also used the dSYM to enrich a partially symbolicated trace and tell me the exact cause of the performance issue.\n\nNow, while it's great that these tools leverage symbolication to pinpoint problem areas in my code, it naturally begs a few questions.\n\nHow does this all work? Where else can I apply this? And is this all about dSYMs? To answer these questions and unlock symbolication's capabilities, we'll need to take a deeper dive into the details.\n\nThis may seem a little overwhelming, but these are important concepts to understand.\n\nThere are many tools to aid in debugging and profiling that build upon symbolication.\n\n`atos` alone already gave us the exact root cause of a crash, and there are many more tools built into Xcode.\n\nFurther, we specified flags like `o`, `l`, and `i` to `atos`, but what do they mean? Do we always use the same set of flags? What if we don't have one of the values available? You'll also gain a good foundation in understanding when and why your backtraces may not be fully symbolicated and how to fix that, as we saw in the Instruments case.\n\nLastly, there are a number of build settings that you're in control of that influence the richness of symbolication.\n\nWe'll go through these build settings so you have a solid intuition about how they're utilized.\n\nTo that end, I'd like to introduce the two-step process for symbolication.\n\nStep number one is going back to the file, and step number two is to consult debug information.\n\nAs we'll see, going back to the file is all about converting or translating runtime memory addresses into a more stable, usable form.\n\nThis allows us to communicate with our debug information to make a meaningful connection between a raw memory address and the source code.\n\nLet's start off by discussing step number one, going back to the file.\n\nThe ultimate goal in this step is to translate a runtime memory address, such as those we saw in the original crash log, to a corresponding address in your binary on disk.\n\nJust like we have runtime addresses, your apps and frameworks have an address space on disk, too! The on disk address space differs from the address space that your app occupies at runtime, and we need a mechanism to figure out those differences.\n\nFirst, we should understand exactly what the on disk addresses are.\n\nThese addresses are assigned by the linker when you build your app.\n\nSpecifically, the linker groups your binary into segments.\n\nEach segment contains related data and has properties such as a name, a size, and their assigned addresses.\n\nFor example, the `__TEXT` segment of your binary contains all of the functions and methods you've written, and the `__DATA` segment contains program-wide state such as global variables.\n\nEach of these segments gets assigned a different address such that they don't overlap.\n\nThe linker records this information at the very beginning of your executables as part of the Mach-O header.\n\nMach-O is the format used for all executable binaries and libraries, and the system knows that it needs to read this header to run your apps.\n\nLooking a little more closely, the Mach-O header contains a number of load commands that hold the segment properties.\n\nThe system uses these load commands to load the segments into memory.\n\nNote that if your apps are Universal 2, then the app will have one header and a set of segments for each architecture.\n\nWe can see for ourselves by using the `otool -l` command, which prints the load commands for a specified file.\n\nHere, we're looking a segment load command identified with `LC_SEGMENT_64`.\n\nThis load commands says that the `__TEXT` segment starts at the address in `vmaddr` and is `vmsize` bytes long.\n\nSo if the kernel follows these load commands to load the segments into memory, what exactly is the difference between the runtime and the linker addresses? Well, before the kernel actually loads the segments, it initializes a random value known as the ASLR slide.\n\nThe kernel then adds the ASLR slide to the addresses in the load commands.\n\nSo rather than loading the `__TEXT` segment at address A and the `__DATA` segment at address B, the kernel instead loads them to A+S and B+S, where S is the ASLR slide.\n\nSince A+S and B+S are the true addresses that the system uses, they're also known as load addresses.\n\nWith that in mind, we now know that the difference between a runtime address and the linker address is the ASLR slide.\n\nWe can calculate the ASLR slide with the following equation: S = L-A, where S is the ASLR slide, L is the load address, and A is the linker address.\n\nWe'll see examples of this equation shortly, but the key point is that we can always go back to the file address space once we know the ASLR slide.\n\nThe ASLR slide equation required two addresses — the load address and the linker address — so where do we get them from? We already saw how we can query the load commands to know the linker address using `otool`.\n\nTo know the runtime address, the system queries your app either at the point of a crash or as its being profiled by Instruments for its runtime address space.\n\nThis information is reflected in the Binary Images list in your crash logs.\n\nYou can also see the load addresses interactively with the `vmmap` tool, which enumerates the active memory regions in your program.\n\nLet's compute the ASLR slide value ourselves from the original crash log.\n\nIn the Binary Images list, I have the load address of the `__TEXT` segment.\n\nI also have the linker address for the binary on disk when I looked at the load commands.\n\nSubtracting these two yields an ASLR slide value of 0x45c000.\n\nThis means that every address in my program's runtime `__TEXT` segment is 0x45c000 bytes away from the linker `__TEXT` segment address.\n\nSo to see what a backtrace address from the crash log corresponds to in the file, I can subtract 0x45c000 from it to get the address on disk.\n\nSince this address is now part of the on-disk address space, I can inspect my app to see what resides there.\n\nThe crash log tells me that a thread crashed while executing whatever is at this address, so we can use `otool` again to see the problematic instruction.\n\nThis time, I specified the `-tV` flags to `otool`, which will print the disassembly.\n\nNotice that I'm also specifying the architecture as arm64.\n\nThis is so that otool knows which Mach-O header and segments to consider since the app is built as Universal 2.\n\nThe output of `otool` reveals a `brk` instruction at the address.\n\n`brk` signals an exception or a problem in the app.\n\nTools such as `atos` also calculate the ASLR slide using the same technique we went through together.\n\n`atos` will read the load commands for the file indicated by the `-o` flag, and we tell it about the load address with the `-l` flag.\n\nAs I mentioned, `vmmap` can also tell us about the load addresses of a running app.\n\nLet's try this calculation again, but this time we'll use `vmmap` instead of the binary image list to determine the ASLR slide.\n\nI ran the MagicNumbers program again and got the `__TEXT` segment load address before the program crashed.\n\nUsing the previous formula, I can determine that this time the ASLR slide value was 0x104d14000.\n\nAgain, to go back to the file, I need to subtract the ASLR slide value.\n\nIf I subtract 0x104d14000 from the topmost entry in the new crash log, I get the same exact file address as before.\n\nAnd this is no coincidence; the kernel just picked a different ASLR value so our load addresses changed between the crash logs.\n\nHowever, we can still determine the file address that was responsible for the crash.\n\nThe important takeaway here is that we have a mechanism to understand exactly what our app was doing down to the instruction level, regardless of its runtime address.\n\nAnd with that mapping, we can then consult our debug information for the source code that was compiled to those instructions.\n\nBefore we move on, I want to present a summary of what we covered and the tools we used.\n\nApp binaries and frameworks are Mach-O files.\n\nThis means that they have related content in their different segments.\n\nThese segments are created by the linker.\n\nThe Mach-O header load commands describe the properties of those segments, including an address.\n\nWe used `otool` with the `-l` flag to print out the load commands.\n\nNext, we learned that the kernel adds a random value, known as the ASLR slide, to the linker addresses.\n\nThe addition of the ASLR slide and the linker address is known as a load address.\n\nWe can check the binary image list in a crash log to see the load addresses in the event of a crash, or we can use `vmmap` to see the load addresses for a running app.\n\nFinally, we walked through some examples of calculating the ASLR slide to get back to the file address space.\n\nNow we can discuss debug information, which contains the crucial links between the file addresses and the source code.\n\nXcode creates the debug information when you build your app and will either embed it directly into your app binaries or store it as a separate file, such as a dSYM.\n\nThere are a few categories or types of debug info.\n\nEach one offers a different level of detail for a given file address.\n\nWe'll look at three different types of debug info today.\n\nFirst, we'll cover the function starts, which by itself doesn't add too much value, but it is a common starting point.\n\nNext we'll see the nlist symbol tables, which add function and method names.\n\nLastly, we'll look at DWARF, which comes from dSYMs and static libraries.\n\nDWARF adds the most detail, including file names, line numbers, and optimization records.\n\nSince DWARF offers the most detail, we really want to strive to have this type of debug info whenever possible.\n\nWe'll learn about each of these and how they can be used to build up the fully symbolicated crash log.\n\nLet's begin with function starts.\n\nAs we saw in the table, function starts offers the least source code detail.\n\nAlso keeping true to its name, this type of debug information only tells us about the first address — or the literal start — of our functions.\n\nFor example, this would tell us that a function begins and exists at a certain address.\n\nHowever, it doesn't tell us which functions begin at those addresses, only that they exist.\n\nThe function starts debug info does this by encoding the list of addresses in your app's `__LINKEDIT` segment.\n\nSince this is embedded directly in your app, the Mach-O header also has a load command to inform us where we can find it, which is `LC_FUNCTION_STARTS`.\n\nYou can see these for yourself with the `symbols` command and the `-onlyFuncStartsData` flag.\n\nHere we get back a list of addresses and null placeholders.\n\nThese placeholders would ideally have function and method names instead of null, but the function starts data doesn't provide names.\n\nAgain, this isn't the most descriptive data.\n\nHowever, it does allow for a slight update to the crash log.\n\nWe can now view the file addresses as offsets from a function.\n\nFor example, first we go back to the file by subtracting the ASLR slide value.\n\nThen we find the function starts value that could contain the file address.\n\nIn this case, only the first value could contain the address because all of the other values are larger than the address.\n\nFinally we can claim that our file address is actually 264 bytes into this function.\n\nThis is primarily useful for debuggers, since they can understand the details of how this function was set up and which registers were modified.\n\nWhat this means for you, however, is that if you ever encounter a crash log that lacks function names, you're probably dealing with this lowest level of debug information.\n\nThis is good news because it means there are plenty of opportunities to enrich the crash log with better debug information.\n\nNaturally, the next level of detail we'd like to see are function names.\n\nThis gives us our first real opportunity to take a crash log or an Instruments trace and use it to track down an issue in our source code.\n\nThis leads us to nlist symbol tables.\n\nThe symbol tables build on the idea of function starts and also encode a list of information in the `__LINKEDIT` segment, and has its own load command too.\n\nHowever, rather than just encoding addresses, they encode C structs.\n\nThis lets us add more details for any given entry compared to function starts.\n\nSpecifically, they encode the `nlist_64` struct.\n\nHere we have the definition of that struct.\n\nA cursory glance shows that we have access to a name and several properties.\n\nThe values of these struct fields are determined by the nlist's `n_type`.\n\nThere are three primary n_types that we're interested in, but for now we'll only focus on two.\n\nThe first is known as a direct symbol.\n\nThese are functions and methods that you have fully defined within your apps and frameworks.\n\nDirect symbols have a name and an address in the `nlist_64` struct.\n\nAdditionally, they're represented by a particular bit pattern in the `n_type` field.\n\nSpecifically, `n_type` will have the second, third, and fourth least significant bits set.\n\nThese bits are also known as `N_SECT`.\n\nWe can see these with `nm` and specifying the `-defined-only` and `--numeric-sort` flags.\n\nHere, `nm` walked through the defined symbols of the MagicNumbers program and listed them in address order.\n\nThe names we get back appear cryptic.\n\nThat's because the names that are actually stored in the symbol tables are mangled names.\n\nThese mangled names help the compiler and linker to uniquely identify a function, but they aren't easy to understand unless they're demangled.\n\nTo get a friendlier version of these names, I passed the output to `swift-demangle`.\n\nNow we get some familiar names, such as `main` and `numberChoices`, because they're directly defined in my app.\n\nSimilarly, the `symbols` tool has an option to show the nlist data, and it also demangles the names automatically.\n\nNow that we can associate a function name to an address, this lets us update the crash log once again.\n\nHere we can observe that our offset expression that we got from the function starts data also matches an entry from the direct symbols, and that entry has a name.\n\nPutting these two together, we can now say that our crash happened at 264 bytes into main.\n\nThis still leaves some details to be desired, since we know for a fact that main isn't the only function involved.\n\nAnd it would also help to have an exact line number too.\n\nWe encountered something similar to this in the Instruments trace example — we had some function names available, but it missed others.\n\nOne reason for this is that the symbol table only has direct symbol entries for functions that are involved in linking.\n\nThese are functions that you use across modules or functions that you export from your frameworks.\n\nThis makes it useful for identifying API boundaries.\n\nAnd it also means that it has the necessary data to power dynamic loading with functions such as `dlsym()` and `dladdr()`.\n\nOne downside though is that local or static functions aren't represented in the symbol table since they aren't referenced outside of their module.\n\nThis ends up omitting implementation functions where we may have a significant portion of the app logic.\n\nFurther, it's common for binaries built in Release mode to have their symbol table stripped.\n\nThis means that unnecessary entries are removed from the symbol table, which helps reduce the size of your app.\n\nIf we think about it, it's rather uncommon for our app's primary driver to export functionality anywhere, so we'd be wasting space keeping those symbol table entries around.\n\nFor our frameworks and libraries, we definitely have exported functions that clients should use, but there's no need to keep around the locally shared functions since they can't be used anywhere else.\n\nStripping our primary app executables will almost always leave the symbol table practically empty.\n\nStripping our frameworks and libraries leaves only the exported functions.\n\nYou may have come across build settings in Xcode such as Strip Linked Product, Strip Style, and Strip Swift Symbols.\n\nThese build settings control how your app is stripped during the build.\n\nIf Strip Linked Product is enabled, then the binary is stripped according to Strip Style.\n\nFor example, All Symbols will perform the most invasive removal and leave behind only the bare essentials.\n\nNon Globals removes direct symbols that are used within different modules of your app but are not exported for use in other apps.\n\nDebugging Symbols removes the third type of nlist type that we'll discuss later when we get to DWARF.\n\nHowever, this strip style does preserve the direct symbols.\n\nFor example, here I have a framework that defines two public interfaces and one internal shared implementation function.\n\nSince all of these functions play a role in linking, they all have direct symbol entries.\n\nIf I strip non globals, then I'm only left with my interfaces.\n\nThe shared implementation function was only used within my framework, so it isn't considered global.\n\nSimilarly, stripping all symbols still leaves the interface since these are required for other apps to use the framework.\n\nYou can also notice in the `symbols --onlyNListData` output that there are function starts addresses interspersed between the direct symbols.\n\nThese addresses represent functions that were either never in the direct symbols, or were stripped.\n\nYou can tailor these strip settings to your desired level of symbol table visibility.\n\nWith this information, we can determine when we're working with direct symbols.\n\nSome telltale signs of this are having function names but no line numbers or file names; or having a mix of function names and function starts addresses, as we have here with the framework example.\n\nThe second type of nlist struct we'll analyze is known as an indirect symbol, as opposed to direct symbol.\n\nThis is when the `n_type` matches only the `N_EXT` bit pattern.\n\nThese are functions and methods that you're using from other frameworks or libraries, such as `print()`.\n\nYou can see these with `nm`, only this time we'll specify `--undefined-only` instead of `--defined-only`.\n\nWe'll also add the `-m` flag, which will show you which frameworks or libraries the functions should be found in.\n\nFor example, the MagicNumbers app depends on a variety of Swift functions that are defined in libswiftCore.\n\nNow that we've covered two of the three debug information categories, let's make sure we understand their properties.\n\nFunction starts are a list of addresses, so they lack names, but do allow us to determine offsets.\n\nnlist symbol tables encode entire structs of information and can associate a name to an address.\n\nThey describe direct symbols — which are defined in your app — and indirect symbols, which are provided by dependencies.\n\nDirect symbols are generally reserved for functions involved in linking, and the strip build settings influence which direct symbols are available.\n\nFinally, both the function starts and the nlist symbol tables are embedded directly in your app.\n\nWhat we haven't seen yet is the richer levels of detail, such as file names and line numbers.\n\nThis is provided to us by DWARF.\n\nDWARF takes the concepts of nlist symbol tables to a completely different level.\n\nRather than keeping only a subset of functions, DWARF strives to describe everything.\n\nWe saw that nlist symbol tables added vastly more information versus the function starts.\n\nIt accomplished that by adding a dimension.\n\nRemember, we started with just a single dimension, which were the addresses, when we looked at function starts.\n\nThen we upgraded to two dimensions by encoding a struct full of information in the nlist symbol table.\n\nDWARF adds a third dimension, which is about relationships.\n\nDWARF recognizes that functions aren't isolated.\n\nThey call other functions, they have parameters, return meaningful data, and are defined in a particular file.\n\nEncoding these relationships unlocks the most powerful aspects of symbolication.\n\nWhen we're analyzing DWARF, we're primarily referring to a dSYM bundle.\n\nIn addition to other metadata such as plists, the dSYM bundle contains a binary with DWARF.\n\nWhat makes this binary so special? The binary contains its data in a special `__DWARF` segment.\n\nThe DWARF specification mentions three streams of data within the segment that we'll focus on.\n\n`debug_info` contains the raw data, `debug_abbrev` assigns structure to the data, and `debug_line` contains the file names and line numbers.\n\nDWARF also defines two vocabulary types that we'll study first: the compile unit and the subprogram.\n\nWe'll introduce a third one later.\n\nA compile unit represents a single source file that went into building the product.\n\nFor example, we can expect to have one compile unit for each Swift file in our project.\n\nDWARF assigns properties to a compile unit, such as the name of the file, the SDKs, the portion of the `__TEXT` segment its functions occupy, and much more.\n\nThe main.swift compile unit contains these properties in the `debug_info` stream on the left, and it has a corresponding entry in the `debug _abbrev` stream on the right which tells us what the values represent.\n\nHere we see the file name, the language it's written in, and a low/high pair representing the `__TEXT` segment range.\n\nA subprogram represents a defined function.\n\nWe saw defined functions in the nlist symbol table already, but the subprogram can describe static and local functions too.\n\nA subprogram also has a name and its `__TEXT` segment address range.\n\nOne fundamental relationship between compile units and subprograms is that subprograms are defined in a compile unit.\n\nDWARF represents this with a tree.\n\nThe compile unit is at the root of the tree and it has subprogram entries as children.\n\nThe children are searchable by following their address ranges.\n\nWe can examine these in more detail with the `dwarfdump` command.\n\nFirst we'll look at a compile unit.\n\nThis matches some of the properties of a compile unit I mentioned earlier.\n\n`dwarfdump` helpfully combines the `debug_ info` and `debug _abbrev` contents to show you the structure and content of the data in your dSYMs.\n\nAnd if we scroll down the output, we'll encounter one subprogram child.\n\nThe address range it occupies is within the bounds of the compile unit and we can also see the name of the function.\n\nI mentioned that DWARF describes its data in extreme detail.\n\nWhile we won't spend much time on all of these details, I think it's fun to see details such as function parameters.\n\nThey have their own vocabulary type that describes the name and type of the parameter.\n\nFollowing the tree model, a parameter is a child of a subprogram.\n\nHere we come across the entry for the choices parameter that we supply to a function.\n\nNext, file names and line numbers come from the `debug_line` stream.\n\nThis stream doesn't have a tree structure.\n\nInstead, it defines a line table program where the individual file addresses can be mapped back to an exact line of code.\n\nThis ends up generating a list of source code details which we can search to find the file and line.\n\nIf we parse the `debug_info` tree and generate the `debug_line` list, we end up with a structure like the following.\n\nSo if want to match a file address, we can traverse the tree.\n\nFirst, we'll start at the compile unit and follow the branches.\n\nThen we'll pick up any of the `debug_line` entries that matched.\n\nWe can automate this again with `atos`, only this time I'm specifically leaving out the `-i` flag.\n\nNotice anything slightly odd here? Yes, we have the function name and line number, so we're definitely using DWARF.\n\nOther than that though, this isn't all too different from the nlist symbol table update.\n\nIn fact, when we compare it to the first time we used `atos`, it still looks like we're missing so many valuable functions and details! What happened here? The only thing that changed was that we didn't specify the `-i` to `atos` this time.\n\nThat flag stands for \"inlined functions.\" Inlining is a routine optimization that compilers perform.\n\nThis involves substituting a function call with the body of the function directly.\n\nOne cool effect that it has is making code seemingly disappear.\n\nWe can think of it as, rather than calling `numberChoices()`, the entirety of the code for `numberChoices()` was dropped in place.\n\nSuddenly there's no function call to `numberChoices()` anymore! DWARF represents this with an inlined subroutine.\n\nThis is the third and final vocabulary type for DWARF that we'll discuss today.\n\nAn inlined subroutine is a subprogram — so it's a function — that was inlined into another subprogram.\n\nSince an inlined function is completely engulfed by another node in the relationship tree, the inlined subroutine is a child of that node.\n\nThis definition applies recursively too, meaning that an inlined subroutine can have other inlined children.\n\nAgain, with `dwarfdump`, we can look for inlined subroutines.\n\nThey're listed as children of other nodes and have similar properties to subprograms, such as names and addresses.\n\nHowever, in DWARF, these properties are frequently accessed through a common node, known as the abstract origin.\n\nIf there are many inlined copies of a particular function, then their common, shared properties are kept in the abstract origin so that they aren't duplicated everywhere.\n\nOne unique property that inlined subroutines have is a call site.\n\nThis is the location in our source code where we wrote the actual function call, but the optimizer replaced it.\n\nHere for instance, we made the call to `generateANumber` on line 36 of the main.swift file.\n\nThis lets us update our tree with new child nodes.\n\nAnd now this is looking like a much more comprehensive view of our program.\n\nThe optimization details for inlined functions were the key details in getting us to the fully symbolicated crash log.\n\nThe `-i` flag for `atos` instructs the tool to consider them during symbolication.\n\nThey were also the missing details from our Instruments trace.\n\nThe reason why we needed a dSYM both for Instruments and for the crash log was precisely so that we could extract all of this content.\n\nThere is another source where you'll find DWARF, and that is from static libraries and object files.\n\nIn the absence of a dSYM, you can still gather DWARF for functions that you linked from a static library or object file.\n\nIn those cases, you'll find the Debugging Symbols nlist types.\n\nThese were one of the symbol types that could be stripped.\n\nThey don't hold the DWARF themselves though.\n\nRather, they associate a function back to the file they came from.\n\nIf the library was built with debug information, then the nlist entry can point us to that DWARF.\n\nThese types of nlist entries can be seen verbosely with `dsymutil -dump-debug-map`.\n\nHere we have the list of different functions and where they were pulled from.\n\nThose locations can be scanned and processed for DWARF.\n\nTo summarize, DWARF is a vital source of in-depth symbolication data.\n\nDWARF exposes important relationships between functions and files.\n\nOptimizations such as function inlining have an enormous impact on the quality of symbolication, and DWARF can express it very well.\n\nWe also saw that dSYMs and static libraries contain DWARF.\n\nHowever, please prefer dSYMs as you can easily transfer them to others and have built-in support from several tools.\n\nFinally, I want to share different tools and tips you can use to facilitate symbolication.\n\nFor local development builds, you'll generally have a great deal of debug information if you build in debug mode.\n\nFor release mode, you can ensure that Xcode generates a dSYM by checking the Debug Information Format build setting.\n\nMake sure Release is set to DWARF with dSYM File.\n\nFor apps that were submitted to the App Store, you can download your dSYMs through App Store Connect.\n\nThis also includes any apps with bitcode enabled.\n\nIf you want to check that a certain dSYM is already on your device, you can use the `mdfind` command.\n\nThe alphanumeric string here is your binary's UUID, which is a unique identifier defined in a load command.\n\nYou can see the UUID for your dSYMs with `symbols -uuid`.\n\nSometimes, a toolchain could generate invalid DWARF.\n\nYou can check this with `dwarfdump -verify`.\n\nIf you see any reported errors, please file a bug! DWARF data also has a cap of four gigabytes per binary.\n\nIf you're running into issues with your dSYMs and see that they're exceeding four gigabytes, consider splitting the project into separate components so that each one has its own smaller dSYM.\n\nYou can make sure that the dSYM you're using matches the specific build of your app that you're interested in by comparing UUIDs.\n\nThe app's UUID is in the Binary Images list section of crash reports and you can also see it with the `symbols` command.\n\nYou should ensure that both your app and your dSYM have the same UUIDs.\n\nThe `symbols` tool also lets you check the types of debug information your app has available.\n\nWe've already seen examples of this, but it's a helpful reminder that these tags in square brackets tell you the information source.\n\nIt's useful if you aren't sure which debug information you might be dealing with.\n\nIf you're certain that you have dSYMs available but still aren't getting names for your functions in Instruments traces, please check your entitlements and code signing.\n\nSpecifically, with the `codesign` command, you can verify that you have a proper code signature.\n\nYou should also verify that locally built apps for development have the `get-task-allow` entitlement.\n\nThis entitlement grants permissions to tools such as Instruments to symbolicate your app.\n\nXcode should set this entitlement automatically with the Profile action, but it's helpful to verify.\n\nIf you don't have the `get-task-allow` entitlement enabled, you should check your Code Signing Inject Base Entitlements build setting and make sure that it's enabled as you're developing.\n\nLastly, for Universal 2 apps, you should specify the architecture that you're interested in to the tools.\n\n`symbols`, `otool`, and `dwarfdump` all have an `-arch` flag to only operate on a particular architecture slice.\n\nThis concludes \"Symbolication: Beyond the basics.\" If nothing else, I want to really emphasize a few key points.\n\nUUIDs and file addresses are a consistent and reliable way to identify what your app was doing since they're independent of the ASLR slide.\n\nThey're also our key to querying the debug info.\n\nYou should also use dSYMs whenever possible.\n\ndSYMs contain the richest debug information in the form of DWARF and are supported by Xcode and Instruments.\n\nLastly, we covered several tools.\n\nThese tools are readily available to you in Xcode and they offer powerful diagnostics and insights.\n\nYou should strive to incorporate them into your workflows for debugging and optimizing.\n\nIf you're interested in learning more, I recommend these two sessions from WWDC18 to learn how your apps spring to life upon launch: \"Optimizing app startup time\" and \"App startup time: Past, present, and future\".\n\nThank you all very much for joining me to learn about symbolication! Have a wonderful rest of the week.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Alejandro Lucena: Hello, everyone."
+      },
+      {
+        "timestamp": "0:10",
+        "text": "Thank you for attending this session on symbolication."
+      },
+      {
+        "timestamp": "0:13",
+        "text": "While symbolication may seem like a vague term, we'll see the instrumental role it plays in helping you to quickly identify the root causes of bugs, crashes, and performance bottlenecks."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "We'll gain a deeper intuition as to how symbolication works and cover several tools that you have at your disposal to follow along firsthand."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Along the way, we'll discuss the various sources of debug information that are necessary for a rich symbolication experience and how you can configure your app to best utilize this information."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "Let's get started by familiarizing ourselves with a concrete definition and example of symbolication."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "Fundamentally, symbolication is a mechanism to convert or translate how our devices see our apps at runtime — which is in terms of memory addresses and instructions — back to how we as developers see our apps — which is in terms of functions, names, and files."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Without this bridging layer, it vastly complicates diagnosing a bug even for a few lines of code."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "As an example, let's consider this Swift code."
+      },
+      {
+        "timestamp": "1:13",
+        "text": "Here I have a function, `generateMagicNumber()`, that selects a particular number from a list of candidate numbers."
+      },
+      {
+        "timestamp": "1:20",
+        "text": "To do this, we first call into `numberChoices()` that returns an array of 10 randomly generated numbers."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "Then, we pass that array into `selectMagicNumber(choices:)`, which returns the number at a particular index."
+      },
+      {
+        "timestamp": "1:33",
+        "text": "This seems like a reasonable program, but I encounter a crash when I first run it."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "My first recourse is to check the crash log, which is rather unfruitful."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "All I can tell from the thread backtrace is that my MagicNumbers app crashed somewhere."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "Thanks, but I already knew that."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "I have no idea what any of the registers are referring to either."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "I can try to step through the app with the debugger and identify the crash, but what if this only happens in particular circumstances that I can't reproduce? Using the debugger won't necessarily pinpoint the problem for me in that case."
+      },
+      {
+        "timestamp": "2:07",
+        "text": "Or I can try to look at the disassembly, but it's much more difficult to keep track of things."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "This clearly isn't a viable way to diagnose the problem, and more importantly, with the help of symbolication, we don't have to debug from this starting point."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "The Xcode Organizer tells me I can download the dSYM for this app, which will reprocess the crash log."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "In doing so, Xcode applies the concepts of symbolication so that I can diagnose the issue with a much nicer crash log, where I can not only see all of my functions actually being called, but I can also determine the file and line number to refer back to in my code."
+      },
+      {
+        "timestamp": "2:44",
+        "text": "This updated crash log also tells me that we tried to access an index out of range."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "Alternatively, If I already have the dSYM, I can use the `atos` command to get the same information."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "Looking back at my code, I come to realize that `MAGIC_CHOICE` is far outside the bounds of our 10-element array."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "Oops."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "In another instance, I'm interested in profiling my app to deliver the fastest user experience."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "Here, Instruments shows me that the app cycles through periods of high utilization and low utilization."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "If we focus on a period of low utilization, Instruments tells us that the app was writing some content to a file."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "However, when I inspect a period of high utilization, I get the same exact backtrace."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "How is this possible? Isn't this executing the same exact code? As we'll see, this Instruments trace is only partially symbolicated."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "For instance, I don't see any file names or line numbers in the backtrace as I did with the updated crash log."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "As a result, it's missing some information."
+      },
+      {
+        "timestamp": "3:45",
+        "text": "With that in mind, I can similarly locate my dSYM in Instruments."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "After doing this, my new Instruments trace shows that the high-utilization regions were indeed writing to a file, but they were specifically within a debug code path that I left in the program."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "The low-utilization areas avoid this and represent how my app behaves in production."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "Just as Xcode utilized the dSYM to symbolicate a rather uninformative crash log, Instruments also used the dSYM to enrich a partially symbolicated trace and tell me the exact cause of the performance issue."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "Now, while it's great that these tools leverage symbolication to pinpoint problem areas in my code, it naturally begs a few questions."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "How does this all work? Where else can I apply this? And is this all about dSYMs? To answer these questions and unlock symbolication's capabilities, we'll need to take a deeper dive into the details."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "This may seem a little overwhelming, but these are important concepts to understand."
+      },
+      {
+        "timestamp": "4:43",
+        "text": "There are many tools to aid in debugging and profiling that build upon symbolication."
+      },
+      {
+        "timestamp": "4:48",
+        "text": "`atos` alone already gave us the exact root cause of a crash, and there are many more tools built into Xcode."
+      },
+      {
+        "timestamp": "4:54",
+        "text": "Further, we specified flags like `o`, `l`, and `i` to `atos`, but what do they mean? Do we always use the same set of flags? What if we don't have one of the values available? You'll also gain a good foundation in understanding when and why your backtraces may not be fully symbolicated and how to fix that, as we saw in the Instruments case."
+      },
+      {
+        "timestamp": "5:15",
+        "text": "Lastly, there are a number of build settings that you're in control of that influence the richness of symbolication."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "We'll go through these build settings so you have a solid intuition about how they're utilized."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "To that end, I'd like to introduce the two-step process for symbolication."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "Step number one is going back to the file, and step number two is to consult debug information."
+      },
+      {
+        "timestamp": "5:36",
+        "text": "As we'll see, going back to the file is all about converting or translating runtime memory addresses into a more stable, usable form."
+      },
+      {
+        "timestamp": "5:44",
+        "text": "This allows us to communicate with our debug information to make a meaningful connection between a raw memory address and the source code."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "Let's start off by discussing step number one, going back to the file."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "The ultimate goal in this step is to translate a runtime memory address, such as those we saw in the original crash log, to a corresponding address in your binary on disk."
+      },
+      {
+        "timestamp": "6:07",
+        "text": "Just like we have runtime addresses, your apps and frameworks have an address space on disk, too! The on disk address space differs from the address space that your app occupies at runtime, and we need a mechanism to figure out those differences."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "First, we should understand exactly what the on disk addresses are."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "These addresses are assigned by the linker when you build your app."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "Specifically, the linker groups your binary into segments."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "Each segment contains related data and has properties such as a name, a size, and their assigned addresses."
+      },
+      {
+        "timestamp": "6:41",
+        "text": "For example, the `__TEXT` segment of your binary contains all of the functions and methods you've written, and the `__DATA` segment contains program-wide state such as global variables."
+      },
+      {
+        "timestamp": "6:52",
+        "text": "Each of these segments gets assigned a different address such that they don't overlap."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "The linker records this information at the very beginning of your executables as part of the Mach-O header."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "Mach-O is the format used for all executable binaries and libraries, and the system knows that it needs to read this header to run your apps."
+      },
+      {
+        "timestamp": "7:10",
+        "text": "Looking a little more closely, the Mach-O header contains a number of load commands that hold the segment properties."
+      },
+      {
+        "timestamp": "7:17",
+        "text": "The system uses these load commands to load the segments into memory."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "Note that if your apps are Universal 2, then the app will have one header and a set of segments for each architecture."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "We can see for ourselves by using the `otool -l` command, which prints the load commands for a specified file."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "Here, we're looking a segment load command identified with `LC_SEGMENT_64`."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "This load commands says that the `__TEXT` segment starts at the address in `vmaddr` and is `vmsize` bytes long."
+      },
+      {
+        "timestamp": "7:48",
+        "text": "So if the kernel follows these load commands to load the segments into memory, what exactly is the difference between the runtime and the linker addresses? Well, before the kernel actually loads the segments, it initializes a random value known as the ASLR slide."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "The kernel then adds the ASLR slide to the addresses in the load commands."
+      },
+      {
+        "timestamp": "8:09",
+        "text": "So rather than loading the `__TEXT` segment at address A and the `__DATA` segment at address B, the kernel instead loads them to A+S and B+S, where S is the ASLR slide."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "Since A+S and B+S are the true addresses that the system uses, they're also known as load addresses."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "With that in mind, we now know that the difference between a runtime address and the linker address is the ASLR slide."
+      },
+      {
+        "timestamp": "8:36",
+        "text": "We can calculate the ASLR slide with the following equation: S = L-A, where S is the ASLR slide, L is the load address, and A is the linker address."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "We'll see examples of this equation shortly, but the key point is that we can always go back to the file address space once we know the ASLR slide."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "The ASLR slide equation required two addresses — the load address and the linker address — so where do we get them from? We already saw how we can query the load commands to know the linker address using `otool`."
+      },
+      {
+        "timestamp": "9:11",
+        "text": "To know the runtime address, the system queries your app either at the point of a crash or as its being profiled by Instruments for its runtime address space."
+      },
+      {
+        "timestamp": "9:21",
+        "text": "This information is reflected in the Binary Images list in your crash logs."
+      },
+      {
+        "timestamp": "9:27",
+        "text": "You can also see the load addresses interactively with the `vmmap` tool, which enumerates the active memory regions in your program."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "Let's compute the ASLR slide value ourselves from the original crash log."
+      },
+      {
+        "timestamp": "9:40",
+        "text": "In the Binary Images list, I have the load address of the `__TEXT` segment."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "I also have the linker address for the binary on disk when I looked at the load commands."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "Subtracting these two yields an ASLR slide value of 0x45c000."
+      },
+      {
+        "timestamp": "9:54",
+        "text": "This means that every address in my program's runtime `__TEXT` segment is 0x45c000 bytes away from the linker `__TEXT` segment address."
+      },
+      {
+        "timestamp": "10:04",
+        "text": "So to see what a backtrace address from the crash log corresponds to in the file, I can subtract 0x45c000 from it to get the address on disk."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "Since this address is now part of the on-disk address space, I can inspect my app to see what resides there."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "The crash log tells me that a thread crashed while executing whatever is at this address, so we can use `otool` again to see the problematic instruction."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "This time, I specified the `-tV` flags to `otool`, which will print the disassembly."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "Notice that I'm also specifying the architecture as arm64."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "This is so that otool knows which Mach-O header and segments to consider since the app is built as Universal 2."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "The output of `otool` reveals a `brk` instruction at the address."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "`brk` signals an exception or a problem in the app."
+      },
+      {
+        "timestamp": "10:56",
+        "text": "Tools such as `atos` also calculate the ASLR slide using the same technique we went through together."
+      },
+      {
+        "timestamp": "11:03",
+        "text": "`atos` will read the load commands for the file indicated by the `-o` flag, and we tell it about the load address with the `-l` flag."
+      },
+      {
+        "timestamp": "11:11",
+        "text": "As I mentioned, `vmmap` can also tell us about the load addresses of a running app."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "Let's try this calculation again, but this time we'll use `vmmap` instead of the binary image list to determine the ASLR slide."
+      },
+      {
+        "timestamp": "11:24",
+        "text": "I ran the MagicNumbers program again and got the `__TEXT` segment load address before the program crashed."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "Using the previous formula, I can determine that this time the ASLR slide value was 0x104d14000."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "Again, to go back to the file, I need to subtract the ASLR slide value."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "If I subtract 0x104d14000 from the topmost entry in the new crash log, I get the same exact file address as before."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "And this is no coincidence; the kernel just picked a different ASLR value so our load addresses changed between the crash logs."
+      },
+      {
+        "timestamp": "12:00",
+        "text": "However, we can still determine the file address that was responsible for the crash."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "The important takeaway here is that we have a mechanism to understand exactly what our app was doing down to the instruction level, regardless of its runtime address."
+      },
+      {
+        "timestamp": "12:16",
+        "text": "And with that mapping, we can then consult our debug information for the source code that was compiled to those instructions."
+      },
+      {
+        "timestamp": "12:24",
+        "text": "Before we move on, I want to present a summary of what we covered and the tools we used."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "App binaries and frameworks are Mach-O files."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "This means that they have related content in their different segments."
+      },
+      {
+        "timestamp": "12:37",
+        "text": "These segments are created by the linker."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "The Mach-O header load commands describe the properties of those segments, including an address."
+      },
+      {
+        "timestamp": "12:45",
+        "text": "We used `otool` with the `-l` flag to print out the load commands."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "Next, we learned that the kernel adds a random value, known as the ASLR slide, to the linker addresses."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "The addition of the ASLR slide and the linker address is known as a load address."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "We can check the binary image list in a crash log to see the load addresses in the event of a crash, or we can use `vmmap` to see the load addresses for a running app."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "Finally, we walked through some examples of calculating the ASLR slide to get back to the file address space."
+      },
+      {
+        "timestamp": "13:19",
+        "text": "Now we can discuss debug information, which contains the crucial links between the file addresses and the source code."
+      },
+      {
+        "timestamp": "13:26",
+        "text": "Xcode creates the debug information when you build your app and will either embed it directly into your app binaries or store it as a separate file, such as a dSYM."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "There are a few categories or types of debug info."
+      },
+      {
+        "timestamp": "13:39",
+        "text": "Each one offers a different level of detail for a given file address."
+      },
+      {
+        "timestamp": "13:43",
+        "text": "We'll look at three different types of debug info today."
+      },
+      {
+        "timestamp": "13:47",
+        "text": "First, we'll cover the function starts, which by itself doesn't add too much value, but it is a common starting point."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "Next we'll see the nlist symbol tables, which add function and method names."
+      },
+      {
+        "timestamp": "13:58",
+        "text": "Lastly, we'll look at DWARF, which comes from dSYMs and static libraries."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "DWARF adds the most detail, including file names, line numbers, and optimization records."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "Since DWARF offers the most detail, we really want to strive to have this type of debug info whenever possible."
+      },
+      {
+        "timestamp": "14:16",
+        "text": "We'll learn about each of these and how they can be used to build up the fully symbolicated crash log."
+      },
+      {
+        "timestamp": "14:21",
+        "text": "Let's begin with function starts."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "As we saw in the table, function starts offers the least source code detail."
+      },
+      {
+        "timestamp": "14:29",
+        "text": "Also keeping true to its name, this type of debug information only tells us about the first address — or the literal start — of our functions."
+      },
+      {
+        "timestamp": "14:38",
+        "text": "For example, this would tell us that a function begins and exists at a certain address."
+      },
+      {
+        "timestamp": "14:44",
+        "text": "However, it doesn't tell us which functions begin at those addresses, only that they exist."
+      },
+      {
+        "timestamp": "14:51",
+        "text": "The function starts debug info does this by encoding the list of addresses in your app's `__LINKEDIT` segment."
+      },
+      {
+        "timestamp": "14:57",
+        "text": "Since this is embedded directly in your app, the Mach-O header also has a load command to inform us where we can find it, which is `LC_FUNCTION_STARTS`."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "You can see these for yourself with the `symbols` command and the `-onlyFuncStartsData` flag."
+      },
+      {
+        "timestamp": "15:13",
+        "text": "Here we get back a list of addresses and null placeholders."
+      },
+      {
+        "timestamp": "15:17",
+        "text": "These placeholders would ideally have function and method names instead of null, but the function starts data doesn't provide names."
+      },
+      {
+        "timestamp": "15:24",
+        "text": "Again, this isn't the most descriptive data."
+      },
+      {
+        "timestamp": "15:28",
+        "text": "However, it does allow for a slight update to the crash log."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "We can now view the file addresses as offsets from a function."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "For example, first we go back to the file by subtracting the ASLR slide value."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "Then we find the function starts value that could contain the file address."
+      },
+      {
+        "timestamp": "15:48",
+        "text": "In this case, only the first value could contain the address because all of the other values are larger than the address."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "Finally we can claim that our file address is actually 264 bytes into this function."
+      },
+      {
+        "timestamp": "16:04",
+        "text": "This is primarily useful for debuggers, since they can understand the details of how this function was set up and which registers were modified."
+      },
+      {
+        "timestamp": "16:11",
+        "text": "What this means for you, however, is that if you ever encounter a crash log that lacks function names, you're probably dealing with this lowest level of debug information."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "This is good news because it means there are plenty of opportunities to enrich the crash log with better debug information."
+      },
+      {
+        "timestamp": "16:29",
+        "text": "Naturally, the next level of detail we'd like to see are function names."
+      },
+      {
+        "timestamp": "16:34",
+        "text": "This gives us our first real opportunity to take a crash log or an Instruments trace and use it to track down an issue in our source code."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "This leads us to nlist symbol tables."
+      },
+      {
+        "timestamp": "16:46",
+        "text": "The symbol tables build on the idea of function starts and also encode a list of information in the `__LINKEDIT` segment, and has its own load command too."
+      },
+      {
+        "timestamp": "16:55",
+        "text": "However, rather than just encoding addresses, they encode C structs."
+      },
+      {
+        "timestamp": "17:00",
+        "text": "This lets us add more details for any given entry compared to function starts."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "Specifically, they encode the `nlist_64` struct."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Here we have the definition of that struct."
+      },
+      {
+        "timestamp": "17:13",
+        "text": "A cursory glance shows that we have access to a name and several properties."
+      },
+      {
+        "timestamp": "17:18",
+        "text": "The values of these struct fields are determined by the nlist's `n_type`."
+      },
+      {
+        "timestamp": "17:24",
+        "text": "There are three primary n_types that we're interested in, but for now we'll only focus on two."
+      },
+      {
+        "timestamp": "17:30",
+        "text": "The first is known as a direct symbol."
+      },
+      {
+        "timestamp": "17:33",
+        "text": "These are functions and methods that you have fully defined within your apps and frameworks."
+      },
+      {
+        "timestamp": "17:38",
+        "text": "Direct symbols have a name and an address in the `nlist_64` struct."
+      },
+      {
+        "timestamp": "17:43",
+        "text": "Additionally, they're represented by a particular bit pattern in the `n_type` field."
+      },
+      {
+        "timestamp": "17:49",
+        "text": "Specifically, `n_type` will have the second, third, and fourth least significant bits set."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "These bits are also known as `N_SECT`."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "We can see these with `nm` and specifying the `-defined-only` and `--numeric-sort` flags."
+      },
+      {
+        "timestamp": "18:05",
+        "text": "Here, `nm` walked through the defined symbols of the MagicNumbers program and listed them in address order."
+      },
+      {
+        "timestamp": "18:13",
+        "text": "The names we get back appear cryptic."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "That's because the names that are actually stored in the symbol tables are mangled names."
+      },
+      {
+        "timestamp": "18:20",
+        "text": "These mangled names help the compiler and linker to uniquely identify a function, but they aren't easy to understand unless they're demangled."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "To get a friendlier version of these names, I passed the output to `swift-demangle`."
+      },
+      {
+        "timestamp": "18:34",
+        "text": "Now we get some familiar names, such as `main` and `numberChoices`, because they're directly defined in my app."
+      },
+      {
+        "timestamp": "18:41",
+        "text": "Similarly, the `symbols` tool has an option to show the nlist data, and it also demangles the names automatically."
+      },
+      {
+        "timestamp": "18:49",
+        "text": "Now that we can associate a function name to an address, this lets us update the crash log once again."
+      },
+      {
+        "timestamp": "18:55",
+        "text": "Here we can observe that our offset expression that we got from the function starts data also matches an entry from the direct symbols, and that entry has a name."
+      },
+      {
+        "timestamp": "19:05",
+        "text": "Putting these two together, we can now say that our crash happened at 264 bytes into main."
+      },
+      {
+        "timestamp": "19:11",
+        "text": "This still leaves some details to be desired, since we know for a fact that main isn't the only function involved."
+      },
+      {
+        "timestamp": "19:18",
+        "text": "And it would also help to have an exact line number too."
+      },
+      {
+        "timestamp": "19:21",
+        "text": "We encountered something similar to this in the Instruments trace example — we had some function names available, but it missed others."
+      },
+      {
+        "timestamp": "19:29",
+        "text": "One reason for this is that the symbol table only has direct symbol entries for functions that are involved in linking."
+      },
+      {
+        "timestamp": "19:36",
+        "text": "These are functions that you use across modules or functions that you export from your frameworks."
+      },
+      {
+        "timestamp": "19:42",
+        "text": "This makes it useful for identifying API boundaries."
+      },
+      {
+        "timestamp": "19:46",
+        "text": "And it also means that it has the necessary data to power dynamic loading with functions such as `dlsym()` and `dladdr()`."
+      },
+      {
+        "timestamp": "19:54",
+        "text": "One downside though is that local or static functions aren't represented in the symbol table since they aren't referenced outside of their module."
+      },
+      {
+        "timestamp": "20:03",
+        "text": "This ends up omitting implementation functions where we may have a significant portion of the app logic."
+      },
+      {
+        "timestamp": "20:09",
+        "text": "Further, it's common for binaries built in Release mode to have their symbol table stripped."
+      },
+      {
+        "timestamp": "20:14",
+        "text": "This means that unnecessary entries are removed from the symbol table, which helps reduce the size of your app."
+      },
+      {
+        "timestamp": "20:21",
+        "text": "If we think about it, it's rather uncommon for our app's primary driver to export functionality anywhere, so we'd be wasting space keeping those symbol table entries around."
+      },
+      {
+        "timestamp": "20:32",
+        "text": "For our frameworks and libraries, we definitely have exported functions that clients should use, but there's no need to keep around the locally shared functions since they can't be used anywhere else."
+      },
+      {
+        "timestamp": "20:44",
+        "text": "Stripping our primary app executables will almost always leave the symbol table practically empty."
+      },
+      {
+        "timestamp": "20:50",
+        "text": "Stripping our frameworks and libraries leaves only the exported functions."
+      },
+      {
+        "timestamp": "20:54",
+        "text": "You may have come across build settings in Xcode such as Strip Linked Product, Strip Style, and Strip Swift Symbols."
+      },
+      {
+        "timestamp": "21:02",
+        "text": "These build settings control how your app is stripped during the build."
+      },
+      {
+        "timestamp": "21:06",
+        "text": "If Strip Linked Product is enabled, then the binary is stripped according to Strip Style."
+      },
+      {
+        "timestamp": "21:12",
+        "text": "For example, All Symbols will perform the most invasive removal and leave behind only the bare essentials."
+      },
+      {
+        "timestamp": "21:19",
+        "text": "Non Globals removes direct symbols that are used within different modules of your app but are not exported for use in other apps."
+      },
+      {
+        "timestamp": "21:28",
+        "text": "Debugging Symbols removes the third type of nlist type that we'll discuss later when we get to DWARF."
+      },
+      {
+        "timestamp": "21:35",
+        "text": "However, this strip style does preserve the direct symbols."
+      },
+      {
+        "timestamp": "21:39",
+        "text": "For example, here I have a framework that defines two public interfaces and one internal shared implementation function."
+      },
+      {
+        "timestamp": "21:46",
+        "text": "Since all of these functions play a role in linking, they all have direct symbol entries."
+      },
+      {
+        "timestamp": "21:52",
+        "text": "If I strip non globals, then I'm only left with my interfaces."
+      },
+      {
+        "timestamp": "21:56",
+        "text": "The shared implementation function was only used within my framework, so it isn't considered global."
+      },
+      {
+        "timestamp": "22:02",
+        "text": "Similarly, stripping all symbols still leaves the interface since these are required for other apps to use the framework."
+      },
+      {
+        "timestamp": "22:10",
+        "text": "You can also notice in the `symbols --onlyNListData` output that there are function starts addresses interspersed between the direct symbols."
+      },
+      {
+        "timestamp": "22:19",
+        "text": "These addresses represent functions that were either never in the direct symbols, or were stripped."
+      },
+      {
+        "timestamp": "22:25",
+        "text": "You can tailor these strip settings to your desired level of symbol table visibility."
+      },
+      {
+        "timestamp": "22:30",
+        "text": "With this information, we can determine when we're working with direct symbols."
+      },
+      {
+        "timestamp": "22:34",
+        "text": "Some telltale signs of this are having function names but no line numbers or file names; or having a mix of function names and function starts addresses, as we have here with the framework example."
+      },
+      {
+        "timestamp": "22:46",
+        "text": "The second type of nlist struct we'll analyze is known as an indirect symbol, as opposed to direct symbol."
+      },
+      {
+        "timestamp": "22:54",
+        "text": "This is when the `n_type` matches only the `N_EXT` bit pattern."
+      },
+      {
+        "timestamp": "22:59",
+        "text": "These are functions and methods that you're using from other frameworks or libraries, such as `print()`."
+      },
+      {
+        "timestamp": "23:05",
+        "text": "You can see these with `nm`, only this time we'll specify `--undefined-only` instead of `--defined-only`."
+      },
+      {
+        "timestamp": "23:12",
+        "text": "We'll also add the `-m` flag, which will show you which frameworks or libraries the functions should be found in."
+      },
+      {
+        "timestamp": "23:19",
+        "text": "For example, the MagicNumbers app depends on a variety of Swift functions that are defined in libswiftCore."
+      },
+      {
+        "timestamp": "23:27",
+        "text": "Now that we've covered two of the three debug information categories, let's make sure we understand their properties."
+      },
+      {
+        "timestamp": "23:34",
+        "text": "Function starts are a list of addresses, so they lack names, but do allow us to determine offsets."
+      },
+      {
+        "timestamp": "23:41",
+        "text": "nlist symbol tables encode entire structs of information and can associate a name to an address."
+      },
+      {
+        "timestamp": "23:48",
+        "text": "They describe direct symbols — which are defined in your app — and indirect symbols, which are provided by dependencies."
+      },
+      {
+        "timestamp": "23:55",
+        "text": "Direct symbols are generally reserved for functions involved in linking, and the strip build settings influence which direct symbols are available."
+      },
+      {
+        "timestamp": "24:03",
+        "text": "Finally, both the function starts and the nlist symbol tables are embedded directly in your app."
+      },
+      {
+        "timestamp": "24:10",
+        "text": "What we haven't seen yet is the richer levels of detail, such as file names and line numbers."
+      },
+      {
+        "timestamp": "24:16",
+        "text": "This is provided to us by DWARF."
+      },
+      {
+        "timestamp": "24:18",
+        "text": "DWARF takes the concepts of nlist symbol tables to a completely different level."
+      },
+      {
+        "timestamp": "24:23",
+        "text": "Rather than keeping only a subset of functions, DWARF strives to describe everything."
+      },
+      {
+        "timestamp": "24:29",
+        "text": "We saw that nlist symbol tables added vastly more information versus the function starts."
+      },
+      {
+        "timestamp": "24:35",
+        "text": "It accomplished that by adding a dimension."
+      },
+      {
+        "timestamp": "24:37",
+        "text": "Remember, we started with just a single dimension, which were the addresses, when we looked at function starts."
+      },
+      {
+        "timestamp": "24:44",
+        "text": "Then we upgraded to two dimensions by encoding a struct full of information in the nlist symbol table."
+      },
+      {
+        "timestamp": "24:51",
+        "text": "DWARF adds a third dimension, which is about relationships."
+      },
+      {
+        "timestamp": "24:54",
+        "text": "DWARF recognizes that functions aren't isolated."
+      },
+      {
+        "timestamp": "24:58",
+        "text": "They call other functions, they have parameters, return meaningful data, and are defined in a particular file."
+      },
+      {
+        "timestamp": "25:05",
+        "text": "Encoding these relationships unlocks the most powerful aspects of symbolication."
+      },
+      {
+        "timestamp": "25:10",
+        "text": "When we're analyzing DWARF, we're primarily referring to a dSYM bundle."
+      },
+      {
+        "timestamp": "25:15",
+        "text": "In addition to other metadata such as plists, the dSYM bundle contains a binary with DWARF."
+      },
+      {
+        "timestamp": "25:22",
+        "text": "What makes this binary so special? The binary contains its data in a special `__DWARF` segment."
+      },
+      {
+        "timestamp": "25:29",
+        "text": "The DWARF specification mentions three streams of data within the segment that we'll focus on."
+      },
+      {
+        "timestamp": "25:35",
+        "text": "`debug_info` contains the raw data, `debug_abbrev` assigns structure to the data, and `debug_line` contains the file names and line numbers."
+      },
+      {
+        "timestamp": "25:45",
+        "text": "DWARF also defines two vocabulary types that we'll study first: the compile unit and the subprogram."
+      },
+      {
+        "timestamp": "25:51",
+        "text": "We'll introduce a third one later."
+      },
+      {
+        "timestamp": "25:54",
+        "text": "A compile unit represents a single source file that went into building the product."
+      },
+      {
+        "timestamp": "26:00",
+        "text": "For example, we can expect to have one compile unit for each Swift file in our project."
+      },
+      {
+        "timestamp": "26:06",
+        "text": "DWARF assigns properties to a compile unit, such as the name of the file, the SDKs, the portion of the `__TEXT` segment its functions occupy, and much more."
+      },
+      {
+        "timestamp": "26:16",
+        "text": "The main.swift compile unit contains these properties in the `debug_info` stream on the left, and it has a corresponding entry in the `debug _abbrev` stream on the right which tells us what the values represent."
+      },
+      {
+        "timestamp": "26:29",
+        "text": "Here we see the file name, the language it's written in, and a low/high pair representing the `__TEXT` segment range."
+      },
+      {
+        "timestamp": "26:37",
+        "text": "A subprogram represents a defined function."
+      },
+      {
+        "timestamp": "26:40",
+        "text": "We saw defined functions in the nlist symbol table already, but the subprogram can describe static and local functions too."
+      },
+      {
+        "timestamp": "26:48",
+        "text": "A subprogram also has a name and its `__TEXT` segment address range."
+      },
+      {
+        "timestamp": "26:53",
+        "text": "One fundamental relationship between compile units and subprograms is that subprograms are defined in a compile unit."
+      },
+      {
+        "timestamp": "27:02",
+        "text": "DWARF represents this with a tree."
+      },
+      {
+        "timestamp": "27:05",
+        "text": "The compile unit is at the root of the tree and it has subprogram entries as children."
+      },
+      {
+        "timestamp": "27:11",
+        "text": "The children are searchable by following their address ranges."
+      },
+      {
+        "timestamp": "27:15",
+        "text": "We can examine these in more detail with the `dwarfdump` command."
+      },
+      {
+        "timestamp": "27:19",
+        "text": "First we'll look at a compile unit."
+      },
+      {
+        "timestamp": "27:21",
+        "text": "This matches some of the properties of a compile unit I mentioned earlier."
+      },
+      {
+        "timestamp": "27:25",
+        "text": "`dwarfdump` helpfully combines the `debug_ info` and `debug _abbrev` contents to show you the structure and content of the data in your dSYMs."
+      },
+      {
+        "timestamp": "27:35",
+        "text": "And if we scroll down the output, we'll encounter one subprogram child."
+      },
+      {
+        "timestamp": "27:40",
+        "text": "The address range it occupies is within the bounds of the compile unit and we can also see the name of the function."
+      },
+      {
+        "timestamp": "27:47",
+        "text": "I mentioned that DWARF describes its data in extreme detail."
+      },
+      {
+        "timestamp": "27:50",
+        "text": "While we won't spend much time on all of these details, I think it's fun to see details such as function parameters."
+      },
+      {
+        "timestamp": "27:56",
+        "text": "They have their own vocabulary type that describes the name and type of the parameter."
+      },
+      {
+        "timestamp": "28:02",
+        "text": "Following the tree model, a parameter is a child of a subprogram."
+      },
+      {
+        "timestamp": "28:07",
+        "text": "Here we come across the entry for the choices parameter that we supply to a function."
+      },
+      {
+        "timestamp": "28:12",
+        "text": "Next, file names and line numbers come from the `debug_line` stream."
+      },
+      {
+        "timestamp": "28:17",
+        "text": "This stream doesn't have a tree structure."
+      },
+      {
+        "timestamp": "28:19",
+        "text": "Instead, it defines a line table program where the individual file addresses can be mapped back to an exact line of code."
+      },
+      {
+        "timestamp": "28:27",
+        "text": "This ends up generating a list of source code details which we can search to find the file and line."
+      },
+      {
+        "timestamp": "28:33",
+        "text": "If we parse the `debug_info` tree and generate the `debug_line` list, we end up with a structure like the following."
+      },
+      {
+        "timestamp": "28:41",
+        "text": "So if want to match a file address, we can traverse the tree."
+      },
+      {
+        "timestamp": "28:45",
+        "text": "First, we'll start at the compile unit and follow the branches."
+      },
+      {
+        "timestamp": "28:49",
+        "text": "Then we'll pick up any of the `debug_line` entries that matched."
+      },
+      {
+        "timestamp": "28:53",
+        "text": "We can automate this again with `atos`, only this time I'm specifically leaving out the `-i` flag."
+      },
+      {
+        "timestamp": "29:01",
+        "text": "Notice anything slightly odd here? Yes, we have the function name and line number, so we're definitely using DWARF."
+      },
+      {
+        "timestamp": "29:08",
+        "text": "Other than that though, this isn't all too different from the nlist symbol table update."
+      },
+      {
+        "timestamp": "29:13",
+        "text": "In fact, when we compare it to the first time we used `atos`, it still looks like we're missing so many valuable functions and details! What happened here? The only thing that changed was that we didn't specify the `-i` to `atos` this time."
+      },
+      {
+        "timestamp": "29:30",
+        "text": "That flag stands for \"inlined functions.\" Inlining is a routine optimization that compilers perform."
+      },
+      {
+        "timestamp": "29:38",
+        "text": "This involves substituting a function call with the body of the function directly."
+      },
+      {
+        "timestamp": "29:43",
+        "text": "One cool effect that it has is making code seemingly disappear."
+      },
+      {
+        "timestamp": "29:47",
+        "text": "We can think of it as, rather than calling `numberChoices()`, the entirety of the code for `numberChoices()` was dropped in place."
+      },
+      {
+        "timestamp": "29:55",
+        "text": "Suddenly there's no function call to `numberChoices()` anymore! DWARF represents this with an inlined subroutine."
+      },
+      {
+        "timestamp": "30:03",
+        "text": "This is the third and final vocabulary type for DWARF that we'll discuss today."
+      },
+      {
+        "timestamp": "30:07",
+        "text": "An inlined subroutine is a subprogram — so it's a function — that was inlined into another subprogram."
+      },
+      {
+        "timestamp": "30:15",
+        "text": "Since an inlined function is completely engulfed by another node in the relationship tree, the inlined subroutine is a child of that node."
+      },
+      {
+        "timestamp": "30:24",
+        "text": "This definition applies recursively too, meaning that an inlined subroutine can have other inlined children."
+      },
+      {
+        "timestamp": "30:32",
+        "text": "Again, with `dwarfdump`, we can look for inlined subroutines."
+      },
+      {
+        "timestamp": "30:36",
+        "text": "They're listed as children of other nodes and have similar properties to subprograms, such as names and addresses."
+      },
+      {
+        "timestamp": "30:42",
+        "text": "However, in DWARF, these properties are frequently accessed through a common node, known as the abstract origin."
+      },
+      {
+        "timestamp": "30:50",
+        "text": "If there are many inlined copies of a particular function, then their common, shared properties are kept in the abstract origin so that they aren't duplicated everywhere."
+      },
+      {
+        "timestamp": "31:00",
+        "text": "One unique property that inlined subroutines have is a call site."
+      },
+      {
+        "timestamp": "31:05",
+        "text": "This is the location in our source code where we wrote the actual function call, but the optimizer replaced it."
+      },
+      {
+        "timestamp": "31:12",
+        "text": "Here for instance, we made the call to `generateANumber` on line 36 of the main.swift file."
+      },
+      {
+        "timestamp": "31:18",
+        "text": "This lets us update our tree with new child nodes."
+      },
+      {
+        "timestamp": "31:22",
+        "text": "And now this is looking like a much more comprehensive view of our program."
+      },
+      {
+        "timestamp": "31:27",
+        "text": "The optimization details for inlined functions were the key details in getting us to the fully symbolicated crash log."
+      },
+      {
+        "timestamp": "31:35",
+        "text": "The `-i` flag for `atos` instructs the tool to consider them during symbolication."
+      },
+      {
+        "timestamp": "31:41",
+        "text": "They were also the missing details from our Instruments trace."
+      },
+      {
+        "timestamp": "31:44",
+        "text": "The reason why we needed a dSYM both for Instruments and for the crash log was precisely so that we could extract all of this content."
+      },
+      {
+        "timestamp": "31:54",
+        "text": "There is another source where you'll find DWARF, and that is from static libraries and object files."
+      },
+      {
+        "timestamp": "32:00",
+        "text": "In the absence of a dSYM, you can still gather DWARF for functions that you linked from a static library or object file."
+      },
+      {
+        "timestamp": "32:07",
+        "text": "In those cases, you'll find the Debugging Symbols nlist types."
+      },
+      {
+        "timestamp": "32:12",
+        "text": "These were one of the symbol types that could be stripped."
+      },
+      {
+        "timestamp": "32:15",
+        "text": "They don't hold the DWARF themselves though."
+      },
+      {
+        "timestamp": "32:18",
+        "text": "Rather, they associate a function back to the file they came from."
+      },
+      {
+        "timestamp": "32:22",
+        "text": "If the library was built with debug information, then the nlist entry can point us to that DWARF."
+      },
+      {
+        "timestamp": "32:28",
+        "text": "These types of nlist entries can be seen verbosely with `dsymutil -dump-debug-map`."
+      },
+      {
+        "timestamp": "32:35",
+        "text": "Here we have the list of different functions and where they were pulled from."
+      },
+      {
+        "timestamp": "32:39",
+        "text": "Those locations can be scanned and processed for DWARF."
+      },
+      {
+        "timestamp": "32:42",
+        "text": "To summarize, DWARF is a vital source of in-depth symbolication data."
+      },
+      {
+        "timestamp": "32:47",
+        "text": "DWARF exposes important relationships between functions and files."
+      },
+      {
+        "timestamp": "32:52",
+        "text": "Optimizations such as function inlining have an enormous impact on the quality of symbolication, and DWARF can express it very well."
+      },
+      {
+        "timestamp": "33:00",
+        "text": "We also saw that dSYMs and static libraries contain DWARF."
+      },
+      {
+        "timestamp": "33:04",
+        "text": "However, please prefer dSYMs as you can easily transfer them to others and have built-in support from several tools."
+      },
+      {
+        "timestamp": "33:12",
+        "text": "Finally, I want to share different tools and tips you can use to facilitate symbolication."
+      },
+      {
+        "timestamp": "33:18",
+        "text": "For local development builds, you'll generally have a great deal of debug information if you build in debug mode."
+      },
+      {
+        "timestamp": "33:25",
+        "text": "For release mode, you can ensure that Xcode generates a dSYM by checking the Debug Information Format build setting."
+      },
+      {
+        "timestamp": "33:32",
+        "text": "Make sure Release is set to DWARF with dSYM File."
+      },
+      {
+        "timestamp": "33:36",
+        "text": "For apps that were submitted to the App Store, you can download your dSYMs through App Store Connect."
+      },
+      {
+        "timestamp": "33:41",
+        "text": "This also includes any apps with bitcode enabled."
+      },
+      {
+        "timestamp": "33:45",
+        "text": "If you want to check that a certain dSYM is already on your device, you can use the `mdfind` command."
+      },
+      {
+        "timestamp": "33:51",
+        "text": "The alphanumeric string here is your binary's UUID, which is a unique identifier defined in a load command."
+      },
+      {
+        "timestamp": "33:58",
+        "text": "You can see the UUID for your dSYMs with `symbols -uuid`."
+      },
+      {
+        "timestamp": "34:03",
+        "text": "Sometimes, a toolchain could generate invalid DWARF."
+      },
+      {
+        "timestamp": "34:07",
+        "text": "You can check this with `dwarfdump -verify`."
+      },
+      {
+        "timestamp": "34:09",
+        "text": "If you see any reported errors, please file a bug! DWARF data also has a cap of four gigabytes per binary."
+      },
+      {
+        "timestamp": "34:17",
+        "text": "If you're running into issues with your dSYMs and see that they're exceeding four gigabytes, consider splitting the project into separate components so that each one has its own smaller dSYM."
+      },
+      {
+        "timestamp": "34:28",
+        "text": "You can make sure that the dSYM you're using matches the specific build of your app that you're interested in by comparing UUIDs."
+      },
+      {
+        "timestamp": "34:36",
+        "text": "The app's UUID is in the Binary Images list section of crash reports and you can also see it with the `symbols` command."
+      },
+      {
+        "timestamp": "34:43",
+        "text": "You should ensure that both your app and your dSYM have the same UUIDs."
+      },
+      {
+        "timestamp": "34:49",
+        "text": "The `symbols` tool also lets you check the types of debug information your app has available."
+      },
+      {
+        "timestamp": "34:55",
+        "text": "We've already seen examples of this, but it's a helpful reminder that these tags in square brackets tell you the information source."
+      },
+      {
+        "timestamp": "35:02",
+        "text": "It's useful if you aren't sure which debug information you might be dealing with."
+      },
+      {
+        "timestamp": "35:07",
+        "text": "If you're certain that you have dSYMs available but still aren't getting names for your functions in Instruments traces, please check your entitlements and code signing."
+      },
+      {
+        "timestamp": "35:16",
+        "text": "Specifically, with the `codesign` command, you can verify that you have a proper code signature."
+      },
+      {
+        "timestamp": "35:23",
+        "text": "You should also verify that locally built apps for development have the `get-task-allow` entitlement."
+      },
+      {
+        "timestamp": "35:28",
+        "text": "This entitlement grants permissions to tools such as Instruments to symbolicate your app."
+      },
+      {
+        "timestamp": "35:34",
+        "text": "Xcode should set this entitlement automatically with the Profile action, but it's helpful to verify."
+      },
+      {
+        "timestamp": "35:41",
+        "text": "If you don't have the `get-task-allow` entitlement enabled, you should check your Code Signing Inject Base Entitlements build setting and make sure that it's enabled as you're developing."
+      },
+      {
+        "timestamp": "35:52",
+        "text": "Lastly, for Universal 2 apps, you should specify the architecture that you're interested in to the tools."
+      },
+      {
+        "timestamp": "36:00",
+        "text": "`symbols`, `otool`, and `dwarfdump` all have an `-arch` flag to only operate on a particular architecture slice."
+      },
+      {
+        "timestamp": "36:07",
+        "text": "This concludes \"Symbolication: Beyond the basics.\" If nothing else, I want to really emphasize a few key points."
+      },
+      {
+        "timestamp": "36:15",
+        "text": "UUIDs and file addresses are a consistent and reliable way to identify what your app was doing since they're independent of the ASLR slide."
+      },
+      {
+        "timestamp": "36:25",
+        "text": "They're also our key to querying the debug info."
+      },
+      {
+        "timestamp": "36:28",
+        "text": "You should also use dSYMs whenever possible."
+      },
+      {
+        "timestamp": "36:31",
+        "text": "dSYMs contain the richest debug information in the form of DWARF and are supported by Xcode and Instruments."
+      },
+      {
+        "timestamp": "36:38",
+        "text": "Lastly, we covered several tools."
+      },
+      {
+        "timestamp": "36:42",
+        "text": "These tools are readily available to you in Xcode and they offer powerful diagnostics and insights."
+      },
+      {
+        "timestamp": "36:47",
+        "text": "You should strive to incorporate them into your workflows for debugging and optimizing."
+      },
+      {
+        "timestamp": "36:54",
+        "text": "If you're interested in learning more, I recommend these two sessions from WWDC18 to learn how your apps spring to life upon launch: \"Optimizing app startup time\" and \"App startup time: Past, present, and future\"."
+      },
+      {
+        "timestamp": "37:08",
+        "text": "Thank you all very much for joining me to learn about symbolication! Have a wonderful rest of the week."
+      },
+      {
+        "timestamp": "37:13",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -131,5 +1506,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110370"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:35.463Z"
+  "extractedAt": "2026-10-17T18:53:31.455Z"
 }

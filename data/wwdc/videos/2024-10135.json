@@ -3,8 +3,7 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10135/",
   "title": "What’s new in Xcode 16",
-  "speakers": [],
-  "duration": "",
+  "duration": "22:14",
   "topics": [
     "Developer Tools",
     "Essentials",
@@ -14,8 +13,280 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I’m Daisy. Along with my colleague, Jake, we’ll show you some of what’s new in Xcode 16. We’re so excited, so let’s jump right in. At every phase of app development, Xcode is there with you. We’ll look at what’s new in Xcode 16 as you edit Swift code, run builds, debug amd test your code and maximize its performance. Let's start with three things that are new when editing code.\n\nFirst, code completion provides more thorough code suggestions thanks to an on-device coding models specifically trained for Swift and Apple SDKs.\n\nIt uses the surrounding code context like function names and comments to move through your ideas faster.\n\nThis is all made possible by Apple Silicon and is available when running Xcode 16 on macOS Sequoia. Now let’s talk about Swift. Swift 6 brings a new language mode that provides concurrency safety guarantees. It turns data races normally only experienced at runtime into compile-time issues. This is a great way to improve the correctness and safety of your code. To take advantage of these guarantees, you’ll want to adopt the Swift 6 language mode. But you can start today in Xcode 16 by incrementally enabling warnings for each upcoming language feature. Let me show you how to do that. I’m working on an app named BOTanist where robots show off their planting skills. I want to prepare this app for Swift 6. So I’ll I start by navigating to the \"Swift Compiler - Upcoming Features\" section in the Build Settings. Here, I can enable upcoming compiler features one at a time. I'll start by setting \"Isolated Global Variables” to Yes.\n\nWhen I build, Xcode displays a new warning in the issues navigator.\n\nLetting me know that logger, which is a global variable, is not concurrency safe.\n\nClicking on the issue, jumps right to where logger is defined.\n\nI know logger doesn’t need to be mutated so I can change it from var to let. Making it safe from any data races.\n\nAdopting upcoming features allows you to catch and address potential issues before switching to Swift 6. Where these warnings will appear as errors.\n\nAnd when ready, you can set the Swift Language version in the build settings.\n\nFor more on this check out “Migrate your app to Swift 6”.\n\nXcode 16 also has some great improvements for Previews. Previews allow you to quickly iterate on your UI to help you create great user interfaces. There are two new APIs that make them simpler to write, more reusable, and better integrated with your model.\n\nThe first is the Previewable macro. Previewable can be attached to property wrappers like State, allowing you to use them directly within a preview block. Writing wrapper views is no longer necessary. Let me show you an example in our app.\n\nHere’s RobotFaceSelectorView. It takes a Binding to a robot face.\n\nWhen I create a preview, I can define my state right in the preview's body and attach the Previewable macro. This will tell the preview system to create a wrapper view behind the scenes, so I don’t have to.\n\nThen I can add my view.\n\nWhich lets me see my UI live with just a couple of lines! The second new API is PreviewModifier. PreviewModifier makes it easier to share environment or data for previews. This not only reduces duplicate code, but it also enables the preview system to cache the data. I’ll switch to another view for this. RobotNameSelectorView requires a RobotNamer to work.\n\nThis type asynchronously retrieves possible robot names from the server. But hitting the server over and over while building my previews, isn’t necessary. I can use PreviewModifier to create a RobotNamer for all my previews without hitting our external server.\n\nTo begin, I’ll define a type that conforms to PreviewModifier. This protocol has two requirements. First, I use makeSharedContext to load and store the data. This method is async and throwing, so I can load data asynchronously and handle errors. In this case, I create a RobotNamer with names from a local file so I don’t hit our external server.\n\nWhat’s key is that this method is only called once for all modifiers of the same type as the preview system caches this data for me.\n\nThe second requirement is the body method. The body method lets me wrap the preview with the shared context. In my conformance, I’ll pass RobotNamer using the environment modifier.\n\nWith my modifier defined, I just need to provide it to my preview using a trait. But given I'm going to use this modifier a lot, I like to define an extension on PreviewTrait to reduce the code at each call site. All that’s left is to create my preview.\n\nThis particular case is relatively simple. But PreviewModifier is especially helpful when you need to share data between previews, like when using SwiftData’s ModelContainer.\n\nBeyond the API, this year is a huge leap forward for the performance and underpinnings of previews. Enabled by a new execution engine, previews are faster than ever! Powered by advances in the compiler, the build system, and operating systems, previews uses the same build products for your project and reassembles your program on the fly, no longer needing to produce a separate copy. Previews is one improvement with builds this year. To tell you about others, I'll hand it over to Jake. Thanks, Daisy. Let's rock and roll forward to builds. Xcode 16 supercharges your builds with Explicit Modules. This feature provides improved parallelism, better diagnostics, and faster debugging, all without changing a single line of code.\n\nThat's unreal! How do you get it? Well, for C and Objective-C, explicit modules are on by default. For Swift, you'll need to opt-in. Let's give that a try. I'll hop over to build settings. Enable Explicitly Built Modules.\n\nAnd kick off a build.\n\nHmm. By the way, with improvements to Swift package integration in Xcode 16, I was able to queue up that build without having to wait for package resolution to finish first. I like that! So what's actually happening now? With explicit modules, Xcode splits up the processing of each compilation unit into three separate phases: scanning, building modules, and finally building the original code. The first two of these phases are now surfaced in the build log as \"Scan dependencies\" and \"Compile Clang module\" or \"Compile Swift module\", commands. Previously, these operations were performed implicitly as part of compiling your source files. Now, you get a more detailed breakdown of the build, better parallelism, and clearer error messages if the build fails due to a module issue.\n\nExplicit modules are also reflected in the build timeline. This makes it easier to see where time is being spent during the build process, and helps you optimize your builds. To learn more, check out: \"Demystify explicitly built modules.\" All right! Now that we've written and built some code, it's time to debug it.\n\nBut first, let me tell you about a couple ways the build process feeds into debugging improvements: Explicit modules make debugging faster, since lldb can re-use the build outputs when evaluating expressions, and DWARF5 is now the default debug symbol format when building against a deployment target of macOS Sequoia or iOS 18. With DWARF5, dSYM bundles are smaller, and symbol lookups are faster.\n\nWhen running in Xcode 16, the thread performance checker does even more. In addition to finding main thread hangs and priority inversions, it will now show excessive disk write and slow app launch diagnostics to help you improve your app's performance.\n\nIn the Organizer, this comes with a new category of diagnostic logs for app launches. If your app takes a long time to launch on customer devices, Xcode will show you the slowest code path signatures, so you can prioritize fixing issues with the largest impact.\n\nAnd if you're familiar with disk write diagnostics, you'll love this trendy new update. Now in the organizer, you can see how the impact of issues has changed across different versions of your app. When you go to the disk writes view you can see that there are up arrows next to some of the signatures. These arrows are a great place to start, helping you prioritize issues with the greatest impact to your users.\n\nWhile debugging your code, the Thread Performance Checker will surface the worst of these as runtime issues, pinpointing the exact line of code to focus on, even if the issue isn't reproducing for you locally. In this example it looks like the Thread Performance Checker flagged an issue that's impacting our customers. It says we shouldn't be loading this video asset on the main thread. I'm going to open up Xcode and set a breakpoint so I can track this down. I'll go ahead and open the file with the issue and click in the gutter to set a breakpoint, and run.\n\nOK, it hit the breakpoint. To make it easier to trace where this call is coming from, I'm going to enable the Unified Backtrace View from the Debug Bar.\n\nThis new visualization allows me to follow the call stack and view the surrounding code in each frame simply by scrolling down. I can even hover over variables to see their values.\n\nOh, here in the View body method there's an \"await\" calling into that code.\n\nWe've traced the call. It's coming from in-side the app! It looks like this video player initialization function is asynchronous and it's being invoked from a SwiftUI task modifier but it's inheriting the @MainActor context from the enclosing SwiftUI view and doing I/O on the main thread! I think I'll fix this issue by marking it nonisolated.\n\nThat ought to do it. Thanks to the Unified Backtrace View, along with the Thread Performance Checker and new Organizer reporting, Xcode helps you focus on what matters most. Spatial development gets a whole lot easier too, with the new RealityKit debugger. Now with the click of a button, you can capture a snapshot of your running app's entity hierarchy, and explore it in 3D, right inside of Xcode. This debugger lets you view entities and their components, and inspect both built-in and custom properties. To learn more about the RealityKit debugger, or the existing debuggers, check out: \"Break into the RealityKit debugger\", and \"Run, break, and inspect: Explore effective debugging in LLDB.\" Now, back to Daisy to test things out! Awesome debugging Jake! Just like debugging helps you solve problems while in the middle of development, testing is a great way to catch issues and regressions in future iterations. Swift Testing is a new framework that leverages Swift language features to make expressing tests more powerful and concise. And these tests work right along side your existing XCTests. Let me show you an example of Swift Testing.\n\nThe team and I are adding a new feature to BOTanist. Robots are getting new planting styles and animation states! But I haven’t tested them all. So let’s add new tests. To start, I’ll create a new file in the test folder and name it PlantTests. To create a test, first I’ll import the Testing framework and our app, then write a function called plantingRoses. I can name this function whatever I want and to benefit from everything Swift Testing provides, all I need to do is add the Test macro.\n\nAs soon as I added the test macro, Xcode knows this is a test and displays it in the navigator.\n\nIn this test, I want to verify that a roses’s default planting style is grafting. The first thing I will do is create a Plant of type rose.\n\nNext, I’ll create a second Plant of type rose but give it grafting as its explicit style. Nice, that’s exactly what I want! And finally, I’ll verify they are equal using the expect macro. This macro takes any boolean expression. You can use it to verify strings, floats, or other types.\n\nAnd now let’s run the test.\n\nOh-oh. Unfortunately the test failed. The test is saying that the two roses are not the same. But based on the error description, they sure look the same Both display the same emoji! However, I don’t know what the other properties look like. With Swift Testing, I can view additional information about each value by clicking \"Show Details\" in the error so I can inspect more closely. Ahh, the planting styles are different. Good thing I wrote a test to check the default value! This is a quick fix.\n\n.Seedling should be .graft.\n\nLet’s run the test again to verify that it passes. I can do so using quick actions. To bring up quick actions I use the shortcut command shift A.\n\nThen I’ll type “test again” to rerun this specific test.\n\nSuper, it passed! The test macro not only marks functions as tests. It also accepts a variety of traits that can add information or change their behavior. For example, you can provide a display name or arguments to a test function.\n\nThis test checks my robot animation state machine. I want to make sure these states can transition to celebrate. Instead of writing multiple test functions, we provide the test macro the list of states. And have a single test function that takes a state as its parameter. Now, let’s run this parameterized test.\n\nIn Swift Testing each provided argument runs in parallel as its own test case. The navigator displays each case individually, letting me know which variations failed. And it looks like the plant animation state did. I probably forgot to include .celebrate as a valid state transition. Let’s fix that.\n\nNow, I can rerun just the failing test case by clicking on the button next to it.\n\nExcellent! All test cases pass! Another benefit of Swift Testing in Xcode is tag-based organization. Swift Testing lets me create tags to group tests across different suites. I’d really like to do that with this feature so I know which tests relate to it. To start, I’ll extend the Tag type to include my custom tag, planting. Then I’ll add the tag to the Test macro of the tests I want to label. I'll add it to this test.\n\nAnd also to plantingRoses.\n\nWith the tags applied, the navigator's tag view shows them grouped together.\n\nIf I want to run all tests in the tag, I can click the button next to it. Tags can also be used to include and exclude tests from test plans.\n\nI’ll go to the test plan by choosing \"Edit Test Plan\" at the top of the navigator. The new planting and animation feature is still under development. And I don’t want to cause any instability in our CI because of these tests. So instead, I'll add the tag for this feature to the excluded tags list until I'm ready to enable it.\n\nTo learn more about Swift Testing, checkout “Meet Swift Testing” and “Go further with Swift Testing”.\n\nWe've debugged and tested our code. The tests run fast, but the app doesn’t. I’ll let Jake take a look. Thanks, Daisy. So we just got done verifying the functionality of our app using testing. But when I run it, I’ve noticed the launch takes a lot more time than I initially expected.\n\nThe best tool to diagnose your performance problems is Instruments, which you can access from the Profile action right from Xcode. I have a trace of our app's launch that Daisy recorded using the “Time Profiler” Instrument. This Instrument visualizes CPU usage in our code and allows us to measure how long it's taking to run. Let's take a look at that now.\n\nWhoa! That's a lot of CPU usage. And a really long hang during the initial launch. Let’s see what we can do about it. To understand why it’s happening, I'll start by setting the inspection range to the hang interval.\n\nNow that I’m only looking at a portion of the trace, let’s analyze the data. To help narrow down the problem, I'll use Instruments 16's new Flame Graph, which I can activate from the jump bar. Flame Graph is an excellent high level overview of the trace execution, which allows us to spot issues at a glance. Execution intervals are weighted by the percentage of time they took in the trace and the intervals are sorted left to right. This means that the left part of the graph will always visualize code that executed the most. Let’s take a look at what my program is executing.\n\nIt looks like this load function is nearly all of the execution time.\n\nAnd it's being called from a SwiftUI View body. That doesn't seem right. I'll right click on this frame and select “Reveal in Xcode”, which will take me right to the code.\n\nAh, I think I see the problem. We're loading a bunch of assets serially in a loop, and we're doing it on the main thread. Not too good. To fix this, I'll parallelize the loading using a task group, which will also move execution of this work to the background where it belongs.\n\nAnd now I'll rebuild, and take a new Time Profile in Instruments, to see if that helped.\n\nNice! The launch was blazing fast. I can see in the flame graph that the asset loading is now distributed across multiple background threads, and no longer blocking the main thread.\n\nFlame graphs work for every Instrument that uses call-trees. This visual way of seeing your callstacks is a great way of finding issues, and another reason to profile your app regularly.\n\nThose are just some of the new and exciting features of Xcode 16. To learn more about what you saw or improvements like Faster UI previews, the Hardened C++ runtime, improved localization workflows, and more, check out our release notes on developer.apple.com. Or better yet: download Xcode 16 and give it a try! Thanks for watching, and have a great WWDC!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I’m Daisy. Along with my colleague, Jake, we’ll show you some of what’s new in Xcode 16. We’re so excited, so let’s jump right in. At every phase of app development, Xcode is there with you. We’ll look at what’s new in Xcode 16 as you edit Swift code, run builds, debug amd test your code and maximize its performance. Let's start with three things that are new when editing code."
+      },
+      {
+        "timestamp": "0:33",
+        "text": "First, code completion provides more thorough code suggestions thanks to an on-device coding models specifically trained for Swift and Apple SDKs."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "It uses the surrounding code context like function names and comments to move through your ideas faster."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "This is all made possible by Apple Silicon and is available when running Xcode 16 on macOS Sequoia. Now let’s talk about Swift. Swift 6 brings a new language mode that provides concurrency safety guarantees. It turns data races normally only experienced at runtime into compile-time issues. This is a great way to improve the correctness and safety of your code. To take advantage of these guarantees, you’ll want to adopt the Swift 6 language mode. But you can start today in Xcode 16 by incrementally enabling warnings for each upcoming language feature. Let me show you how to do that. I’m working on an app named BOTanist where robots show off their planting skills. I want to prepare this app for Swift 6. So I’ll I start by navigating to the \"Swift Compiler - Upcoming Features\" section in the Build Settings. Here, I can enable upcoming compiler features one at a time. I'll start by setting \"Isolated Global Variables” to Yes."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "When I build, Xcode displays a new warning in the issues navigator."
+      },
+      {
+        "timestamp": "2:03",
+        "text": "Letting me know that logger, which is a global variable, is not concurrency safe."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "Clicking on the issue, jumps right to where logger is defined."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "I know logger doesn’t need to be mutated so I can change it from var to let. Making it safe from any data races."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "Adopting upcoming features allows you to catch and address potential issues before switching to Swift 6. Where these warnings will appear as errors."
+      },
+      {
+        "timestamp": "2:36",
+        "text": "And when ready, you can set the Swift Language version in the build settings."
+      },
+      {
+        "timestamp": "2:42",
+        "text": "For more on this check out “Migrate your app to Swift 6”."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "Xcode 16 also has some great improvements for Previews. Previews allow you to quickly iterate on your UI to help you create great user interfaces. There are two new APIs that make them simpler to write, more reusable, and better integrated with your model."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "The first is the Previewable macro. Previewable can be attached to property wrappers like State, allowing you to use them directly within a preview block. Writing wrapper views is no longer necessary. Let me show you an example in our app."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Here’s RobotFaceSelectorView. It takes a Binding to a robot face."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "When I create a preview, I can define my state right in the preview's body and attach the Previewable macro. This will tell the preview system to create a wrapper view behind the scenes, so I don’t have to."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "Then I can add my view."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "Which lets me see my UI live with just a couple of lines! The second new API is PreviewModifier. PreviewModifier makes it easier to share environment or data for previews. This not only reduces duplicate code, but it also enables the preview system to cache the data. I’ll switch to another view for this. RobotNameSelectorView requires a RobotNamer to work."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "This type asynchronously retrieves possible robot names from the server. But hitting the server over and over while building my previews, isn’t necessary. I can use PreviewModifier to create a RobotNamer for all my previews without hitting our external server."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "To begin, I’ll define a type that conforms to PreviewModifier. This protocol has two requirements. First, I use makeSharedContext to load and store the data. This method is async and throwing, so I can load data asynchronously and handle errors. In this case, I create a RobotNamer with names from a local file so I don’t hit our external server."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "What’s key is that this method is only called once for all modifiers of the same type as the preview system caches this data for me."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "The second requirement is the body method. The body method lets me wrap the preview with the shared context. In my conformance, I’ll pass RobotNamer using the environment modifier."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "With my modifier defined, I just need to provide it to my preview using a trait. But given I'm going to use this modifier a lot, I like to define an extension on PreviewTrait to reduce the code at each call site. All that’s left is to create my preview."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "This particular case is relatively simple. But PreviewModifier is especially helpful when you need to share data between previews, like when using SwiftData’s ModelContainer."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "Beyond the API, this year is a huge leap forward for the performance and underpinnings of previews. Enabled by a new execution engine, previews are faster than ever! Powered by advances in the compiler, the build system, and operating systems, previews uses the same build products for your project and reassembles your program on the fly, no longer needing to produce a separate copy. Previews is one improvement with builds this year. To tell you about others, I'll hand it over to Jake. Thanks, Daisy. Let's rock and roll forward to builds. Xcode 16 supercharges your builds with Explicit Modules. This feature provides improved parallelism, better diagnostics, and faster debugging, all without changing a single line of code."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "That's unreal! How do you get it? Well, for C and Objective-C, explicit modules are on by default. For Swift, you'll need to opt-in. Let's give that a try. I'll hop over to build settings. Enable Explicitly Built Modules."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "And kick off a build."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "Hmm. By the way, with improvements to Swift package integration in Xcode 16, I was able to queue up that build without having to wait for package resolution to finish first. I like that! So what's actually happening now? With explicit modules, Xcode splits up the processing of each compilation unit into three separate phases: scanning, building modules, and finally building the original code. The first two of these phases are now surfaced in the build log as \"Scan dependencies\" and \"Compile Clang module\" or \"Compile Swift module\", commands. Previously, these operations were performed implicitly as part of compiling your source files. Now, you get a more detailed breakdown of the build, better parallelism, and clearer error messages if the build fails due to a module issue."
+      },
+      {
+        "timestamp": "8:13",
+        "text": "Explicit modules are also reflected in the build timeline. This makes it easier to see where time is being spent during the build process, and helps you optimize your builds. To learn more, check out: \"Demystify explicitly built modules.\" All right! Now that we've written and built some code, it's time to debug it."
+      },
+      {
+        "timestamp": "8:36",
+        "text": "But first, let me tell you about a couple ways the build process feeds into debugging improvements: Explicit modules make debugging faster, since lldb can re-use the build outputs when evaluating expressions, and DWARF5 is now the default debug symbol format when building against a deployment target of macOS Sequoia or iOS 18. With DWARF5, dSYM bundles are smaller, and symbol lookups are faster."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "When running in Xcode 16, the thread performance checker does even more. In addition to finding main thread hangs and priority inversions, it will now show excessive disk write and slow app launch diagnostics to help you improve your app's performance."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "In the Organizer, this comes with a new category of diagnostic logs for app launches. If your app takes a long time to launch on customer devices, Xcode will show you the slowest code path signatures, so you can prioritize fixing issues with the largest impact."
+      },
+      {
+        "timestamp": "9:42",
+        "text": "And if you're familiar with disk write diagnostics, you'll love this trendy new update. Now in the organizer, you can see how the impact of issues has changed across different versions of your app. When you go to the disk writes view you can see that there are up arrows next to some of the signatures. These arrows are a great place to start, helping you prioritize issues with the greatest impact to your users."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "While debugging your code, the Thread Performance Checker will surface the worst of these as runtime issues, pinpointing the exact line of code to focus on, even if the issue isn't reproducing for you locally. In this example it looks like the Thread Performance Checker flagged an issue that's impacting our customers. It says we shouldn't be loading this video asset on the main thread. I'm going to open up Xcode and set a breakpoint so I can track this down. I'll go ahead and open the file with the issue and click in the gutter to set a breakpoint, and run."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "OK, it hit the breakpoint. To make it easier to trace where this call is coming from, I'm going to enable the Unified Backtrace View from the Debug Bar."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "This new visualization allows me to follow the call stack and view the surrounding code in each frame simply by scrolling down. I can even hover over variables to see their values."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "Oh, here in the View body method there's an \"await\" calling into that code."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "We've traced the call. It's coming from in-side the app! It looks like this video player initialization function is asynchronous and it's being invoked from a SwiftUI task modifier but it's inheriting the @MainActor context from the enclosing SwiftUI view and doing I/O on the main thread! I think I'll fix this issue by marking it nonisolated."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "That ought to do it. Thanks to the Unified Backtrace View, along with the Thread Performance Checker and new Organizer reporting, Xcode helps you focus on what matters most. Spatial development gets a whole lot easier too, with the new RealityKit debugger. Now with the click of a button, you can capture a snapshot of your running app's entity hierarchy, and explore it in 3D, right inside of Xcode. This debugger lets you view entities and their components, and inspect both built-in and custom properties. To learn more about the RealityKit debugger, or the existing debuggers, check out: \"Break into the RealityKit debugger\", and \"Run, break, and inspect: Explore effective debugging in LLDB.\" Now, back to Daisy to test things out! Awesome debugging Jake! Just like debugging helps you solve problems while in the middle of development, testing is a great way to catch issues and regressions in future iterations. Swift Testing is a new framework that leverages Swift language features to make expressing tests more powerful and concise. And these tests work right along side your existing XCTests. Let me show you an example of Swift Testing."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "The team and I are adding a new feature to BOTanist. Robots are getting new planting styles and animation states! But I haven’t tested them all. So let’s add new tests. To start, I’ll create a new file in the test folder and name it PlantTests. To create a test, first I’ll import the Testing framework and our app, then write a function called plantingRoses. I can name this function whatever I want and to benefit from everything Swift Testing provides, all I need to do is add the Test macro."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "As soon as I added the test macro, Xcode knows this is a test and displays it in the navigator."
+      },
+      {
+        "timestamp": "14:04",
+        "text": "In this test, I want to verify that a roses’s default planting style is grafting. The first thing I will do is create a Plant of type rose."
+      },
+      {
+        "timestamp": "14:15",
+        "text": "Next, I’ll create a second Plant of type rose but give it grafting as its explicit style. Nice, that’s exactly what I want! And finally, I’ll verify they are equal using the expect macro. This macro takes any boolean expression. You can use it to verify strings, floats, or other types."
+      },
+      {
+        "timestamp": "14:39",
+        "text": "And now let’s run the test."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "Oh-oh. Unfortunately the test failed. The test is saying that the two roses are not the same. But based on the error description, they sure look the same Both display the same emoji! However, I don’t know what the other properties look like. With Swift Testing, I can view additional information about each value by clicking \"Show Details\" in the error so I can inspect more closely. Ahh, the planting styles are different. Good thing I wrote a test to check the default value! This is a quick fix."
+      },
+      {
+        "timestamp": "15:28",
+        "text": ".Seedling should be .graft."
+      },
+      {
+        "timestamp": "15:34",
+        "text": "Let’s run the test again to verify that it passes. I can do so using quick actions. To bring up quick actions I use the shortcut command shift A."
+      },
+      {
+        "timestamp": "15:47",
+        "text": "Then I’ll type “test again” to rerun this specific test."
+      },
+      {
+        "timestamp": "15:59",
+        "text": "Super, it passed! The test macro not only marks functions as tests. It also accepts a variety of traits that can add information or change their behavior. For example, you can provide a display name or arguments to a test function."
+      },
+      {
+        "timestamp": "16:17",
+        "text": "This test checks my robot animation state machine. I want to make sure these states can transition to celebrate. Instead of writing multiple test functions, we provide the test macro the list of states. And have a single test function that takes a state as its parameter. Now, let’s run this parameterized test."
+      },
+      {
+        "timestamp": "16:42",
+        "text": "In Swift Testing each provided argument runs in parallel as its own test case. The navigator displays each case individually, letting me know which variations failed. And it looks like the plant animation state did. I probably forgot to include .celebrate as a valid state transition. Let’s fix that."
+      },
+      {
+        "timestamp": "17:03",
+        "text": "Now, I can rerun just the failing test case by clicking on the button next to it."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "Excellent! All test cases pass! Another benefit of Swift Testing in Xcode is tag-based organization. Swift Testing lets me create tags to group tests across different suites. I’d really like to do that with this feature so I know which tests relate to it. To start, I’ll extend the Tag type to include my custom tag, planting. Then I’ll add the tag to the Test macro of the tests I want to label. I'll add it to this test."
+      },
+      {
+        "timestamp": "17:46",
+        "text": "And also to plantingRoses."
+      },
+      {
+        "timestamp": "17:52",
+        "text": "With the tags applied, the navigator's tag view shows them grouped together."
+      },
+      {
+        "timestamp": "17:57",
+        "text": "If I want to run all tests in the tag, I can click the button next to it. Tags can also be used to include and exclude tests from test plans."
+      },
+      {
+        "timestamp": "18:07",
+        "text": "I’ll go to the test plan by choosing \"Edit Test Plan\" at the top of the navigator. The new planting and animation feature is still under development. And I don’t want to cause any instability in our CI because of these tests. So instead, I'll add the tag for this feature to the excluded tags list until I'm ready to enable it."
+      },
+      {
+        "timestamp": "18:28",
+        "text": "To learn more about Swift Testing, checkout “Meet Swift Testing” and “Go further with Swift Testing”."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "We've debugged and tested our code. The tests run fast, but the app doesn’t. I’ll let Jake take a look. Thanks, Daisy. So we just got done verifying the functionality of our app using testing. But when I run it, I’ve noticed the launch takes a lot more time than I initially expected."
+      },
+      {
+        "timestamp": "18:53",
+        "text": "The best tool to diagnose your performance problems is Instruments, which you can access from the Profile action right from Xcode. I have a trace of our app's launch that Daisy recorded using the “Time Profiler” Instrument. This Instrument visualizes CPU usage in our code and allows us to measure how long it's taking to run. Let's take a look at that now."
+      },
+      {
+        "timestamp": "19:21",
+        "text": "Whoa! That's a lot of CPU usage. And a really long hang during the initial launch. Let’s see what we can do about it. To understand why it’s happening, I'll start by setting the inspection range to the hang interval."
+      },
+      {
+        "timestamp": "19:37",
+        "text": "Now that I’m only looking at a portion of the trace, let’s analyze the data. To help narrow down the problem, I'll use Instruments 16's new Flame Graph, which I can activate from the jump bar. Flame Graph is an excellent high level overview of the trace execution, which allows us to spot issues at a glance. Execution intervals are weighted by the percentage of time they took in the trace and the intervals are sorted left to right. This means that the left part of the graph will always visualize code that executed the most. Let’s take a look at what my program is executing."
+      },
+      {
+        "timestamp": "20:16",
+        "text": "It looks like this load function is nearly all of the execution time."
+      },
+      {
+        "timestamp": "20:22",
+        "text": "And it's being called from a SwiftUI View body. That doesn't seem right. I'll right click on this frame and select “Reveal in Xcode”, which will take me right to the code."
+      },
+      {
+        "timestamp": "20:37",
+        "text": "Ah, I think I see the problem. We're loading a bunch of assets serially in a loop, and we're doing it on the main thread. Not too good. To fix this, I'll parallelize the loading using a task group, which will also move execution of this work to the background where it belongs."
+      },
+      {
+        "timestamp": "20:57",
+        "text": "And now I'll rebuild, and take a new Time Profile in Instruments, to see if that helped."
+      },
+      {
+        "timestamp": "21:13",
+        "text": "Nice! The launch was blazing fast. I can see in the flame graph that the asset loading is now distributed across multiple background threads, and no longer blocking the main thread."
+      },
+      {
+        "timestamp": "21:25",
+        "text": "Flame graphs work for every Instrument that uses call-trees. This visual way of seeing your callstacks is a great way of finding issues, and another reason to profile your app regularly."
+      },
+      {
+        "timestamp": "21:39",
+        "text": "Those are just some of the new and exciting features of Xcode 16. To learn more about what you saw or improvements like Faster UI previews, the Hardened C++ runtime, improved localization workflows, and more, check out our release notes on developer.apple.com. Or better yet: download Xcode 16 and give it a try! Thanks for watching, and have a great WWDC!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -109,6 +380,93 @@
       "code": "await withDiscardingTaskGroup { group in\n    for asset in allAssets {\n        group.addTask {\n            asset.load()\n        }\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "0:29"
+    },
+    {
+      "timestamp": "0:29",
+      "title": "Updates in editing",
+      "duration": "0:04"
+    },
+    {
+      "timestamp": "0:33",
+      "title": "Code completion",
+      "duration": "0:28"
+    },
+    {
+      "timestamp": "1:01",
+      "title": "Adopting Swift 6 data-race safety guarantees",
+      "duration": "1:48"
+    },
+    {
+      "timestamp": "2:49",
+      "title": "Improvements to Previews",
+      "duration": "3:33"
+    },
+    {
+      "timestamp": "6:22",
+      "title": "Updates in builds",
+      "duration": "0:04"
+    },
+    {
+      "timestamp": "6:26",
+      "title": "Explicit modules",
+      "duration": "0:49"
+    },
+    {
+      "timestamp": "7:15",
+      "title": "Package resolution",
+      "duration": "1:15"
+    },
+    {
+      "timestamp": "8:30",
+      "title": "What's new in debugging",
+      "duration": "0:05"
+    },
+    {
+      "timestamp": "8:35",
+      "title": "Build process and debugging",
+      "duration": "0:32"
+    },
+    {
+      "timestamp": "9:07",
+      "title": "Thread performance checker",
+      "duration": "0:16"
+    },
+    {
+      "timestamp": "9:23",
+      "title": "The organizer",
+      "duration": "2:53"
+    },
+    {
+      "timestamp": "12:16",
+      "title": "The RealityKit debugger",
+      "duration": "0:39"
+    },
+    {
+      "timestamp": "12:55",
+      "title": "Meet Swift Testing",
+      "duration": "5:47"
+    },
+    {
+      "timestamp": "18:42",
+      "title": "What's new in Instruments",
+      "duration": "1:02"
+    },
+    {
+      "timestamp": "19:44",
+      "title": "Meet the flame graph",
+      "duration": "1:54"
+    },
+    {
+      "timestamp": "21:38",
+      "title": "Wrap up",
+      "duration": "0:36"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -165,5 +523,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10198"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:49.956Z"
+  "extractedAt": "2026-10-17T18:44:48.344Z"
 }

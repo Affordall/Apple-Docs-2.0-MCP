@@ -3,16 +3,271 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/375/",
   "title": "Create high-quality images using Image Playground",
-  "speakers": [],
-  "duration": "",
+  "duration": "14:11",
   "topics": [
     "Machine Learning & AI"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Antonio, an Engineer on the Image Playground team.\n\nToday, I'll show you how to bring Image Playground into your app.\n\nPeople have been creating images with Image Playground in Messages, Freeform, and in your apps. They have been combining scenes, experimenting with different looks, and making things feel personal.\n\nWe are reimagining the experience with powerful image models at the core.\n\nAnd now, it makes a real leap, with the ability to make high quality images in virtually any style, even photorealistic ones, that now look genuinely true to life.\n\nThe ImagePlayground framework brings that full experience, the same powerful models, the same styles, the same quality, directly into your app.\n\nThe Image Playground app is available on iOS, iPadOS, macOS, and visionOS. It runs on devices with Apple Intelligence support, bringing the full power of generative models to your app.\n\nJust like the Image Playground app, you can leverage ImagePlayground.framework APIs on the same platforms. Let's walk through how you can add Image Playground to your app.\n\nI'll start with capabilities, a look at what the image creation model can create.\n\nThen I'll show you how to adopt Image Playground, how to present the sheet and seed it with context from your app.\n\nAfter that, options, configuring size, aspect ratio, and style.\n\nAnd finally, availability, making sure your app handles both supported and unsupported devices gracefully.\n\nBefore writing any code, let's look at what Image Playground can enable in your app. Give the model a text description, and it creates a matching image. You can be as specific or as open-ended as you like; \"a birthday celebration with dogs, balloons and confetti\" or just \"celebration.\" The model handles the rest.\n\nThe model can create images with people, including multiple people in a single scene. With personalization enabled, users can bring in someone from their Photos library or simply describe an appearance using text.\n\nThe result is an image that feels personal. You have a range of styles to work with. You can ask for an image without specifying a style.\n\nYou can specify your desired style in text, such as by asking for an oil painting style.\n\nOr use one of our presets.\n\nAnimation adds playful character.\n\nIllustration gives a polished, editorial look.\n\nSketch creates a hand-drawn feel.\n\nGenmoji is a style tuned for expressive, emoji-scale characters you can embed directly in text.\n\nImage Playground supports multiple sizes and aspect ratios. You can request a landscape image for a banner.\n\nA portrait image for full screen on iPhone. Or square for a thumbnail.\n\nThe model picks the closest supported resolution to the size you ask for. All of this runs on Private Cloud Compute, Apple's privacy-preserving cloud infrastructure. Your data is never stored or shared, even with Apple.\n\nFor a deeper look at how it works, check out \"Build with the new Apple Foundation Model on Private Cloud Compute\".\n\nImage Playground has a usage limit because it relies on powerful server models. Increased access is available with most iCloud+ subscription plans. And as the developer, none of this is your problem to solve. There's no server to provision, no infrastructure to maintain.\n\nThe system manages usage limits on behalf of your users, you never need to build any usage-related UI.\n\nYou call the framework. Apple handles the rest. Moving the models to Private Cloud Compute also meant rethinking the API. ImageCreator, the non-UI API for generating images directly in your code, is deprecated.\n\nEverything is now available through a new API with greater image quality, built-in privacy, and a full experience people already know how to use.\n\nIf your app uses ImageCreator today, keep watching. So now let us look at how to add Image Playground to your app.\n\nTo show you how this comes together in code, I've been building Postcards, a greeting card creator.\n\nWith Postcards, you can design custom cards, write a personal message, and choose a layout.\n\nThe last piece is custom artwork for the front of each card. That's where Image Playground comes in. Adopting Image Playground starts with one view modifier. No SDK initialization, no API keys, no server endpoints, just the modifier. I add .imagePlaygroundSheet to my button with a binding to a @State boolean.\n\nWhen the binding flips to true, the sheet appears. Image Playground handles everything, the UI, the model interaction, the style picker.\n\nWhen someone accepts an image, the completion closure receives a URL to the generated file. That URL points to a temporary location inside your app container, save it elsewhere before the session ends.\n\nThe sheet drops into your app as a fully-formed, consistent experience. The user can type a description, browse style options, include people from their library, and preview results before confirming. Your app gets the final URL, ready to display.\n\nThe sheet can open with an empty prompt or can be seeded with context from your app for a richer initial experience.\n\nImagePlaygroundConcept has two factory methods here: text wraps a direct description, I'm passing the card's theme, like cherry blossoms; extracted takes longer text and lets the system pull out the most relevant ideas, I'm passing the card's message, so the model picks up on what the card is about.\n\nWith concepts in place, the sheet opens already primed for this specific card. The user doesn't have to start from scratch. You can also seed the sheet with an image. Pass any SwiftUI Image to the sourceImage parameter, a photo the person picked from their library, or an image the card already has.\n\nImage Playground uses it as visual inspiration alongside the concepts. The user can replace or refine it inside the sheet, it's a starting point, not a constraint. On iPad, Postcards shows a small canvas below the card front. ImagePlaygroundConcept.drawing takes a PKDrawing from PencilKit and adds it as a concept alongside the text. The model treats the strokes as a visual suggestion, they guide the composition without locking it in. To know more about drawings in PencilKit, check out \"Read between the strokes with PencilKit\".\n\nIf you're building a UIKit or AppKit app, ImagePlaygroundViewController gives you the same experience as a view controller. Set concepts and options as properties before presentation, then implement imagePlaygroundViewController, didCreateImageAt on the delegate to receive the result. The API mirrors SwiftUI.\n\nNow, let's configure the sheet to fit Postcards, configuring options like size, style, and personalization.\n\nImagePlaygroundOptions and ImagePlaygroundStyle allow you to manage the configuration of the playground, size and aspect ratio, available and preselected styles, and personalization. Whether you're generating card artwork, a lock screen wallpaper, a banner, or a Genmoji icon, the same API adapts to fit. Postcards supports three card formats: landscape, portrait, and square. Each format stores a CGSize I pass it directly to .closest(to: , and the system maps it to the closest supported aspect ratio and resolution.\n\nBecause format is a property of the card, the size request adapts automatically. A landscape card requests a wide image, a portrait card requests a tall one.\n\nI pass the options to the sheet using .imagePlaygroundOptions.\n\nImagePlaygroundStyle has several values, like: illustration, sketch, animation, and emoji.\n\nimagePlaygroundGenerationStyle takes two arguments: a default style that the picker opens on, and an allowed list that limits which styles appear. If you pass a single style in the allowed list, the picker locks to that style.\n\nIn Postcards, each card carries a StylePreset that maps directly to these values. A classic card defaults to illustration, and allows only illustration and sketch. While an expressive card defaults to animation and also allows illustration and emoji. The style picker automatically reflects whichever card is open.\n\nexternalProvider is an opt-in style that surfaces whatever third-party provider the person has configured in Settings, ChatGPT, for example. To offer it, append it to your .allowedStyles list.\n\nIf the user has a provider configured, the tab appears in the picker.\n\nIf they haven't, the system handles its setup, no check required on your side. You can also pass it as the default style if your app has a context where that makes sense.\n\nEither way, the picker adapts to what's actually available. ImagePlaygroundStyle.emoji is tuned for expressive, emoji-scale characters. When it's active, the sheet fires a separate completion, onAdaptiveImageGlyphCreation, and hands you an NSAdaptiveImageGlyph instead of a URL. An adaptive image glyph is special - it can be embedded directly inline with text, just like an emoji, which is exactly what you want for a card thumbnail that appears next to the recipient's name.\n\nFor everything you can do with adaptive image glyphs in text, rendering, storing, custom text engines, check out \"Bring expression to your app with Genmoji\".\n\nPersonalization is enabled by default. It lets people include someone from their Photos library, a powerful way to make a greeting card feel genuinely personal.\n\nIf your app context doesn't call for it, say, you're building a product image generator, you can set options.personalization to disabled.\n\nThe people picker and name detection disappear from the sheet entirely. Last up: making sure Postcards handles every device gracefully. Image Playground is available on devices that support Apple Intelligence, across a growing set of languages and regions, and when the user has image generation enabled in Settings. The supportsImageGeneration environment value is all you need. It returns true when image generation is fully available, the device has the capability, the current language and region are supported, and the user has it enabled.\n\nWhen it's true, I navigate to CardEditorView, the full Image Playground experience. When it's false, I navigate to CardPickerView, a simple Photos picker fallback.\n\nNo entitlement, no extra capability check, no setup step, just the environment value and a conditional. That's all it takes to support both paths cleanly.\n\nWith Image Playground, it's easy to provide a high-quality image creation experience in your app.\n\nConsider where images live in your design. A card someone sends to a friend.\n\nA profile that represents them.\n\nA message they've been trying to put into words.\n\nThe right shape and feel changes everything.\n\nAnd then think about what only your app knows. What relationships, what memories, what context can you bring into the picture to make the result feel like it was made for that specific person? That's the real opportunity. Image Playground brings the models, you bring the story. Thanks for watching, now go build something that earns a spot on someone's refrigerator.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm Antonio, an Engineer on the Image Playground team."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "Today, I'll show you how to bring Image Playground into your app."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "People have been creating images with Image Playground in Messages, Freeform, and in your apps. They have been combining scenes, experimenting with different looks, and making things feel personal."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "We are reimagining the experience with powerful image models at the core."
+      },
+      {
+        "timestamp": "0:37",
+        "text": "And now, it makes a real leap, with the ability to make high quality images in virtually any style, even photorealistic ones, that now look genuinely true to life."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "The ImagePlayground framework brings that full experience, the same powerful models, the same styles, the same quality, directly into your app."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "The Image Playground app is available on iOS, iPadOS, macOS, and visionOS. It runs on devices with Apple Intelligence support, bringing the full power of generative models to your app."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "Just like the Image Playground app, you can leverage ImagePlayground.framework APIs on the same platforms. Let's walk through how you can add Image Playground to your app."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "I'll start with capabilities, a look at what the image creation model can create."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "Then I'll show you how to adopt Image Playground, how to present the sheet and seed it with context from your app."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "After that, options, configuring size, aspect ratio, and style."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "And finally, availability, making sure your app handles both supported and unsupported devices gracefully."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "Before writing any code, let's look at what Image Playground can enable in your app. Give the model a text description, and it creates a matching image. You can be as specific or as open-ended as you like; \"a birthday celebration with dogs, balloons and confetti\" or just \"celebration.\" The model handles the rest."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "The model can create images with people, including multiple people in a single scene. With personalization enabled, users can bring in someone from their Photos library or simply describe an appearance using text."
+      },
+      {
+        "timestamp": "2:41",
+        "text": "The result is an image that feels personal. You have a range of styles to work with. You can ask for an image without specifying a style."
+      },
+      {
+        "timestamp": "2:51",
+        "text": "You can specify your desired style in text, such as by asking for an oil painting style."
+      },
+      {
+        "timestamp": "2:58",
+        "text": "Or use one of our presets."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "Animation adds playful character."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "Illustration gives a polished, editorial look."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "Sketch creates a hand-drawn feel."
+      },
+      {
+        "timestamp": "3:13",
+        "text": "Genmoji is a style tuned for expressive, emoji-scale characters you can embed directly in text."
+      },
+      {
+        "timestamp": "3:21",
+        "text": "Image Playground supports multiple sizes and aspect ratios. You can request a landscape image for a banner."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "A portrait image for full screen on iPhone. Or square for a thumbnail."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "The model picks the closest supported resolution to the size you ask for. All of this runs on Private Cloud Compute, Apple's privacy-preserving cloud infrastructure. Your data is never stored or shared, even with Apple."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "For a deeper look at how it works, check out \"Build with the new Apple Foundation Model on Private Cloud Compute\"."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "Image Playground has a usage limit because it relies on powerful server models. Increased access is available with most iCloud+ subscription plans. And as the developer, none of this is your problem to solve. There's no server to provision, no infrastructure to maintain."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "The system manages usage limits on behalf of your users, you never need to build any usage-related UI."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "You call the framework. Apple handles the rest. Moving the models to Private Cloud Compute also meant rethinking the API. ImageCreator, the non-UI API for generating images directly in your code, is deprecated."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "Everything is now available through a new API with greater image quality, built-in privacy, and a full experience people already know how to use."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "If your app uses ImageCreator today, keep watching. So now let us look at how to add Image Playground to your app."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "To show you how this comes together in code, I've been building Postcards, a greeting card creator."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "With Postcards, you can design custom cards, write a personal message, and choose a layout."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "The last piece is custom artwork for the front of each card. That's where Image Playground comes in. Adopting Image Playground starts with one view modifier. No SDK initialization, no API keys, no server endpoints, just the modifier. I add .imagePlaygroundSheet to my button with a binding to a @State boolean."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "When the binding flips to true, the sheet appears. Image Playground handles everything, the UI, the model interaction, the style picker."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "When someone accepts an image, the completion closure receives a URL to the generated file. That URL points to a temporary location inside your app container, save it elsewhere before the session ends."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "The sheet drops into your app as a fully-formed, consistent experience. The user can type a description, browse style options, include people from their library, and preview results before confirming. Your app gets the final URL, ready to display."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "The sheet can open with an empty prompt or can be seeded with context from your app for a richer initial experience."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "ImagePlaygroundConcept has two factory methods here: text wraps a direct description, I'm passing the card's theme, like cherry blossoms; extracted takes longer text and lets the system pull out the most relevant ideas, I'm passing the card's message, so the model picks up on what the card is about."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "With concepts in place, the sheet opens already primed for this specific card. The user doesn't have to start from scratch. You can also seed the sheet with an image. Pass any SwiftUI Image to the sourceImage parameter, a photo the person picked from their library, or an image the card already has."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "Image Playground uses it as visual inspiration alongside the concepts. The user can replace or refine it inside the sheet, it's a starting point, not a constraint. On iPad, Postcards shows a small canvas below the card front. ImagePlaygroundConcept.drawing takes a PKDrawing from PencilKit and adds it as a concept alongside the text. The model treats the strokes as a visual suggestion, they guide the composition without locking it in. To know more about drawings in PencilKit, check out \"Read between the strokes with PencilKit\"."
+      },
+      {
+        "timestamp": "8:05",
+        "text": "If you're building a UIKit or AppKit app, ImagePlaygroundViewController gives you the same experience as a view controller. Set concepts and options as properties before presentation, then implement imagePlaygroundViewController, didCreateImageAt on the delegate to receive the result. The API mirrors SwiftUI."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "Now, let's configure the sheet to fit Postcards, configuring options like size, style, and personalization."
+      },
+      {
+        "timestamp": "8:39",
+        "text": "ImagePlaygroundOptions and ImagePlaygroundStyle allow you to manage the configuration of the playground, size and aspect ratio, available and preselected styles, and personalization. Whether you're generating card artwork, a lock screen wallpaper, a banner, or a Genmoji icon, the same API adapts to fit. Postcards supports three card formats: landscape, portrait, and square. Each format stores a CGSize I pass it directly to .closest(to: , and the system maps it to the closest supported aspect ratio and resolution."
+      },
+      {
+        "timestamp": "9:21",
+        "text": "Because format is a property of the card, the size request adapts automatically. A landscape card requests a wide image, a portrait card requests a tall one."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "I pass the options to the sheet using .imagePlaygroundOptions."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "ImagePlaygroundStyle has several values, like: illustration, sketch, animation, and emoji."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "imagePlaygroundGenerationStyle takes two arguments: a default style that the picker opens on, and an allowed list that limits which styles appear. If you pass a single style in the allowed list, the picker locks to that style."
+      },
+      {
+        "timestamp": "10:04",
+        "text": "In Postcards, each card carries a StylePreset that maps directly to these values. A classic card defaults to illustration, and allows only illustration and sketch. While an expressive card defaults to animation and also allows illustration and emoji. The style picker automatically reflects whichever card is open."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "externalProvider is an opt-in style that surfaces whatever third-party provider the person has configured in Settings, ChatGPT, for example. To offer it, append it to your .allowedStyles list."
+      },
+      {
+        "timestamp": "10:42",
+        "text": "If the user has a provider configured, the tab appears in the picker."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "If they haven't, the system handles its setup, no check required on your side. You can also pass it as the default style if your app has a context where that makes sense."
+      },
+      {
+        "timestamp": "10:58",
+        "text": "Either way, the picker adapts to what's actually available. ImagePlaygroundStyle.emoji is tuned for expressive, emoji-scale characters. When it's active, the sheet fires a separate completion, onAdaptiveImageGlyphCreation, and hands you an NSAdaptiveImageGlyph instead of a URL. An adaptive image glyph is special - it can be embedded directly inline with text, just like an emoji, which is exactly what you want for a card thumbnail that appears next to the recipient's name."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "For everything you can do with adaptive image glyphs in text, rendering, storing, custom text engines, check out \"Bring expression to your app with Genmoji\"."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "Personalization is enabled by default. It lets people include someone from their Photos library, a powerful way to make a greeting card feel genuinely personal."
+      },
+      {
+        "timestamp": "12:00",
+        "text": "If your app context doesn't call for it, say, you're building a product image generator, you can set options.personalization to disabled."
+      },
+      {
+        "timestamp": "12:10",
+        "text": "The people picker and name detection disappear from the sheet entirely. Last up: making sure Postcards handles every device gracefully. Image Playground is available on devices that support Apple Intelligence, across a growing set of languages and regions, and when the user has image generation enabled in Settings. The supportsImageGeneration environment value is all you need. It returns true when image generation is fully available, the device has the capability, the current language and region are supported, and the user has it enabled."
+      },
+      {
+        "timestamp": "12:48",
+        "text": "When it's true, I navigate to CardEditorView, the full Image Playground experience. When it's false, I navigate to CardPickerView, a simple Photos picker fallback."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "No entitlement, no extra capability check, no setup step, just the environment value and a conditional. That's all it takes to support both paths cleanly."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "With Image Playground, it's easy to provide a high-quality image creation experience in your app."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "Consider where images live in your design. A card someone sends to a friend."
+      },
+      {
+        "timestamp": "13:27",
+        "text": "A profile that represents them."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "A message they've been trying to put into words."
+      },
+      {
+        "timestamp": "13:34",
+        "text": "The right shape and feel changes everything."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "And then think about what only your app knows. What relationships, what memories, what context can you bring into the picture to make the result feel like it was made for that specific person? That's the real opportunity. Image Playground brings the models, you bring the story. Thanks for watching, now go build something that earns a spot on someone's refrigerator."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -88,6 +343,33 @@
       "code": "// Supports image generation\n\n@Environment(\\.supportsImageGeneration)\nprivate var supportsImageGeneration\n\nvar body: some View {\n    NavigationLink(card.recipient) {\n        if supportsImageGeneration {\n            CardEditorView(card: card)\n        }γelse {\n            CardPickerView(card: card)\n        }\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:03"
+    },
+    {
+      "timestamp": "2:03",
+      "title": "Capabilities",
+      "duration": "2:59"
+    },
+    {
+      "timestamp": "5:02",
+      "title": "Adopt Image Playground",
+      "duration": "3:27"
+    },
+    {
+      "timestamp": "8:29",
+      "title": "Options",
+      "duration": "3:46"
+    },
+    {
+      "timestamp": "12:15",
+      "title": "Availability",
+      "duration": "1:56"
+    }
+  ],
   "resources": {
     "resourceLinks": [],
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/375/4/01104285-3253-4b2d-80c3-0d5cdf95c97e/downloads/wwdc2026-375_hd.mp4?dl=1",
@@ -113,5 +395,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10220"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:11.583Z"
+  "extractedAt": "2026-10-17T18:42:05.303Z"
 }

@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110351/",
   "title": "Eliminate data races using Swift Concurrency",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials",
@@ -12,8 +11,932 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop music ♪ ♪ Hello.\n\nI'm Doug from the Swift team, and I'm here to talk about Swift Concurrency's approach to eliminating data races.\n\nWe introduced Swift Concurrency as a set of language features that make it easier to write concurrent programs.\n\nFor the mechanics of these individual language features, we refer you to the 2021 WWDC talks covering each of them.\n\nThis talk takes a different, more holistic view of Swift Concurrency as a way of structuring your program to make efficient use of concurrency without introducing data races.\n\nBut to do so, we need a great analogy, so we invite you to sail with us on the high seas of concurrency.\n\nThe sea of concurrency is unpredictable, with many things going on at once, but with you at the helm and Swift helping you navigate the waters, it can produce amazing things.\n\nLet's dive in! We'll start by talking about isolation, which is one of the key ideas of Swift's concurrency model, ensuring that data is not shared in a manner that can introduce data races.\n\nLet's start with task isolation.\n\nIn our sea of concurrency, tasks are represented by boats.\n\nBoats are our main workers -- they have a job to do, which they perform sequentially from start to finish.\n\nThey are asynchronous, and their work can be suspended any number of times at \"await\" operations in the code.\n\nFinally, they are self-contained: each task has its own resources, so it can operate by itself, independently of all of the other boats in the sea.\n\nIf our boats are completely independent, we have concurrency without data races, but it's not very useful without some way to communicate.\n\nLet's add some communication! For example, one boat might have a pineapple that it wants to share with another boat.\n\nSo the boats meet on the open sea, and we transfer the pineapple from one boat to the other.\n\nNow, this is where the physical analogy breaks down a little bit, because this pineapple is not a physical item that moves from one boat to the next.\n\nIt's data, and in Swift we have a couple of different ways we could represent that data.\n\nHow do we define our pineapple type? We like value types in Swift, so let's make the pineapple a struct that's defined by its weight and ripeness.\n\nLet's see how this works.\n\nWhen the boats meet on the open sea, we're really passing a copy of the pineapple instance from one boat to the next, and each boat goes away with its own copy.\n\nIf you were to mutate the copies, such as by calling the slice() and ripen() methods, it won't have any effect on the other one.\n\nSwift has always preferred value types for exactly this reason -- mutations have only local effects.\n\nThat principle helps value types maintain isolation.\n\nNow, let's extend our data model a bit and add chickens! Unlike pineapples, which are pretty much only good for eating, chickens are beautiful creatures with their own unique personalities.\n\nSo, we're going to model them with a class, like this.\n\nLet's have our intrepid seafarers exchange a chicken.\n\nWhen our boats meet, we share the chicken, except that copying a reference type like chicken doesn't give you another full copy of the chicken, it gives you a reference to that specific object.\n\nSo once our boats have gone their separate ways, we can see that we have a problem: both boats are doing their work concurrently, but they are not independent because they both reference the same chicken object.\n\nThat shared mutable data is prone to data races, such as when one boat is trying to feed the chicken and the other wants to play with it, leading to one very confused chicken.\n\nWe need a way to know that it was safe to share pineapples amongst boats, but not chickens.\n\nAnd then we need some checking in place in the Swift compiler to ensure that chickens aren't accidentally passed from one boat to another.\n\nSwift protocols are a great way of categorizing types so you can reason about their behavior.\n\nThe Sendable protocol is used to describe types that can safely be shared across different isolation domains, without creating data races.\n\nA type can be made Sendable by writing a conformance.\n\nThe Pineapple struct conforms to Sendable because it's a value type, but the Chicken class cannot because it's an unsynchronized reference type.\n\nModeling Sendable as a protocol allows us to describe the places where data is going to be shared across isolation domains.\n\nFor example, when a task returns a value, this value is provided to any of the tasks that are waiting for that value.\n\nHere, we are trying to return a Chicken from our Task, and we get an error stating that this is unsafe because Chicken is not Sendable.\n\nThe actual Sendable constraint comes from the definition of the Task struct itself, which specifies that the result type of a Task, called Success, must conform to the Sendable protocol.\n\nYou should use Sendable constraints where you have generic parameters whose values will be passed across different isolation domains.\n\nNow, let's revisit the idea of sharing data among boats.\n\nWhen two boats meet on the high seas and want to share data, we need someone to consistently check all of the goods to make sure they're safe to share.\n\nThat's the role of our friendly customs inspector -- played here by the Swift compiler -- to make sure that only Sendable types are exchanged.\n\nThe pineapple is fine and can be exchanged freely, because it's Sendable.\n\nHowever, the chicken cannot be exchanged, and our friendly customs inspector will prevent us from making that mistake.\n\nThe compiler is involved in checking Sendable correctness at many different points.\n\nSendable types must be correct by construction, and cannot allow any shared data to be smuggled through them.\n\nEnums and structs generally define value types, which copy all of their instance data along with them to produce independent values.\n\nTherefore, they can be Sendable so long as all of their instance data is also Sendable.\n\nSendable can be propagated through collections and other generic types using conditional conformance.\n\nAn array of Sendable types is Sendable, so a Crate full of pineapples is also Sendable.\n\nAll of these Sendable conformances can even be inferred by the Swift compiler for non-public types, so Ripeness, Pineapple, and Crate are all implicitly Sendable.\n\nBut let's say we create a coop to house our flock of chickens.\n\nThis type cannot be marked as Sendable, because it contains non-Sendable state: Chicken isn't Sendable, so the array of chickens isn't Sendable.\n\nWe'll get an error message from our compiler to indicate that this type cannot safely be shared.\n\nClasses are reference types, so they can only be made Sendable under very narrow circumstances, such as when a final class only has immutable storage.\n\nOur attempt to make the Chicken class Sendable will produce an error because it contains mutable state.\n\nNow, it is possible to implement reference types that do their own internal synchronization, for example, by using a lock consistently.\n\nThese types are conceptually Sendable, but there is no way for Swift to reason about that.\n\nUse unchecked Sendable to disable the compiler's checking.\n\nBe careful with this, because smuggling mutable state through @unchecked Sendable undermines the data race safety guarantees Swift is providing.\n\nTask creation involves executing a closure in a new, independent task, like sending off a rowboat from your boat.\n\nWhen we do this, we can capture values from the original task and pass them into the new task, so we need Sendable checking to ensure we don't introduce data races.\n\nIf we do try to share a non-Sendable type across this boundary, the Swift compiler has us covered, producing an error message like this one.\n\nThis isn't magic for task creation.\n\nThe closure is being inferred to be a Sendable closure, which could have been written explicitly with At-Sendable.\n\nSendable closures are values of Sendable function type.\n\nAt-Sendable can be written on a function type to indicate that the function type conforms to the Sendable protocol.\n\nThat implies that values of that function type can be passed to other isolation domains and called there without introducing data races on their captured state.\n\nNormally, function types cannot conform to protocols, but Sendable is special because the compiler validates the semantic requirements for it.\n\nThere is similar support for tuples of Sendable types conforming to the Sendable protocol, which allows Sendable to be used throughout the entire language.\n\nThe system we've described has many concurrently executing tasks that are isolated from each other.\n\nThe Sendable protocol describes types that can be safely shared among tasks, and the Swift compiler checks Sendable conformances at every level to maintain isolation of the tasks.\n\nHowever, without any notion of shared mutable data anywhere, it's hard for the tasks to coordinate in a meaningful manner.\n\nSo we need some way to share data amongst our tasks that doesn't re-introduce data races.\n\nThis is where actors come in.\n\nActors provide a way to isolate state that can be accessed by different tasks, but in a coordinated manner that eliminates data races.\n\nActors are the islands in our sea of concurrency.\n\nLike boats, each island is self-contained, with its own state that is isolated from everything else in the sea.\n\nTo access that state, your code needs to be running on the island.\n\nFor example, the advanceTime method is isolated to this island.\n\nIt lives on the island and has access to all of the island's state.\n\nTo actually run code on an island, you need a boat.\n\nA boat can visit the island to run code on the island, at which point it has access to that state.\n\nOnly one boat can visit the island to run code at a time, which ensures that there is no concurrent access to the island's state.\n\nIf other boats show up, they must await their turn to visit the island.\n\nAnd because it might be a long time before a given boat gets a chance to visit the island, entering into an actor is a potential suspension point marked by the “await” keyword.\n\nOnce the island frees up -- again, at a suspension point -- another boat can visit.\n\nJust like with two boats meeting on the open sea, interactions between a boat and an island need to maintain isolation of both, by making sure that non-Sendable types don't pass between the two.\n\nFor example, perhaps we try to add a chicken from our boat to the flock on the island.\n\nThis would create two references to the same chicken object from different isolation domains, so the Swift compiler rejects it.\n\nSimilarly, if we try to adopt a pet chicken from the island and take it away on our boat, Sendable checking ensures that we cannot create this data race.\n\nActors are reference types, but unlike classes, they isolate all of their properties and code to prevent concurrent access.\n\nTherefore, having a reference to an actor from a different isolation domain is safe.\n\nIt's like having a map to an island: you can use the map to go visit the island, but you still need to go through the docking procedure to access its state.\n\nTherefore, all actor types are implicitly Sendable.\n\nYou might be wondering how to know what code is isolated to the actor and what code isn't.\n\nActor isolation is determined by the context you're in.\n\nThe instance properties of an actor are isolated to that actor.\n\nInstance methods on the actor or an extension of the actor are also isolated by default, like this advanceTime method.\n\nClosures that are not Sendable, such as the closure passed to the reduce algorithm, stay on the actor and are actor-isolated when they are in an actor-isolated context.\n\nThe task initializer also inherits actor isolation from its context, so the created task will be scheduled on the same actor as it was initiated from.\n\nHere, that grants access to the flock.\n\nOn the other hand, a detached task does not inherit actor isolation from its context, because it is completely independent of the context where it was created.\n\nWe can see that the code in the closure here is considered to be outside the actor because it needs to use “await” to refer to the isolated “food” property.\n\nWe have a term for this closure: it's non-isolated code.\n\nNo-isolated code is code that does not run on any actor at all.\n\nYou can explicitly make a function that's within an actor non-isolated by using the non-isolated keyword, putting it outside of the actor.\n\nJust like what happened implicitly with the closure used for the detached task.\n\nThat means if we want to read some of the state that's isolated to the actor, we'll need to use “await” to visit the island and grab a copy of the state we need.\n\nNon-isolated async code always runs on the global cooperative pool.\n\nThink of it as only running when a boat is out on the open sea, so you have to leave the island you're visiting to do the work.\n\nThat means checking to ensure that you aren't taking any non-Sendable data with you! Here, the compiler detects the potential data race, where an instance of the non-Sendable Chicken is trying to leave the island.\n\nLet's consider one more case of non-isolated code.\n\nThe “greet” operation is non-isolated, synchronous code.\n\nIt knows nothing about boats or islands or concurrency in general.\n\nAnd here, we're calling it from the actor-isolated greetOne function, and that's okay! This synchronous code, when called from the island, will stay on the island, so it's free to operate on the chicken from the flock.\n\nIf instead we had a non-isolated async operation that calls “greet,” then “greet” will run there, on a boat, in the open sea.\n\nMost Swift code is like this: synchronous, non-isolated to any actor, and only operates on the parameters it's been given, so it stays in the isolation domain where it is called.\n\nActors hold state that is isolated from the rest of the program.\n\nOnly one task can run on an actor at a time, so there is no concurrent access to that state.\n\nSendable checking applies any time a task enters or exits an actor to ensure that no unsynchronized mutable state escapes.\n\nAltogether, this makes actors one of the building blocks for a concurrent program in Swift.\n\nThere's another special actor we often talk about called the main actor.\n\nThink of the main actor as a big island in the middle of the sea.\n\nIt represents the main thread, where all of the drawing and interaction for your user interface occurs.\n\nSo if you want to draw something, you need to run the code on the main actor's island.\n\nIt's so important for your UI, that maybe we should even call it the “U-I-land.\" When we say that the main actor is “big,” what we mean is that it contains a lot of state related to the program's user interface.\n\nThere's a lot of code, both in the UI frameworks and in your apps, that needs to run on it.\n\nHowever, it's still an actor, so it only runs one job at a time.\n\nSo you have to be careful not to put too much or long-running work on the main actor, because it can make your UI unresponsive.\n\nIsolation to the main actor is expressed with the MainActor attribute.\n\nThis attribute can be applied to a function or closure to indicate that the code must run on the main actor.\n\nThen, we say that this code is isolated to the main actor.\n\nThe Swift compiler will guarantee that main-actor-isolated code will only be executed on the main thread, using the same mechanism that ensures mutually exclusive access to other actors.\n\nIf one calls updateView from a context that isn't isolated to the main actor, it will need to introduce an “await” to account for the switch over to the main actor.\n\nThe main actor attribute can also be applied to types, in which case the instances of those types will be isolated to the main actor.\n\nAgain, this is just like any other actor -- the properties are only accessible while on the main actor, and the methods are isolated to the main actor unless they explicitly opt out.\n\nLike normal actors, references to main-actor classes are themselves Sendable, because their data is isolated.\n\nThis makes the main actor annotation suitable for your UI views and view controllers, which are necessarily tied to the main thread by the frameworks themselves.\n\nYou can share a reference to your view controller with other tasks and actors in your program, and they can asynchronously call back into the view controller to post results.\n\nThis has a direct effect on your app's architecture.\n\nIn your app, your views and view controllers will be on the main actor.\n\nOther program logic should be separated from that main actor, using other actors to safely model shared state and tasks to describe independent work.\n\nAnd those tasks can shuttle between the main actor and other actors as necessary.\n\nThere's a lot going on in a concurrent app, so we've built some great tools to help you make sense of it.\n\nI invite you to check out the \"Visualize and Optimize Swift Concurrency\" talk to learn more.\n\nLet's dive into some deeper waters to talk about atomicity.\n\nThe goal of the Swift Concurrency model is to eliminate data races.\n\nWhat that really means is that it eliminates low-level data races, which involve data corruption.\n\nYou still need to reason about atomicity at a high level.\n\nAs we've talked about before, actors only run one task at a time.\n\nHowever, when you stop running on an actor, the actor can run other tasks.\n\nThis ensures that the program makes progress, eliminating the potential for deadlocks.\n\nHowever, it requires you to consider your actor's invariants carefully around await statements.\n\nOtherwise, you can end up with a high-level data race where the program is in an unexpected state, even though no data is actually corrupted.\n\nLet's break down an example of this.\n\nHere we have a function that intends to deposit some additional pineapples on an island.\n\nIt's outside of an actor, so it's non-isolated async code.\n\nThat means it runs out here in the open sea.\n\nIt's been given some pineapples and a map to the island where it should deposit those pineapples.\n\nThe first interesting operation here gets a copy of the food array from the island.\n\nTo do that, the boat needs to visit the island, signaled by the “await” keyword.\n\nAs soon as it has a copy of the food, the boat heads back out to the open sea to continue its work.\n\nThat means adding the pineapple from the pineapples parameter to the two it got from the island.\n\nNow, we can move along to the last line of the function.\n\nOur boat now needs to visit the island again to set the island's food array to those three pineapples.\n\nHere, everything worked out fine, and we have the three pineapples on the island! But things could have gone a bit differently.\n\nLet's say a pirate ship snuck in and stole all of the pineapples while our first boat was waiting its turn to visit the island.\n\nNow, our original ship deposits its three pineapples on the island, and we notice a problem.\n\nThe three pineapples have suddenly turned into five pineapples! What happened here? Well, notice that we have two awaits for access to state on the same actor, and we're making an assumption here that the food array on the island doesn't change between those two awaits.\n\nBut these are awaits, meaning that our task could get suspended here and the actor could do other higher-priority work, like battling pirates.\n\nIn this specific case, the Swift compiler will reject an attempt to outright modify the state on another actor.\n\nHowever, we should really rewrite our deposit operation as synchronous code on the actor, like this.\n\nBecause this is synchronous code, it will run on the actor without interruption.\n\nSo we can be sure that the state of the island will be unchanged by anyone else throughout the entire function.\n\nWhen you are writing your actor, think in terms of synchronous, transactional operations that can be interleaved in any way.\n\nEvery one of them should ensure that the actor is in a good state when it exits.\n\nFor async actor operations, keep them simple, forming them primarily from your synchronous, transactional operations, and take care that your actor is in a good state at each await operation.\n\nThis way, you can make full use of actors to eliminate both low-level and high-level data races.\n\nIn a concurrent program, many things are happening at once, so the order in which those things happen can vary from one execution to the next.\n\nAnd yet programs often rely on handling events in a consistent order.\n\nFor example, the stream of events that come in from user input or messages from a server.\n\nWhen these event streams come in, we expect their effects to happen in order.\n\nSwift Concurrency provides tools for ordering operations, however, actors are not the tool for doing so.\n\nActors execute the highest-priority work first, to help the overall system stay responsive.\n\nThis eliminates priority inversions where lower-priority work ends up happening before higher-priority work on the same actor.\n\nNote that this is a significant difference from serial Dispatch queues, which execute in a strictly First-In, First-Out order.\n\nSwift Concurrency has several tools for ordering work.\n\nThe first we've been talking about a lot already -- tasks.\n\nTasks execute from beginning to end, with the normal control flow you're used to, so they naturally order work.\n\nAsyncStream can be used to model an actual stream of events.\n\nOne task can iterate over the stream of events with a for-await-in loop, processing each event in turn.\n\nAn AsyncStream can be shared with any number of event producers, which can add elements to the stream while maintaining order.\n\nWe've talked a lot about how Swift's concurrency model is designed to eliminate data races using the notion of isolation, which is maintained by Sendable checking at task and actor boundaries.\n\nHowever, we cannot all just stop what we are doing to go mark all of the Sendable types everywhere.\n\nInstead, we need an incremental approach.\n\nSwift 5.7 introduces a build setting to specify how strictly the Swift compiler should check for Sendability.\n\nThe default setting is Minimal meaning that the compiler will only diagnose places where one has explicitly tried to mark something as Sendable.\n\nThis is similar to how Swift 5.5 and 5.6 behaved, and for the above, there won't be any warnings or errors.\n\nNow, if you add a Sendable conformance, the compiler will complain that the Coop type cannot be Sendable because Chicken isn't Sendable.\n\nHowever, this -- and other Sendable-related problems -- will be presented as warnings in Swift 5, not errors, to make it easier to work through the problems one by one.\n\nTo move further toward data race safety, enable the “targeted” strict concurrency setting.\n\nThis setting enables Sendable checking for code that has already adopted Swift Concurrency features like async/await, tasks, or actors.\n\nThis will identify, for example, attempts to capture values of non-Sendable type in a newly created task.\n\nSometimes the non-Sendable types come from another module.\n\nPerhaps it's some package that hasn't been updated for Sendable yet, or even your own module that you just haven't gotten around to.\n\nFor those, you can temporarily disable the Sendable warnings for types that come from that module using the @preconcurrency attribute.\n\nThis will silence Sendable warnings for the Chicken type within this source file.\n\nAt some point, the FarmAnimals module will get updated with Sendable conformances.\n\nThen, one of two things will happen: either Chicken becomes Sendable somehow, in which case the preconcurrency attribute can be removed from the import.\n\nOr Chicken will be known to be non-Sendable, in which case the warning will come back, indicating that your assumptions about Chicken being Sendable are, in fact, not correct.\n\nThe targeted strictness setting tries to strike a balance between compatibility with existing code and identifying potential data races.\n\nHowever, if you'd like to see everywhere that races could occur, there is one more option: complete checking.\n\nComplete checking approximates the intended Swift 6 semantics to completely eliminate data races.\n\nIt checks everything that the earlier two modes check but does so for all code in the module.\n\nHere, we're not actually making use of Swift's concurrency features at all.\n\nRather, it's performing work on a dispatch queue, which will execute that code concurrently.\n\nThe async operation on a dispatch queue is actually known to take a Sendable closure, so the compiler produces a warning indicating that there is a data race when the non-Sendable body is captured by the code running on the dispatch queue.\n\nWe can fix this by making the body parameter Sendable.\n\nThat change eliminates this warning, and now all of the callers of doWork know that they need to provide a Sendable closure.\n\nThat means we get better checking for data races, and we can see that the visit function now is the source of a data race.\n\nComplete checking will help flush out the potential data races in your program.\n\nTo achieve Swift's goal of eliminating data races, we'll eventually need to get to complete checking.\n\nWe encourage you to work incrementally toward that goal: adopt Swift's concurrency model to architect your app for data race safety, then enable progressively stricter concurrency checking to eliminate classes of errors from your code.\n\nAnd don't fret over marking your imports with @preconcurrency to suppress warnings for imported types.\n\nAs those modules adopt stricter concurrency checking, the compiler will recheck your assumptions.\n\nAt the end of this road, your code will benefit from both memory safety and data race safety, helping you focus on building great apps.\n\nAnd thank you for sailing with me on the sea of concurrency.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop music ♪ ♪ Hello."
+      },
+      {
+        "timestamp": "0:10",
+        "text": "I'm Doug from the Swift team, and I'm here to talk about Swift Concurrency's approach to eliminating data races."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "We introduced Swift Concurrency as a set of language features that make it easier to write concurrent programs."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "For the mechanics of these individual language features, we refer you to the 2021 WWDC talks covering each of them."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "This talk takes a different, more holistic view of Swift Concurrency as a way of structuring your program to make efficient use of concurrency without introducing data races."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "But to do so, we need a great analogy, so we invite you to sail with us on the high seas of concurrency."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "The sea of concurrency is unpredictable, with many things going on at once, but with you at the helm and Swift helping you navigate the waters, it can produce amazing things."
+      },
+      {
+        "timestamp": "1:01",
+        "text": "Let's dive in! We'll start by talking about isolation, which is one of the key ideas of Swift's concurrency model, ensuring that data is not shared in a manner that can introduce data races."
+      },
+      {
+        "timestamp": "1:14",
+        "text": "Let's start with task isolation."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "In our sea of concurrency, tasks are represented by boats."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "Boats are our main workers -- they have a job to do, which they perform sequentially from start to finish."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "They are asynchronous, and their work can be suspended any number of times at \"await\" operations in the code."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "Finally, they are self-contained: each task has its own resources, so it can operate by itself, independently of all of the other boats in the sea."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "If our boats are completely independent, we have concurrency without data races, but it's not very useful without some way to communicate."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "Let's add some communication! For example, one boat might have a pineapple that it wants to share with another boat."
+      },
+      {
+        "timestamp": "2:07",
+        "text": "So the boats meet on the open sea, and we transfer the pineapple from one boat to the other."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "Now, this is where the physical analogy breaks down a little bit, because this pineapple is not a physical item that moves from one boat to the next."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "It's data, and in Swift we have a couple of different ways we could represent that data."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "How do we define our pineapple type? We like value types in Swift, so let's make the pineapple a struct that's defined by its weight and ripeness."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "Let's see how this works."
+      },
+      {
+        "timestamp": "2:41",
+        "text": "When the boats meet on the open sea, we're really passing a copy of the pineapple instance from one boat to the next, and each boat goes away with its own copy."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "If you were to mutate the copies, such as by calling the slice() and ripen() methods, it won't have any effect on the other one."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "Swift has always preferred value types for exactly this reason -- mutations have only local effects."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "That principle helps value types maintain isolation."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "Now, let's extend our data model a bit and add chickens! Unlike pineapples, which are pretty much only good for eating, chickens are beautiful creatures with their own unique personalities."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "So, we're going to model them with a class, like this."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "Let's have our intrepid seafarers exchange a chicken."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "When our boats meet, we share the chicken, except that copying a reference type like chicken doesn't give you another full copy of the chicken, it gives you a reference to that specific object."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "So once our boats have gone their separate ways, we can see that we have a problem: both boats are doing their work concurrently, but they are not independent because they both reference the same chicken object."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "That shared mutable data is prone to data races, such as when one boat is trying to feed the chicken and the other wants to play with it, leading to one very confused chicken."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "We need a way to know that it was safe to share pineapples amongst boats, but not chickens."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "And then we need some checking in place in the Swift compiler to ensure that chickens aren't accidentally passed from one boat to another."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "Swift protocols are a great way of categorizing types so you can reason about their behavior."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "The Sendable protocol is used to describe types that can safely be shared across different isolation domains, without creating data races."
+      },
+      {
+        "timestamp": "4:43",
+        "text": "A type can be made Sendable by writing a conformance."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "The Pineapple struct conforms to Sendable because it's a value type, but the Chicken class cannot because it's an unsynchronized reference type."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "Modeling Sendable as a protocol allows us to describe the places where data is going to be shared across isolation domains."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "For example, when a task returns a value, this value is provided to any of the tasks that are waiting for that value."
+      },
+      {
+        "timestamp": "5:15",
+        "text": "Here, we are trying to return a Chicken from our Task, and we get an error stating that this is unsafe because Chicken is not Sendable."
+      },
+      {
+        "timestamp": "5:25",
+        "text": "The actual Sendable constraint comes from the definition of the Task struct itself, which specifies that the result type of a Task, called Success, must conform to the Sendable protocol."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "You should use Sendable constraints where you have generic parameters whose values will be passed across different isolation domains."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "Now, let's revisit the idea of sharing data among boats."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "When two boats meet on the high seas and want to share data, we need someone to consistently check all of the goods to make sure they're safe to share."
+      },
+      {
+        "timestamp": "6:00",
+        "text": "That's the role of our friendly customs inspector -- played here by the Swift compiler -- to make sure that only Sendable types are exchanged."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "The pineapple is fine and can be exchanged freely, because it's Sendable."
+      },
+      {
+        "timestamp": "6:14",
+        "text": "However, the chicken cannot be exchanged, and our friendly customs inspector will prevent us from making that mistake."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "The compiler is involved in checking Sendable correctness at many different points."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "Sendable types must be correct by construction, and cannot allow any shared data to be smuggled through them."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "Enums and structs generally define value types, which copy all of their instance data along with them to produce independent values."
+      },
+      {
+        "timestamp": "6:44",
+        "text": "Therefore, they can be Sendable so long as all of their instance data is also Sendable."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "Sendable can be propagated through collections and other generic types using conditional conformance."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "An array of Sendable types is Sendable, so a Crate full of pineapples is also Sendable."
+      },
+      {
+        "timestamp": "7:04",
+        "text": "All of these Sendable conformances can even be inferred by the Swift compiler for non-public types, so Ripeness, Pineapple, and Crate are all implicitly Sendable."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "But let's say we create a coop to house our flock of chickens."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "This type cannot be marked as Sendable, because it contains non-Sendable state: Chicken isn't Sendable, so the array of chickens isn't Sendable."
+      },
+      {
+        "timestamp": "7:29",
+        "text": "We'll get an error message from our compiler to indicate that this type cannot safely be shared."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "Classes are reference types, so they can only be made Sendable under very narrow circumstances, such as when a final class only has immutable storage."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "Our attempt to make the Chicken class Sendable will produce an error because it contains mutable state."
+      },
+      {
+        "timestamp": "7:53",
+        "text": "Now, it is possible to implement reference types that do their own internal synchronization, for example, by using a lock consistently."
+      },
+      {
+        "timestamp": "8:01",
+        "text": "These types are conceptually Sendable, but there is no way for Swift to reason about that."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "Use unchecked Sendable to disable the compiler's checking."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "Be careful with this, because smuggling mutable state through @unchecked Sendable undermines the data race safety guarantees Swift is providing."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "Task creation involves executing a closure in a new, independent task, like sending off a rowboat from your boat."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "When we do this, we can capture values from the original task and pass them into the new task, so we need Sendable checking to ensure we don't introduce data races."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "If we do try to share a non-Sendable type across this boundary, the Swift compiler has us covered, producing an error message like this one."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "This isn't magic for task creation."
+      },
+      {
+        "timestamp": "8:53",
+        "text": "The closure is being inferred to be a Sendable closure, which could have been written explicitly with At-Sendable."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "Sendable closures are values of Sendable function type."
+      },
+      {
+        "timestamp": "9:07",
+        "text": "At-Sendable can be written on a function type to indicate that the function type conforms to the Sendable protocol."
+      },
+      {
+        "timestamp": "9:13",
+        "text": "That implies that values of that function type can be passed to other isolation domains and called there without introducing data races on their captured state."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "Normally, function types cannot conform to protocols, but Sendable is special because the compiler validates the semantic requirements for it."
+      },
+      {
+        "timestamp": "9:31",
+        "text": "There is similar support for tuples of Sendable types conforming to the Sendable protocol, which allows Sendable to be used throughout the entire language."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "The system we've described has many concurrently executing tasks that are isolated from each other."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "The Sendable protocol describes types that can be safely shared among tasks, and the Swift compiler checks Sendable conformances at every level to maintain isolation of the tasks."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "However, without any notion of shared mutable data anywhere, it's hard for the tasks to coordinate in a meaningful manner."
+      },
+      {
+        "timestamp": "10:07",
+        "text": "So we need some way to share data amongst our tasks that doesn't re-introduce data races."
+      },
+      {
+        "timestamp": "10:13",
+        "text": "This is where actors come in."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "Actors provide a way to isolate state that can be accessed by different tasks, but in a coordinated manner that eliminates data races."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "Actors are the islands in our sea of concurrency."
+      },
+      {
+        "timestamp": "10:30",
+        "text": "Like boats, each island is self-contained, with its own state that is isolated from everything else in the sea."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "To access that state, your code needs to be running on the island."
+      },
+      {
+        "timestamp": "10:43",
+        "text": "For example, the advanceTime method is isolated to this island."
+      },
+      {
+        "timestamp": "10:47",
+        "text": "It lives on the island and has access to all of the island's state."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "To actually run code on an island, you need a boat."
+      },
+      {
+        "timestamp": "10:56",
+        "text": "A boat can visit the island to run code on the island, at which point it has access to that state."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "Only one boat can visit the island to run code at a time, which ensures that there is no concurrent access to the island's state."
+      },
+      {
+        "timestamp": "11:11",
+        "text": "If other boats show up, they must await their turn to visit the island."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "And because it might be a long time before a given boat gets a chance to visit the island, entering into an actor is a potential suspension point marked by the “await” keyword."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "Once the island frees up -- again, at a suspension point -- another boat can visit."
+      },
+      {
+        "timestamp": "11:34",
+        "text": "Just like with two boats meeting on the open sea, interactions between a boat and an island need to maintain isolation of both, by making sure that non-Sendable types don't pass between the two."
+      },
+      {
+        "timestamp": "11:47",
+        "text": "For example, perhaps we try to add a chicken from our boat to the flock on the island."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "This would create two references to the same chicken object from different isolation domains, so the Swift compiler rejects it."
+      },
+      {
+        "timestamp": "12:00",
+        "text": "Similarly, if we try to adopt a pet chicken from the island and take it away on our boat, Sendable checking ensures that we cannot create this data race."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "Actors are reference types, but unlike classes, they isolate all of their properties and code to prevent concurrent access."
+      },
+      {
+        "timestamp": "12:19",
+        "text": "Therefore, having a reference to an actor from a different isolation domain is safe."
+      },
+      {
+        "timestamp": "12:25",
+        "text": "It's like having a map to an island: you can use the map to go visit the island, but you still need to go through the docking procedure to access its state."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "Therefore, all actor types are implicitly Sendable."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "You might be wondering how to know what code is isolated to the actor and what code isn't."
+      },
+      {
+        "timestamp": "12:46",
+        "text": "Actor isolation is determined by the context you're in."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "The instance properties of an actor are isolated to that actor."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "Instance methods on the actor or an extension of the actor are also isolated by default, like this advanceTime method."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "Closures that are not Sendable, such as the closure passed to the reduce algorithm, stay on the actor and are actor-isolated when they are in an actor-isolated context."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "The task initializer also inherits actor isolation from its context, so the created task will be scheduled on the same actor as it was initiated from."
+      },
+      {
+        "timestamp": "13:23",
+        "text": "Here, that grants access to the flock."
+      },
+      {
+        "timestamp": "13:27",
+        "text": "On the other hand, a detached task does not inherit actor isolation from its context, because it is completely independent of the context where it was created."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "We can see that the code in the closure here is considered to be outside the actor because it needs to use “await” to refer to the isolated “food” property."
+      },
+      {
+        "timestamp": "13:46",
+        "text": "We have a term for this closure: it's non-isolated code."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "No-isolated code is code that does not run on any actor at all."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "You can explicitly make a function that's within an actor non-isolated by using the non-isolated keyword, putting it outside of the actor."
+      },
+      {
+        "timestamp": "14:05",
+        "text": "Just like what happened implicitly with the closure used for the detached task."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "That means if we want to read some of the state that's isolated to the actor, we'll need to use “await” to visit the island and grab a copy of the state we need."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "Non-isolated async code always runs on the global cooperative pool."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "Think of it as only running when a boat is out on the open sea, so you have to leave the island you're visiting to do the work."
+      },
+      {
+        "timestamp": "14:33",
+        "text": "That means checking to ensure that you aren't taking any non-Sendable data with you! Here, the compiler detects the potential data race, where an instance of the non-Sendable Chicken is trying to leave the island."
+      },
+      {
+        "timestamp": "14:47",
+        "text": "Let's consider one more case of non-isolated code."
+      },
+      {
+        "timestamp": "14:52",
+        "text": "The “greet” operation is non-isolated, synchronous code."
+      },
+      {
+        "timestamp": "14:56",
+        "text": "It knows nothing about boats or islands or concurrency in general."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "And here, we're calling it from the actor-isolated greetOne function, and that's okay! This synchronous code, when called from the island, will stay on the island, so it's free to operate on the chicken from the flock."
+      },
+      {
+        "timestamp": "15:14",
+        "text": "If instead we had a non-isolated async operation that calls “greet,” then “greet” will run there, on a boat, in the open sea."
+      },
+      {
+        "timestamp": "15:23",
+        "text": "Most Swift code is like this: synchronous, non-isolated to any actor, and only operates on the parameters it's been given, so it stays in the isolation domain where it is called."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "Actors hold state that is isolated from the rest of the program."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "Only one task can run on an actor at a time, so there is no concurrent access to that state."
+      },
+      {
+        "timestamp": "15:47",
+        "text": "Sendable checking applies any time a task enters or exits an actor to ensure that no unsynchronized mutable state escapes."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "Altogether, this makes actors one of the building blocks for a concurrent program in Swift."
+      },
+      {
+        "timestamp": "16:04",
+        "text": "There's another special actor we often talk about called the main actor."
+      },
+      {
+        "timestamp": "16:09",
+        "text": "Think of the main actor as a big island in the middle of the sea."
+      },
+      {
+        "timestamp": "16:13",
+        "text": "It represents the main thread, where all of the drawing and interaction for your user interface occurs."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "So if you want to draw something, you need to run the code on the main actor's island."
+      },
+      {
+        "timestamp": "16:24",
+        "text": "It's so important for your UI, that maybe we should even call it the “U-I-land.\" When we say that the main actor is “big,” what we mean is that it contains a lot of state related to the program's user interface."
+      },
+      {
+        "timestamp": "16:39",
+        "text": "There's a lot of code, both in the UI frameworks and in your apps, that needs to run on it."
+      },
+      {
+        "timestamp": "16:45",
+        "text": "However, it's still an actor, so it only runs one job at a time."
+      },
+      {
+        "timestamp": "16:51",
+        "text": "So you have to be careful not to put too much or long-running work on the main actor, because it can make your UI unresponsive."
+      },
+      {
+        "timestamp": "17:00",
+        "text": "Isolation to the main actor is expressed with the MainActor attribute."
+      },
+      {
+        "timestamp": "17:04",
+        "text": "This attribute can be applied to a function or closure to indicate that the code must run on the main actor."
+      },
+      {
+        "timestamp": "17:12",
+        "text": "Then, we say that this code is isolated to the main actor."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "The Swift compiler will guarantee that main-actor-isolated code will only be executed on the main thread, using the same mechanism that ensures mutually exclusive access to other actors."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "If one calls updateView from a context that isn't isolated to the main actor, it will need to introduce an “await” to account for the switch over to the main actor."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "The main actor attribute can also be applied to types, in which case the instances of those types will be isolated to the main actor."
+      },
+      {
+        "timestamp": "17:47",
+        "text": "Again, this is just like any other actor -- the properties are only accessible while on the main actor, and the methods are isolated to the main actor unless they explicitly opt out."
+      },
+      {
+        "timestamp": "17:58",
+        "text": "Like normal actors, references to main-actor classes are themselves Sendable, because their data is isolated."
+      },
+      {
+        "timestamp": "18:07",
+        "text": "This makes the main actor annotation suitable for your UI views and view controllers, which are necessarily tied to the main thread by the frameworks themselves."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "You can share a reference to your view controller with other tasks and actors in your program, and they can asynchronously call back into the view controller to post results."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "This has a direct effect on your app's architecture."
+      },
+      {
+        "timestamp": "18:30",
+        "text": "In your app, your views and view controllers will be on the main actor."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "Other program logic should be separated from that main actor, using other actors to safely model shared state and tasks to describe independent work."
+      },
+      {
+        "timestamp": "18:45",
+        "text": "And those tasks can shuttle between the main actor and other actors as necessary."
+      },
+      {
+        "timestamp": "18:51",
+        "text": "There's a lot going on in a concurrent app, so we've built some great tools to help you make sense of it."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "I invite you to check out the \"Visualize and Optimize Swift Concurrency\" talk to learn more."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "Let's dive into some deeper waters to talk about atomicity."
+      },
+      {
+        "timestamp": "19:08",
+        "text": "The goal of the Swift Concurrency model is to eliminate data races."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "What that really means is that it eliminates low-level data races, which involve data corruption."
+      },
+      {
+        "timestamp": "19:18",
+        "text": "You still need to reason about atomicity at a high level."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "As we've talked about before, actors only run one task at a time."
+      },
+      {
+        "timestamp": "19:28",
+        "text": "However, when you stop running on an actor, the actor can run other tasks."
+      },
+      {
+        "timestamp": "19:32",
+        "text": "This ensures that the program makes progress, eliminating the potential for deadlocks."
+      },
+      {
+        "timestamp": "19:38",
+        "text": "However, it requires you to consider your actor's invariants carefully around await statements."
+      },
+      {
+        "timestamp": "19:43",
+        "text": "Otherwise, you can end up with a high-level data race where the program is in an unexpected state, even though no data is actually corrupted."
+      },
+      {
+        "timestamp": "19:52",
+        "text": "Let's break down an example of this."
+      },
+      {
+        "timestamp": "19:56",
+        "text": "Here we have a function that intends to deposit some additional pineapples on an island."
+      },
+      {
+        "timestamp": "20:01",
+        "text": "It's outside of an actor, so it's non-isolated async code."
+      },
+      {
+        "timestamp": "20:06",
+        "text": "That means it runs out here in the open sea."
+      },
+      {
+        "timestamp": "20:10",
+        "text": "It's been given some pineapples and a map to the island where it should deposit those pineapples."
+      },
+      {
+        "timestamp": "20:16",
+        "text": "The first interesting operation here gets a copy of the food array from the island."
+      },
+      {
+        "timestamp": "20:22",
+        "text": "To do that, the boat needs to visit the island, signaled by the “await” keyword."
+      },
+      {
+        "timestamp": "20:27",
+        "text": "As soon as it has a copy of the food, the boat heads back out to the open sea to continue its work."
+      },
+      {
+        "timestamp": "20:33",
+        "text": "That means adding the pineapple from the pineapples parameter to the two it got from the island."
+      },
+      {
+        "timestamp": "20:39",
+        "text": "Now, we can move along to the last line of the function."
+      },
+      {
+        "timestamp": "20:43",
+        "text": "Our boat now needs to visit the island again to set the island's food array to those three pineapples."
+      },
+      {
+        "timestamp": "20:50",
+        "text": "Here, everything worked out fine, and we have the three pineapples on the island! But things could have gone a bit differently."
+      },
+      {
+        "timestamp": "20:58",
+        "text": "Let's say a pirate ship snuck in and stole all of the pineapples while our first boat was waiting its turn to visit the island."
+      },
+      {
+        "timestamp": "21:07",
+        "text": "Now, our original ship deposits its three pineapples on the island, and we notice a problem."
+      },
+      {
+        "timestamp": "21:13",
+        "text": "The three pineapples have suddenly turned into five pineapples! What happened here? Well, notice that we have two awaits for access to state on the same actor, and we're making an assumption here that the food array on the island doesn't change between those two awaits."
+      },
+      {
+        "timestamp": "21:32",
+        "text": "But these are awaits, meaning that our task could get suspended here and the actor could do other higher-priority work, like battling pirates."
+      },
+      {
+        "timestamp": "21:42",
+        "text": "In this specific case, the Swift compiler will reject an attempt to outright modify the state on another actor."
+      },
+      {
+        "timestamp": "21:49",
+        "text": "However, we should really rewrite our deposit operation as synchronous code on the actor, like this."
+      },
+      {
+        "timestamp": "21:56",
+        "text": "Because this is synchronous code, it will run on the actor without interruption."
+      },
+      {
+        "timestamp": "22:01",
+        "text": "So we can be sure that the state of the island will be unchanged by anyone else throughout the entire function."
+      },
+      {
+        "timestamp": "22:09",
+        "text": "When you are writing your actor, think in terms of synchronous, transactional operations that can be interleaved in any way."
+      },
+      {
+        "timestamp": "22:17",
+        "text": "Every one of them should ensure that the actor is in a good state when it exits."
+      },
+      {
+        "timestamp": "22:23",
+        "text": "For async actor operations, keep them simple, forming them primarily from your synchronous, transactional operations, and take care that your actor is in a good state at each await operation."
+      },
+      {
+        "timestamp": "22:35",
+        "text": "This way, you can make full use of actors to eliminate both low-level and high-level data races."
+      },
+      {
+        "timestamp": "22:42",
+        "text": "In a concurrent program, many things are happening at once, so the order in which those things happen can vary from one execution to the next."
+      },
+      {
+        "timestamp": "22:51",
+        "text": "And yet programs often rely on handling events in a consistent order."
+      },
+      {
+        "timestamp": "22:56",
+        "text": "For example, the stream of events that come in from user input or messages from a server."
+      },
+      {
+        "timestamp": "23:02",
+        "text": "When these event streams come in, we expect their effects to happen in order."
+      },
+      {
+        "timestamp": "23:07",
+        "text": "Swift Concurrency provides tools for ordering operations, however, actors are not the tool for doing so."
+      },
+      {
+        "timestamp": "23:14",
+        "text": "Actors execute the highest-priority work first, to help the overall system stay responsive."
+      },
+      {
+        "timestamp": "23:20",
+        "text": "This eliminates priority inversions where lower-priority work ends up happening before higher-priority work on the same actor."
+      },
+      {
+        "timestamp": "23:28",
+        "text": "Note that this is a significant difference from serial Dispatch queues, which execute in a strictly First-In, First-Out order."
+      },
+      {
+        "timestamp": "23:38",
+        "text": "Swift Concurrency has several tools for ordering work."
+      },
+      {
+        "timestamp": "23:41",
+        "text": "The first we've been talking about a lot already -- tasks."
+      },
+      {
+        "timestamp": "23:45",
+        "text": "Tasks execute from beginning to end, with the normal control flow you're used to, so they naturally order work."
+      },
+      {
+        "timestamp": "23:54",
+        "text": "AsyncStream can be used to model an actual stream of events."
+      },
+      {
+        "timestamp": "23:58",
+        "text": "One task can iterate over the stream of events with a for-await-in loop, processing each event in turn."
+      },
+      {
+        "timestamp": "24:05",
+        "text": "An AsyncStream can be shared with any number of event producers, which can add elements to the stream while maintaining order."
+      },
+      {
+        "timestamp": "24:14",
+        "text": "We've talked a lot about how Swift's concurrency model is designed to eliminate data races using the notion of isolation, which is maintained by Sendable checking at task and actor boundaries."
+      },
+      {
+        "timestamp": "24:26",
+        "text": "However, we cannot all just stop what we are doing to go mark all of the Sendable types everywhere."
+      },
+      {
+        "timestamp": "24:32",
+        "text": "Instead, we need an incremental approach."
+      },
+      {
+        "timestamp": "24:36",
+        "text": "Swift 5.7 introduces a build setting to specify how strictly the Swift compiler should check for Sendability."
+      },
+      {
+        "timestamp": "24:44",
+        "text": "The default setting is Minimal meaning that the compiler will only diagnose places where one has explicitly tried to mark something as Sendable."
+      },
+      {
+        "timestamp": "24:53",
+        "text": "This is similar to how Swift 5.5 and 5.6 behaved, and for the above, there won't be any warnings or errors."
+      },
+      {
+        "timestamp": "25:00",
+        "text": "Now, if you add a Sendable conformance, the compiler will complain that the Coop type cannot be Sendable because Chicken isn't Sendable."
+      },
+      {
+        "timestamp": "25:09",
+        "text": "However, this -- and other Sendable-related problems -- will be presented as warnings in Swift 5, not errors, to make it easier to work through the problems one by one."
+      },
+      {
+        "timestamp": "25:22",
+        "text": "To move further toward data race safety, enable the “targeted” strict concurrency setting."
+      },
+      {
+        "timestamp": "25:28",
+        "text": "This setting enables Sendable checking for code that has already adopted Swift Concurrency features like async/await, tasks, or actors."
+      },
+      {
+        "timestamp": "25:37",
+        "text": "This will identify, for example, attempts to capture values of non-Sendable type in a newly created task."
+      },
+      {
+        "timestamp": "25:45",
+        "text": "Sometimes the non-Sendable types come from another module."
+      },
+      {
+        "timestamp": "25:50",
+        "text": "Perhaps it's some package that hasn't been updated for Sendable yet, or even your own module that you just haven't gotten around to."
+      },
+      {
+        "timestamp": "25:57",
+        "text": "For those, you can temporarily disable the Sendable warnings for types that come from that module using the @preconcurrency attribute."
+      },
+      {
+        "timestamp": "26:07",
+        "text": "This will silence Sendable warnings for the Chicken type within this source file."
+      },
+      {
+        "timestamp": "26:12",
+        "text": "At some point, the FarmAnimals module will get updated with Sendable conformances."
+      },
+      {
+        "timestamp": "26:17",
+        "text": "Then, one of two things will happen: either Chicken becomes Sendable somehow, in which case the preconcurrency attribute can be removed from the import."
+      },
+      {
+        "timestamp": "26:27",
+        "text": "Or Chicken will be known to be non-Sendable, in which case the warning will come back, indicating that your assumptions about Chicken being Sendable are, in fact, not correct."
+      },
+      {
+        "timestamp": "26:38",
+        "text": "The targeted strictness setting tries to strike a balance between compatibility with existing code and identifying potential data races."
+      },
+      {
+        "timestamp": "26:47",
+        "text": "However, if you'd like to see everywhere that races could occur, there is one more option: complete checking."
+      },
+      {
+        "timestamp": "26:55",
+        "text": "Complete checking approximates the intended Swift 6 semantics to completely eliminate data races."
+      },
+      {
+        "timestamp": "27:01",
+        "text": "It checks everything that the earlier two modes check but does so for all code in the module."
+      },
+      {
+        "timestamp": "27:07",
+        "text": "Here, we're not actually making use of Swift's concurrency features at all."
+      },
+      {
+        "timestamp": "27:11",
+        "text": "Rather, it's performing work on a dispatch queue, which will execute that code concurrently."
+      },
+      {
+        "timestamp": "27:17",
+        "text": "The async operation on a dispatch queue is actually known to take a Sendable closure, so the compiler produces a warning indicating that there is a data race when the non-Sendable body is captured by the code running on the dispatch queue."
+      },
+      {
+        "timestamp": "27:31",
+        "text": "We can fix this by making the body parameter Sendable."
+      },
+      {
+        "timestamp": "27:36",
+        "text": "That change eliminates this warning, and now all of the callers of doWork know that they need to provide a Sendable closure."
+      },
+      {
+        "timestamp": "27:45",
+        "text": "That means we get better checking for data races, and we can see that the visit function now is the source of a data race."
+      },
+      {
+        "timestamp": "27:53",
+        "text": "Complete checking will help flush out the potential data races in your program."
+      },
+      {
+        "timestamp": "28:00",
+        "text": "To achieve Swift's goal of eliminating data races, we'll eventually need to get to complete checking."
+      },
+      {
+        "timestamp": "28:06",
+        "text": "We encourage you to work incrementally toward that goal: adopt Swift's concurrency model to architect your app for data race safety, then enable progressively stricter concurrency checking to eliminate classes of errors from your code."
+      },
+      {
+        "timestamp": "28:21",
+        "text": "And don't fret over marking your imports with @preconcurrency to suppress warnings for imported types."
+      },
+      {
+        "timestamp": "28:27",
+        "text": "As those modules adopt stricter concurrency checking, the compiler will recheck your assumptions."
+      },
+      {
+        "timestamp": "28:33",
+        "text": "At the end of this road, your code will benefit from both memory safety and data race safety, helping you focus on building great apps."
+      },
+      {
+        "timestamp": "28:42",
+        "text": "And thank you for sailing with me on the sea of concurrency."
+      },
+      {
+        "timestamp": "28:47",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -285,5 +1208,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10095"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:16.613Z"
+  "extractedAt": "2026-10-17T18:50:15.050Z"
 }

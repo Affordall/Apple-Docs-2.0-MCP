@@ -3,7 +3,6 @@
   "year": "2019",
   "url": "https://developer.apple.com/videos/play/wwdc2019/406/",
   "title": "Create ML for Object Detection and Sound Classification",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools",
@@ -58,5 +57,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/209"
     }
   ],
-  "extractedAt": "2026-10-11T16:47:09.424Z"
+  "extractedAt": "2026-10-17T18:57:02.522Z"
 }

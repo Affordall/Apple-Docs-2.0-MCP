@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110922/",
   "title": "Q&A: C, C++, Objective-C compiler, analyzer, sanitizer, debugger, and linker",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools"
@@ -21,5 +20,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110367"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:07.835Z"
+  "extractedAt": "2026-10-17T18:50:05.382Z"
 }

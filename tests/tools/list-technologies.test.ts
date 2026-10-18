@@ -2,16 +2,8 @@ import type { Mocked } from 'vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleListTechnologies } from '../../src/tools/list-technologies.js';
 import { httpClient } from '../../src/utils/http-client.js';
-import { technologiesCache } from '../../src/utils/cache.js';
 
 vi.mock('../../src/utils/http-client.js');
-vi.mock('../../src/utils/cache.js', () => ({
-  technologiesCache: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
-  generateUrlCacheKey: vi.fn().mockImplementation((url, params) => `${url}-${JSON.stringify(params)}`),
-}));
 
 const mockHttpClient = httpClient as Mocked<typeof httpClient>;
 
@@ -206,18 +198,13 @@ describe('list-technologies', () => {
     it('should handle fetch errors', async () => {
       mockHttpClient.getJson.mockRejectedValue(new Error('Network error'));
 
-      const result = await handleListTechnologies();
-      
-      expect(result).toContain('Error: Failed to list technologies:');
-      expect(result).toContain('Network error');
+      await expect(handleListTechnologies()).rejects.toThrow('Network error');
     });
 
     it('should report malformed JSON as an error', async () => {
       mockHttpClient.getJson.mockResolvedValue({ invalid: 'response' });
 
-      const result = await handleListTechnologies();
-
-      expect(result).toContain('Error: Failed to list technologies:');
+      await expect(handleListTechnologies()).rejects.toThrow();
     });
 
     it('should return detailed technology information when available', async () => {
@@ -251,124 +238,8 @@ describe('list-technologies', () => {
       const result = await handleListTechnologies();
 
       expect(result).toContain('[Metal]');
-      expect(result).toContain('Languages: swift, occ');
-      expect(result).toContain('Categories: Graphics, Games');
-    });
-
-    it('should apply the limit to each category', async () => {
-      const limitTestResponse = {
-        references: {},
-        sections: [
-          {
-            kind: 'technologies',
-            groups: [
-              {
-                name: 'UI Frameworks',
-                technologies: [
-                  {
-                    title: 'SwiftUI',
-                    identifier: 'swiftui',
-                    tags: ['UI'],
-                    languages: ['swift'],
-                    destination: { identifier: 'doc://com.apple.documentation/documentation/swiftui' }
-                  },
-                  {
-                    title: 'UIKit',
-                    identifier: 'uikit',
-                    tags: ['UI'],
-                    languages: ['swift', 'occ'],
-                    destination: { identifier: 'doc://com.apple.documentation/documentation/uikit' }
-                  },
-                  {
-                    title: 'AppKit',
-                    identifier: 'appkit',
-                    tags: ['UI'],
-                    languages: ['swift', 'occ'],
-                    destination: { identifier: 'doc://com.apple.documentation/documentation/appkit' }
-                  }
-                ]
-              },
-              {
-                name: 'Data Frameworks',
-                technologies: [
-                  {
-                    title: 'Core Data',
-                    identifier: 'coredata',
-                    tags: ['Data'],
-                    languages: ['swift', 'occ'],
-                    destination: { identifier: 'doc://com.apple.documentation/documentation/coredata' }
-                  },
-                  {
-                    title: 'CloudKit',
-                    identifier: 'cloudkit',
-                    tags: ['Data'],
-                    languages: ['swift', 'occ'],
-                    destination: { identifier: 'doc://com.apple.documentation/documentation/cloudkit' }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      };
-
-      mockHttpClient.getJson.mockResolvedValue(limitTestResponse);
-
-      const result = await handleListTechnologies(undefined, undefined, true, 2);
-
-      // The first 2 of each category
-      expect(result).toContain('SwiftUI');
-      expect(result).toContain('UIKit');
-      expect(result).not.toContain('AppKit');
-      expect(result).toContain('Core Data');
-      expect(result).toContain('CloudKit');
-      expect(result).toContain('Found 4 technologies');
-    });
-
-    it('should list every category under the limit', async () => {
-      const multiGroupResponse = {
-        references: {},
-        sections: [
-          {
-            kind: 'technologies',
-            groups: [
-              {
-                name: 'Group A',
-                technologies: [
-                  { title: 'Tech 1', identifier: 'tech1', tags: [], languages: ['swift'], destination: { identifier: 'doc://com.apple.documentation/documentation/tech1' } },
-                  { title: 'Tech 2', identifier: 'tech2', tags: [], languages: ['swift'], destination: { identifier: 'doc://com.apple.documentation/documentation/tech2' } }
-                ]
-              },
-              {
-                name: 'Group B',
-                technologies: [
-                  { title: 'Tech 3', identifier: 'tech3', tags: [], languages: ['swift'], destination: { identifier: 'doc://com.apple.documentation/documentation/tech3' } },
-                  { title: 'Tech 4', identifier: 'tech4', tags: [], languages: ['swift'], destination: { identifier: 'doc://com.apple.documentation/documentation/tech4' } }
-                ]
-              }
-            ]
-          }
-        ]
-      };
-
-      mockHttpClient.getJson.mockResolvedValue(multiGroupResponse);
-
-      const result = await handleListTechnologies(undefined, undefined, true, 1);
-
-      // The first of each category
-      expect(result).toContain('Tech 1');
-      expect(result).not.toContain('Tech 2');
-      expect(result).toContain('Tech 3');
-      expect(result).not.toContain('Tech 4');
-      expect(result).toContain('Found 2 technologies');
-    });
-
-    it('should handle zero limit', async () => {
-      mockHttpClient.getJson.mockResolvedValue(mockTechnologiesResponse);
-
-      const result = await handleListTechnologies(undefined, undefined, true, 0);
-
-      expect(result).toContain('No technologies found matching the specified criteria.');
+      expect(result).toContain('swift, occ');
+      expect(result).toContain('Graphics, Games');
     });
   });
 });

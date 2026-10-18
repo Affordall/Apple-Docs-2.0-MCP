@@ -5,29 +5,24 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
-import type AppleDeveloperDocsMCPServer from '../index.js';
-import {
-  searchAppleDocsSchema,
-  getAppleDocContentSchema,
-  listTechnologiesSchema,
-  searchFrameworkSymbolsSchema,
-  getRelatedApisSchema,
-  resolveReferencesBatchSchema,
-  getPlatformCompatibilitySchema,
-  findSimilarApisSchema,
-  getDocumentationUpdatesSchema,
-  getTechnologyOverviewsSchema,
-  getSampleCodeSchema,
-  searchDocsMapSchema,
-} from '../schemas/index.js';
-import {
-  listWWDCVideosSchema,
-  searchWWDCContentSchema,
-  getWWDCVideoSchema,
-  getWWDCCodeExamplesSchema,
-  browseWWDCTopicsSchema,
-  findRelatedWWDCVideosSchema,
-} from '../schemas/wwdc.schemas.js';
+import { getAppleDocContentSchema } from '../schemas/doc-content.schema.js';
+import { indexKindSchema, searchDocsMapSchema } from '../schemas/docs-map.schema.js';
+import { searchAppleDocsSchema } from '../schemas/search.schema.js';
+import { listTechnologiesSchema } from '../schemas/technologies.schema.js';
+import { listWWDCVideosSchema, searchWWDCContentSchema, getWWDCVideoSchema } from '../schemas/wwdc.schemas.js';
+import { API_LIMITS, APPLE_URLS, RATE_LIMIT, WWDC_CONFIG } from '../utils/constants.js';
+import { fetchAppleDocJson } from './doc-fetcher.js';
+import { handleFindSimilarApis } from './find-similar-apis.js';
+import { handleGetDocumentationUpdates } from './get-documentation-updates.js';
+import { handleGetPlatformCompatibility } from './get-platform-compatibility.js';
+import { handleGetRelatedApis } from './get-related-apis.js';
+import { handleGetSampleCode } from './get-sample-code.js';
+import { handleGetTechnologyOverviews } from './get-technology-overviews.js';
+import { handleListTechnologies } from './list-technologies.js';
+import { handleResolveReferencesBatch } from './resolve-references-batch.js';
+import { searchStream } from './search-api.js';
+import { searchFrameworkSymbols } from './search-framework-symbols.js';
+import { parseSearchResults } from './search-parser.js';
 import {
   handleBrowseWWDCTopics,
   handleFindRelatedWWDCVideos,
@@ -39,153 +34,113 @@ import {
 } from './wwdc/wwdc-handlers.js';
 import { handleSearchDocsMap } from './search-docs-map.js';
 
+/** A tool's answer: its Markdown as the one text item. A failure is thrown, and the SDK answers it with `isError`. */
 const text = (result: string): CallToolResult => ({ content: [{ type: 'text', text: result }] });
 
-export function registerTools(server: McpServer, docs: AppleDeveloperDocsMCPServer): void {
+/** A view of a page asked for in Objective-C: the views read the Swift page */
+class ViewLanguageError extends Error {}
+
+/** The index source given no framework, or several: it reads one framework's sidebar */
+class IndexFrameworkError extends Error {}
+
+export function registerTools(server: McpServer): void {
   server.registerTool('search_apple_docs', {
     title: 'Search Apple Docs',
-    description: "Search developer.apple.com the way its search page does (Apple's search API). Returns links, not content: each result's title, framework, type and Apple's one-line summary, grouped by section. type \"all\" (the default) covers documentation, the Human Interface Guidelines, sample code and App Store Connect Help, plus a WWDC Sessions section of up to 5 sessions, each with the get_wwdc_video call that reads it; \"documentation\", \"design\", \"sample\" or \"help\" (App Store Connect Help) searches only that. Read a result with get_apple_doc_content. Searches go out one at a time, 15 s apart, as Apple answers quicker ones with no results; \"all\" sends two.",
+    description: `Search Apple's developer site the way developer.apple.com/search does, best match first: API reference, articles, sample code, the Human Interface Guidelines, App Store Connect Help and WWDC sessions. Use it to find pages by what they do or are about ("SwiftUI haptic feedback", "TestFlight external testers"); for a name you already know, search_docs_map answers at once. Returns links, each with its title, framework, kind and one-line summary; read a page with get_apple_doc_content, a session with get_wwdc_video. For sample code, type "sample" ranks every sample project on the site, including ones Apple's Sample Code Library doesn't list; for WWDC sessions, type "video". Searches run one at a time, ${RATE_LIMIT.SEARCH_SPACING_MS / 1000} s apart, so several in a row are slow.`,
     inputSchema: searchAppleDocsSchema,
     annotations: { readOnlyHint: true },
-  }, ({ query, type }) => docs.searchAppleDocs(query, type));
+  }, async ({ query, type }) => parseSearchResults(await searchStream(query, type), query,
+    `${APPLE_URLS.SEARCH}?q=${encodeURIComponent(query)}`, type));
 
   server.registerTool('get_apple_doc_content', {
     title: 'Get Apple Doc Content',
-    description: "One page of Apple's documentation as Markdown, rendered from the page's JSON, the data developer.apple.com builds the page from, in its Swift version: the symbol's kind, Apple's summary, a deprecated API's message, its declaration, the overview with its code listings, tables, term lists, notes, images and videos (with Apple's alt text), the articles it's mentioned in, a property list key's details and attributes, the Topics groups with each group's description and each member's declaration and summary, a protocol requirement's default implementations, the Relationships (conforms to, inherits from, inherited by, conforming types), platform availability and the See Also links; a sample page's Download; a tutorial overview's volumes and chapters, each tutorial with its summary, and its resources, and a tutorial's steps with the code file after each and its project files; a web-service page's (App Store Connect API, App Store Server API and the like) URL, parameters, body, response codes, properties and possible values. An App Store Connect Help page comes as its article converted to Markdown. Links in the text come as links. The include\u2026 flags append related APIs, referenced types, similar APIs and a platform analysis, read from the page's JSON.",
+    description: "Read one page of Apple's developer documentation by its URL: an API, article, sample project, tutorial, Human Interface Guidelines page, App Store Connect Help article or web-service endpoint (App Store Connect API, App Store Server API and the like). Returns the whole page as Markdown: summary, declarations, overview with its code, each member with its declaration and summary, relationships, the versions it's available in on each platform with Apple's notes, and See Also; for a sample, its Download link; for a tutorial, its steps with their code; for an endpoint, its URL, parameters and responses. Use it on a search result's link or a URL you already have; language \"occ\" reads an API's Objective-C version. A view answers one question about an API in less: \"related\" (what it inherits, conforms to and lists, with summaries), \"similar\" (what to use instead, led by the pages its deprecation note names), \"references\" (the pages it links to, with their summaries) or \"availability\" (the versions that introduced and deprecated it on each platform).",
     inputSchema: getAppleDocContentSchema,
     annotations: { readOnlyHint: true },
-  }, ({ url, includeRelatedApis, includeReferences, includeSimilarApis, includePlatformAnalysis }) =>
-    docs.getAppleDocContent(url, includeRelatedApis, includeReferences, includeSimilarApis, includePlatformAnalysis));
+  }, async ({ url, language, view, searchDepth, maxReferences, filterByType }) => {
+    if (view !== 'page' && language !== 'swift') {
+      throw new ViewLanguageError(`view "${view}" reads the Swift page; leave language out, or read the page with view "page"`);
+    }
+    // Each view runs the tool it replaced, with that tool's defaults for what it took and no past call set
+    switch (view) {
+      case 'related':
+        return text(await handleGetRelatedApis(url));
+      case 'similar':
+        return text(await handleFindSimilarApis(url, searchDepth));
+      case 'references':
+        return text(await handleResolveReferencesBatch(url, maxReferences, filterByType));
+      case 'availability':
+        return text(await handleGetPlatformCompatibility(url));
+      case 'page':
+        return fetchAppleDocJson(url, language);
+    }
+  });
 
   server.registerTool('list_technologies', {
     title: 'List Technologies',
-    description: "Apple's technology index: every framework and technology with its link, its languages (swift, occ, data) and its categories, alphabetical within each category. category keeps the categories whose name contains it, or else the technologies with a tag that contains it (\"Machine learning\": Core ML, Create ML, Vision…), in any case; a beta technology is marked (Beta). The last segment of a technology's link (\"swiftui\", \"storekit\") is the framework search_framework_symbols takes.",
+    description: "Browse four of Apple's catalogs. catalog \"technologies\": every Apple framework and technology, grouped by Apple's categories, each with its link, languages, tags and Apple's one-line summary, beta ones marked; use it to see which frameworks fit a task (category \"Machine learning\") or to get a framework's exact name and link. catalog \"samples\": Apple's Sample Code Library, each sample with its framework, sections and summary, featured ones first, then by the library's sections (\"WWDC26\" holds that year's); to find a sample by what it does, search_apple_docs with type \"sample\" ranks every sample on the site, including ones this library leaves out. catalog \"updates\": Apple's Updates page as links with summaries, each framework's updates page (\"SwiftUI updates\"), the release notes of each OS, Xcode and Safari, and each past WWDC's What's new page; use it to find what changed in a framework or a release. catalog \"overviews\": Apple's Technology Overviews, guides to which technologies to use for a goal (app design and UI, Liquid Glass, games, AI and machine learning and more), the collections with their summaries and the articles in each; use it to choose an approach before choosing APIs. Read any entry with get_apple_doc_content. The technologies and samples answers also name a TSV of the whole catalog, one entry a line, for a grep the parameters can't make.",
     inputSchema: listTechnologiesSchema,
     annotations: { readOnlyHint: true },
-  }, ({ category, language, includeBeta, limit }) =>
-    docs.listTechnologies(category, language, includeBeta, limit));
-
-  server.registerTool('search_framework_symbols', {
-    title: 'Search Framework Symbols',
-    description: "The symbols in one framework's navigator index: each one's name, link and kind, without summaries. framework is the last segment of the framework's documentation link (\"swiftui\", \"storekit\"); symbolType keeps one kind; namePattern is a wildcard such as \"*View\" or \"UI*\", in any case; nested symbols count toward limit. Read a symbol with get_apple_doc_content.",
-    inputSchema: searchFrameworkSymbolsSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ framework, symbolType, namePattern, language, limit }) =>
-    docs.searchFrameworkSymbols(framework, symbolType, namePattern, language, limit));
+  }, async ({ catalog, category, language, framework, technology, searchQuery, includeBeta, includeSubcategories, limit }) => {
+    switch (catalog) {
+      case 'samples':
+        return text(await handleGetSampleCode({ framework, category, includeBeta, searchQuery },
+          limit ?? API_LIMITS.DEFAULT_SAMPLE_CODE_LIMIT));
+      case 'updates':
+        return text(await handleGetDocumentationUpdates(category, technology, undefined, searchQuery, includeBeta,
+          limit ?? API_LIMITS.DEFAULT_DOCUMENTATION_UPDATES_LIMIT));
+      case 'overviews':
+        return text(await handleGetTechnologyOverviews(category, searchQuery, includeSubcategories,
+          limit ?? API_LIMITS.DEFAULT_TECHNOLOGY_OVERVIEWS_LIMIT));
+      case 'technologies':
+        return text(await handleListTechnologies(category, language, includeBeta,
+          limit ?? API_LIMITS.DEFAULT_TECHNOLOGIES_LIMIT));
+    }
+  });
 
   server.registerTool('search_docs_map', {
     title: 'Search Docs Map',
-    description: "Every page of Apple's documentation and the Human Interface Guidelines whose title contains query, in any case and as typed (no pattern syntax), from the docs map on disk (api-map/apple-docs-map.tsv, built by scripts/build-docs-map.ts; no network): each one's title, kind, technology and link, shortest titles first; technology keeps one or more frameworks. Read a page with get_apple_doc_content.",
+    description: "Find any page of Apple's documentation by its title, at once: API symbols (types, methods, properties, enum cases, macros), articles, samples, web-service endpoints, Info.plist and entitlement keys, Human Interface Guidelines and App Store Connect Help pages. Use it when you know a name or part of one, from code, an error or another page. Returns each match's title, kind, Beta or Deprecated mark, technology, the page it sits under (which tells same-named members apart) and link, shortest titles first; read one with get_apple_doc_content. It matches titles only, so to search by what something does, use search_apple_docs. Pages Apple added after the map's date, given in each answer, are missing: source \"index\" reads one framework's sidebar live and matches a wildcard (\"*View\" structs in SwiftUI, \"*Delegate\" protocols in UIKit), to see a family of APIs or what's newer than the map, without summaries.",
     inputSchema: searchDocsMapSchema,
     annotations: { readOnlyHint: true },
-  }, async ({ query, technology, limit }) => text(await handleSearchDocsMap(query, technology, limit)));
-
-  server.registerTool('get_related_apis', {
-    title: 'Get Related APIs',
-    description: "The APIs one documentation page relates to, read from that page's JSON alone: what it inherits from and conforms to, its See Also group and the first 3 APIs of each Topics group, each with its link and Apple's one-line summary.",
-    inputSchema: getRelatedApisSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ apiUrl, includeInherited, includeConformance, includeSeeAlso }) =>
-    docs.getRelatedApis(apiUrl, includeInherited, includeConformance, includeSeeAlso));
-
-  server.registerTool('resolve_references_batch', {
-    title: 'Resolve References Batch',
-    description: "The pages one documentation page references, read from that page's JSON alone (no further requests): each one's title, kind, Apple's summary and, for a symbol, its declaration, grouped by kind. Takes the first maxReferences in the JSON's own order, not by relevance, and leaves out the page's images and other media; filterByType keeps one role or kind.",
-    inputSchema: resolveReferencesBatchSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ sourceUrl, maxReferences, filterByType }) =>
-    docs.resolveReferencesBatch(sourceUrl, maxReferences, filterByType));
-
-  server.registerTool('get_platform_compatibility', {
-    title: 'Get Platform Compatibility',
-    description: "Where one API is available, from its page's JSON: each platform with the version that introduced it and the version that deprecated it, with Apple's note, and the minimum versions; an API deprecated on every platform it supports is flagged as such. compareMode \"framework\" runs the same check with related APIs included.",
-    inputSchema: getPlatformCompatibilitySchema,
-    annotations: { readOnlyHint: true },
-  }, ({ apiUrl, compareMode, includeRelated }) =>
-    docs.getPlatformCompatibility(apiUrl, compareMode, includeRelated));
-
-  server.registerTool('find_similar_apis', {
-    title: 'Find Similar APIs',
-    description: "Alternatives to one API, read from its page's JSON: for a deprecated API, first the pages its deprecation note names (Apple's replacements, scored 10/10), then its See Also group (8/10) and, with searchDepth \"medium\" or \"deep\", its Topics groups (6/10); \"deep\" also reads the See Also of the first results. The scores come from where an API was found, not from comparing APIs.",
-    inputSchema: findSimilarApisSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ apiUrl, searchDepth, filterByCategory, includeAlternatives }) =>
-    docs.findSimilarApis(apiUrl, searchDepth, filterByCategory, includeAlternatives));
-
-  server.registerTool('get_documentation_updates', {
-    title: 'Get Documentation Updates',
-    description: "Links from Apple's Updates page, each with Apple's one-line summary: the release notes of each OS, Xcode and Safari; each framework's updates page (\"SwiftUI updates\"); and the What's new page of each past WWDC. Returns the links, not the changes; read one with get_apple_doc_content. For WWDC sessions use the WWDC tools.",
-    inputSchema: getDocumentationUpdatesSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ category, technology, year, searchQuery, includeBeta, limit }) =>
-    docs.getDocumentationUpdates(category, technology, year, searchQuery, includeBeta, limit));
-
-  server.registerTool('get_technology_overviews', {
-    title: 'Get Technology Overviews',
-    description: "Apple's Technology Overviews guides: its collections, each with Apple's summary, and the articles in each, as one tree in Apple's order. category gives one collection with everything in it; searchQuery gives a flat list of the entries that mention it, each with the collection it is in. Returns links, not the articles; read one with get_apple_doc_content.",
-    inputSchema: getTechnologyOverviewsSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ category, searchQuery, includeSubcategories, limit }) =>
-    docs.getTechnologyOverviews(category, searchQuery, includeSubcategories, limit));
-
-  server.registerTool('get_sample_code', {
-    title: 'Get Sample Code',
-    description: "Apple's sample-code library: project titles with links and Apple's one-line summaries, grouped by framework; read a project's page, with its Download link, with get_apple_doc_content. framework matches the project's framework in any spelling (\"storekit\", \"Store Kit\"); searchQuery matches titles first, then frameworks, paths and summaries.",
-    inputSchema: getSampleCodeSchema,
-    annotations: { readOnlyHint: true },
-  }, ({ framework, beta, searchQuery, limit }) => docs.getSampleCode(framework, beta, searchQuery, limit));
+  }, async ({ source, query, technology, kind, limit }) => {
+    if (source === 'map') {
+      return text(await handleSearchDocsMap(query, technology, kind, limit ?? API_LIMITS.DEFAULT_DOCS_MAP_LIMIT));
+    }
+    const [framework, ...others] = technology ?? [];
+    if (!framework || others.length > 0) {
+      throw new IndexFrameworkError('source "index" reads one framework\'s sidebar: give technology one name, as ["SwiftUI"]');
+    }
+    return text(await searchFrameworkSymbols(framework, indexKindSchema.parse(kind), query,
+      limit ?? API_LIMITS.DEFAULT_FRAMEWORK_SYMBOLS_LIMIT));
+  });
 
   server.registerTool('list_wwdc_videos', {
     title: 'List WWDC Videos',
-    description: "WWDC sessions from the data bundled with this server (no network): each one's title, its link on developer.apple.com, whether it has a transcript and code, and its topics. year is one year or \"all\" (list_wwdc_years lists them); topic is a topic ID from browse_wwdc_topics or a word in the title; hasCode keeps the sessions with, or without, code.",
+    description: 'List WWDC sessions, every year since 2014, by year, topic or text in the title or topic names: each with its title, link, topics, and whether it has a transcript and code, newest year first. Use it to browse sessions; search_wwdc_content finds what sessions said or showed, and get_wwdc_video reads one. view "years" counts each year\'s sessions; view "topics" lists the WWDC topics with their IDs and session counts, or one topic\'s sessions.',
     inputSchema: listWWDCVideosSchema,
     annotations: { readOnlyHint: true },
-  }, async ({ year, topic, hasCode, limit }) =>
-    text(await handleListWWDCVideos(year, topic, hasCode, limit)));
+  }, async ({ view, year, topic, hasCode, includeVideos, limit }) => text(await (view === 'years'
+    ? handleListWWDCYears()
+    : view === 'topics'
+      ? handleBrowseWWDCTopics(topic, includeVideos, year, limit ?? WWDC_CONFIG.DEFAULT_TOPIC_VIDEOS_LIMIT)
+      : handleListWWDCVideos(year, topic, hasCode, limit ?? WWDC_CONFIG.DEFAULT_VIDEO_LIMIT))));
 
   server.registerTool('search_wwdc_content', {
     title: 'Search WWDC Content',
-    description: "Full-text search of the bundled WWDC transcripts and code (no network). For each session that matches, most matches first: its title, link and year, and up to 3 matches, each a transcript paragraph or the code lines around the match, with the code example's title and the time it appears. searchIn picks transcripts, code or both; language filters the code.",
+    description: 'Search what WWDC sessions said and showed, every year since 2014: the full text of their transcripts and their code. Returns the sessions whose transcript or code contains the query, most matches first, each with its count of matches and its first matching passages and code excerpts, with the time each comes up. Use it to find the sessions that cover an API or a technique; read one with get_wwdc_video. view "examples" lists the code itself instead: each example that contains query (pass the type or attribute the code uses, "LanguageModelSession", "@Generable"), with its session, year and time, newest year first. The answer also names a folder of every session as text, for a grep across sessions.',
     inputSchema: searchWWDCContentSchema,
     annotations: { readOnlyHint: true },
-  }, async ({ query, searchIn, year, language, limit }) =>
-    text(await handleSearchWWDCContent(query, searchIn, year, language, limit)));
+  }, async ({ view, query, searchIn, year, topic, limit }) => text(await (view === 'examples'
+    ? handleGetWWDCCodeExamples(query, topic, year, limit ?? WWDC_CONFIG.DEFAULT_CODE_EXAMPLES_LIMIT)
+    : handleSearchWWDCContent(query, searchIn, year, limit ?? WWDC_CONFIG.DEFAULT_SEARCH_LIMIT))));
 
   server.registerTool('get_wwdc_video', {
     title: 'Get WWDC Video',
-    description: 'One WWDC session from the bundled data, as text (no network): title, year and topics; its links, including the HD and SD .mp4 downloads and the documentation it covers; the full transcript as plain text, without timestamps; every code example with the time it appears; and related sessions. Transcripts run to tens of KB: includeTranscript false leaves it out.',
+    description: 'One WWDC session: its title, year and topics; its links, including the video downloads and the documentation it covers; its chapters; the full transcript, each paragraph with its time; every code example with the time it appears; and the sessions Apple lists as related. Transcripts are long: set includeTranscript to false when you need only the code or the links. view "related" lists the sessions related to it instead: those Apple lists, then, across every year, those that share the most of its topics.',
     inputSchema: getWWDCVideoSchema,
     annotations: { readOnlyHint: true },
-  }, async ({ year, videoId, includeTranscript, includeCode }) =>
-    text(await handleGetWWDCVideo(year, videoId, includeTranscript, includeCode)));
-
-  server.registerTool('get_wwdc_code_examples', {
-    title: 'Get WWDC Code Examples',
-    description: "Code examples from the bundled WWDC sessions (no network): each with its title, its session's title, link and year, the time it appears, and the code. framework keeps the examples whose code mentions it, so \"SwiftUI\" matches any code that imports SwiftUI; topic, language and year filter too.",
-    inputSchema: getWWDCCodeExamplesSchema,
-    annotations: { readOnlyHint: true },
-  }, async ({ framework, topic, year, language, limit }) =>
-    text(await handleGetWWDCCodeExamples(framework, topic, year, language, limit)));
-
-  server.registerTool('browse_wwdc_topics', {
-    title: 'Browse WWDC Topics',
-    description: "The WWDC topics in the bundled data (no network), each with its ID, link and session count. With topicId, that topic's sessions instead, filtered by year and capped by limit.",
-    inputSchema: browseWWDCTopicsSchema,
-    annotations: { readOnlyHint: true },
-  }, async ({ topicId, includeVideos, year, limit }) =>
-    text(await handleBrowseWWDCTopics(topicId, includeVideos, year, limit)));
-
-  server.registerTool('find_related_wwdc_videos', {
-    title: 'Find Related WWDC Videos',
-    description: "Sessions related to one WWDC session, from the bundled data (no network): first those Apple lists as related on the session's page, then sessions sharing its topics and, with includeYearRelated, sessions of the same year; each with its year, link, topics and whether it has a transcript and code.",
-    inputSchema: findRelatedWWDCVideosSchema,
-    annotations: { readOnlyHint: true },
-  }, async ({ videoId, year, includeExplicitRelated, includeTopicRelated, includeYearRelated, limit }) =>
-    text(await handleFindRelatedWWDCVideos(videoId, year, includeExplicitRelated, includeTopicRelated, includeYearRelated, limit)));
-
-  server.registerTool('list_wwdc_years', {
-    title: 'List WWDC Years',
-    description: 'The WWDC years in the bundled data, each with its session count, plus the total and how many sessions have code and transcripts.',
-    annotations: { readOnlyHint: true },
-  }, async () => text(await handleListWWDCYears()));
+  }, async ({ view, year, videoId, includeTranscript, includeCode, limit }) => text(await (view === 'related'
+    ? handleFindRelatedWWDCVideos(videoId, year, limit)
+    : handleGetWWDCVideo(year, videoId, includeTranscript, includeCode))));
 }

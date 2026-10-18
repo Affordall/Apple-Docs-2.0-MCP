@@ -1,51 +1,44 @@
 /**
- * In-memory caches of Apple's answers, one per kind, each holding at most its size and expiring entries (lru-cache)
+ * In-memory caches, each holding at most its size and expiring entries (lru-cache). Apple's JSON is cached by URL, as
+ * Apple sends it, and every tool reads through them, so a page or index another tool just read isn't downloaded again.
  */
 import { LRUCache } from 'lru-cache';
 
-import { CACHE_SIZE, CACHE_TTL, WWDC_CONFIG } from './constants.js';
+import type { SampleCodeEntry } from '../tools/get-sample-code.js';
+import { CACHE_SIZE, CACHE_TTL } from './constants.js';
+import { httpClient } from './http-client.js';
 
-/** A page as `get_apple_doc_content` returns it */
-export const apiCache = new LRUCache<string, { content: Array<{ type: string; text: string }> }>({
-  max: CACHE_SIZE.API_DOCS,
-  ttl: CACHE_TTL.API_DOCS,
-});
-export const indexCache = new LRUCache<string, string>({ max: CACHE_SIZE.FRAMEWORK_INDEX, ttl: CACHE_TTL.FRAMEWORK_INDEX });
-export const technologiesCache = new LRUCache<string, string>({ max: CACHE_SIZE.TECHNOLOGIES, ttl: CACHE_TTL.TECHNOLOGIES });
-export const updatesCache = new LRUCache<string, string>({ max: CACHE_SIZE.UPDATES, ttl: CACHE_TTL.UPDATES });
-export const sampleCodeCache = new LRUCache<string, string>({ max: CACHE_SIZE.SAMPLE_CODE, ttl: CACHE_TTL.SAMPLE_CODE });
-export const technologyOverviewsCache = new LRUCache<string, string>({
-  max: CACHE_SIZE.TECHNOLOGY_OVERVIEWS,
-  ttl: CACHE_TTL.TECHNOLOGY_OVERVIEWS,
-});
-export const wwdcDataCache = new LRUCache<string, string>({ max: 100, ttl: WWDC_CONFIG.CACHE_TTL });
+/** A fetch lru-cache resolved without a value: only an aborted fetch does, and nothing here aborts one */
+class FetchAbortedError extends Error {}
 
 /**
- * Generate cache key for URL-based requests
+ * Apple's JSON by URL, fetched once per entry's lifetime; simultaneous requests for one URL share one fetch.
+ * `allowStaleOnFetchRejection` stays off: it would turn a failed fetch into `undefined`.
  */
-export function generateUrlCacheKey(url: string, params?: Record<string, unknown>): string {
-  let key = url;
-  if (params) {
-    const sortedParams = Object.keys(params)
-      .sort()
-      .map(k => `${k}=${JSON.stringify(params[k])}`)
-      .join('&');
-    key += `?${sortedParams}`;
+const jsonCache = (max: number, ttl: number): LRUCache<string, object> =>
+  new LRUCache<string, object>({ max, ttl, fetchMethod: (url) => httpClient.getJson<object>(url) });
+
+/** Documentation pages, catalog pages (Updates, Technology Overviews, Sample Code) and `technologies.json` */
+export const pageCache = jsonCache(CACHE_SIZE.PAGES, CACHE_TTL.PAGES);
+/** Navigator indexes, a framework's or a catalog's sidebar (`/tutorials/data/index/…`), SwiftUI's 1.4 MB among them */
+export const indexCache = jsonCache(CACHE_SIZE.INDEXES, CACHE_TTL.INDEXES);
+
+/** `key`'s value through `cache`'s fetchMethod */
+export async function cachedFetch<V extends object>(cache: LRUCache<string, V>, key: string): Promise<V> {
+  const value = await cache.fetch(key);
+  if (value === undefined) {
+    throw new FetchAbortedError(`${key}: the fetch was aborted`);
   }
-  return key;
+  return value;
 }
 
-/**
- * Generate cache key for enhanced analysis
- */
-export function generateEnhancedCacheKey(
-  url: string,
-  options: {
-    includeRelatedApis?: boolean;
-    includeReferences?: boolean;
-    includeSimilarApis?: boolean;
-    includePlatformAnalysis?: boolean;
-  },
-): string {
-  return generateUrlCacheKey(url, options);
+/** The JSON at `url`, through `cache`, as the caller's type */
+export async function cachedJson<T>(cache: LRUCache<string, object>, url: string): Promise<T> {
+  return await cachedFetch(cache, url) as T;
 }
+
+/** The Sample Code Library's entries, read once and filtered for each request */
+export const sampleCodeCache = new LRUCache<string, SampleCodeEntry[]>({
+  max: 1,
+  ttl: CACHE_TTL.PAGES,
+});

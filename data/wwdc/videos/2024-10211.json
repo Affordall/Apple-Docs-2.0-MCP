@@ -3,16 +3,275 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10211/",
   "title": "Support real-time ML inference on the CPU",
-  "speakers": [],
-  "duration": "",
+  "duration": "20:03",
   "topics": [
     "Machine Learning & AI"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, my name is Simon Gladman and I work for the Vector & Numerics Group here at Apple. Today, I’ll be talking about some exciting new functionality in our machine learning library, Basic Neural Network Subroutines or BNNS.\n\nFor the last few years, BNNS has provided a comprehensive API for machine learning inference and training on the CPU.\n\nToday, we’re making BNNS faster, more energy efficient, and far, far easier to work with. In this video, I’ll introduce you to our next great API for CPU-based machine learning, BNNS Graph.\n\nI’ll start by introducing you to our new API and explain some of the ways it can optimize machine learning and AI models. Then, I’ll look at the important features that help BNNS Graph meet the demands of real-time use cases. And later on, I’ll talk through the steps you need to take for your app to adopt BNNS Graph. Finally, I’ll walk through how to implement BNNS Graph in Swift and how it can work with SwiftUI and Swift Charts. So, make yourself a cup of tea, settle down on your favorite chair, and let’s dive into BNNS Graph.\n\nJust before we get started, let me share how BNNS fits into Apple’s overall stack of machine learning frameworks. BNNS is one of the libraries in our Accelerate framework and it allows you to integrate your model into your app.\n\nIt accelerates machine learning on the CPU and it’s used by Apple’s machine learning framework, Core ML.\n\nOur new API for CPU-based machine learning, BNNS Graph, allows the BNNS library to consume an entire graph rather than individual machine learning primitives.\n\nTraining is the initial step for deploying your model onto Apple platforms Once the model has been trained, it has to be prepared - that is, optimized and converted - for deployment on device and after preparing the model, it's ready to be integrated in your applications. In this video, I’ll be focussing on the integrate part of the workflow To understand BNNS Graph, I’d like to first look at the classic BNNS API.\n\nUp until today, BNNS presented a set of layer-focused APIs and supplied the individual performance primitives, the building blocks that you would use for machine learning. For each single operation, such as a convolution, you would typically have to configure lots of details.\n\nYou would use n-dimensional array descriptors to specify the arguments and their properties to the layer. This means, you’d create a descriptor for the input, a descriptor for the output, a descriptor for the convolution kernel, or weights matrix. And, as you might have guessed, BNNS expected the convolution bias as one more array descriptor. Then, you’d use those array descriptors to create a parameters structure and pass that parameters structure to a function that creates the layer itself. And finally, you’d apply the layer during inference. If you wanted to use BNNS to implement an existing model, you’d have to code each layer as a BNNS primitive and write code for all of the intermediate tensors.\n\nIn the past few years, we have been working on a new API: BNNS Graph. BNNS Graph takes an entire graph that consists of multiple layers and the dataflow between those layers and consumes it as a single object; a graph object. For you, this means you don’t have to write the code for each individual layer. Furthermore, you and your users will benefit from faster performance and better energy efficiency. Let’s run through a quick summary of the workflow to integrate BNNS Graph into your app.\n\nYou’ll start with a Core ML model package, or an mlpackage file. For more details on how to create an mlpackage, watch the \"Deploy machine learning and AI models on-device with Core ML\" video. Xcode automatically compiles the package to an mlmodelc file. and then you write the code that builds the graph from the mlmodelc file. The last step is to create a context to wrap the graph. And it’s that context that performs inference. Because BNNS Graph is aware of the entire model, it’s able to perform a number of optimizations that were not possible before. And even better, these optimizations come for free. Here is an example of a small section of a model. The first layer in this section performs an element wise addition of tensors A and B and writes the results into C. The next layer performs a convolution. And, after that, the model applies an activation function to the convolution result. and finally, the slice layer writes a subset of the elements into tensor D.\n\nBNNS Graph’s optimizations include mathematical transformations. In this example, the slice operation is the last layer. This means all the preceding operations act over the entire tensor, rather than just the slice.\n\nThe mathematical transformation optimization moves the slice to the beginning of the model so that BNNS only needs to compute the subset of elements in that slice.\n\nOptimizing with layer fusion involves combining some layers into a single operation. In this example, BNNS has fused the convolution and activation layers. And another optimization is copy elision where a slice operation may naively copy the data in the slice to a new tensor.\n\nBNNS Graph optimizes the slice so that it passes a window on the original data.\n\nBy ensuring tensors share memory where possible, BNNS Graph can also optimize memory usage and eliminate unnecessary allocations. In this example tensors A and C can share the same memory, and tensors B and D can also share the same memory.\n\nBNNS Graph’s weight repacking optimizations can repack weights from, for example, row-major layout to a blocked iteration order that can provide better cache locality.\n\nYou don’t need to write any code to benefit from these optimizations, they happen “just like that”! And, they can provide performance that’s on average, at least 2x faster than previous BNNS primitives.\n\nSo, because our new API is ideally suited to real-time use cases. I’ll be looking at such a use-case, working with audio by adding BNNS Graph to an AudioUnit. Audio Units allow you to create or modify audio and MIDI data in an iOS or macOS app These include music-production apps such as Logic Pro and GarageBand. An audio unit that uses machine learning can offer functionality such as separating audio to isolate or remove vocals, segmenting audio into different regions based on content, or applying timbre transfer to make one instrument sound like another.\n\nIn this demonstration, I’ll keep things simple and create an audio unit that “bit crushes” or quantizes audio to give a distorted effect.\n\nThe main requirements for real-time processing are to avoid any memory allocations or multithreading during the execute phase as doing so may incur a context switch into kernel code and lead to defeat of the real-time deadlines BNNS Graph offers you fine-grained control over the compilation and the execution of models, and you’re able to manage tasks such as memory allocation and whether execution is single- or multi-threaded.\n\nI’m now going to show you how to create an audio unit project that adopts BNNS Graph.\n\nXcode makes creating an audio unit really easy because it includes a template that creates an Audio Unit Extension App.\n\nI’ll get started by dragging and dropping my bitcrusher mlpackage file into the project navigator.\n\nXcode compiles the mlpackage into the mlmodelc file that we’ll use to instantiate the BNNS Graph. So, that’s the first two steps done! Now that I have the mlmodelc file available inside Xcode, I’m ready to create a BNNS Graph object and to wrap it in a modifiable context You’ll only build the graph once, so typically, you’ll do this in a background thread after your app starts up or, when your user first uses a feature that depends on machine learning.\n\nGraph compilation processes the compiled Core ML model into an optimized BNNS Graph object. This object contains a list of kernels that inference invokes and a memory layout map for the intermediate tensors.\n\nThe Xcode template uses Swift and SwiftUI for the business logic and user interface and C++ for real-time processing. The C++ DSP Kernel header file is where all of the signal processing takes place in this project, and that’s where I’ll be adding the BNNS Graph code.\n\nTo do that, I will get the path for the mlmodelc, Build the BNNS Graph, create the context, set the argument type, and create the workspace. Now, let's see how to write the code.\n\nHere’s the code to get the path to the mlmodelc file. Recall that I copied just the mlpackage file into the project, and Xcode has generated the mlmodelc file from the package.\n\nTo specify that the graph only uses a single thread during execution, I’ll create a compilation options structure with the default settings. The default behavior is that BNNS Graph executes on multiple-threads. So, I’ll call the SetTargetSingleThread function to change that.\n\nNow, I’ll use the compilation options and the path to the mlmodelc file to compile the graph. The GraphCompileFromFile function creates a graph. Note that I’ve passed NULL as the second argument to specify that the operation compiles all the functions in the source model.\n\nAnd when the compilation completes, I can safely deallocate the compilation options.\n\nSo, that’s step three done! We’ve created the graph. Now that we have the graph which is immutable the ContextMake function wraps the graph in a context which is mutable. BNNS Graph requires a mutable context to support dynamic shapes and certain other execution options. The context also allows you to set callback functions so that you can manage output and workspace memory yourself.\n\nBNNS Graph can work with tensor structures that specify shape, stride, and rank, and point to the underlying data, or it can work directly with pointers to the underlying data. Because this demonstration will work directly with the audio buffers, I’ll specify that the context’s arguments are pointers. We want to make sure BNNS doesn’t allocate any memory while it’s processing the audio data. So, during this initialization, I’ll create the page aligned workspace.\n\nI need to update the context so that it knows the maximum size of the data it will be working with. To do that, I’ll pass a shape that is based on the maximum frames that the audio unit can render to the SetDynamicShapes function.\n\nNow, the GetWorkspaceSize function returns the amount of memory that I need to allocate for the workspace The workspace memory must be page aligned, and I’ll call aligned_alloc to create the workspace.\n\nIt’s important to note that the argument order in my original Python code may not be the same as the argument order in the mlmodelc file. The GraphGetArgumentPosition function returns the correct position for each argument that I’ll pass to the execute function a little later.\n\nAnd now we have the properly configured context! Just before we move on, I’d like to briefly mention some other options. While we we working with the compilation options, we had the opportunity to set an optimization preference. By default, BNNS optimizes the graph for performance which is perfect for the audio unit. Optimizing for performance means that additional work may be moved to the compile phase, even if it increases the footprint of the BNNS Graph object.\n\nHowever, if the footprint of your app is important, you can optimize for size. Optimizing for size means that data will be left in smallest possible form, but this may decrease execute performance due to cost of performing transformations.\n\nAnother tip is that BNNS Graph includes a function that enables NaNAndInfinityChecks. This debugging setting will help you detect issues such as infinities in tensors when 16-bit accumulators overflow. However, you don’t want to enable this check in your production code! And there we go, we’ve initialized the graph and context, specified single-threaded execution, and created the workspace to ensure BNNS doesn’t perform any allocations. We’re ready to execute the graph! Let’s now take a look at the code required to do just that! The SetBatchSize function sets the size of the first dimension of the input and output signal shapes to the number of audio samples in the frame. In this case, the second argument refers to the function name in the source file. However, because the source file only contains a single function, I can pass NULL.\n\nI’ll pass the five arguments, the output and input signals, and the scalar values that define the amount of quantization, as an array to the execute function. The first argument I’ll add is the output signal. I’ll specify the data_ptr and the data_ptr_size fields based on the outputBuffer for the current audio channel.\n\nThe next argument is the the input signal. I’ll specify the data_ptr and the data_ptr_size fields, but based on the inputBuffer for the current audio channel.\n\nAnd the next arguments are the three scalar values that are derived from the sliders in the user interface.\n\nAnd now I can execute the function! The GraphContextExecute function accepts the context, the arguments, and, of course that important workspace. On return, the output pointer contains the result of the inference. As with the SetBatchSize function: the second argument refers to the function name in the source file, and since the source file only contains a single function, I pass NULL.\n\nFinally, let’s take a look at how to integrate BNNS Graph in a Swift project.\n\nOne perfect use-case for using Swift is to implement our BNNS Graph into the SwiftUI component of our audio unit. This will allow the audio unit’s user interface to display a sine wave that’s been processed by the same model with the same parameters as the audio signal itself. The user interface component of the audio unit uses Swift UI and applies the bitcrusher model to data that contains sampleCount elements and represents a smooth sine wave.\n\nThe srcChartData buffer stores the sine wave representation and the dstChartData buffer stores the sine wave data after BNNS Graph has applied the effect.\n\nThese three buffers store the scalar values that the user controls with the sliders in the user interface.\n\nThe API is consistent between C and Swift, so, much like the audio processing code we looked at earlier, I’ll define a graph and a context.\n\nAnd although Swift doesn’t guarantee real-time safety by providing a workspace as we did in C++ BNNS Graph won’t need to do any memory allocations during execution and this will help towards improving the performance and the energy efficiency of the audio unit.\n\nNext, I’ll declare the argument index variables that define where the arguments live inside the arguments array.\n\nWhat you’re seeing here is the code in the initializer method for the waveform display component. And this is where I create the graph, context, and workspace. The first step is to get the path to the mlmodelc file that Xcode has compiled from the mlpackage. Next, I’ll compile the mlmodelc into a BNNS Graph object.\n\nThen, just as I did in the C++ code, I create the graph context.\n\nYou may be wondering why I don’t use the same context for both the user interface and the audio processing. This is because the context can only execute on one thread at a time. Since the user may well be adjusting one of the sliders while the audio unit is processing data, we need separate contexts for each part of the project.\n\nI’ll do a quick check to ensure that BNNS has successfully created the graph and context.\n\nMuch like I did in the audio processing code, I’ll work directly with pointers to the source and destination chart data. So, I’ll tell the context that the arguments are pointers rather than tensors. In this case, the batch size, the size of the first dimension of the source and destination signal data buffers, is the number of samples in the example sine wave.\n\nAnd after the SetBatchSize function returns, the GetWorkspaceSize function returns the correct size for the sample count.\n\nI’ll calculate the indices into the arguments array. And whenever the user changes the slider value, Swift calls the updateChartData() function that applies the bitcrusher effect to the sine wave.\n\nThe first step in the updateChartData() function is to copy the scalar values into their corresponding storage.\n\nThen, I’ll use the indices to create the arguments array in the correct order.\n\nAnd now I can execute the bitcrusher on the sample sine wave! On return of the execute function, SwiftUI updates the chart in the user interface to show the bit-crushed sine wave.\n\nI’ll jump back into Xcode where I’ve already added the Swift chart that displays the waveform. I’ll declare the buffers that store the arguments.\n\nAnd I’ll declare the graph, context, and argument indices.\n\nInside the initializer, I’ll initialize the graph and context, create the workspace and calculate the indices for the arguments, then, down in the updateChartData() function, I’ll create the arguments function using the indices to ensure the correct ordering and then execute the graph! Let’s press the Xcode run button to start the app and hear our bitcrusher in action! Many thanks for your time. Allow me to wrap up with a summary: BNNS Graph provides the API that enables you to deliver High performance Energy efficient Real-time and latency-sensitive machine learning on the CPU. That’s great for audio apps! Thanks again and best wishes!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, my name is Simon Gladman and I work for the Vector & Numerics Group here at Apple. Today, I’ll be talking about some exciting new functionality in our machine learning library, Basic Neural Network Subroutines or BNNS."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "For the last few years, BNNS has provided a comprehensive API for machine learning inference and training on the CPU."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "Today, we’re making BNNS faster, more energy efficient, and far, far easier to work with. In this video, I’ll introduce you to our next great API for CPU-based machine learning, BNNS Graph."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "I’ll start by introducing you to our new API and explain some of the ways it can optimize machine learning and AI models. Then, I’ll look at the important features that help BNNS Graph meet the demands of real-time use cases. And later on, I’ll talk through the steps you need to take for your app to adopt BNNS Graph. Finally, I’ll walk through how to implement BNNS Graph in Swift and how it can work with SwiftUI and Swift Charts. So, make yourself a cup of tea, settle down on your favorite chair, and let’s dive into BNNS Graph."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "Just before we get started, let me share how BNNS fits into Apple’s overall stack of machine learning frameworks. BNNS is one of the libraries in our Accelerate framework and it allows you to integrate your model into your app."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "It accelerates machine learning on the CPU and it’s used by Apple’s machine learning framework, Core ML."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "Our new API for CPU-based machine learning, BNNS Graph, allows the BNNS library to consume an entire graph rather than individual machine learning primitives."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "Training is the initial step for deploying your model onto Apple platforms Once the model has been trained, it has to be prepared - that is, optimized and converted - for deployment on device and after preparing the model, it's ready to be integrated in your applications. In this video, I’ll be focussing on the integrate part of the workflow To understand BNNS Graph, I’d like to first look at the classic BNNS API."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "Up until today, BNNS presented a set of layer-focused APIs and supplied the individual performance primitives, the building blocks that you would use for machine learning. For each single operation, such as a convolution, you would typically have to configure lots of details."
+      },
+      {
+        "timestamp": "2:48",
+        "text": "You would use n-dimensional array descriptors to specify the arguments and their properties to the layer. This means, you’d create a descriptor for the input, a descriptor for the output, a descriptor for the convolution kernel, or weights matrix. And, as you might have guessed, BNNS expected the convolution bias as one more array descriptor. Then, you’d use those array descriptors to create a parameters structure and pass that parameters structure to a function that creates the layer itself. And finally, you’d apply the layer during inference. If you wanted to use BNNS to implement an existing model, you’d have to code each layer as a BNNS primitive and write code for all of the intermediate tensors."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "In the past few years, we have been working on a new API: BNNS Graph. BNNS Graph takes an entire graph that consists of multiple layers and the dataflow between those layers and consumes it as a single object; a graph object. For you, this means you don’t have to write the code for each individual layer. Furthermore, you and your users will benefit from faster performance and better energy efficiency. Let’s run through a quick summary of the workflow to integrate BNNS Graph into your app."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "You’ll start with a Core ML model package, or an mlpackage file. For more details on how to create an mlpackage, watch the \"Deploy machine learning and AI models on-device with Core ML\" video. Xcode automatically compiles the package to an mlmodelc file. and then you write the code that builds the graph from the mlmodelc file. The last step is to create a context to wrap the graph. And it’s that context that performs inference. Because BNNS Graph is aware of the entire model, it’s able to perform a number of optimizations that were not possible before. And even better, these optimizations come for free. Here is an example of a small section of a model. The first layer in this section performs an element wise addition of tensors A and B and writes the results into C. The next layer performs a convolution. And, after that, the model applies an activation function to the convolution result. and finally, the slice layer writes a subset of the elements into tensor D."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "BNNS Graph’s optimizations include mathematical transformations. In this example, the slice operation is the last layer. This means all the preceding operations act over the entire tensor, rather than just the slice."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "The mathematical transformation optimization moves the slice to the beginning of the model so that BNNS only needs to compute the subset of elements in that slice."
+      },
+      {
+        "timestamp": "5:39",
+        "text": "Optimizing with layer fusion involves combining some layers into a single operation. In this example, BNNS has fused the convolution and activation layers. And another optimization is copy elision where a slice operation may naively copy the data in the slice to a new tensor."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "BNNS Graph optimizes the slice so that it passes a window on the original data."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "By ensuring tensors share memory where possible, BNNS Graph can also optimize memory usage and eliminate unnecessary allocations. In this example tensors A and C can share the same memory, and tensors B and D can also share the same memory."
+      },
+      {
+        "timestamp": "6:21",
+        "text": "BNNS Graph’s weight repacking optimizations can repack weights from, for example, row-major layout to a blocked iteration order that can provide better cache locality."
+      },
+      {
+        "timestamp": "6:33",
+        "text": "You don’t need to write any code to benefit from these optimizations, they happen “just like that”! And, they can provide performance that’s on average, at least 2x faster than previous BNNS primitives."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "So, because our new API is ideally suited to real-time use cases. I’ll be looking at such a use-case, working with audio by adding BNNS Graph to an AudioUnit. Audio Units allow you to create or modify audio and MIDI data in an iOS or macOS app These include music-production apps such as Logic Pro and GarageBand. An audio unit that uses machine learning can offer functionality such as separating audio to isolate or remove vocals, segmenting audio into different regions based on content, or applying timbre transfer to make one instrument sound like another."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "In this demonstration, I’ll keep things simple and create an audio unit that “bit crushes” or quantizes audio to give a distorted effect."
+      },
+      {
+        "timestamp": "7:34",
+        "text": "The main requirements for real-time processing are to avoid any memory allocations or multithreading during the execute phase as doing so may incur a context switch into kernel code and lead to defeat of the real-time deadlines BNNS Graph offers you fine-grained control over the compilation and the execution of models, and you’re able to manage tasks such as memory allocation and whether execution is single- or multi-threaded."
+      },
+      {
+        "timestamp": "8:00",
+        "text": "I’m now going to show you how to create an audio unit project that adopts BNNS Graph."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "Xcode makes creating an audio unit really easy because it includes a template that creates an Audio Unit Extension App."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "I’ll get started by dragging and dropping my bitcrusher mlpackage file into the project navigator."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "Xcode compiles the mlpackage into the mlmodelc file that we’ll use to instantiate the BNNS Graph. So, that’s the first two steps done! Now that I have the mlmodelc file available inside Xcode, I’m ready to create a BNNS Graph object and to wrap it in a modifiable context You’ll only build the graph once, so typically, you’ll do this in a background thread after your app starts up or, when your user first uses a feature that depends on machine learning."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "Graph compilation processes the compiled Core ML model into an optimized BNNS Graph object. This object contains a list of kernels that inference invokes and a memory layout map for the intermediate tensors."
+      },
+      {
+        "timestamp": "9:11",
+        "text": "The Xcode template uses Swift and SwiftUI for the business logic and user interface and C++ for real-time processing. The C++ DSP Kernel header file is where all of the signal processing takes place in this project, and that’s where I’ll be adding the BNNS Graph code."
+      },
+      {
+        "timestamp": "9:29",
+        "text": "To do that, I will get the path for the mlmodelc, Build the BNNS Graph, create the context, set the argument type, and create the workspace. Now, let's see how to write the code."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "Here’s the code to get the path to the mlmodelc file. Recall that I copied just the mlpackage file into the project, and Xcode has generated the mlmodelc file from the package."
+      },
+      {
+        "timestamp": "9:55",
+        "text": "To specify that the graph only uses a single thread during execution, I’ll create a compilation options structure with the default settings. The default behavior is that BNNS Graph executes on multiple-threads. So, I’ll call the SetTargetSingleThread function to change that."
+      },
+      {
+        "timestamp": "10:13",
+        "text": "Now, I’ll use the compilation options and the path to the mlmodelc file to compile the graph. The GraphCompileFromFile function creates a graph. Note that I’ve passed NULL as the second argument to specify that the operation compiles all the functions in the source model."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "And when the compilation completes, I can safely deallocate the compilation options."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "So, that’s step three done! We’ve created the graph. Now that we have the graph which is immutable the ContextMake function wraps the graph in a context which is mutable. BNNS Graph requires a mutable context to support dynamic shapes and certain other execution options. The context also allows you to set callback functions so that you can manage output and workspace memory yourself."
+      },
+      {
+        "timestamp": "11:03",
+        "text": "BNNS Graph can work with tensor structures that specify shape, stride, and rank, and point to the underlying data, or it can work directly with pointers to the underlying data. Because this demonstration will work directly with the audio buffers, I’ll specify that the context’s arguments are pointers. We want to make sure BNNS doesn’t allocate any memory while it’s processing the audio data. So, during this initialization, I’ll create the page aligned workspace."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "I need to update the context so that it knows the maximum size of the data it will be working with. To do that, I’ll pass a shape that is based on the maximum frames that the audio unit can render to the SetDynamicShapes function."
+      },
+      {
+        "timestamp": "11:45",
+        "text": "Now, the GetWorkspaceSize function returns the amount of memory that I need to allocate for the workspace The workspace memory must be page aligned, and I’ll call aligned_alloc to create the workspace."
+      },
+      {
+        "timestamp": "11:58",
+        "text": "It’s important to note that the argument order in my original Python code may not be the same as the argument order in the mlmodelc file. The GraphGetArgumentPosition function returns the correct position for each argument that I’ll pass to the execute function a little later."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "And now we have the properly configured context! Just before we move on, I’d like to briefly mention some other options. While we we working with the compilation options, we had the opportunity to set an optimization preference. By default, BNNS optimizes the graph for performance which is perfect for the audio unit. Optimizing for performance means that additional work may be moved to the compile phase, even if it increases the footprint of the BNNS Graph object."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "However, if the footprint of your app is important, you can optimize for size. Optimizing for size means that data will be left in smallest possible form, but this may decrease execute performance due to cost of performing transformations."
+      },
+      {
+        "timestamp": "13:00",
+        "text": "Another tip is that BNNS Graph includes a function that enables NaNAndInfinityChecks. This debugging setting will help you detect issues such as infinities in tensors when 16-bit accumulators overflow. However, you don’t want to enable this check in your production code! And there we go, we’ve initialized the graph and context, specified single-threaded execution, and created the workspace to ensure BNNS doesn’t perform any allocations. We’re ready to execute the graph! Let’s now take a look at the code required to do just that! The SetBatchSize function sets the size of the first dimension of the input and output signal shapes to the number of audio samples in the frame. In this case, the second argument refers to the function name in the source file. However, because the source file only contains a single function, I can pass NULL."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "I’ll pass the five arguments, the output and input signals, and the scalar values that define the amount of quantization, as an array to the execute function. The first argument I’ll add is the output signal. I’ll specify the data_ptr and the data_ptr_size fields based on the outputBuffer for the current audio channel."
+      },
+      {
+        "timestamp": "14:12",
+        "text": "The next argument is the the input signal. I’ll specify the data_ptr and the data_ptr_size fields, but based on the inputBuffer for the current audio channel."
+      },
+      {
+        "timestamp": "14:23",
+        "text": "And the next arguments are the three scalar values that are derived from the sliders in the user interface."
+      },
+      {
+        "timestamp": "14:30",
+        "text": "And now I can execute the function! The GraphContextExecute function accepts the context, the arguments, and, of course that important workspace. On return, the output pointer contains the result of the inference. As with the SetBatchSize function: the second argument refers to the function name in the source file, and since the source file only contains a single function, I pass NULL."
+      },
+      {
+        "timestamp": "14:53",
+        "text": "Finally, let’s take a look at how to integrate BNNS Graph in a Swift project."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "One perfect use-case for using Swift is to implement our BNNS Graph into the SwiftUI component of our audio unit. This will allow the audio unit’s user interface to display a sine wave that’s been processed by the same model with the same parameters as the audio signal itself. The user interface component of the audio unit uses Swift UI and applies the bitcrusher model to data that contains sampleCount elements and represents a smooth sine wave."
+      },
+      {
+        "timestamp": "15:27",
+        "text": "The srcChartData buffer stores the sine wave representation and the dstChartData buffer stores the sine wave data after BNNS Graph has applied the effect."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "These three buffers store the scalar values that the user controls with the sliders in the user interface."
+      },
+      {
+        "timestamp": "15:45",
+        "text": "The API is consistent between C and Swift, so, much like the audio processing code we looked at earlier, I’ll define a graph and a context."
+      },
+      {
+        "timestamp": "15:54",
+        "text": "And although Swift doesn’t guarantee real-time safety by providing a workspace as we did in C++ BNNS Graph won’t need to do any memory allocations during execution and this will help towards improving the performance and the energy efficiency of the audio unit."
+      },
+      {
+        "timestamp": "16:11",
+        "text": "Next, I’ll declare the argument index variables that define where the arguments live inside the arguments array."
+      },
+      {
+        "timestamp": "16:18",
+        "text": "What you’re seeing here is the code in the initializer method for the waveform display component. And this is where I create the graph, context, and workspace. The first step is to get the path to the mlmodelc file that Xcode has compiled from the mlpackage. Next, I’ll compile the mlmodelc into a BNNS Graph object."
+      },
+      {
+        "timestamp": "16:39",
+        "text": "Then, just as I did in the C++ code, I create the graph context."
+      },
+      {
+        "timestamp": "16:45",
+        "text": "You may be wondering why I don’t use the same context for both the user interface and the audio processing. This is because the context can only execute on one thread at a time. Since the user may well be adjusting one of the sliders while the audio unit is processing data, we need separate contexts for each part of the project."
+      },
+      {
+        "timestamp": "17:04",
+        "text": "I’ll do a quick check to ensure that BNNS has successfully created the graph and context."
+      },
+      {
+        "timestamp": "17:09",
+        "text": "Much like I did in the audio processing code, I’ll work directly with pointers to the source and destination chart data. So, I’ll tell the context that the arguments are pointers rather than tensors. In this case, the batch size, the size of the first dimension of the source and destination signal data buffers, is the number of samples in the example sine wave."
+      },
+      {
+        "timestamp": "17:31",
+        "text": "And after the SetBatchSize function returns, the GetWorkspaceSize function returns the correct size for the sample count."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "I’ll calculate the indices into the arguments array. And whenever the user changes the slider value, Swift calls the updateChartData() function that applies the bitcrusher effect to the sine wave."
+      },
+      {
+        "timestamp": "17:52",
+        "text": "The first step in the updateChartData() function is to copy the scalar values into their corresponding storage."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "Then, I’ll use the indices to create the arguments array in the correct order."
+      },
+      {
+        "timestamp": "18:04",
+        "text": "And now I can execute the bitcrusher on the sample sine wave! On return of the execute function, SwiftUI updates the chart in the user interface to show the bit-crushed sine wave."
+      },
+      {
+        "timestamp": "18:15",
+        "text": "I’ll jump back into Xcode where I’ve already added the Swift chart that displays the waveform. I’ll declare the buffers that store the arguments."
+      },
+      {
+        "timestamp": "18:23",
+        "text": "And I’ll declare the graph, context, and argument indices."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "Inside the initializer, I’ll initialize the graph and context, create the workspace and calculate the indices for the arguments, then, down in the updateChartData() function, I’ll create the arguments function using the indices to ensure the correct ordering and then execute the graph! Let’s press the Xcode run button to start the app and hear our bitcrusher in action! Many thanks for your time. Allow me to wrap up with a summary: BNNS Graph provides the API that enables you to deliver High performance Energy efficient Real-time and latency-sensitive machine learning on the CPU. That’s great for audio apps! Thanks again and best wishes!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -76,6 +335,33 @@
       "code": "// Execute the function.\n        BNNSGraphContextExecute(context,\n                                nil,\n                                arguments.count, &arguments,"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:18"
+    },
+    {
+      "timestamp": "1:18",
+      "title": "Introducing BNNS Graph",
+      "duration": "5:29"
+    },
+    {
+      "timestamp": "6:47",
+      "title": "Real-time processing",
+      "duration": "1:13"
+    },
+    {
+      "timestamp": "8:00",
+      "title": "Adopting BNNS Graph",
+      "duration": "6:52"
+    },
+    {
+      "timestamp": "14:52",
+      "title": "BNNS Graph in Swift",
+      "duration": "5:11"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -94,5 +380,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10223"
     }
   ],
-  "extractedAt": "2026-10-11T16:35:00.135Z"
+  "extractedAt": "2026-10-17T18:44:59.515Z"
 }

@@ -3,16 +3,291 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10186/",
   "title": "What’s new in Core Data",
-  "speakers": [],
-  "duration": "",
+  "duration": "23:23",
   "topics": [
     "System Services"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ ♪ David: Hi, and welcome to “What's New in Core Data.” My name is David Stites, and I'm an engineer on the Core Data team. In this session, you'll learn about new technologies in Core Data that will help you more quickly and easily design, query, update, and migrate the Core Data data model in your app.\n\nI'll start by talking about composite attributes, a great new way to organize structured data in your app's model, before talking about how to “stage” your most complex model migrations so that you can use lightweight migration, and I'll finish up with how to defer your model migrations to keep your app responsive. Composite attributes are a new type of attribute.\n\nComposite attributes allow for the encapsulation of complex and custom data types within a single attribute. Each composite attribute is composed of attributes of the built-in Core Data types that you're already familiar with, such as String, Float, Int, and Data.\n\nComposite attributes may be nested within each other so that a top-level composite attribute may contain additional composite attributes.\n\nThe Xcode Core Data model editor has been updated to make it easy to define and manage your model's composite attributes.\n\nComposite attributes are a compelling alternative to using transformable type attributes to create durable custom data types. There is no need to write code that transforms the attribute's value. Unlike transformable attributes, composite attributes allow NSFetchRequests with NSPredicates configured with the composite attribute's namespaced keypaths.\n\nComposite attributes can be used to encapsulate a proliferation of flattened attributes, leading to more maintainable and readable code.\n\nComposite attributes can be used to improve the performance of your app. If your data model is composed in such a way that fetching one entity almost always results in accessing a relationship to another entity, you can refactor that relationship into using composite attributes. The effect of embedding a composite attribute in the first entity is that it prevents faulting in objects across the relationship.\n\nThe composite attribute class is NSCompositeAttributeDescription. The attribute type for an NSCompositeAttributeDescription is NSCompositeAttributeType.\n\nThe NSCompositeAttributeDescription class contains an array, elements, that consists of NSAttributeDescription's or other nested NSCompositeAttributeDescription's.\n\nThe elements array cannot contain other types of property descriptions, such as NSRelationshipDescription. Attempting to set invalid elements will result in an NSInvalidArgumentException.\n\nI'm gonna describe to you how to adopt composite attributes with a demo.\n\nConsider this basic data model with an Aircraft entity. It has a number of attributes, including a colors attribute, which is a transformable type. The transformer for that type stores and parses a formatted string that describes the primary, secondary, and tertiary colors of the aircraft.\n\nI'll improve this entity by replacing the colors attribute with a composite attribute colorScheme to store the paint colors of the aircraft.\n\ncolorScheme is a composite attribute with the elements: Primary, secondary, and tertiary, each of which are a String attribute.\n\nIn Xcode, I'll open a project which is an app I use to track my flight time.\n\nThe data model for that app is configured with the Aircraft entity that I just talked about, as well as a couple other entities.\n\nTo begin the conversion, in the Core Data model editor, I am adding a new composite attribute named colorScheme.\n\nWithin that composite, I am adding three string attributes, primary, secondary, and tertiary.\n\nIn the Aircraft entity, I'll add the composite attribute and set the type of that attribute to colorScheme.\n\nThe work in the model is now complete, and it's time to update the code.\n\nIn my Aircraft implementation, I am adding a new property, @NSManaged var colorScheme, whose type is a Dictionary with a String key and Any object. As I use this composite attribute throughout the code, I am accessing the values using dictionary notation, with the attribute's name as the key. Here, I am setting the colorScheme attribute of the aircraft by using the String keys primary, secondary, and tertiary.\n\nSimilarly, when I configure a NSFetchRequest with a NSPredicate, the elements of a composite attribute are accessed via a namespaced keypath. Here, colorScheme.primary is used to filter on that attribute.\n\nAs an application evolves, it may become necessary to change the data model.\n\nUpdating the data model requires that those changes are materialized in the underlying storage schema.\n\nIf a numPassengers attribute is added to the model, the corresponding storage must be updated.\n\nThe process of performing schema changes is called migration.\n\nAfter migration, the changes are fully reflected in the underlying storage.\n\nCore Data has a built-in migration toolset to help keep an app's data storage up to date with the current data model. Collectively, these tools are referred to as “lightweight migration.” To learn more about lightweight migration, watch \"Evolve your app's schema\" from WWDC 2022.\n\nSometimes, the combined changes to a data model exceed the capabilities of lightweight migration. The solution to this problem is a staged migration.\n\nThe staged migrations API was designed with a couple goals in mind: Help you migrate complex data models that have non-conforming lightweight schema changes, simplify your app by potentially removing thousands of lines of code related to migrations and the migration infrastructure, and provide opportunities for your app to gain execution control during the migration process to perform various tasks.\n\nTo use this API, there are several steps you'll need to take: Determine when changes to your model do not conform to operations supported by lightweight migration, decompose non-conforming model changes into a series of conforming model changes that are supported by lightweight migration, describe a total ordering of NSManagedObjectModel's to Core Data using the new staged migrations APIs, and have Core Data execute an event loop that iteratively steps through each unprocessed model in a serial order and migrate the store. At certain points during the migration, execution control will be given to your app to perform any necessary tasks related to that migration.\n\nTo determine when your model has non-conforming lightweight changes, you have several options. The first option is to review the schema changes manually and ensure each change is eligible for lightweight migration.\n\nThe second option is to try to open the persistent store with the new model and the lightweight migration options, NSMigratePersistentStores AutomaticallyOption and NSInferMappingModelAutomaticallyOption set to true. If the changes are not lightweight-eligible, you'll receive an NSPersistentStore IncompatibleVersionHashError.\n\nThe final option is to use NSMappingModel.inferredMappingModel (forSourceModel:destinationModel:). This method returns the inferred model if Core Data was able to create it. Otherwise, it returns nil.\n\nConsidering the Aircraft model again, it has a new attribute, flightData, that stores data in a binary format.\n\nSuppose there's a need to denormalize this model and separate all flight data into its own entity type, all while preserving any existing data and the relationship to the aircraft from which it was generated. This is a very complex model change and is not eligible for lightweight migration by itself. These changes need to be decomposed to use staged migration. When decomposing non-lightweight changes, the goal is to transform migration tasks that aren't eligible for lightweight migration into a minimum series of migrations that are eligible for lightweight migration.\n\nEach of the models introduced will have one or more operations that is within the capabilities of lightweight migration that compose the non-conforming changes. The result is a series of migrations where each model is lightweight migratable but equivalent to the non-conforming migration.\n\nReturning to the example, I've labeled the original model ModelV1. This model migration will be decomposed by introducing two new model versions, ModelV2 and ModelV3. In ModelV2, the Aircraft entity gains a relationship called flightParameters, which is a collection of newly created FlightData entities. The FlightData entity has a binary type attribute data and a relationship to an Aircraft. To preserve the existing data, the migration stage will copy the data from the Aircraft entity over into the new FlightData entities and relate them to the Aircraft.\n\nOur final model is ModelV3, created from ModelV2. In ModelV3, the old flightData attribute is deleted from Aircraft entity, and the model is successfully denormalized, and all existing data is preserved. Each of the steps described is within the capabilities of lightweight migration.\n\nTo describe a total ordering of models, the Core Data framework level support consists of the following classes: NSStagedMigrationManager, NSCustomMigrationStage, NSLightweightMigrationStage, and NSManagedObjectModelReference.\n\nThe NSStagedMigrationManager class encapsulates a total ordering of NSCustomMigrationStage's and the supplementary NSLightweightMigrationStage's that is described by you. The staged migration manager also manages the migration event loop and provides access to the migrating store via an NSPersistentContainer. The manager is added to the store options using the key NSPersistentStoreStagedMigrationManager OptionKey.\n\nMigration stages form the basis for migrating between versions of a model.\n\nAs you adopt staged migration, you'll describe each model version to Core Data using either an NSCustomMigrationStage or an NSLightweightMigrationStage. The NSLightweightMigrationStage class describes a series of models that did not require decomposition and that were lightweight migration eligible. This will likely be the majority of your models. These lightweight migration stages are used to supplement the total ordering of models described to Core Data. All lightweight model versions must be represented in one or more NSLightweightMigrationStage's.\n\nEach decomposed version of your model you create will be represented using an NSCustomMigrationStage and contain a source model reference and a destination model reference.\n\nNSCustomMigrationStage provides optional handlers that run immediately prior to and after the migration stage. These handlers give you the ability to run custom code during the migration process.\n\nStaged migrations make use of the NSManagedObjectModelReference class. This class represents a promise of an NSManagedObjectModel. During migration, Core Data will fulfill this promise. An NSManagedObjectModelReference is flexible and can be created in a number of different ways.\n\nEvery NSManagedObjectModelReference needs to be initialized with a version checksum. This is to validate the model hasn't inadvertently changed. The checksum can be obtained using the NSManagedObjectModel .versionChecksum method.\n\nAlternatively, you can retrieve the version checksum from the Xcode build log under “Compile data model.” Search for the string “version checksum.” For versioned models, the checksum is also available in the VersionInfo.plist of the NSManagedObjectModel bundle.\n\nReturning to the example, to start using staged migration, I'll begin by creating model references for each of the three models. I am using the initializer that accepts a model name and bundle reference, but there are other options as well.\n\nThe next step is to describe the required migration stages. Since the first stage only added the flightData attribute, that can be represented in a lightweight stage, as adding attributes is a lightweight change.\n\nThe next stage, however, will be a custom stage because the model changes were decomposed into two model versions, and we need to run custom code to preserve existing data. The custom migration stage is initialized with ModelV2 and ModelV3.\n\nIn the willMigrateHandler, the code fetches entity rows where flightData is not nil. The generic NSManagedObject and NSFetchRequestResult types are being used instead of the Aircraft managed object subclass due to the fact that it is possible that the Aircraft class may not exist as expected during the migration.\n\nFor each fetched Aircraft entity, the data is copied into a new instance of FlightData, and the two entities are related and persisted. At the end of the execution of this migration stage, the store schema is updated to the latest model, and the existing data has been preserved.\n\nTo finish the staged migration, I create an NSStagedMigrationManager with the lightweight migration stage and the custom migration stage.\n\nThe NSStagedMigrationManager is added to the NSPersistentStoreDescription options with the key NSPersistentStore StagedMigrationManagerOptionKey.\n\nThe persistent stores are then loaded to start the migration process and affect the store schema. And that's it. Core Data will automatically apply the required stages and migrate the store schema.\n\nSome lightweight migrations require additional runtime that your app may not be able to provide in the foreground.\n\nThe process of transforming user data during lightweight migration is not instantaneous. For example, if the migration involves copying data from one column to another, or one table to another, it may take some time. This can result in a frustrating user experience, especially if the migration is done at launch time.\n\nDeferred migration can help you solve this problem. This API will allow you to defer some of the work done during lightweight migration with the ability to finish the deferred work at a later date. During a lightweight migration, if an entity has a migration transformation that requires clean up, such as updating indices or dropping a column after performing a table copy, this table transformation can be delayed until you deem that the resources are available to perform the table transformation. The lightweight migration is still synchronous and occurs normally. Only the clean up of the schema is deferred. Your app will use the latest schema as normal. To opt into deferred migration, set the NSPersistentStore DeferredLightweightMigrationOptionKey in the store options to true.\n\nThe deferred migration API has runtime compatibility all the way back to macOS Big Sur and iOS 14.\n\nDeferred migration is only available for SQLite store types.\n\nSome examples of where deferred migration might be useful include: Removing attributes or relationships from an entity, changing relationships where an entity hierarchy no longer exists, and changing relationships from being ordered to non-ordered.\n\nTo finish deferred migration tasks, check the persistent store metadata. If it contains the key NSPersistentStore DeferredLightweightMigrationOptionKey, that is a signal to you that there is deferred migration work that needs to be finished. The delayed migrations can be processed by invoking NSPersistentStoreCoordinator .finishDeferredLightweightMigration.\n\nTo defer any lightweight migration in your app, set the NSPersistentStoreDeferred LightweightMigrationOptionKey to true in your store options when adding the persistent store to the coordinator. When it's a good time to finish a deferred migration, you can check to see if there is pending deferred work by checking the metadata for the store. If NSPersistentStoreDeferredLightweight MigrationOptionKey is set to true, then call finishDeferredLightweightMigration().\n\nTo schedule your deferred migration tasks, consider using the Background Tasks API. BGProcessingTask is meant for time-consuming operations such as long data updates and app maintenance. The system will determine the best time to run your task. However, generally processing tasks only run on the device when it's idle and will terminate any background processing tasks when the user starts using the device.\n\nDeferred and staged migration can be combined. If you have a set of complex migrations that may take a while, consider designing stages that take advantage of both APIs capabilities. Returning to the example model, in ModelV3, where we remove the attribute flightData, this might make for a good deferred migration candidate.\n\nThere are three great new technologies in Core Data. Encapsulate your custom data types in a nestable, structured way using composite attributes, perform complex model migrations using staged migration by decomposing your model changes, and turbocharge your app's performance by delaying some migration work using deferred migration. All three technologies work in harmony to improve your app.\n\nOur team is excited to hear how you use these new technologies. Thanks for watching, and have a great WWDC. ♪ ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ ♪ David: Hi, and welcome to “What's New in Core Data.” My name is David Stites, and I'm an engineer on the Core Data team. In this session, you'll learn about new technologies in Core Data that will help you more quickly and easily design, query, update, and migrate the Core Data data model in your app."
+      },
+      {
+        "timestamp": "0:33",
+        "text": "I'll start by talking about composite attributes, a great new way to organize structured data in your app's model, before talking about how to “stage” your most complex model migrations so that you can use lightweight migration, and I'll finish up with how to defer your model migrations to keep your app responsive. Composite attributes are a new type of attribute."
+      },
+      {
+        "timestamp": "1:01",
+        "text": "Composite attributes allow for the encapsulation of complex and custom data types within a single attribute. Each composite attribute is composed of attributes of the built-in Core Data types that you're already familiar with, such as String, Float, Int, and Data."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "Composite attributes may be nested within each other so that a top-level composite attribute may contain additional composite attributes."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "The Xcode Core Data model editor has been updated to make it easy to define and manage your model's composite attributes."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "Composite attributes are a compelling alternative to using transformable type attributes to create durable custom data types. There is no need to write code that transforms the attribute's value. Unlike transformable attributes, composite attributes allow NSFetchRequests with NSPredicates configured with the composite attribute's namespaced keypaths."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "Composite attributes can be used to encapsulate a proliferation of flattened attributes, leading to more maintainable and readable code."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "Composite attributes can be used to improve the performance of your app. If your data model is composed in such a way that fetching one entity almost always results in accessing a relationship to another entity, you can refactor that relationship into using composite attributes. The effect of embedding a composite attribute in the first entity is that it prevents faulting in objects across the relationship."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "The composite attribute class is NSCompositeAttributeDescription. The attribute type for an NSCompositeAttributeDescription is NSCompositeAttributeType."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "The NSCompositeAttributeDescription class contains an array, elements, that consists of NSAttributeDescription's or other nested NSCompositeAttributeDescription's."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "The elements array cannot contain other types of property descriptions, such as NSRelationshipDescription. Attempting to set invalid elements will result in an NSInvalidArgumentException."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "I'm gonna describe to you how to adopt composite attributes with a demo."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "Consider this basic data model with an Aircraft entity. It has a number of attributes, including a colors attribute, which is a transformable type. The transformer for that type stores and parses a formatted string that describes the primary, secondary, and tertiary colors of the aircraft."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "I'll improve this entity by replacing the colors attribute with a composite attribute colorScheme to store the paint colors of the aircraft."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "colorScheme is a composite attribute with the elements: Primary, secondary, and tertiary, each of which are a String attribute."
+      },
+      {
+        "timestamp": "4:25",
+        "text": "In Xcode, I'll open a project which is an app I use to track my flight time."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "The data model for that app is configured with the Aircraft entity that I just talked about, as well as a couple other entities."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "To begin the conversion, in the Core Data model editor, I am adding a new composite attribute named colorScheme."
+      },
+      {
+        "timestamp": "4:51",
+        "text": "Within that composite, I am adding three string attributes, primary, secondary, and tertiary."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "In the Aircraft entity, I'll add the composite attribute and set the type of that attribute to colorScheme."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "The work in the model is now complete, and it's time to update the code."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "In my Aircraft implementation, I am adding a new property, @NSManaged var colorScheme, whose type is a Dictionary with a String key and Any object. As I use this composite attribute throughout the code, I am accessing the values using dictionary notation, with the attribute's name as the key. Here, I am setting the colorScheme attribute of the aircraft by using the String keys primary, secondary, and tertiary."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "Similarly, when I configure a NSFetchRequest with a NSPredicate, the elements of a composite attribute are accessed via a namespaced keypath. Here, colorScheme.primary is used to filter on that attribute."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "As an application evolves, it may become necessary to change the data model."
+      },
+      {
+        "timestamp": "6:37",
+        "text": "Updating the data model requires that those changes are materialized in the underlying storage schema."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "If a numPassengers attribute is added to the model, the corresponding storage must be updated."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "The process of performing schema changes is called migration."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "After migration, the changes are fully reflected in the underlying storage."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "Core Data has a built-in migration toolset to help keep an app's data storage up to date with the current data model. Collectively, these tools are referred to as “lightweight migration.” To learn more about lightweight migration, watch \"Evolve your app's schema\" from WWDC 2022."
+      },
+      {
+        "timestamp": "7:29",
+        "text": "Sometimes, the combined changes to a data model exceed the capabilities of lightweight migration. The solution to this problem is a staged migration."
+      },
+      {
+        "timestamp": "7:40",
+        "text": "The staged migrations API was designed with a couple goals in mind: Help you migrate complex data models that have non-conforming lightweight schema changes, simplify your app by potentially removing thousands of lines of code related to migrations and the migration infrastructure, and provide opportunities for your app to gain execution control during the migration process to perform various tasks."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "To use this API, there are several steps you'll need to take: Determine when changes to your model do not conform to operations supported by lightweight migration, decompose non-conforming model changes into a series of conforming model changes that are supported by lightweight migration, describe a total ordering of NSManagedObjectModel's to Core Data using the new staged migrations APIs, and have Core Data execute an event loop that iteratively steps through each unprocessed model in a serial order and migrate the store. At certain points during the migration, execution control will be given to your app to perform any necessary tasks related to that migration."
+      },
+      {
+        "timestamp": "9:07",
+        "text": "To determine when your model has non-conforming lightweight changes, you have several options. The first option is to review the schema changes manually and ensure each change is eligible for lightweight migration."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "The second option is to try to open the persistent store with the new model and the lightweight migration options, NSMigratePersistentStores AutomaticallyOption and NSInferMappingModelAutomaticallyOption set to true. If the changes are not lightweight-eligible, you'll receive an NSPersistentStore IncompatibleVersionHashError."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "The final option is to use NSMappingModel.inferredMappingModel (forSourceModel:destinationModel:). This method returns the inferred model if Core Data was able to create it. Otherwise, it returns nil."
+      },
+      {
+        "timestamp": "10:05",
+        "text": "Considering the Aircraft model again, it has a new attribute, flightData, that stores data in a binary format."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "Suppose there's a need to denormalize this model and separate all flight data into its own entity type, all while preserving any existing data and the relationship to the aircraft from which it was generated. This is a very complex model change and is not eligible for lightweight migration by itself. These changes need to be decomposed to use staged migration. When decomposing non-lightweight changes, the goal is to transform migration tasks that aren't eligible for lightweight migration into a minimum series of migrations that are eligible for lightweight migration."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "Each of the models introduced will have one or more operations that is within the capabilities of lightweight migration that compose the non-conforming changes. The result is a series of migrations where each model is lightweight migratable but equivalent to the non-conforming migration."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "Returning to the example, I've labeled the original model ModelV1. This model migration will be decomposed by introducing two new model versions, ModelV2 and ModelV3. In ModelV2, the Aircraft entity gains a relationship called flightParameters, which is a collection of newly created FlightData entities. The FlightData entity has a binary type attribute data and a relationship to an Aircraft. To preserve the existing data, the migration stage will copy the data from the Aircraft entity over into the new FlightData entities and relate them to the Aircraft."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "Our final model is ModelV3, created from ModelV2. In ModelV3, the old flightData attribute is deleted from Aircraft entity, and the model is successfully denormalized, and all existing data is preserved. Each of the steps described is within the capabilities of lightweight migration."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "To describe a total ordering of models, the Core Data framework level support consists of the following classes: NSStagedMigrationManager, NSCustomMigrationStage, NSLightweightMigrationStage, and NSManagedObjectModelReference."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "The NSStagedMigrationManager class encapsulates a total ordering of NSCustomMigrationStage's and the supplementary NSLightweightMigrationStage's that is described by you. The staged migration manager also manages the migration event loop and provides access to the migrating store via an NSPersistentContainer. The manager is added to the store options using the key NSPersistentStoreStagedMigrationManager OptionKey."
+      },
+      {
+        "timestamp": "13:32",
+        "text": "Migration stages form the basis for migrating between versions of a model."
+      },
+      {
+        "timestamp": "13:40",
+        "text": "As you adopt staged migration, you'll describe each model version to Core Data using either an NSCustomMigrationStage or an NSLightweightMigrationStage. The NSLightweightMigrationStage class describes a series of models that did not require decomposition and that were lightweight migration eligible. This will likely be the majority of your models. These lightweight migration stages are used to supplement the total ordering of models described to Core Data. All lightweight model versions must be represented in one or more NSLightweightMigrationStage's."
+      },
+      {
+        "timestamp": "14:25",
+        "text": "Each decomposed version of your model you create will be represented using an NSCustomMigrationStage and contain a source model reference and a destination model reference."
+      },
+      {
+        "timestamp": "14:39",
+        "text": "NSCustomMigrationStage provides optional handlers that run immediately prior to and after the migration stage. These handlers give you the ability to run custom code during the migration process."
+      },
+      {
+        "timestamp": "14:54",
+        "text": "Staged migrations make use of the NSManagedObjectModelReference class. This class represents a promise of an NSManagedObjectModel. During migration, Core Data will fulfill this promise. An NSManagedObjectModelReference is flexible and can be created in a number of different ways."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "Every NSManagedObjectModelReference needs to be initialized with a version checksum. This is to validate the model hasn't inadvertently changed. The checksum can be obtained using the NSManagedObjectModel .versionChecksum method."
+      },
+      {
+        "timestamp": "15:39",
+        "text": "Alternatively, you can retrieve the version checksum from the Xcode build log under “Compile data model.” Search for the string “version checksum.” For versioned models, the checksum is also available in the VersionInfo.plist of the NSManagedObjectModel bundle."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "Returning to the example, to start using staged migration, I'll begin by creating model references for each of the three models. I am using the initializer that accepts a model name and bundle reference, but there are other options as well."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "The next step is to describe the required migration stages. Since the first stage only added the flightData attribute, that can be represented in a lightweight stage, as adding attributes is a lightweight change."
+      },
+      {
+        "timestamp": "16:35",
+        "text": "The next stage, however, will be a custom stage because the model changes were decomposed into two model versions, and we need to run custom code to preserve existing data. The custom migration stage is initialized with ModelV2 and ModelV3."
+      },
+      {
+        "timestamp": "16:56",
+        "text": "In the willMigrateHandler, the code fetches entity rows where flightData is not nil. The generic NSManagedObject and NSFetchRequestResult types are being used instead of the Aircraft managed object subclass due to the fact that it is possible that the Aircraft class may not exist as expected during the migration."
+      },
+      {
+        "timestamp": "17:21",
+        "text": "For each fetched Aircraft entity, the data is copied into a new instance of FlightData, and the two entities are related and persisted. At the end of the execution of this migration stage, the store schema is updated to the latest model, and the existing data has been preserved."
+      },
+      {
+        "timestamp": "17:41",
+        "text": "To finish the staged migration, I create an NSStagedMigrationManager with the lightweight migration stage and the custom migration stage."
+      },
+      {
+        "timestamp": "17:53",
+        "text": "The NSStagedMigrationManager is added to the NSPersistentStoreDescription options with the key NSPersistentStore StagedMigrationManagerOptionKey."
+      },
+      {
+        "timestamp": "18:06",
+        "text": "The persistent stores are then loaded to start the migration process and affect the store schema. And that's it. Core Data will automatically apply the required stages and migrate the store schema."
+      },
+      {
+        "timestamp": "18:21",
+        "text": "Some lightweight migrations require additional runtime that your app may not be able to provide in the foreground."
+      },
+      {
+        "timestamp": "18:31",
+        "text": "The process of transforming user data during lightweight migration is not instantaneous. For example, if the migration involves copying data from one column to another, or one table to another, it may take some time. This can result in a frustrating user experience, especially if the migration is done at launch time."
+      },
+      {
+        "timestamp": "18:56",
+        "text": "Deferred migration can help you solve this problem. This API will allow you to defer some of the work done during lightweight migration with the ability to finish the deferred work at a later date. During a lightweight migration, if an entity has a migration transformation that requires clean up, such as updating indices or dropping a column after performing a table copy, this table transformation can be delayed until you deem that the resources are available to perform the table transformation. The lightweight migration is still synchronous and occurs normally. Only the clean up of the schema is deferred. Your app will use the latest schema as normal. To opt into deferred migration, set the NSPersistentStore DeferredLightweightMigrationOptionKey in the store options to true."
+      },
+      {
+        "timestamp": "19:55",
+        "text": "The deferred migration API has runtime compatibility all the way back to macOS Big Sur and iOS 14."
+      },
+      {
+        "timestamp": "20:06",
+        "text": "Deferred migration is only available for SQLite store types."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "Some examples of where deferred migration might be useful include: Removing attributes or relationships from an entity, changing relationships where an entity hierarchy no longer exists, and changing relationships from being ordered to non-ordered."
+      },
+      {
+        "timestamp": "20:34",
+        "text": "To finish deferred migration tasks, check the persistent store metadata. If it contains the key NSPersistentStore DeferredLightweightMigrationOptionKey, that is a signal to you that there is deferred migration work that needs to be finished. The delayed migrations can be processed by invoking NSPersistentStoreCoordinator .finishDeferredLightweightMigration."
+      },
+      {
+        "timestamp": "21:02",
+        "text": "To defer any lightweight migration in your app, set the NSPersistentStoreDeferred LightweightMigrationOptionKey to true in your store options when adding the persistent store to the coordinator. When it's a good time to finish a deferred migration, you can check to see if there is pending deferred work by checking the metadata for the store. If NSPersistentStoreDeferredLightweight MigrationOptionKey is set to true, then call finishDeferredLightweightMigration()."
+      },
+      {
+        "timestamp": "21:37",
+        "text": "To schedule your deferred migration tasks, consider using the Background Tasks API. BGProcessingTask is meant for time-consuming operations such as long data updates and app maintenance. The system will determine the best time to run your task. However, generally processing tasks only run on the device when it's idle and will terminate any background processing tasks when the user starts using the device."
+      },
+      {
+        "timestamp": "22:08",
+        "text": "Deferred and staged migration can be combined. If you have a set of complex migrations that may take a while, consider designing stages that take advantage of both APIs capabilities. Returning to the example model, in ModelV3, where we remove the attribute flightData, this might make for a good deferred migration candidate."
+      },
+      {
+        "timestamp": "22:34",
+        "text": "There are three great new technologies in Core Data. Encapsulate your custom data types in a nestable, structured way using composite attributes, perform complex model migrations using staged migration by decomposing your model changes, and turbocharge your app's performance by delaying some migration work using deferred migration. All three technologies work in harmony to improve your app."
+      },
+      {
+        "timestamp": "23:06",
+        "text": "Our team is excited to hear how you use these new technologies. Thanks for watching, and have a great WWDC. ♪ ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -70,6 +345,33 @@
       "code": "// After using BGProcessingTask to run migration work   \nlet metadata = coordinator.metadata(for: store)\nif (metadata[NSPersistentStoreDeferredLightweightMigrationOptionKey] == true) {\n    coordinator.finishDeferredLightweightMigration()\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Intro",
+      "duration": "0:56"
+    },
+    {
+      "timestamp": "0:56",
+      "title": "Composite attributes",
+      "duration": "5:35"
+    },
+    {
+      "timestamp": "6:31",
+      "title": "Stage your migrations",
+      "duration": "11:52"
+    },
+    {
+      "timestamp": "18:23",
+      "title": "Defer your migrations",
+      "duration": "4:10"
+    },
+    {
+      "timestamp": "22:33",
+      "title": "Wrap-up",
+      "duration": "0:50"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -104,5 +406,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10120"
     }
   ],
-  "extractedAt": "2026-10-11T16:38:08.371Z"
+  "extractedAt": "2026-10-17T18:48:05.300Z"
 }

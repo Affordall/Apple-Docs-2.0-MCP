@@ -3,17 +3,375 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10193/",
   "title": "Design Shortcuts for Spotlight",
-  "speakers": [],
-  "duration": "",
+  "duration": "9:39",
   "topics": [
     "Design"
   ],
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ ♪ Cameron: My name is Cameron, and I’m a designer here at Apple on the Human Interface team.\n\nToday, I’m excited to tell you about how you can design Shortcuts for Spotlight in iOS 17. Built into iOS, Spotlight is a search utility that makes it easy start any search.\n\nAnd now, when people search for apps, their shortcuts appear next to them in the top hit. In iOS 17, we’ve created new shortcuts for many of our apps, and today, I’ll explain how you can design shortcuts for your apps.\n\nBut first, let’s take a look at what’s new.\n\nWhen someone launches Spotlight, if your app is suggested, your app shortcut can be suggested too.\n\nAnd when someone searches directly for an app shortcut, it will come to life in a colorful top hit. And on iPad, the wide screen shows up to five of your app’s shortcuts in the top hit. But it doesn’t stop at Search.\n\nYour app shortcuts also appear in the Shortcuts app where people can explore, remix and add shortcuts directly to their Home Screens.\n\nNow that you’ve seen some of what’s new for App Shortcuts in iOS 17.\n\nLet’s talk about how to make a great shortcut for Spotlight.\n\nWe’ll start with how to come with a good idea for a shortcut, then discuss how to create your shortcut’s visual appearance and behavior before finishing off with some quick tips about to make your shortcuts discoverable in search.\n\nNow let’s start with ideation. When designing shortcuts for Spotlight, it’s best to focus on the essential, habitual actions and content from your app.\n\nFor Clock we have two App Shortcuts, one to Set Timers and another to Add Alarms.\n\nWe could’ve included an \"Add City\" to World Clock shortcut, but we didn’t because that functionality is less habitual and more complicated.\n\nDon’t feel compelled to fill up all the spaces.\n\nIt’s fine to have just one or two shortcuts. Next, when appropriate, prefer shortcuts that take action directly. Your first idea might be to look at your app’s tab bar and reflect it directly into shortcuts, but challenge yourself to think of something better.\n\nPeople already know how to use your app’s primary navigation, and this might not be the best you can do.\n\nInstead, make shortcuts that can accomplish your app’s primary purpose.\n\nFor Phone, that’s placing calls to favorites or recents.\n\nFinally, you should design shortcuts that will be predictable and personal.\n\nFor Podcasts, we offer shortcuts to shows people are currently listening to and those that have new episodes...\n\nbut we wouldn’t promote trending podcasts someone hasn’t heard before.\n\nApp Shortcuts should be instantly recognizable and browsing new content is best done inside your app.\n\nAnother part of being predictable is personalizing your app shortcuts using the decisions people make inside your app.\n\nLet’s look at Notes as an example.\n\nIn Notes, the compose button is persistently in the bottom right toolbar, so in the App Top Hit, the new note button is predictably to the right of the app icon too.\n\nThe notes themselves are reverse-chronologically organized in the app, so the shortcuts in the app top hit are too.\n\nThe exception is pinned notes, which are always shown first in the app.\n\nBecause this is an intentional action that someone took, you should reflect it into the ordering of your app shortcuts too. You should order your shortcuts to reflect the decisions people make inside your app, and to help people build muscle memory around things being in predictable places.\n\nTo recap, when coming up with ideas, focus on essentials.\n\nElevate a handful of habitual actions.\n\nNot everything, and nothing too complicated.\n\nPrefer actionable shortcuts.\n\nGo beyond your tab bar and focus on making shortcuts that reflect the primary purpose of your app.\n\nAnd finally, be predicable.\n\nMake shortcuts for things people have previously interacted with inside your app, not stuff they haven’t seen yet.\n\nAnd design for people to build muscle memory.\n\nNow that you have some ideas for App Shortcuts, let’s dive into creating them.\n\nThe first thing you need to understand is that every App Shortcut is made of either an action or an entity.\n\nYou can think of them as a verb or a noun.\n\nOr more concretely, an action to make a New Board in Freeform or entity for My Big Idea board. In the UI, actions are always shown as SF symbols inside circles like this.\n\nAnd by default, all entities are drawn using an SF symbol too.\n\nBut it usually makes sense to provide an icon for your entity, so it’s more visual and recognizable.\n\nIf needed, your action title can wrap to a second line.\n\nBut be especially conscious of keeping your titles concise to avoid truncation and never include your app name because it’s already shown in the UI.\n\nStrive to make your titles as short as possible while still being easily understood.\n\nBecause App Shortcuts icons are small, it’s important to make them as recognizable as possible. When drawing icons for entities, pay attention to ensuring the shape of shortcuts match the corresponding shapes of those concepts in your app.\n\nBecause reminders lists are circles in the app, so are their app shortcuts.\n\nAnd because Photos albums are always square in the app, so are their app shortcuts.\n\nAnd think beyond the shape.\n\nBecause the favorites cover integrates a small heart in the corner, we carry that element over into the shortcut icon too.\n\nDetails like this serve as visual queues to maximize the familiarity of your app shortcuts.\n\nWhen people search directly for shortcuts, you have the opportunity to show even more information in a subtitle.\n\nYou can use this opportunity to design an even richer result.\n\nPhotos includes the number of favorited photos, inside the album, just like in the app.\n\nNow, let’s dive into color! By default, your app shortcuts will appear like this.\n\nThis is often the right appearance if your app icon is multicolor or neutral.\n\nHowever, if your app icon has a strong gradient or color, like Notes’ yellow, you can infuse color into your top hits in Spotlight and platters in the Shortcuts app. When deciding on your complementing color, do the mental exercise of peeling the graphics off your app icon to create a gradient, or solid color.\n\nBy default, your symbols will have a monochrome appearance, but for app that have dark complementing colors, this may no longer feel like your brand. To address this, you can provide a secondary tint color to create a two-tone appearance.\n\nNext, let's talk about the behavior of your shortcut.\n\nHere, you have three options. App Launch: open your app to a specific screen.\n\nLive Activity: start a live activity or background audio session. Or, a Snippet, which can ask a question or show a small piece of information in a compact form.\n\nThe simplest is for your App Shortcut to launch your app to the appropriate screen.\n\nThis is easy to do and often the right choice.\n\nNext, you can start a Live Activity. This is a great option for simple actions that don’t require further in-app attention, like placing a call or starting a timer.\n\nFor guidance on designing Live Activities, see Mac and Chan’s session \"Design dynamic Live Activities.\" Finally, you can choose to show a snippet to ask a simple question or show a custom response.\n\nBut, for more complex tasks, it’s often better to open your app. After showing a snippet, you can optionally start a Live Activity or open your app too.\n\nFor detailed guidance on designing with snippets, see these talks from previous years.\n\nTo recap, when creating your app shortcuts, design icons for them that are visually representative of what’s inside your app. Write clear, short titles that are pithy without being obscure.\n\nConsider including entities subtitles to enrich your top hits. And where appropriate, consider infusing your app’s colors.\n\nAnd, design the right behavior for your app's shortcuts.\n\nLast but not least, let’s review some of the key things you can do to make your App Shortcuts discoverable in Spotlight. In Spotlight, people may search for your shortcuts in different ways.\n\nFor example, someone might search “File Scanner” while looking for “Scan Document\" shortcut.\n\nYou can support this by adding synonyms of your shortcut phrase. Your phrase is a natural language description of your app shortcut that includes your app name and it’s also what people can say to Siri to run your App Shortcut.\n\nYou should provide a handful of synonyms for your App Shortcut phrase to make sure people can find your shortcut no matter how they search for it.\n\nIf your app is known by multiple names, you should consider providing App Name synonyms.\n\nFor example, the Music Recognition app built into iOS provides the synonym \"Shazam.\" This helps people find your app shortcut, even if they search for it by one of its other monikers.\n\nTo recap, make your shortcuts discoverable in Spotlight by writing phrase synonyms that cover the different ways people might search for your functionality and, if appropriate, by providing app name synonyms.\n\nNow we’ve reviewed how to ideate and Create App Shortcuts and make them discoverable in Spotlight. Thanks for watching We can’t wait to see what App Shortcuts you make with iOS 17. ♪ ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:01",
+        "text": "♪ ♪ Cameron: My name is Cameron, and I’m a designer here at Apple on the Human Interface team."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "Today, I’m excited to tell you about how you can design Shortcuts for Spotlight in iOS 17. Built into iOS, Spotlight is a search utility that makes it easy start any search."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "And now, when people search for apps, their shortcuts appear next to them in the top hit. In iOS 17, we’ve created new shortcuts for many of our apps, and today, I’ll explain how you can design shortcuts for your apps."
+      },
+      {
+        "timestamp": "0:41",
+        "text": "But first, let’s take a look at what’s new."
+      },
+      {
+        "timestamp": "0:44",
+        "text": "When someone launches Spotlight, if your app is suggested, your app shortcut can be suggested too."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "And when someone searches directly for an app shortcut, it will come to life in a colorful top hit. And on iPad, the wide screen shows up to five of your app’s shortcuts in the top hit. But it doesn’t stop at Search."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "Your app shortcuts also appear in the Shortcuts app where people can explore, remix and add shortcuts directly to their Home Screens."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Now that you’ve seen some of what’s new for App Shortcuts in iOS 17."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "Let’s talk about how to make a great shortcut for Spotlight."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "We’ll start with how to come with a good idea for a shortcut, then discuss how to create your shortcut’s visual appearance and behavior before finishing off with some quick tips about to make your shortcuts discoverable in search."
+      },
+      {
+        "timestamp": "1:32",
+        "text": "Now let’s start with ideation. When designing shortcuts for Spotlight, it’s best to focus on the essential, habitual actions and content from your app."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "For Clock we have two App Shortcuts, one to Set Timers and another to Add Alarms."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "We could’ve included an \"Add City\" to World Clock shortcut, but we didn’t because that functionality is less habitual and more complicated."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "Don’t feel compelled to fill up all the spaces."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "It’s fine to have just one or two shortcuts. Next, when appropriate, prefer shortcuts that take action directly. Your first idea might be to look at your app’s tab bar and reflect it directly into shortcuts, but challenge yourself to think of something better."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "People already know how to use your app’s primary navigation, and this might not be the best you can do."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "Instead, make shortcuts that can accomplish your app’s primary purpose."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "For Phone, that’s placing calls to favorites or recents."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "Finally, you should design shortcuts that will be predictable and personal."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "For Podcasts, we offer shortcuts to shows people are currently listening to and those that have new episodes..."
+      },
+      {
+        "timestamp": "2:41",
+        "text": "but we wouldn’t promote trending podcasts someone hasn’t heard before."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "App Shortcuts should be instantly recognizable and browsing new content is best done inside your app."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "Another part of being predictable is personalizing your app shortcuts using the decisions people make inside your app."
+      },
+      {
+        "timestamp": "2:59",
+        "text": "Let’s look at Notes as an example."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "In Notes, the compose button is persistently in the bottom right toolbar, so in the App Top Hit, the new note button is predictably to the right of the app icon too."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "The notes themselves are reverse-chronologically organized in the app, so the shortcuts in the app top hit are too."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "The exception is pinned notes, which are always shown first in the app."
+      },
+      {
+        "timestamp": "3:23",
+        "text": "Because this is an intentional action that someone took, you should reflect it into the ordering of your app shortcuts too. You should order your shortcuts to reflect the decisions people make inside your app, and to help people build muscle memory around things being in predictable places."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "To recap, when coming up with ideas, focus on essentials."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "Elevate a handful of habitual actions."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Not everything, and nothing too complicated."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "Prefer actionable shortcuts."
+      },
+      {
+        "timestamp": "3:51",
+        "text": "Go beyond your tab bar and focus on making shortcuts that reflect the primary purpose of your app."
+      },
+      {
+        "timestamp": "3:56",
+        "text": "And finally, be predicable."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "Make shortcuts for things people have previously interacted with inside your app, not stuff they haven’t seen yet."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "And design for people to build muscle memory."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "Now that you have some ideas for App Shortcuts, let’s dive into creating them."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "The first thing you need to understand is that every App Shortcut is made of either an action or an entity."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "You can think of them as a verb or a noun."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "Or more concretely, an action to make a New Board in Freeform or entity for My Big Idea board. In the UI, actions are always shown as SF symbols inside circles like this."
+      },
+      {
+        "timestamp": "4:35",
+        "text": "And by default, all entities are drawn using an SF symbol too."
+      },
+      {
+        "timestamp": "4:40",
+        "text": "But it usually makes sense to provide an icon for your entity, so it’s more visual and recognizable."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "If needed, your action title can wrap to a second line."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "But be especially conscious of keeping your titles concise to avoid truncation and never include your app name because it’s already shown in the UI."
+      },
+      {
+        "timestamp": "5:00",
+        "text": "Strive to make your titles as short as possible while still being easily understood."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "Because App Shortcuts icons are small, it’s important to make them as recognizable as possible. When drawing icons for entities, pay attention to ensuring the shape of shortcuts match the corresponding shapes of those concepts in your app."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "Because reminders lists are circles in the app, so are their app shortcuts."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "And because Photos albums are always square in the app, so are their app shortcuts."
+      },
+      {
+        "timestamp": "5:32",
+        "text": "And think beyond the shape."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "Because the favorites cover integrates a small heart in the corner, we carry that element over into the shortcut icon too."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "Details like this serve as visual queues to maximize the familiarity of your app shortcuts."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "When people search directly for shortcuts, you have the opportunity to show even more information in a subtitle."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "You can use this opportunity to design an even richer result."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "Photos includes the number of favorited photos, inside the album, just like in the app."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "Now, let’s dive into color! By default, your app shortcuts will appear like this."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "This is often the right appearance if your app icon is multicolor or neutral."
+      },
+      {
+        "timestamp": "6:14",
+        "text": "However, if your app icon has a strong gradient or color, like Notes’ yellow, you can infuse color into your top hits in Spotlight and platters in the Shortcuts app. When deciding on your complementing color, do the mental exercise of peeling the graphics off your app icon to create a gradient, or solid color."
+      },
+      {
+        "timestamp": "6:33",
+        "text": "By default, your symbols will have a monochrome appearance, but for app that have dark complementing colors, this may no longer feel like your brand. To address this, you can provide a secondary tint color to create a two-tone appearance."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "Next, let's talk about the behavior of your shortcut."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "Here, you have three options. App Launch: open your app to a specific screen."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "Live Activity: start a live activity or background audio session. Or, a Snippet, which can ask a question or show a small piece of information in a compact form."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "The simplest is for your App Shortcut to launch your app to the appropriate screen."
+      },
+      {
+        "timestamp": "7:12",
+        "text": "This is easy to do and often the right choice."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "Next, you can start a Live Activity. This is a great option for simple actions that don’t require further in-app attention, like placing a call or starting a timer."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "For guidance on designing Live Activities, see Mac and Chan’s session \"Design dynamic Live Activities.\" Finally, you can choose to show a snippet to ask a simple question or show a custom response."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "But, for more complex tasks, it’s often better to open your app. After showing a snippet, you can optionally start a Live Activity or open your app too."
+      },
+      {
+        "timestamp": "7:47",
+        "text": "For detailed guidance on designing with snippets, see these talks from previous years."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "To recap, when creating your app shortcuts, design icons for them that are visually representative of what’s inside your app. Write clear, short titles that are pithy without being obscure."
+      },
+      {
+        "timestamp": "8:05",
+        "text": "Consider including entities subtitles to enrich your top hits. And where appropriate, consider infusing your app’s colors."
+      },
+      {
+        "timestamp": "8:13",
+        "text": "And, design the right behavior for your app's shortcuts."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "Last but not least, let’s review some of the key things you can do to make your App Shortcuts discoverable in Spotlight. In Spotlight, people may search for your shortcuts in different ways."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "For example, someone might search “File Scanner” while looking for “Scan Document\" shortcut."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "You can support this by adding synonyms of your shortcut phrase. Your phrase is a natural language description of your app shortcut that includes your app name and it’s also what people can say to Siri to run your App Shortcut."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "You should provide a handful of synonyms for your App Shortcut phrase to make sure people can find your shortcut no matter how they search for it."
+      },
+      {
+        "timestamp": "8:50",
+        "text": "If your app is known by multiple names, you should consider providing App Name synonyms."
+      },
+      {
+        "timestamp": "8:56",
+        "text": "For example, the Music Recognition app built into iOS provides the synonym \"Shazam.\" This helps people find your app shortcut, even if they search for it by one of its other monikers."
+      },
+      {
+        "timestamp": "9:08",
+        "text": "To recap, make your shortcuts discoverable in Spotlight by writing phrase synonyms that cover the different ways people might search for your functionality and, if appropriate, by providing app name synonyms."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "Now we’ve reviewed how to ideate and Create App Shortcuts and make them discoverable in Spotlight. Thanks for watching We can’t wait to see what App Shortcuts you make with iOS 17. ♪ ♪"
+      }
+    ]
   },
+  "chapters": [
+    {
+      "timestamp": "1:35",
+      "title": "Principle 1: Focus on the essentials",
+      "duration": "0:29"
+    },
+    {
+      "timestamp": "2:04",
+      "title": "Principle 2: Prefer actionable shortcuts",
+      "duration": "0:26"
+    },
+    {
+      "timestamp": "2:30",
+      "title": "Principle 3: Design predictable and personal shortcuts",
+      "duration": "1:43"
+    },
+    {
+      "timestamp": "4:13",
+      "title": "Design icons for actions and entities",
+      "duration": "1:34"
+    },
+    {
+      "timestamp": "5:47",
+      "title": "Consider providing entity subtitles",
+      "duration": "0:16"
+    },
+    {
+      "timestamp": "6:03",
+      "title": "App icon colors",
+      "duration": "0:45"
+    },
+    {
+      "timestamp": "6:48",
+      "title": "Design your shortcut’s behavior: App launch, Live Activity, or snippet",
+      "duration": "1:35"
+    },
+    {
+      "timestamp": "8:23",
+      "title": "Supporting phrase synonyms to increase discoverability",
+      "duration": "0:29"
+    },
+    {
+      "timestamp": "8:52",
+      "title": "App name synonyms",
+      "duration": "0:47"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -76,5 +434,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/806"
     }
   ],
-  "extractedAt": "2026-10-11T16:38:00.186Z"
+  "extractedAt": "2026-10-17T18:47:57.671Z"
 }

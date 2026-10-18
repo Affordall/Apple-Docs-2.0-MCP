@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10323/",
   "title": "Wednesday@WWDC21",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,76 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Ready for your day three recap? Here we go.\n\n♪ \"Better Days (Instrumental)\" by DARKMINDS ♪ We discovered how to bring real-world objects into augmented reality.\n\nAri showed us how to design incredible actions and shortcuts for our apps.\n\n- You open your app up to a world of Shortcuts possibilities.\n\n- While Yusef helped us add some style to our user interfaces.\n\n- This makes the label wrap around to as many lines as needed.\n\n- Check out the new buttons system.\n\nPop-ups, accessible design, and so much more! And hey, speaking of, did you catch Apple engineers and designers as they shared how we built Apple Watch with accessibility in mind? - I mean, we're talking about real sci-fi kind of things right now.\n\n- Amazing! Meanwhile, we explored how to turn people into superheroes with Vision.\n\n- This is cool.\n\n- Can't wait to try that.\n\nWe discovered how to move beyond passwords with iCloud Keychain and Passkeys.\n\n- This is the first step of a multiyear effort in replacing passwords.\n\n- Phew. I'm gonna feel so secure.\n\nAnd we learned how you can create interactive, memorable experiences to onboard people into your app.\n\nAnd there's so much more amazing stuff on the way.\n\n♪  Wow, that was a trip! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "",
+        "text": "Ready for your day three recap? Here we go."
+      },
+      {
+        "timestamp": "",
+        "text": "♪ \"Better Days (Instrumental)\" by DARKMINDS ♪ We discovered how to bring real-world objects into augmented reality."
+      },
+      {
+        "timestamp": "",
+        "text": "Ari showed us how to design incredible actions and shortcuts for our apps."
+      },
+      {
+        "timestamp": "",
+        "text": "- You open your app up to a world of Shortcuts possibilities."
+      },
+      {
+        "timestamp": "",
+        "text": "- While Yusef helped us add some style to our user interfaces."
+      },
+      {
+        "timestamp": "",
+        "text": "- This makes the label wrap around to as many lines as needed."
+      },
+      {
+        "timestamp": "",
+        "text": "- Check out the new buttons system."
+      },
+      {
+        "timestamp": "",
+        "text": "Pop-ups, accessible design, and so much more! And hey, speaking of, did you catch Apple engineers and designers as they shared how we built Apple Watch with accessibility in mind? - I mean, we're talking about real sci-fi kind of things right now."
+      },
+      {
+        "timestamp": "",
+        "text": "- Amazing! Meanwhile, we explored how to turn people into superheroes with Vision."
+      },
+      {
+        "timestamp": "",
+        "text": "- This is cool."
+      },
+      {
+        "timestamp": "",
+        "text": "- Can't wait to try that."
+      },
+      {
+        "timestamp": "",
+        "text": "We discovered how to move beyond passwords with iCloud Keychain and Passkeys."
+      },
+      {
+        "timestamp": "",
+        "text": "- This is the first step of a multiyear effort in replacing passwords."
+      },
+      {
+        "timestamp": "",
+        "text": "- Phew. I'm gonna feel so secure."
+      },
+      {
+        "timestamp": "",
+        "text": "And we learned how you can create interactive, memorable experiences to onboard people into your app."
+      },
+      {
+        "timestamp": "",
+        "text": "And there's so much more amazing stuff on the way."
+      },
+      {
+        "timestamp": "",
+        "text": "♪  Wow, that was a trip! ♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [

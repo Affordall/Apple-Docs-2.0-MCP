@@ -3,15 +3,36 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/111/",
   "title": "Keynote (ASL)",
-  "speakers": [],
-  "duration": "",
+  "duration": "1:16:14",
   "topics": [
     "Essentials"
   ],
   "hasTranscript": false,
   "hasCode": false,
+  "chapters": [
+    {
+      "timestamp": "0:00:00",
+      "title": "Introduction",
+      "duration": "5:04"
+    },
+    {
+      "timestamp": "0:05:04",
+      "title": "Platform improvements",
+      "duration": "11:52"
+    },
+    {
+      "timestamp": "0:16:56",
+      "title": "Trust and safety",
+      "duration": "10:57"
+    },
+    {
+      "timestamp": "0:27:53",
+      "title": "Apple Intelligence and Siri",
+      "duration": "48:21"
+    }
+  ],
   "resources": {
     "resourceLinks": []
   },
-  "extractedAt": "2026-10-11T16:32:02.546Z"
+  "extractedAt": "2026-10-17T18:41:56.449Z"
 }

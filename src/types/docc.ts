@@ -15,10 +15,11 @@ export type RenderReference = Schemas['RenderReference'];
 export type TopicRenderReference = Schemas['TopicRenderReference'];
 export type RenderInlineContent = Schemas['RenderInlineContent'];
 export type TasksGroupSection = Schemas['TasksGroupSection'];
-export type RelationshipsGroupSection = Schemas['RelationshipsGroupSection'];
 export type PlatformAvailability = Schemas['PlatformAvailability'];
 /** A web-service page's parts: a property, parameter or body field, its type's tokens, and a property's attribute */
 export type TypedProperty = Schemas['TypedProperty'];
+export type Declaration = Schemas['Declaration'];
+export type RelationshipsGroupSection = Schemas['RelationshipsGroupSection'];
 export type DeclarationToken = Schemas['DeclarationToken'];
 export type Attribute = Schemas['Attribute'];
 export type DetailsSection = Schemas['DetailsSection'];

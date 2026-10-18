@@ -3,7 +3,6 @@
   "year": "2019",
   "url": "https://developer.apple.com/videos/play/wwdc2019/711/",
   "title": "Introducing Combine and Advances in Foundation",
-  "speakers": [],
   "duration": "",
   "topics": [
     "System Services"
@@ -45,5 +44,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/230"
     }
   ],
-  "extractedAt": "2026-10-11T16:47:54.696Z"
+  "extractedAt": "2026-10-17T18:57:48.571Z"
 }

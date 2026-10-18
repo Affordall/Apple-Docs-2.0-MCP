@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10216/",
   "title": "ARC in Swift: Basics and beyond",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Swift"
@@ -11,8 +10,644 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Meghana Gupta: Hi, my name is Meghana.\n\nToday, I'll be talking to you about ARC in Swift.\n\nSwift provides powerful value types like structs and enums.\n\nYou should prefer to use value types when possible to avoid the dangers of unintended sharing that comes with reference types.\n\nClasses are reference types in Swift, and if you decide to use them, Swift manages its memory via Automatic Reference Counting, or ARC.\n\nIn order to write effective Swift, it is important to understand how ARC works.\n\nIn this session, we’ll do just that.\n\nI’ll start with a review of object lifetimes and ARC in Swift.\n\nThen, I’ll describe what observable object lifetimes are.\n\nI'll explain in detail what language features make object lifetimes observable, consequences of relying on observed object lifetimes, and some safe techniques to fix them.\n\nLet’s begin.\n\nAn object’s lifetime in Swift begins at initialization and ends at last use.\n\nARC automatically manages memory, by deallocating an object after its lifetime ends.\n\nIt determines an object’s lifetime by keeping track of its reference counts.\n\nARC is mainly driven by the Swift compiler which inserts retain and release operations.\n\nAt runtime, retain increments the reference count and release decrements it.\n\nWhen the reference count drops to zero, the object will be deallocated.\n\nLet’s see how it works with an example.\n\nImagine we want to build a travel app.\n\nTo represent a traveler, let’s write a class with name and an optional destination property.\n\nIn the test() function, first, a Traveler object is created, then its reference is copied, and finally, its destination is updated.\n\nIn order to automatically manage the memory of the Traveler object, the Swift compiler inserts a retain operation when a reference begins and a release operation after the last use of the reference.\n\ntraveler1 is the first reference to the Traveler object, and its last use is the copy.\n\nHere, the Swift compiler inserts a release operation immediately after the last use of the traveler1 reference.\n\nIt does not insert a retain operation when the reference begins, because initialization sets the reference count to one.\n\ntraveler2 is another reference to the Traveler object, and its last use is the destination update.\n\nHere, the Swift compiler inserts a retain operation when the reference begins and a release operation immediately after the last use of the reference.\n\nLet's step through the code and see what happens at runtime.\n\nFirst, the Traveler object is created on the heap and initialized with a reference count of one.\n\nThen in preparation of the new reference, retain operation executes, incrementing the reference count to two.\n\nNow traveler2 is also a reference to the Traveler object.\n\nAfter the last use of the traveler1 reference, the release operation executes, decrementing the reference count to one.\n\nThen the destination of the Traveler object is updated to Big Sur.\n\nSince that was the last use of the traveler2 reference, release operation executes, decrementing the reference count to zero.\n\nOnce the reference count drops to zero, the object can be deallocated.\n\nObject lifetimes in Swift are use-based.\n\nAn object's guaranteed minimum lifetime begins at initialization and ends at last use.\n\nThis is different from languages like C++, in which an object’s lifetime is guaranteed to end at the closing brace.\n\nIn this example, we saw the object was deallocated immediately after the last use.\n\nHowever, in practice, object lifetimes are determined by the retain and release operations inserted by the Swift compiler.\n\nAnd depending on the ARC optimizations that kick in, the observed object lifetimes may differ from their guaranteed minimum, ending beyond the last use of the object.\n\nIn such cases, the object is deallocated at a program point beyond its last use.\n\nIn most cases, it doesn’t really matter what the exact lifetime of an object is.\n\nHowever, with language features like weak and unowned references and deinitializer side effects, it is possible to observe object lifetimes.\n\nAnd if you have programs that rely on observed object lifetimes instead of guaranteed object lifetimes, you can end up with problems in the future.\n\nBecause relying on observed object lifetimes may work today, but it is only a coincidence.\n\nObserved object lifetimes are an emergent property of the Swift compiler and can change as implementation details change.\n\nSuch bugs may not be discovered during development and may remain hidden for a long time, only to be uncovered by a compiler update with improved ARC optimizations or unrelated source changes that enable a previously limited ARC optimization.\n\nI’ll go over the language features that make object lifetimes observable, walk through what can happen if we rely only on observed object lifetimes, and some safe techniques to fix them.\n\nUnlike default references that are strong references, weak and unowned references do not participate in reference counting, and for this reason, they are commonly used to break reference cycles.\n\nBefore I get into their details, let’s see what reference cycles are.\n\nThis is an extension of our Travel app.\n\nWe now want to introduce an optional points system.\n\nA traveler can have an account and accumulate points in it.\n\nTo represent this, we have a new Account class with points property.\n\nThe Account class refers to the Traveler class, and the Traveler class refers back to the Account class.\n\nIn the test() function, we create Traveler and Account objects, and then call the printSummary() function via the traveler reference.\n\nLet’s step through the code and see what happens with ARC.\n\nFirst, Traveler object is created on the heap with a reference count of one.\n\nThen Account object is created on the heap with a reference count of one.\n\nSince the Account object refers to the Traveler object, the reference count of the Traveler object is incremented to two.\n\nNow the Traveler object starts referring to the Account object, so the reference count of the Account object is also incremented to two.\n\nThis is the last use of the account reference.\n\nAfter this, the account reference goes away and reference count of the Account object is decremented to one.\n\nThen, printSummary() function is called to print name and points.\n\nThis is the last use of the Traveler reference.\n\nAfter this, the Traveler reference goes away and the reference count of the Traveler object is decremented to one.\n\nEven after all the references that make the objects reachable go away, the reference count of the objects remain one.\n\nThis is because of the reference cycle.\n\nAs a result, the objects are never deallocated, causing a memory leak.\n\nYou may break the reference cycle with a weak or unowned reference.\n\nBecause they don’t participate in reference counting, the referred object may be deallocated while a weak or unowned reference is in use.\n\nWhen this happens, the Swift runtime safely turns access to weak references as nil, and access to unowned references as traps.\n\nAny reference participating in the reference cycle can be marked as weak or unowned to break the reference cycle.\n\nIt depends on the application.\n\nIn our example, let’s mark the traveler reference in the Account class as weak.\n\nBecause weak reference does not participate in reference counting, after the last use of the Traveler object, its reference count drops to zero.\n\nOnce the reference count of the Traveler object is zero, it can be deallocated.\n\nWhen the Traveler object goes away, its reference to the Account object goes away, making its reference count zero.\n\nNow the Account object can be deallocated.\n\nIn this example, we used the weak reference to only break the reference cycle.\n\nIf a weak reference is used to access an object while its guaranteed object lifetime has ended, and you are relying on observed object lifetime for the object to be available, you can end up with bugs in the future when the observed object lifetime changes for unrelated reasons.\n\nLet’s see an example.\n\nHere, the printSummary() function is moved from the Traveler class to the Account class.\n\nAnd the test() function now calls the printSummary() function via the Account reference.\n\nWhat exactly happens when printSummary() function is called? It may print the traveler’s name and points today, but this is only a coincidence.\n\nThis is because the last use of the Traveler object is before the call to the printSummary() function.\n\nAfter this, the reference count of the Traveler object can drop to zero if the compiler inserted a release immediately after the last use.\n\nIf the reference count has dropped to zero, access to the Traveler object via the weak reference will be nil, and the Traveler object may be deallocated.\n\nSo when the printSummary() function is called, the force unwrap of the weak Traveler reference will trap, causing a crash.\n\nYou may be wondering if the force unwrap is the reason for the crash here, and optional binding may have prevented it.\n\nOptional binding actually worsens the problem.\n\nWithout an obvious crash, it creates a silent bug that may go unnoticed when the observed object lifetime changes for unrelated reasons.\n\nThere are different techniques to safely handle weak and unowned references, each of them with varying degrees of upfront implementation cost versus continuous maintenance cost.\n\nLet’s explore them one by one with our example.\n\nSwift provides withExtendedLifetime() utility that can explicitly extend the lifetime of an object.\n\nUsing withExtendedLifetime(), it is possible to safely extend the lifetime of the Traveler object, while the printSummary() function is being called, preventing potential bugs.\n\nThe same effect can be achieved by placing an empty call to withExtendedLifetime() at the end of the existing scope.\n\nFor more complex cases, we can ask the compiler to extend the lifetime of an object to the end of the current scope using defer.\n\nwithExtendedLifetime() may look like an easy way out of object lifetimes bugs.\n\nHowever, this technique is fragile, and transfers the responsibility of correctness on you.\n\nWith this approach, you should ensure withExtendedLifetime() is used every time a weak reference has a potential to cause bugs.\n\nIf not controlled, withExtendedLifetime() can creep up all over the codebase, increasing maintenance cost.\n\nRedesigning classes with better APIs is a much more principled approach.\n\nObject lifetime surprises can be prevented, if access to the object can be limited to strong references only.\n\nHere, the printSummary() function is moved back to the Traveler class, and the weak reference in Account class is hidden.\n\nTests are now forced to call the printSummary() function via a strong reference, eliminating potential bugs.\n\nIn addition to carrying a performance cost, weak and unowned references can expose bugs if you are not careful with class design.\n\nIt is important to pause and think, why are weak and unowned references needed? Are they used only to break reference cycles? What if you avoid creating reference cycles in the first place? Reference cycles can often be avoided by rethinking algorithms and transforming cyclic class relationships to tree structures.\n\nIn our example, Traveler class needs to refer to the Account class.\n\nIt is not really necessary for the Account class to refer to the Traveler class.\n\nAccount class only needs access to the traveler’s personal information.\n\nWe can move the traveler’s personal information into a new class called PersonalInfo.\n\nBoth Traveler class and Account class can refer to the PersonalInfo class, avoiding the cycle.\n\nAvoiding the need for weak and unowned references may have additional implementation cost, but this is a definite way to eliminate all potential object lifetime bugs.\n\nAnother language feature that makes object lifetimes observable are deinitializer side effects.\n\nA deinitializer runs before deallocation and its side effects can be observed by external program effects.\n\nIf you write code to sequence deinitializer side effects with external program effects, it can lead to hidden bugs, which are uncovered only when the observed object lifetime changes due to unrelated reasons.\n\nBefore I get into how such bugs can come up, let’s see what a deinitializer is.\n\nThis is a repeat of the first example, now with a deinitializer.\n\nThe deinitializer has a global side effect: printing a message on the console.\n\nToday the deinitializer may run after \"Done traveling\" is printed.\n\nBut since the last use of the Traveler object is the destination update, the deinitializer can run before \"Done traveling\" is printed, depending on the ARC optimizations that kick in.\n\nIn this example, deinitializer side effects were observable but not relied upon.\n\nLet’s look at a more complex example, where deinitializer side effects are relied upon by external program effects.\n\nWe now introduce travel metrics to the Traveler class.\n\nWhenever a destination is updated, it is recorded in the TravelMetrics class.\n\nEventually when deinitializing the Traveler object, metrics get published to a global record.\n\nMetrics published are the traveler’s anonymous ID, number of destinations looked up, and a computed travel interest category.\n\nIn the test() function, first, a Traveler object is created, then reference to the travelMetrics is copied from the Traveler object.\n\nThe traveler’s destination is updated to Big Sur, which records Big Sur in TravelMetrics.\n\nThe traveler’s destination is updated to Catalina, which records Catalina in TravelMetrics.\n\nThen the travel interest category is computed by looking at the recorded destinations.\n\nToday the deinitializer may run after computing travel interest, publishing the interested category as Nature.\n\nBut the last use of the Traveler object is the destination update to Catalina, immediately after which the deinitializer can run.\n\nSince the deinitializer runs before computing the travel interest, nil gets published, causing a bug.\n\nJust like weak and unowned references, there are different techniques to safely handle deinitializer side effects.\n\nEach of them with varying degrees of upfront implementation cost versus continuous maintenance cost.\n\nLet’s look at them one by one.\n\nwithExtendedLifetime() can be used to explicitly extend the lifetime of the Traveler object until the travel interest category is computed, preventing potential bugs.\n\nAs discussed before, this transfers responsibility of correctness on you.\n\nWith this approach, you should ensure withExtendedLifetime is used every time there is a potential of incorrect interaction between deinitializer side effects and external program effects, increasing maintenance cost.\n\nDeinitializer side effects cannot be observed if the effects are all local.\n\nRedesigning class API by limiting the visibility of internal class details can prevent object lifetime bugs.\n\nHere, TravelMetrics is marked private, hiding it from external access.\n\nThe deinitializer now computes the most interested travel category and publishes the metrics.\n\nThis works, but a more principled approach is to get rid of the deinitializer side effects altogether.\n\nHere, defer is used instead of the deinitializer to publish metrics, and the deinitializer only performs verification.\n\nBy removing deinitializer side effects, we can eliminate all potential object lifetime bugs.\n\nWe explored our educational Travel app example to learn about ARC, weak and unowned references, and deinitializer side effects.\n\nIt is important to thoroughly understand the language features that make object lifetimes observable and eliminate potentially incorrect reliance on observed object lifetimes, so that we don’t uncover bugs at surprising times.\n\nWith Xcode 13, a new experimental build setting called \"Optimize Object Lifetimes\" is available for the Swift compiler.\n\nThis enables powerful lifetime shortening ARC optimizations.\n\nWith this build setting turned on, you may see objects being deallocated immediately after last use much more consistently, bringing observed object lifetimes closer to their guaranteed minimum.\n\nThis may expose hidden object lifetime bugs, similar to the examples discussed.\n\nYou can follow the safe techniques discussed in this session to eliminate all such bugs.\n\nI hope you enjoyed this session.\n\nThanks for watching.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Meghana Gupta: Hi, my name is Meghana."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "Today, I'll be talking to you about ARC in Swift."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "Swift provides powerful value types like structs and enums."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "You should prefer to use value types when possible to avoid the dangers of unintended sharing that comes with reference types."
+      },
+      {
+        "timestamp": "0:28",
+        "text": "Classes are reference types in Swift, and if you decide to use them, Swift manages its memory via Automatic Reference Counting, or ARC."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "In order to write effective Swift, it is important to understand how ARC works."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "In this session, we’ll do just that."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "I’ll start with a review of object lifetimes and ARC in Swift."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "Then, I’ll describe what observable object lifetimes are."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "I'll explain in detail what language features make object lifetimes observable, consequences of relying on observed object lifetimes, and some safe techniques to fix them."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "Let’s begin."
+      },
+      {
+        "timestamp": "1:10",
+        "text": "An object’s lifetime in Swift begins at initialization and ends at last use."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "ARC automatically manages memory, by deallocating an object after its lifetime ends."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "It determines an object’s lifetime by keeping track of its reference counts."
+      },
+      {
+        "timestamp": "1:28",
+        "text": "ARC is mainly driven by the Swift compiler which inserts retain and release operations."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "At runtime, retain increments the reference count and release decrements it."
+      },
+      {
+        "timestamp": "1:40",
+        "text": "When the reference count drops to zero, the object will be deallocated."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "Let’s see how it works with an example."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "Imagine we want to build a travel app."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "To represent a traveler, let’s write a class with name and an optional destination property."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "In the test() function, first, a Traveler object is created, then its reference is copied, and finally, its destination is updated."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "In order to automatically manage the memory of the Traveler object, the Swift compiler inserts a retain operation when a reference begins and a release operation after the last use of the reference."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "traveler1 is the first reference to the Traveler object, and its last use is the copy."
+      },
+      {
+        "timestamp": "2:32",
+        "text": "Here, the Swift compiler inserts a release operation immediately after the last use of the traveler1 reference."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "It does not insert a retain operation when the reference begins, because initialization sets the reference count to one."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "traveler2 is another reference to the Traveler object, and its last use is the destination update."
+      },
+      {
+        "timestamp": "2:57",
+        "text": "Here, the Swift compiler inserts a retain operation when the reference begins and a release operation immediately after the last use of the reference."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "Let's step through the code and see what happens at runtime."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "First, the Traveler object is created on the heap and initialized with a reference count of one."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "Then in preparation of the new reference, retain operation executes, incrementing the reference count to two."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "Now traveler2 is also a reference to the Traveler object."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "After the last use of the traveler1 reference, the release operation executes, decrementing the reference count to one."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Then the destination of the Traveler object is updated to Big Sur."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "Since that was the last use of the traveler2 reference, release operation executes, decrementing the reference count to zero."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "Once the reference count drops to zero, the object can be deallocated."
+      },
+      {
+        "timestamp": "4:09",
+        "text": "Object lifetimes in Swift are use-based."
+      },
+      {
+        "timestamp": "4:13",
+        "text": "An object's guaranteed minimum lifetime begins at initialization and ends at last use."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "This is different from languages like C++, in which an object’s lifetime is guaranteed to end at the closing brace."
+      },
+      {
+        "timestamp": "4:29",
+        "text": "In this example, we saw the object was deallocated immediately after the last use."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "However, in practice, object lifetimes are determined by the retain and release operations inserted by the Swift compiler."
+      },
+      {
+        "timestamp": "4:45",
+        "text": "And depending on the ARC optimizations that kick in, the observed object lifetimes may differ from their guaranteed minimum, ending beyond the last use of the object."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "In such cases, the object is deallocated at a program point beyond its last use."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "In most cases, it doesn’t really matter what the exact lifetime of an object is."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "However, with language features like weak and unowned references and deinitializer side effects, it is possible to observe object lifetimes."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "And if you have programs that rely on observed object lifetimes instead of guaranteed object lifetimes, you can end up with problems in the future."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "Because relying on observed object lifetimes may work today, but it is only a coincidence."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "Observed object lifetimes are an emergent property of the Swift compiler and can change as implementation details change."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "Such bugs may not be discovered during development and may remain hidden for a long time, only to be uncovered by a compiler update with improved ARC optimizations or unrelated source changes that enable a previously limited ARC optimization."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "I’ll go over the language features that make object lifetimes observable, walk through what can happen if we rely only on observed object lifetimes, and some safe techniques to fix them."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "Unlike default references that are strong references, weak and unowned references do not participate in reference counting, and for this reason, they are commonly used to break reference cycles."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "Before I get into their details, let’s see what reference cycles are."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "This is an extension of our Travel app."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "We now want to introduce an optional points system."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "A traveler can have an account and accumulate points in it."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "To represent this, we have a new Account class with points property."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "The Account class refers to the Traveler class, and the Traveler class refers back to the Account class."
+      },
+      {
+        "timestamp": "6:58",
+        "text": "In the test() function, we create Traveler and Account objects, and then call the printSummary() function via the traveler reference."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "Let’s step through the code and see what happens with ARC."
+      },
+      {
+        "timestamp": "7:12",
+        "text": "First, Traveler object is created on the heap with a reference count of one."
+      },
+      {
+        "timestamp": "7:18",
+        "text": "Then Account object is created on the heap with a reference count of one."
+      },
+      {
+        "timestamp": "7:24",
+        "text": "Since the Account object refers to the Traveler object, the reference count of the Traveler object is incremented to two."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "Now the Traveler object starts referring to the Account object, so the reference count of the Account object is also incremented to two."
+      },
+      {
+        "timestamp": "7:43",
+        "text": "This is the last use of the account reference."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "After this, the account reference goes away and reference count of the Account object is decremented to one."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "Then, printSummary() function is called to print name and points."
+      },
+      {
+        "timestamp": "8:00",
+        "text": "This is the last use of the Traveler reference."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "After this, the Traveler reference goes away and the reference count of the Traveler object is decremented to one."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "Even after all the references that make the objects reachable go away, the reference count of the objects remain one."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "This is because of the reference cycle."
+      },
+      {
+        "timestamp": "8:22",
+        "text": "As a result, the objects are never deallocated, causing a memory leak."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "You may break the reference cycle with a weak or unowned reference."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "Because they don’t participate in reference counting, the referred object may be deallocated while a weak or unowned reference is in use."
+      },
+      {
+        "timestamp": "8:43",
+        "text": "When this happens, the Swift runtime safely turns access to weak references as nil, and access to unowned references as traps."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "Any reference participating in the reference cycle can be marked as weak or unowned to break the reference cycle."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "It depends on the application."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "In our example, let’s mark the traveler reference in the Account class as weak."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "Because weak reference does not participate in reference counting, after the last use of the Traveler object, its reference count drops to zero."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "Once the reference count of the Traveler object is zero, it can be deallocated."
+      },
+      {
+        "timestamp": "9:26",
+        "text": "When the Traveler object goes away, its reference to the Account object goes away, making its reference count zero."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "Now the Account object can be deallocated."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "In this example, we used the weak reference to only break the reference cycle."
+      },
+      {
+        "timestamp": "9:43",
+        "text": "If a weak reference is used to access an object while its guaranteed object lifetime has ended, and you are relying on observed object lifetime for the object to be available, you can end up with bugs in the future when the observed object lifetime changes for unrelated reasons."
+      },
+      {
+        "timestamp": "10:03",
+        "text": "Let’s see an example."
+      },
+      {
+        "timestamp": "10:05",
+        "text": "Here, the printSummary() function is moved from the Traveler class to the Account class."
+      },
+      {
+        "timestamp": "10:11",
+        "text": "And the test() function now calls the printSummary() function via the Account reference."
+      },
+      {
+        "timestamp": "10:17",
+        "text": "What exactly happens when printSummary() function is called? It may print the traveler’s name and points today, but this is only a coincidence."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "This is because the last use of the Traveler object is before the call to the printSummary() function."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "After this, the reference count of the Traveler object can drop to zero if the compiler inserted a release immediately after the last use."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "If the reference count has dropped to zero, access to the Traveler object via the weak reference will be nil, and the Traveler object may be deallocated."
+      },
+      {
+        "timestamp": "10:59",
+        "text": "So when the printSummary() function is called, the force unwrap of the weak Traveler reference will trap, causing a crash."
+      },
+      {
+        "timestamp": "11:07",
+        "text": "You may be wondering if the force unwrap is the reason for the crash here, and optional binding may have prevented it."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "Optional binding actually worsens the problem."
+      },
+      {
+        "timestamp": "11:19",
+        "text": "Without an obvious crash, it creates a silent bug that may go unnoticed when the observed object lifetime changes for unrelated reasons."
+      },
+      {
+        "timestamp": "11:29",
+        "text": "There are different techniques to safely handle weak and unowned references, each of them with varying degrees of upfront implementation cost versus continuous maintenance cost."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "Let’s explore them one by one with our example."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "Swift provides withExtendedLifetime() utility that can explicitly extend the lifetime of an object."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "Using withExtendedLifetime(), it is possible to safely extend the lifetime of the Traveler object, while the printSummary() function is being called, preventing potential bugs."
+      },
+      {
+        "timestamp": "12:04",
+        "text": "The same effect can be achieved by placing an empty call to withExtendedLifetime() at the end of the existing scope."
+      },
+      {
+        "timestamp": "12:14",
+        "text": "For more complex cases, we can ask the compiler to extend the lifetime of an object to the end of the current scope using defer."
+      },
+      {
+        "timestamp": "12:24",
+        "text": "withExtendedLifetime() may look like an easy way out of object lifetimes bugs."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "However, this technique is fragile, and transfers the responsibility of correctness on you."
+      },
+      {
+        "timestamp": "12:38",
+        "text": "With this approach, you should ensure withExtendedLifetime() is used every time a weak reference has a potential to cause bugs."
+      },
+      {
+        "timestamp": "12:47",
+        "text": "If not controlled, withExtendedLifetime() can creep up all over the codebase, increasing maintenance cost."
+      },
+      {
+        "timestamp": "12:55",
+        "text": "Redesigning classes with better APIs is a much more principled approach."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "Object lifetime surprises can be prevented, if access to the object can be limited to strong references only."
+      },
+      {
+        "timestamp": "13:10",
+        "text": "Here, the printSummary() function is moved back to the Traveler class, and the weak reference in Account class is hidden."
+      },
+      {
+        "timestamp": "13:19",
+        "text": "Tests are now forced to call the printSummary() function via a strong reference, eliminating potential bugs."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "In addition to carrying a performance cost, weak and unowned references can expose bugs if you are not careful with class design."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "It is important to pause and think, why are weak and unowned references needed? Are they used only to break reference cycles? What if you avoid creating reference cycles in the first place? Reference cycles can often be avoided by rethinking algorithms and transforming cyclic class relationships to tree structures."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "In our example, Traveler class needs to refer to the Account class."
+      },
+      {
+        "timestamp": "14:07",
+        "text": "It is not really necessary for the Account class to refer to the Traveler class."
+      },
+      {
+        "timestamp": "14:12",
+        "text": "Account class only needs access to the traveler’s personal information."
+      },
+      {
+        "timestamp": "14:18",
+        "text": "We can move the traveler’s personal information into a new class called PersonalInfo."
+      },
+      {
+        "timestamp": "14:25",
+        "text": "Both Traveler class and Account class can refer to the PersonalInfo class, avoiding the cycle."
+      },
+      {
+        "timestamp": "14:33",
+        "text": "Avoiding the need for weak and unowned references may have additional implementation cost, but this is a definite way to eliminate all potential object lifetime bugs."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "Another language feature that makes object lifetimes observable are deinitializer side effects."
+      },
+      {
+        "timestamp": "14:53",
+        "text": "A deinitializer runs before deallocation and its side effects can be observed by external program effects."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "If you write code to sequence deinitializer side effects with external program effects, it can lead to hidden bugs, which are uncovered only when the observed object lifetime changes due to unrelated reasons."
+      },
+      {
+        "timestamp": "15:16",
+        "text": "Before I get into how such bugs can come up, let’s see what a deinitializer is."
+      },
+      {
+        "timestamp": "15:22",
+        "text": "This is a repeat of the first example, now with a deinitializer."
+      },
+      {
+        "timestamp": "15:28",
+        "text": "The deinitializer has a global side effect: printing a message on the console."
+      },
+      {
+        "timestamp": "15:34",
+        "text": "Today the deinitializer may run after \"Done traveling\" is printed."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "But since the last use of the Traveler object is the destination update, the deinitializer can run before \"Done traveling\" is printed, depending on the ARC optimizations that kick in."
+      },
+      {
+        "timestamp": "15:54",
+        "text": "In this example, deinitializer side effects were observable but not relied upon."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "Let’s look at a more complex example, where deinitializer side effects are relied upon by external program effects."
+      },
+      {
+        "timestamp": "16:09",
+        "text": "We now introduce travel metrics to the Traveler class."
+      },
+      {
+        "timestamp": "16:13",
+        "text": "Whenever a destination is updated, it is recorded in the TravelMetrics class."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "Eventually when deinitializing the Traveler object, metrics get published to a global record."
+      },
+      {
+        "timestamp": "16:26",
+        "text": "Metrics published are the traveler’s anonymous ID, number of destinations looked up, and a computed travel interest category."
+      },
+      {
+        "timestamp": "16:35",
+        "text": "In the test() function, first, a Traveler object is created, then reference to the travelMetrics is copied from the Traveler object."
+      },
+      {
+        "timestamp": "16:47",
+        "text": "The traveler’s destination is updated to Big Sur, which records Big Sur in TravelMetrics."
+      },
+      {
+        "timestamp": "16:55",
+        "text": "The traveler’s destination is updated to Catalina, which records Catalina in TravelMetrics."
+      },
+      {
+        "timestamp": "17:02",
+        "text": "Then the travel interest category is computed by looking at the recorded destinations."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Today the deinitializer may run after computing travel interest, publishing the interested category as Nature."
+      },
+      {
+        "timestamp": "17:19",
+        "text": "But the last use of the Traveler object is the destination update to Catalina, immediately after which the deinitializer can run."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "Since the deinitializer runs before computing the travel interest, nil gets published, causing a bug."
+      },
+      {
+        "timestamp": "17:37",
+        "text": "Just like weak and unowned references, there are different techniques to safely handle deinitializer side effects."
+      },
+      {
+        "timestamp": "17:45",
+        "text": "Each of them with varying degrees of upfront implementation cost versus continuous maintenance cost."
+      },
+      {
+        "timestamp": "17:53",
+        "text": "Let’s look at them one by one."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "withExtendedLifetime() can be used to explicitly extend the lifetime of the Traveler object until the travel interest category is computed, preventing potential bugs."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "As discussed before, this transfers responsibility of correctness on you."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "With this approach, you should ensure withExtendedLifetime is used every time there is a potential of incorrect interaction between deinitializer side effects and external program effects, increasing maintenance cost."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "Deinitializer side effects cannot be observed if the effects are all local."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "Redesigning class API by limiting the visibility of internal class details can prevent object lifetime bugs."
+      },
+      {
+        "timestamp": "18:44",
+        "text": "Here, TravelMetrics is marked private, hiding it from external access."
+      },
+      {
+        "timestamp": "18:50",
+        "text": "The deinitializer now computes the most interested travel category and publishes the metrics."
+      },
+      {
+        "timestamp": "18:58",
+        "text": "This works, but a more principled approach is to get rid of the deinitializer side effects altogether."
+      },
+      {
+        "timestamp": "19:07",
+        "text": "Here, defer is used instead of the deinitializer to publish metrics, and the deinitializer only performs verification."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "By removing deinitializer side effects, we can eliminate all potential object lifetime bugs."
+      },
+      {
+        "timestamp": "19:25",
+        "text": "We explored our educational Travel app example to learn about ARC, weak and unowned references, and deinitializer side effects."
+      },
+      {
+        "timestamp": "19:34",
+        "text": "It is important to thoroughly understand the language features that make object lifetimes observable and eliminate potentially incorrect reliance on observed object lifetimes, so that we don’t uncover bugs at surprising times."
+      },
+      {
+        "timestamp": "19:50",
+        "text": "With Xcode 13, a new experimental build setting called \"Optimize Object Lifetimes\" is available for the Swift compiler."
+      },
+      {
+        "timestamp": "19:59",
+        "text": "This enables powerful lifetime shortening ARC optimizations."
+      },
+      {
+        "timestamp": "20:04",
+        "text": "With this build setting turned on, you may see objects being deallocated immediately after last use much more consistently, bringing observed object lifetimes closer to their guaranteed minimum."
+      },
+      {
+        "timestamp": "20:19",
+        "text": "This may expose hidden object lifetime bugs, similar to the examples discussed."
+      },
+      {
+        "timestamp": "20:24",
+        "text": "You can follow the safe techniques discussed in this session to eliminate all such bugs."
+      },
+      {
+        "timestamp": "20:31",
+        "text": "I hope you enjoyed this session."
+      },
+      {
+        "timestamp": "20:33",
+        "text": "Thanks for watching."
+      },
+      {
+        "timestamp": "20:35",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -99,5 +734,5 @@
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2021/10216/4/884C234F-2424-47DF-A4CF-A9010D869C66/downloads/wwdc2021-10216_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2021/10216/4/884C234F-2424-47DF-A4CF-A9010D869C66/downloads/wwdc2021-10216_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:43:55.295Z"
+  "extractedAt": "2026-10-17T18:53:51.746Z"
 }

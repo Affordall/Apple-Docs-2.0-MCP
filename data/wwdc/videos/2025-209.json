@@ -3,16 +3,311 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/209/",
   "title": "Level up your games",
-  "speakers": [],
-  "duration": "",
+  "duration": "23:10",
   "topics": [
     "Graphics & Games"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I am Alexey, an engineering manager on the Metal Games Ecosystem team. Your players expect the best possible experience in your games. You can provide that by taking advantage of the ever-improving power and efficiency of Apple Silicon, and the software that brings it to life.\n\nApple’s SDK provides you with a wide range of tools to create the next generation of games that reach players across the Apple ecosystem. From stunning graphics, to great input and social experiences, it’s easy to bring games to iPhone, iPad, and Mac thanks to the unified gaming platform.\n\nOver the years, the OS and frameworks that help enable great gaming experiences have continued to advance. This year there are even more features designed to help you level up your players’ experience even further. In this talk I will show you how to take advantage of the built-in system features that will boost your game’s performance, walk you through the important game technologies that enable players to enjoy your game whenever and wherever they want to, and explain how you can use new graphics features to immerse them in your game’s world, taking full advantage of Apple Silicon. First, I’ll tell you about some powerful system features that you can adopt to enable players to get the most out of their devices while gaming.\n\nThese include configurable system modes to boost the sustained performance of your game, and social features that increase players engagement with your game, and the visibility your game has across the system. Let’s start with boosting your games performance.\n\nGame Mode optimizes system behavior to give your game even more resources. It reduces background activity, so your game gets access to more CPU time to process complex tasks, like rendering or physics simulation. And Game Mode also improves Bluetooth latency, making input and headphones more responsive.\n\nOn macOS and iOS, Game Mode is enabled when a player launches the game in full screen. The Game Mode banner will let the player know that it's active. It is simple to make sure your game enables Game Mode. Just add the LSSupportsGameMode key in your game’s info.plist and set it to true.\n\nOnce enabled, Game Mode gives more system resources to your game to improve its performance. It is important to manage them correctly to ensure your players’ experience will be consistent across the whole gaming session.\n\nTo do that you can ask the system to enable Sustained Execution Mode for your game. When it is enabled, the system will limit performance to the steady state, right from the game launch. This allows you to quickly identify a level of quality and performance appropriate for the target device, and you can be confident your players will have a consistent experience. It takes a couple of simple steps to enable Sustained Execution Mode. First add the corresponding entitlement to your game. To do that - enable the capability in the Signing & Capabilities tools within Xcode. Next, login to your Apple Developer Account and include this entitlement in the provisioning profile for your game. Now your game and OS will work together to deliver a smooth gaming experience.\n\nAcross different devices, Apple Silicon delivers great power efficiency that allows players to enjoy their favorite games wherever they are. In macOS 26, players will be notified when a game is using significant energy while running on battery power. They'll have the option of switching to Low Power Mode, now tuned for gaming, enabling them to play longer.\n\nAnd players can also dynamically change the system energy mode while playing, right inside of the Game Overlay without leaving the game.\n\nTo further improve the experience for your players, you can set your game to respond and adapt to Low Power Mode. The system provides you an API to detect when Low Power Mode is active. Listen for the NSProcessInfoPowerStateDidChange notification. When the Low Power Mode state changes to enabled, you might, for example, optimize the quality settings to help extend play time even longer.\n\nPlayers across the Unified Gaming Platform have lots of ways to find their friends and play together with them.\n\nAnd Game Center is at the center of it all.\n\nIt is Apple's social gaming network that connects players with their friends, so they can see who's playing what, discover new games, and challenge their friends.\n\nYour game can add many features from Game Center, including Achievements, Leaderboards, Challenges, and Activities.\n\nThese features let players keep track of their progress, compete for high scores, and invite their friends to play along. And now Game Center configuration is fully integrated with Xcode. You can create Achievements, setup localizations, and configure Challenges. Any changes you make can be included in code reviews and version control. After you are done with the configuration use the new Game Progress Manager to test it locally before making it available to players. Check out “Get started with Game Center” to learn more about Game Center and its features.\n\nOnce your game is integrated with Game Center, it will be automatically discoverable in lots of places across the system.\n\nFor example, in the brand new Apple Games app! The Games app gives players a brand-new, all-in-one destination for their games. They can launch their games, discover new ones, and have even more fun playing with their friends.\n\nIt comes pre-installed on Mac, iPad, and iPhone and its features are integrated throughout the operating system, including widgets, notifications, and the App Store.\n\nFor example, players can check their ranking in leaderboards right in the Game Overlay without the need to leave the game.\n\nCheck out “Engage players with the Apple Games app” to learn more about how getting your game into the Games app can boost its visibility to players through their friends who are playing.\n\nWith the system experience designed for gaming you can unlock your game's full potential. You can achieve consistent and smooth frame rates with system performance features and use social features to help you build a community and keep your players engaged.\n\nNow let’s talk about how you can elevate your game and your player's experience even further, using some existing and some brand-new game technologies.\n\nThe Human Interface Guidelines for games is a great place to start learning how to provide a great experience specific to Apple platforms. It is a comprehensive set of documentation that serves as a guide on how to best support multiple Apple devices with topics like onboarding players, adapting to different screen sizes and supporting various input methods.\n\nA great gaming experience is a combination of thoughtful game design and taking advantage of the technologies that best enable it.\n\nIt starts the moment players install your game and continues as they progress. And all of that is driven by how they interact with your game.\n\nHigh-end games tend to have larger initial downloads, so the first thing you want to consider, is how you can let players jump into gameplay as soon as possible.\n\nFor example, here’s My game. It consists of an executable and gigabytes of textures and audio recordings in the content packages, all of which deliver a rich player experience.\n\nIt can take a long time to download the game before players can start to play it. I’ve decided to improve this by splitting my game’s content into two parts. Now players only need to download the smaller portion of it that is required to play the tutorial level. In the meantime the rest of the content is downloaded in the background while the player is already having fun in the game. On Apple Platforms you can achieve this using the Background Assets framework. It is designed to deliver a great first-launch experience.\n\nYou can configure how the system downloads your assets to the device and prioritize content that is required to start playing. Using Background Assets you can offer optional downloadable content that players can unlock within the game. And you are able to update your game assets separately from the main game bundle.\n\nThe new Managed Background Assets improves the API and simplifies the workflow. For games on TestFlight or the App Store, you get up to 200GB of Apple hosting capacity. And the API is simple to use, including built-in support for automatic out-of-band asset updates and system management.\n\nManaged Background Assets are also tightly integrated into the same workflow you use for your game distribution on Apple platforms.\n\nYou can use TestFlight to beta test content changes in your game and once these changes pass AppStore review - deliver them to players. Check out “Discover Apple-Hosted Background Assets” to learn more.\n\nWhat makes your game stand apart on Apple platforms is that, in addition to easily targeting both macOS and iOS, you can keep the game state synchronized across all your players’ devices. For example, your player can start playing on a device at home. When they reach a milestone and save the game, you upload the game save data to iCloud. Then, say they catch a bus. No problem, they can open your game on their iPhone and pick up where they left off by loading save data from iCloud and keeping it in sync as they play.\n\nFinally, if your player goes to a café and decides to play on their iPad, because they’d like to use a larger screen, the game can load the progress from iCloud.\n\nThe key to continuing your progress on-the-go across devices is cloud saves.\n\nThe new GameSave framework introduces an easy way to enable cloud saves in your game.\n\nIt is powered by iCloud and is designed with user privacy and data security in mind. It automatically syncs and saves game data across devices with the same iCloud account and supports scenarios when a player goes offline or is signed out of iCloud.\n\nThe Game Save framework also provides you with default UI that you can use to show progress while save data is being synchronized with iCloud, notify the player about potential save data conflicts and provide options to resolve them, or send an alert when the player is signed out of iCloud. And, if you want to customize the player experience, you can use the GameSave API to integrate with your game's UI and add custom logic. It is easy to enable the Game Save framework in your game and only takes a couple of steps: First add the iCloud entitlement to your game. To do that, enable the capability in Signing & Capabilities tool within Xcode, select the iCloud Documents checkbox in game project settings and add your iCloud container entitlement. Next, login to your Apple developer account and include this entitlement in the provisioning profile for your game. The GameSave framework is now ready to be used in your game. Let me show you how to start.\n\nIn the typical flow to use GameSave framework, first call openDirectory. GameSave will start fetching the user’s save data in the background. While GameSave is syncing, you can check the status providing a Window for the user alert.\n\nAnd finally, when syncing is finished, the save will be available from the url. Here is an example. To start synchronization with iCloud, call openDirectoryForContainer with your game’s container identifier. While the GameSave framework performs a sync in the background, you can call the finishSyncing completion handler and add post sync logic to it. When cloud sync is done, you can check the state and handle any errors if needed. Finally, use the directory state URL to access player’s save data. Your game is now ready to share saves across all the devices it supports.\n\nYou can learn more about the GameSave API and its features in the framework documentation.\n\nThere are various ways players can interact with your game and it is important to allow them to play however they prefer. Apple platforms provide comprehensive support for peripheral input devices like keyboard, mouse, and game controllers. You can allow players to enjoy your game in exactly the same way as they do on other platforms.\n\nAnd the Game Controller framework provides an API to add support for all of these types of input in your game.\n\nIts modern and flexible design enables you to either register event callbacks or poll players’ actions on demand. It is the preferred method to get your player’s input on all Apple platforms and it has support for modern controllers, like the Playstation DualSense controller! In addition to mouse, keyboard, and controller support, Apple is especially unique in our support for high-end games on touch-first platforms. And while some players may play your game on their iPhone or iPad with a controller — the vast majority of players won’t have a controller available. To help you, the new Touch Controls framework provides an easy way to add touch support into your existing game. There are a wealth of button types and behaviors provided to support your common inputs, on top of that each button’s look can be customized to best fit the needs of your game. And the new API integrates directly with Metal to ensure the highest possible performance.\n\nWith that you can easily provide players with options. Some will prefer to play using touch, or just don’t have a controller handy. They can enjoy your game anytime they’re ready. Check out the documentation for a detailed walkthrough on how to easily set up Touch Controls in your game. And make sure you watch “Design advanced games for Apple platforms” to learn more about best practices for games.\n\nUsing these technologies, you can level up your players’ experience from the first time they start up your game. And you can make sure they progress in the game the way they want.\n\nNow let’s talk about one of the key aspects that helps tell your game’s story and keeps players immersed — Graphics.\n\nMetal is Apple’s low-level graphics and compute API. It powers multiple generations of complex applications including the latest games and pro apps. Metal supports all the features you need to deliver the best in class graphics and performance in your game. Metal 4 API handles the increased complexity of managing resources and compiling shaders, it reduces CPU overhead for encoding your graphics commands and enables your game to use machine learning in your rendering pipeline. Start with ”Discover Metal 4” to learn more about the new features.\n\nWith the ever growing complexity of graphical effects, it takes more effort to keep the frame time of your game in budget. And of course you want to achieve that without sacrificing visual quality.\n\nYou can do that by integrating MetalFX upscaling support into your game. MetalFX scales a lower resolution image, up to the target output resolution, in less time that it takes to render directly at the output resolution. And it supports both spatial and temporal upscaling so you can balance between visual quality and performance. You can further boost your game's frame rate when you integrate MetalFX frame interpolation. In combination with MetalFX upscaling you will be able to get even more of a performance uplift. Your game can use frame interpolation to generate intermediate frames in much less time than it would take to render each frame from scratch. And if your game uses graphics techniques like ray tracing, you can use MetalFX denoising to enhance the visual quality.\n\nMetalFX supports denoising during the upscale process, so your game can remove the noise from images rendered with fewer rays, and deliver full-size results. Here is Cyberpunk 2077 from CD Projekt Red running on the latest M4 Max MacBook Pro. This game uses a lot of complex techniques to achieve these stunning visuals. With MetalFX features, players are able to see significantly higher and smoother frame rates.\n\nCheck out “Go further with Metal 4 games” to learn how to enable existing and new MetalFX features in your game and boost its performance and visual quality.\n\nThe Game Porting Toolkit 3 also adds support for Metal 4. Metal-cpp is the part of Game Porting Toolkit that allows you to integrate Metal into your existing C++ code base. Metal-cpp comes with full Metal 4 support and, if you are already using it, you can enable Metal 4 features straightaway. In addition to that, Metal-cpp also includes support for the latest Metal FX features like denoising and frame interpolation.\n\nMetal Shader Converter is another useful tool. It helps you translate your HLSL shaders to Metal.\n\nWith Metal 4 support in Metal Shader Converter you can use intersection function buffers for ray tracing to translate your existing shader binding tables directly to Metal ray tracing. And, to go further, you can enable Metal features directly in your HLSL code.\n\nUse function constants for efficient specializations of your shaders to improve performance in case they have complicated logic inside and frame buffer fetch which enables techniques such as programmable blending to efficiently combine results of multiple render passes. Both features are available to you without the need to make high level changes in your engine.\n\nTo get started with them, check out the new sample code “Function Constants and Framebuffer Fetch” and “Ray tracing with Intersection Function Buffer”.\n\nAnd to learn more about the new features in the Game Porting Toolkit 3, go to developer.apple.com/games to check out the documentation and use the game porting example code to get started.\n\nMetal 4 also provides you with a comprehensive set of tools that are there to help you with profiling and debugging! The Runtime API and shader validation tool can tell you if an issue you see is caused by a missing flag or an attempt to read a resource that is not bound to the shader. Metal Performance HUD displays various performance metrics to help you analyze the performance of your game in real time. Metal debugger in Xcode shows you detailed profiling data for your GPU work, and enables you to do step-by-step debugging in case one of the pixels feels wrong.\n\nAnd Metal system trace in Instruments gives you insights about your game’s CPU and GPU utilization.\n\nYou'll be able to spot check potential improvements. The Metal performance HUD provides an overview of your game’s performance, whether you are profiling a native build of your game, or using the evaluation environment for Windows games. To help you analyze the performance of your game more efficiently, there are four new features. The Metal Performance HUD now supports performance insights that provide you recommendations on how to better optimize your game for increased frame rates and it provides even more metrics, such as shader compilation counts, which you can use to identify unexpected frame hitches in real time. Optionally, you can have all of this data aggregated in a performance report to review later. The appearance of the Metal Performance HUD can now be customized, so you can decide what data you want to see and where you want that data to be displayed.\n\nLet’s see this in action. Here is a sample running on my Mac with Metal Performance HUD enabled. The global menu allows me to quickly tune the HUD appearance and access the new configuration panel.\n\nThe configuration panel provides me controls to further customize the HUD appearance. For example, here I'm enabling the additional Shader Compiler metric to help me understand if the stutters I see are caused by shader compilation.\n\nIn the Insights tab of the configuration panel I can enable Performance Insights.\n\nThis feature tracks the sample’s usage of the Metal API and highlights if it can be improved by pointing me to the related documentation.\n\nThis data is aggregated over time and, once ready, the insight will be displayed showing me details and recommendations.\n\nFor example, here I can see that some of the shaders are still compiling at runtime. This can cause performance drops and I want to avoid them.\n\nPerformance Insights are available for both native games and for games running through the Evaluation environment for Windows Games. With that you can understand potential spots for performance improvements early in the development process. In addition to that, Metal Performance HUD can now generate performance reports for you to review offline! Through the global menu, I can choose to generate a performance report of my sample for a specific duration. And once that duration has passed, the report will be saved to the temporary folder for my review.\n\nThe generated report contains all the metrics collected by the Metal Performance HUD including the performance insights. From it I can understand performance of my sample over time, which particular render or compute passes are the most costly and identify potential improvements.\n\nMetal 4 has all the features and tools you need to enable rich visuals and best in class performance on Apple Silicon.\n\nMake sure you take advantage of the built-in system features for smooth, responsive gameplay. Deliver a great player experience by integrating core game technologies into your game. And use Metal 4 to level up your game's visuals and performance.\n\nTake a look at “Explore Metal 4 games” to learn more about other exciting Metal 4 features, and watch “Engage players with the Apple Games app” to boost your game's discoverability for players and all their friends.\n\nI am excited to play your next game on Apple Platforms! Thanks for watching!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I am Alexey, an engineering manager on the Metal Games Ecosystem team. Your players expect the best possible experience in your games. You can provide that by taking advantage of the ever-improving power and efficiency of Apple Silicon, and the software that brings it to life."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "Apple’s SDK provides you with a wide range of tools to create the next generation of games that reach players across the Apple ecosystem. From stunning graphics, to great input and social experiences, it’s easy to bring games to iPhone, iPad, and Mac thanks to the unified gaming platform."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "Over the years, the OS and frameworks that help enable great gaming experiences have continued to advance. This year there are even more features designed to help you level up your players’ experience even further. In this talk I will show you how to take advantage of the built-in system features that will boost your game’s performance, walk you through the important game technologies that enable players to enjoy your game whenever and wherever they want to, and explain how you can use new graphics features to immerse them in your game’s world, taking full advantage of Apple Silicon. First, I’ll tell you about some powerful system features that you can adopt to enable players to get the most out of their devices while gaming."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "These include configurable system modes to boost the sustained performance of your game, and social features that increase players engagement with your game, and the visibility your game has across the system. Let’s start with boosting your games performance."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "Game Mode optimizes system behavior to give your game even more resources. It reduces background activity, so your game gets access to more CPU time to process complex tasks, like rendering or physics simulation. And Game Mode also improves Bluetooth latency, making input and headphones more responsive."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "On macOS and iOS, Game Mode is enabled when a player launches the game in full screen. The Game Mode banner will let the player know that it's active. It is simple to make sure your game enables Game Mode. Just add the LSSupportsGameMode key in your game’s info.plist and set it to true."
+      },
+      {
+        "timestamp": "2:24",
+        "text": "Once enabled, Game Mode gives more system resources to your game to improve its performance. It is important to manage them correctly to ensure your players’ experience will be consistent across the whole gaming session."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "To do that you can ask the system to enable Sustained Execution Mode for your game. When it is enabled, the system will limit performance to the steady state, right from the game launch. This allows you to quickly identify a level of quality and performance appropriate for the target device, and you can be confident your players will have a consistent experience. It takes a couple of simple steps to enable Sustained Execution Mode. First add the corresponding entitlement to your game. To do that - enable the capability in the Signing & Capabilities tools within Xcode. Next, login to your Apple Developer Account and include this entitlement in the provisioning profile for your game. Now your game and OS will work together to deliver a smooth gaming experience."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Across different devices, Apple Silicon delivers great power efficiency that allows players to enjoy their favorite games wherever they are. In macOS 26, players will be notified when a game is using significant energy while running on battery power. They'll have the option of switching to Low Power Mode, now tuned for gaming, enabling them to play longer."
+      },
+      {
+        "timestamp": "3:48",
+        "text": "And players can also dynamically change the system energy mode while playing, right inside of the Game Overlay without leaving the game."
+      },
+      {
+        "timestamp": "4:02",
+        "text": "To further improve the experience for your players, you can set your game to respond and adapt to Low Power Mode. The system provides you an API to detect when Low Power Mode is active. Listen for the NSProcessInfoPowerStateDidChange notification. When the Low Power Mode state changes to enabled, you might, for example, optimize the quality settings to help extend play time even longer."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "Players across the Unified Gaming Platform have lots of ways to find their friends and play together with them."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "And Game Center is at the center of it all."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "It is Apple's social gaming network that connects players with their friends, so they can see who's playing what, discover new games, and challenge their friends."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "Your game can add many features from Game Center, including Achievements, Leaderboards, Challenges, and Activities."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "These features let players keep track of their progress, compete for high scores, and invite their friends to play along. And now Game Center configuration is fully integrated with Xcode. You can create Achievements, setup localizations, and configure Challenges. Any changes you make can be included in code reviews and version control. After you are done with the configuration use the new Game Progress Manager to test it locally before making it available to players. Check out “Get started with Game Center” to learn more about Game Center and its features."
+      },
+      {
+        "timestamp": "5:33",
+        "text": "Once your game is integrated with Game Center, it will be automatically discoverable in lots of places across the system."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "For example, in the brand new Apple Games app! The Games app gives players a brand-new, all-in-one destination for their games. They can launch their games, discover new ones, and have even more fun playing with their friends."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "It comes pre-installed on Mac, iPad, and iPhone and its features are integrated throughout the operating system, including widgets, notifications, and the App Store."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "For example, players can check their ranking in leaderboards right in the Game Overlay without the need to leave the game."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "Check out “Engage players with the Apple Games app” to learn more about how getting your game into the Games app can boost its visibility to players through their friends who are playing."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "With the system experience designed for gaming you can unlock your game's full potential. You can achieve consistent and smooth frame rates with system performance features and use social features to help you build a community and keep your players engaged."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "Now let’s talk about how you can elevate your game and your player's experience even further, using some existing and some brand-new game technologies."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "The Human Interface Guidelines for games is a great place to start learning how to provide a great experience specific to Apple platforms. It is a comprehensive set of documentation that serves as a guide on how to best support multiple Apple devices with topics like onboarding players, adapting to different screen sizes and supporting various input methods."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "A great gaming experience is a combination of thoughtful game design and taking advantage of the technologies that best enable it."
+      },
+      {
+        "timestamp": "7:23",
+        "text": "It starts the moment players install your game and continues as they progress. And all of that is driven by how they interact with your game."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "High-end games tend to have larger initial downloads, so the first thing you want to consider, is how you can let players jump into gameplay as soon as possible."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "For example, here’s My game. It consists of an executable and gigabytes of textures and audio recordings in the content packages, all of which deliver a rich player experience."
+      },
+      {
+        "timestamp": "7:57",
+        "text": "It can take a long time to download the game before players can start to play it. I’ve decided to improve this by splitting my game’s content into two parts. Now players only need to download the smaller portion of it that is required to play the tutorial level. In the meantime the rest of the content is downloaded in the background while the player is already having fun in the game. On Apple Platforms you can achieve this using the Background Assets framework. It is designed to deliver a great first-launch experience."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "You can configure how the system downloads your assets to the device and prioritize content that is required to start playing. Using Background Assets you can offer optional downloadable content that players can unlock within the game. And you are able to update your game assets separately from the main game bundle."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "The new Managed Background Assets improves the API and simplifies the workflow. For games on TestFlight or the App Store, you get up to 200GB of Apple hosting capacity. And the API is simple to use, including built-in support for automatic out-of-band asset updates and system management."
+      },
+      {
+        "timestamp": "9:09",
+        "text": "Managed Background Assets are also tightly integrated into the same workflow you use for your game distribution on Apple platforms."
+      },
+      {
+        "timestamp": "9:17",
+        "text": "You can use TestFlight to beta test content changes in your game and once these changes pass AppStore review - deliver them to players. Check out “Discover Apple-Hosted Background Assets” to learn more."
+      },
+      {
+        "timestamp": "9:30",
+        "text": "What makes your game stand apart on Apple platforms is that, in addition to easily targeting both macOS and iOS, you can keep the game state synchronized across all your players’ devices. For example, your player can start playing on a device at home. When they reach a milestone and save the game, you upload the game save data to iCloud. Then, say they catch a bus. No problem, they can open your game on their iPhone and pick up where they left off by loading save data from iCloud and keeping it in sync as they play."
+      },
+      {
+        "timestamp": "10:05",
+        "text": "Finally, if your player goes to a café and decides to play on their iPad, because they’d like to use a larger screen, the game can load the progress from iCloud."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "The key to continuing your progress on-the-go across devices is cloud saves."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "The new GameSave framework introduces an easy way to enable cloud saves in your game."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "It is powered by iCloud and is designed with user privacy and data security in mind. It automatically syncs and saves game data across devices with the same iCloud account and supports scenarios when a player goes offline or is signed out of iCloud."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "The Game Save framework also provides you with default UI that you can use to show progress while save data is being synchronized with iCloud, notify the player about potential save data conflicts and provide options to resolve them, or send an alert when the player is signed out of iCloud. And, if you want to customize the player experience, you can use the GameSave API to integrate with your game's UI and add custom logic. It is easy to enable the Game Save framework in your game and only takes a couple of steps: First add the iCloud entitlement to your game. To do that, enable the capability in Signing & Capabilities tool within Xcode, select the iCloud Documents checkbox in game project settings and add your iCloud container entitlement. Next, login to your Apple developer account and include this entitlement in the provisioning profile for your game. The GameSave framework is now ready to be used in your game. Let me show you how to start."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "In the typical flow to use GameSave framework, first call openDirectory. GameSave will start fetching the user’s save data in the background. While GameSave is syncing, you can check the status providing a Window for the user alert."
+      },
+      {
+        "timestamp": "12:05",
+        "text": "And finally, when syncing is finished, the save will be available from the url. Here is an example. To start synchronization with iCloud, call openDirectoryForContainer with your game’s container identifier. While the GameSave framework performs a sync in the background, you can call the finishSyncing completion handler and add post sync logic to it. When cloud sync is done, you can check the state and handle any errors if needed. Finally, use the directory state URL to access player’s save data. Your game is now ready to share saves across all the devices it supports."
+      },
+      {
+        "timestamp": "12:46",
+        "text": "You can learn more about the GameSave API and its features in the framework documentation."
+      },
+      {
+        "timestamp": "12:52",
+        "text": "There are various ways players can interact with your game and it is important to allow them to play however they prefer. Apple platforms provide comprehensive support for peripheral input devices like keyboard, mouse, and game controllers. You can allow players to enjoy your game in exactly the same way as they do on other platforms."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "And the Game Controller framework provides an API to add support for all of these types of input in your game."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Its modern and flexible design enables you to either register event callbacks or poll players’ actions on demand. It is the preferred method to get your player’s input on all Apple platforms and it has support for modern controllers, like the Playstation DualSense controller! In addition to mouse, keyboard, and controller support, Apple is especially unique in our support for high-end games on touch-first platforms. And while some players may play your game on their iPhone or iPad with a controller — the vast majority of players won’t have a controller available. To help you, the new Touch Controls framework provides an easy way to add touch support into your existing game. There are a wealth of button types and behaviors provided to support your common inputs, on top of that each button’s look can be customized to best fit the needs of your game. And the new API integrates directly with Metal to ensure the highest possible performance."
+      },
+      {
+        "timestamp": "14:22",
+        "text": "With that you can easily provide players with options. Some will prefer to play using touch, or just don’t have a controller handy. They can enjoy your game anytime they’re ready. Check out the documentation for a detailed walkthrough on how to easily set up Touch Controls in your game. And make sure you watch “Design advanced games for Apple platforms” to learn more about best practices for games."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "Using these technologies, you can level up your players’ experience from the first time they start up your game. And you can make sure they progress in the game the way they want."
+      },
+      {
+        "timestamp": "14:56",
+        "text": "Now let’s talk about one of the key aspects that helps tell your game’s story and keeps players immersed — Graphics."
+      },
+      {
+        "timestamp": "15:04",
+        "text": "Metal is Apple’s low-level graphics and compute API. It powers multiple generations of complex applications including the latest games and pro apps. Metal supports all the features you need to deliver the best in class graphics and performance in your game. Metal 4 API handles the increased complexity of managing resources and compiling shaders, it reduces CPU overhead for encoding your graphics commands and enables your game to use machine learning in your rendering pipeline. Start with ”Discover Metal 4” to learn more about the new features."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "With the ever growing complexity of graphical effects, it takes more effort to keep the frame time of your game in budget. And of course you want to achieve that without sacrificing visual quality."
+      },
+      {
+        "timestamp": "15:52",
+        "text": "You can do that by integrating MetalFX upscaling support into your game. MetalFX scales a lower resolution image, up to the target output resolution, in less time that it takes to render directly at the output resolution. And it supports both spatial and temporal upscaling so you can balance between visual quality and performance. You can further boost your game's frame rate when you integrate MetalFX frame interpolation. In combination with MetalFX upscaling you will be able to get even more of a performance uplift. Your game can use frame interpolation to generate intermediate frames in much less time than it would take to render each frame from scratch. And if your game uses graphics techniques like ray tracing, you can use MetalFX denoising to enhance the visual quality."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "MetalFX supports denoising during the upscale process, so your game can remove the noise from images rendered with fewer rays, and deliver full-size results. Here is Cyberpunk 2077 from CD Projekt Red running on the latest M4 Max MacBook Pro. This game uses a lot of complex techniques to achieve these stunning visuals. With MetalFX features, players are able to see significantly higher and smoother frame rates."
+      },
+      {
+        "timestamp": "17:11",
+        "text": "Check out “Go further with Metal 4 games” to learn how to enable existing and new MetalFX features in your game and boost its performance and visual quality."
+      },
+      {
+        "timestamp": "17:21",
+        "text": "The Game Porting Toolkit 3 also adds support for Metal 4. Metal-cpp is the part of Game Porting Toolkit that allows you to integrate Metal into your existing C++ code base. Metal-cpp comes with full Metal 4 support and, if you are already using it, you can enable Metal 4 features straightaway. In addition to that, Metal-cpp also includes support for the latest Metal FX features like denoising and frame interpolation."
+      },
+      {
+        "timestamp": "17:50",
+        "text": "Metal Shader Converter is another useful tool. It helps you translate your HLSL shaders to Metal."
+      },
+      {
+        "timestamp": "17:57",
+        "text": "With Metal 4 support in Metal Shader Converter you can use intersection function buffers for ray tracing to translate your existing shader binding tables directly to Metal ray tracing. And, to go further, you can enable Metal features directly in your HLSL code."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "Use function constants for efficient specializations of your shaders to improve performance in case they have complicated logic inside and frame buffer fetch which enables techniques such as programmable blending to efficiently combine results of multiple render passes. Both features are available to you without the need to make high level changes in your engine."
+      },
+      {
+        "timestamp": "18:37",
+        "text": "To get started with them, check out the new sample code “Function Constants and Framebuffer Fetch” and “Ray tracing with Intersection Function Buffer”."
+      },
+      {
+        "timestamp": "18:46",
+        "text": "And to learn more about the new features in the Game Porting Toolkit 3, go to developer.apple.com/games to check out the documentation and use the game porting example code to get started."
+      },
+      {
+        "timestamp": "18:58",
+        "text": "Metal 4 also provides you with a comprehensive set of tools that are there to help you with profiling and debugging! The Runtime API and shader validation tool can tell you if an issue you see is caused by a missing flag or an attempt to read a resource that is not bound to the shader. Metal Performance HUD displays various performance metrics to help you analyze the performance of your game in real time. Metal debugger in Xcode shows you detailed profiling data for your GPU work, and enables you to do step-by-step debugging in case one of the pixels feels wrong."
+      },
+      {
+        "timestamp": "19:33",
+        "text": "And Metal system trace in Instruments gives you insights about your game’s CPU and GPU utilization."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "You'll be able to spot check potential improvements. The Metal performance HUD provides an overview of your game’s performance, whether you are profiling a native build of your game, or using the evaluation environment for Windows games. To help you analyze the performance of your game more efficiently, there are four new features. The Metal Performance HUD now supports performance insights that provide you recommendations on how to better optimize your game for increased frame rates and it provides even more metrics, such as shader compilation counts, which you can use to identify unexpected frame hitches in real time. Optionally, you can have all of this data aggregated in a performance report to review later. The appearance of the Metal Performance HUD can now be customized, so you can decide what data you want to see and where you want that data to be displayed."
+      },
+      {
+        "timestamp": "20:32",
+        "text": "Let’s see this in action. Here is a sample running on my Mac with Metal Performance HUD enabled. The global menu allows me to quickly tune the HUD appearance and access the new configuration panel."
+      },
+      {
+        "timestamp": "20:44",
+        "text": "The configuration panel provides me controls to further customize the HUD appearance. For example, here I'm enabling the additional Shader Compiler metric to help me understand if the stutters I see are caused by shader compilation."
+      },
+      {
+        "timestamp": "20:58",
+        "text": "In the Insights tab of the configuration panel I can enable Performance Insights."
+      },
+      {
+        "timestamp": "21:05",
+        "text": "This feature tracks the sample’s usage of the Metal API and highlights if it can be improved by pointing me to the related documentation."
+      },
+      {
+        "timestamp": "21:13",
+        "text": "This data is aggregated over time and, once ready, the insight will be displayed showing me details and recommendations."
+      },
+      {
+        "timestamp": "21:21",
+        "text": "For example, here I can see that some of the shaders are still compiling at runtime. This can cause performance drops and I want to avoid them."
+      },
+      {
+        "timestamp": "21:31",
+        "text": "Performance Insights are available for both native games and for games running through the Evaluation environment for Windows Games. With that you can understand potential spots for performance improvements early in the development process. In addition to that, Metal Performance HUD can now generate performance reports for you to review offline! Through the global menu, I can choose to generate a performance report of my sample for a specific duration. And once that duration has passed, the report will be saved to the temporary folder for my review."
+      },
+      {
+        "timestamp": "22:05",
+        "text": "The generated report contains all the metrics collected by the Metal Performance HUD including the performance insights. From it I can understand performance of my sample over time, which particular render or compute passes are the most costly and identify potential improvements."
+      },
+      {
+        "timestamp": "22:23",
+        "text": "Metal 4 has all the features and tools you need to enable rich visuals and best in class performance on Apple Silicon."
+      },
+      {
+        "timestamp": "22:30",
+        "text": "Make sure you take advantage of the built-in system features for smooth, responsive gameplay. Deliver a great player experience by integrating core game technologies into your game. And use Metal 4 to level up your game's visuals and performance."
+      },
+      {
+        "timestamp": "22:45",
+        "text": "Take a look at “Explore Metal 4 games” to learn more about other exciting Metal 4 features, and watch “Engage players with the Apple Games app” to boost your game's discoverability for players and all their friends."
+      },
+      {
+        "timestamp": "22:57",
+        "text": "I am excited to play your next game on Apple Platforms! Thanks for watching!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -26,6 +321,58 @@
       "title": "GameSave code sample",
       "language": "swift",
       "code": "// Objective-C GameSave code sample\n#import <GameSave/GameSave.h>\nNSString* containerIdentifier = ///… container entitlement string, nil specifies the first in the entitlement array\n\nGSSyncedDirectory* directory = [GSSyncedDirectory openDirectoryForContainerIdentifier:containerIdentifier];\n    \n/// Where statusDisplay is an NSWindow or UIWindow where the alert will be anchored to\n[directory finishSyncing:statusDisplay completionHandler:^{\n }];\n        \nGSSyncedDirectoryState* directoryState = [directory directoryState];\nswitch (directoryState.state) {\n    case GSSyncStateError:\n        error = directoryState.error;\n        break;\n    default:\n        NSLog(@\"Sync has finished\");\n}\n  \nNSURL* saveURL = directoryState.url;"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Intro",
+      "duration": "1:19"
+    },
+    {
+      "timestamp": "1:19",
+      "title": "System experience",
+      "duration": "0:20"
+    },
+    {
+      "timestamp": "1:39",
+      "title": "Boost performance",
+      "duration": "2:47"
+    },
+    {
+      "timestamp": "4:26",
+      "title": "Engage players",
+      "duration": "2:17"
+    },
+    {
+      "timestamp": "6:43",
+      "title": "Game technologies",
+      "duration": "0:50"
+    },
+    {
+      "timestamp": "7:33",
+      "title": "Start playing",
+      "duration": "1:58"
+    },
+    {
+      "timestamp": "9:31",
+      "title": "Play anywhere",
+      "duration": "3:21"
+    },
+    {
+      "timestamp": "12:52",
+      "title": "Play how they like",
+      "duration": "2:04"
+    },
+    {
+      "timestamp": "14:56",
+      "title": "Graphics",
+      "duration": "7:35"
+    },
+    {
+      "timestamp": "22:31",
+      "title": "Next steps",
+      "duration": "0:39"
     }
   ],
   "resources": {
@@ -95,5 +442,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10089"
     }
   ],
-  "extractedAt": "2026-10-11T16:33:44.267Z"
+  "extractedAt": "2026-10-17T18:43:41.565Z"
 }

@@ -3,7 +3,6 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10203/",
   "title": "Meet AccessorySetupKit",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Privacy & Security",
@@ -12,8 +11,272 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi! I’m Yixin, and I work on the Bluetooth team at Apple.\n\nToday, I’m excited to introduce to you a better accessory setup experience with AccessorySetupKit. We’ll first have an overview.\n\nThen we will dive into the APIs and create a sample app together.\n\nFinally, we’ll discuss how to make your accessories look great in the accessory picker.\n\nLet’s start with an overview.\n\nAccessories are an incredibly important part of our lives, from fitness trackers that monitor your health, to creative tools that bring your artistic visions to life. In iOS 18 and iPadOS 18, we created something to help you make the setup experience for your accessories even better.\n\nIntroducing AccessorySetupKit, a brand new framework that offers a streamlined and privacy-friendly approach for your app to set up and manage accessories with Bluetooth and Wi-Fi.\n\nSimply call an API, and the brand-new accessory picker will appear with any nearby accessories that your app wants to pair with. You will see your own high-fidelity artwork and friendly name for the accessories in the picker.\n\nWith just one tap, the accessory is securely paired with your app and ready to use. This one tap will allow access to both Bluetooth and Wi-Fi from your accessory, if it supports both.\n\nYour app can continue using the same CoreBluetooth and NetworkExtension APIs for communication with the accessory.\n\nIn Privacy & Security settings, the Accessories row is the new home for all accessories managed through AccessorySetupKit.\n\nIn the detail page of each accessory your product image, display name and the hardware name help people easily identify the accessory.\n\nPeople can modify the accessory name, toggle the access of its paired apps, or remove it from the system.\n\nThe newly-designed accessory page can also be found in Bluetooth Settings and Wi-Fi Settings based on the technologies your accessory supports.\n\nIn iOS 18 and iPadOS 18, AccessorySetupKit supports Bluetooth and Wi-Fi accessories. So, how does it work? Let’s start by reviewing how apps used to set up accessories, and how AccessorySetupKit differs from it.\n\nUp until now, an app would request access to use Bluetooth in order to discover and connect to any accessory.\n\nA separate request would be required for the app to join a Wi-Fi network that the accessory is broadcasting.\n\nAnd there could be additional Bluetooth pairing requests.\n\nIn comparison, AccessorySetupKit removes all the friction for both you and your customers.\n\nWith just one tap, the accessory is paired to your app, granting your app both Bluetooth and Wi-Fi access to it. And it's easier than ever for people to understand what they are allowing in the new accessory picker, as it displays the friendly name and product image for your accessory, as well as the hardware name the accessory advertises over the air, so that people can make sure of its authenticity before they tap to set up. This is all made possible with the privacy-friendly design of AccessorySetupKit.\n\nThe accessory picker shown on top of your app runs in a separate process. Your app sends over the discovery rules and assets to the picker process. These rules can be configured to have both Bluetooth and Wi-Fi interfaces, so you can obtain all necessary communication access to an accessory within one setup flow.\n\nOnce discovered, the accessory is presented in the picker, and can be paired with your app with just one tap.\n\nAnd that’s an overview of AccessorySetupKit. Let’s now dive into the APIs. We will make an app that sets up digital dice and syncs roll results over Bluetooth, and you can download the sample project as well.\n\nThe digital dice are simulated by an app using CoreBluetooth. Our sample app will connect to it and subscribe to its Bluetooth GATT service.\n\nTo use AccessorySetupKit, we will add a few entries in the app’s Info.plist. We'll put Bluetooth under AccessorySetupKit - Supports since that's how our sample app talks to the dice. Wi-Fi is another supported item in this array.\n\nWe’ll then add the rules for the accessory’s discovery, whether it’s Bluetooth Services, Wi-Fi SSIDs, or Company Identifiers. Since our dice have 2 color variants and each advertises a different service UUID, we’ll put these 2 UUIDs under Bluetooth Services. Now, to use an accessory with your app, there are 3 steps: discovery of the accessory, authorization to use the accessory, and communication with the accessory. AccessorySetupKit takes care of discovery and authorization, while the communication is still handled with CoreBluetooth and NetworkExtension just like previous versions of iOS.\n\nThe first class we'll encounter in AccessorySetupKit is ASAccessorySession.\n\nThis is the central object that displays the accessory picker, notifies you of events, and manages accessories.\n\nWhen we ask the ASAccessorySession to present the picker, we provide an array of ASPickerDisplayItem objects.\n\nASPickerDisplayItem defines the name and image for an accessory, as well as a discovery descriptor to tell the system how to scan for it.\n\nWith that, we can call showPicker on the ASAccessorySession to begin discovery and authorization in the picker process.\n\nWhen the setup finishes, your app will receive an ASAccessoryEvent via the session object. The event contains important information about the newly-added accessory for your app to interact with it.\n\nNow let’s write some code.\n\nAs we said, first we’ll create an ASAccessorySession.\n\nThe session is activated with a DispatchQueue where you want your API calls to be executed, and an eventHandler that your app uses to process events from the session.\n\nAn ASAccessoryEvent is passed to the event handler whenever there’s an update about your session, your accessories, or the picker. There’s a variety of events and you can differentiate them by checking their eventType. Use the activated event as the signal that allows you to query your accessories by reading the 'accessories' property from your session, or start a new setup process.\n\nWe’ll talk more about event handling later. Let’s now learn how to start a setup process by creating picker display items and invoking the accessory picker.\n\nCreating the display item requires the product name, product image and a discovery descriptor. The ASDiscoveryDescriptor class lets you combine all the required discovery rules into one composite object. The system will match the scanned results with all rules inside the descriptor to filter for the exact accessory that you care about.\n\nASDiscoveryDescriptor is highly flexible with lots of customizable fields such as Bluetooth service UUID and Wi-Fi SSID. Learn all about it in our documentation on developer.apple.com.\n\nTo discover our dice, the discovery descriptor needs to have its bluetoothServiceUUID set as the GATT service UUID advertised by the dice.\n\nAnd since the pink dice and blue dice advertise different service UUIDs based on their color, we want to create a different discovery descriptor for each color using their own service UUID.\n\nWe’ll then create the display items for these two color variants of our dice by passing in their name, image and corresponding discovery descriptor. This way the system will be able to scan for both color variants as separate accessories.\n\nThere are more properties of ASPickerDisplayItem that you can use to customize the setup experience. Make sure to check out our documentation.\n\nAnd finally, we have a button in our sample app that simply calls showPicker on our activated session, while passing in the display items we created for the pink dice and blue dice. This is when the accessory picker appears and starts the discovery and setup process. Let’s give it a go.\n\nHere on the desk I have a phone simulating pink dice.\n\nIn our sample app, if we tap the Add button, the accessory picker slides on top of the app, and the pink dice are instantly discovered and displayed. Now if I also turn on my blue dice using another simulator phone, notice it gets discovered and animated to peek through the edge of the screen. The picker creates a horizontal carousel to house the beautiful assets of your accessories. We can swipe left and right to select the dice we want to set up this time.\n\nHmm, they both look cute, but we all love a hot pink. Let’s set up the pink dice. Connecting… and done. Pink dice are now ready to use with our app. It’s that fast.\n\nThe accessory picker will show various Bluetooth-pairing UI if your accessory requires a more secure pairing method, such as numeric comparison and passkey entry.\n\nNow that the pink dice are set up, what’s next? When an accessory is ready to use, the app would get an accessoryAdded event. By reading the accessory property from this event, we get an ASAccessory object that represents our newly-setup dice. Some other events include accessoryChanged, which is sent when properties of the accessory have changed, such as display name, which can be changed in Settings. accessoryRemoved is sent when the accessory was removed from the system, either by the user or your app.\n\nThe ASAccessory class represents a physical accessory. It has the accessory’s authorization state, display name, discovery descriptor, and all of its networking interfaces, including a Bluetooth identifier of the CBPeripheral, and Wi-Fi SSID if it broadcasts a Wi-Fi network. With the ASAccessory object from the accessoryAdded event, we can use CoreBluetooth to connect to the Bluetooth peripheral.\n\nWe’ll create a CBCentralManager as always. Since we declared AccessorySetupKit support in our Info.plist, unlike previous versions of iOS, people will not be asked for permission to use Bluetooth.\n\nThe CBCentralManager state will only become poweredOn when your app has paired accessories. In our case, we have our pink dice paired with AccessorySetupKit. We’ll retrieve the Bluetooth peripheral of the pink dice using bluetoothIdentifier. And of course, you can always use the central manager’s scan API to scan for peripherals. Only accessories paired with your app will be returned in the scan results. We’ll then connect to the peripheral. And once it’s connected, we’ll discover its GATT service, so that we can read and get notified of updates.\n\nIf you’re new to connecting Bluetooth accessories from your app, check out the CoreBluetooth documentation on developer.apple.com for more details. With all that, let’s try connecting to our newly setup pink dice! We are able to connect from our sample app to the dice simulator. Let’s bring out the simulator app and get rolling.\n\nNice! The roll results are synchronized into our sample app in real time.\n\nAnd that is how we use AccessorySetupKit to set up an accessory, and later connect to it using existing networking APIs. But what if your app has already been authorized to use Bluetooth to manage existing accessories without AccessorySetupKit? How does the app transition from that permission model to the more fine-grained model in AccessorySetupKit? Using the Bluetooth peripheral identifiers or Wi-Fi SSIDs of your existing accessories, you can create instances of ASMigrationDisplayItem, which is a subclass of ASPickerDisplayItem. Pass these migration items to the showPicker call to upgrade the existing accessories to be managed by AccessorySetupKit and for them to be found in the new Accessories settings.\n\nIf the showPicker call contained only migration items, an informational page is shown on top of your app to notify people of the migration. Note that if you choose to pass migration items along with other non-migration display items, the migration will only happen when a new accessory is discovered and set up.\n\nAnd that’s how you migrate existing accessories to be managed by AccessorySetupKit! Before we wrap up today’s session, I’d like to share some recommended design practices that can truly enhance your accessory setup experience.\n\nThe accessory picker offers a container box of 180 by 120 in point size to house your product image. Make sure your images have enough pixel resolution so they look sharp on screens of all scale factors.\n\nBe sure to test how your assets look in both light mode and dark mode. The background of your image should be transparent so it looks great in both modes.\n\nUtilize the transparent borders around your image. As the system scales the whole image to the container box, the wider the transparent borders are, the smaller the accessory appears on screen. Tune your transparent borders as a way of padding to get the perfect-sized image in the picker UI.\n\nKeep in mind that part of your app’s UI is occluded by the accessory picker while people set up an accessory. Don’t make updates to your UI that might not be visible during setup. You can listen to the pickerDidPresent and pickerDidDismiss event to track the presentation and dismissal of the picker.\n\nLast but not least, while the showPicker API is free to call anytime, to avoid unexpected picker presentation, we recommend showing people enough context about adding a new accessory before you show the picker. And if possible, bind the showPicker call to a button, so that the setup experience is always user-initiated.\n\nFinally, I wanted to reiterate a few key points from today’s session. AccessorySetupKit is a brand new way to set up Bluetooth and Wi-Fi accessories. Your app gets both Bluetooth and Wi-Fi access to accessories with just one tap. It minimizes friction during a critical time — that is, when people first experience your product.\n\nTo use it, add AccessorySetupKit items to your app’s Info.plist. Create an ASAccessorySession and wait for its activation to start your tasks. Create an ASPickerDisplayItem for each accessory you want to discover. Show the accessory picker to start your setup process and respond appropriately to events.\n\nAnd if your app already manages existing accessories using system access, use ASMigrationDisplayItem to migrate the accessories to AccessorySetupKit. Pay attention to the design of your assets so your accessories can be presented to your customers in the best ways possible inside the accessory picker.\n\nThanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi! I’m Yixin, and I work on the Bluetooth team at Apple."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "Today, I’m excited to introduce to you a better accessory setup experience with AccessorySetupKit. We’ll first have an overview."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "Then we will dive into the APIs and create a sample app together."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "Finally, we’ll discuss how to make your accessories look great in the accessory picker."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "Let’s start with an overview."
+      },
+      {
+        "timestamp": "0:34",
+        "text": "Accessories are an incredibly important part of our lives, from fitness trackers that monitor your health, to creative tools that bring your artistic visions to life. In iOS 18 and iPadOS 18, we created something to help you make the setup experience for your accessories even better."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "Introducing AccessorySetupKit, a brand new framework that offers a streamlined and privacy-friendly approach for your app to set up and manage accessories with Bluetooth and Wi-Fi."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Simply call an API, and the brand-new accessory picker will appear with any nearby accessories that your app wants to pair with. You will see your own high-fidelity artwork and friendly name for the accessories in the picker."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "With just one tap, the accessory is securely paired with your app and ready to use. This one tap will allow access to both Bluetooth and Wi-Fi from your accessory, if it supports both."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "Your app can continue using the same CoreBluetooth and NetworkExtension APIs for communication with the accessory."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "In Privacy & Security settings, the Accessories row is the new home for all accessories managed through AccessorySetupKit."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "In the detail page of each accessory your product image, display name and the hardware name help people easily identify the accessory."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "People can modify the accessory name, toggle the access of its paired apps, or remove it from the system."
+      },
+      {
+        "timestamp": "2:03",
+        "text": "The newly-designed accessory page can also be found in Bluetooth Settings and Wi-Fi Settings based on the technologies your accessory supports."
+      },
+      {
+        "timestamp": "2:12",
+        "text": "In iOS 18 and iPadOS 18, AccessorySetupKit supports Bluetooth and Wi-Fi accessories. So, how does it work? Let’s start by reviewing how apps used to set up accessories, and how AccessorySetupKit differs from it."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "Up until now, an app would request access to use Bluetooth in order to discover and connect to any accessory."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "A separate request would be required for the app to join a Wi-Fi network that the accessory is broadcasting."
+      },
+      {
+        "timestamp": "2:42",
+        "text": "And there could be additional Bluetooth pairing requests."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "In comparison, AccessorySetupKit removes all the friction for both you and your customers."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "With just one tap, the accessory is paired to your app, granting your app both Bluetooth and Wi-Fi access to it. And it's easier than ever for people to understand what they are allowing in the new accessory picker, as it displays the friendly name and product image for your accessory, as well as the hardware name the accessory advertises over the air, so that people can make sure of its authenticity before they tap to set up. This is all made possible with the privacy-friendly design of AccessorySetupKit."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "The accessory picker shown on top of your app runs in a separate process. Your app sends over the discovery rules and assets to the picker process. These rules can be configured to have both Bluetooth and Wi-Fi interfaces, so you can obtain all necessary communication access to an accessory within one setup flow."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "Once discovered, the accessory is presented in the picker, and can be paired with your app with just one tap."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "And that’s an overview of AccessorySetupKit. Let’s now dive into the APIs. We will make an app that sets up digital dice and syncs roll results over Bluetooth, and you can download the sample project as well."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "The digital dice are simulated by an app using CoreBluetooth. Our sample app will connect to it and subscribe to its Bluetooth GATT service."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "To use AccessorySetupKit, we will add a few entries in the app’s Info.plist. We'll put Bluetooth under AccessorySetupKit - Supports since that's how our sample app talks to the dice. Wi-Fi is another supported item in this array."
+      },
+      {
+        "timestamp": "4:28",
+        "text": "We’ll then add the rules for the accessory’s discovery, whether it’s Bluetooth Services, Wi-Fi SSIDs, or Company Identifiers. Since our dice have 2 color variants and each advertises a different service UUID, we’ll put these 2 UUIDs under Bluetooth Services. Now, to use an accessory with your app, there are 3 steps: discovery of the accessory, authorization to use the accessory, and communication with the accessory. AccessorySetupKit takes care of discovery and authorization, while the communication is still handled with CoreBluetooth and NetworkExtension just like previous versions of iOS."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "The first class we'll encounter in AccessorySetupKit is ASAccessorySession."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "This is the central object that displays the accessory picker, notifies you of events, and manages accessories."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "When we ask the ASAccessorySession to present the picker, we provide an array of ASPickerDisplayItem objects."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "ASPickerDisplayItem defines the name and image for an accessory, as well as a discovery descriptor to tell the system how to scan for it."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "With that, we can call showPicker on the ASAccessorySession to begin discovery and authorization in the picker process."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "When the setup finishes, your app will receive an ASAccessoryEvent via the session object. The event contains important information about the newly-added accessory for your app to interact with it."
+      },
+      {
+        "timestamp": "6:00",
+        "text": "Now let’s write some code."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "As we said, first we’ll create an ASAccessorySession."
+      },
+      {
+        "timestamp": "6:07",
+        "text": "The session is activated with a DispatchQueue where you want your API calls to be executed, and an eventHandler that your app uses to process events from the session."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "An ASAccessoryEvent is passed to the event handler whenever there’s an update about your session, your accessories, or the picker. There’s a variety of events and you can differentiate them by checking their eventType. Use the activated event as the signal that allows you to query your accessories by reading the 'accessories' property from your session, or start a new setup process."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "We’ll talk more about event handling later. Let’s now learn how to start a setup process by creating picker display items and invoking the accessory picker."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "Creating the display item requires the product name, product image and a discovery descriptor. The ASDiscoveryDescriptor class lets you combine all the required discovery rules into one composite object. The system will match the scanned results with all rules inside the descriptor to filter for the exact accessory that you care about."
+      },
+      {
+        "timestamp": "7:10",
+        "text": "ASDiscoveryDescriptor is highly flexible with lots of customizable fields such as Bluetooth service UUID and Wi-Fi SSID. Learn all about it in our documentation on developer.apple.com."
+      },
+      {
+        "timestamp": "7:23",
+        "text": "To discover our dice, the discovery descriptor needs to have its bluetoothServiceUUID set as the GATT service UUID advertised by the dice."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "And since the pink dice and blue dice advertise different service UUIDs based on their color, we want to create a different discovery descriptor for each color using their own service UUID."
+      },
+      {
+        "timestamp": "7:45",
+        "text": "We’ll then create the display items for these two color variants of our dice by passing in their name, image and corresponding discovery descriptor. This way the system will be able to scan for both color variants as separate accessories."
+      },
+      {
+        "timestamp": "8:01",
+        "text": "There are more properties of ASPickerDisplayItem that you can use to customize the setup experience. Make sure to check out our documentation."
+      },
+      {
+        "timestamp": "8:09",
+        "text": "And finally, we have a button in our sample app that simply calls showPicker on our activated session, while passing in the display items we created for the pink dice and blue dice. This is when the accessory picker appears and starts the discovery and setup process. Let’s give it a go."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "Here on the desk I have a phone simulating pink dice."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "In our sample app, if we tap the Add button, the accessory picker slides on top of the app, and the pink dice are instantly discovered and displayed. Now if I also turn on my blue dice using another simulator phone, notice it gets discovered and animated to peek through the edge of the screen. The picker creates a horizontal carousel to house the beautiful assets of your accessories. We can swipe left and right to select the dice we want to set up this time."
+      },
+      {
+        "timestamp": "8:59",
+        "text": "Hmm, they both look cute, but we all love a hot pink. Let’s set up the pink dice. Connecting… and done. Pink dice are now ready to use with our app. It’s that fast."
+      },
+      {
+        "timestamp": "9:12",
+        "text": "The accessory picker will show various Bluetooth-pairing UI if your accessory requires a more secure pairing method, such as numeric comparison and passkey entry."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "Now that the pink dice are set up, what’s next? When an accessory is ready to use, the app would get an accessoryAdded event. By reading the accessory property from this event, we get an ASAccessory object that represents our newly-setup dice. Some other events include accessoryChanged, which is sent when properties of the accessory have changed, such as display name, which can be changed in Settings. accessoryRemoved is sent when the accessory was removed from the system, either by the user or your app."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "The ASAccessory class represents a physical accessory. It has the accessory’s authorization state, display name, discovery descriptor, and all of its networking interfaces, including a Bluetooth identifier of the CBPeripheral, and Wi-Fi SSID if it broadcasts a Wi-Fi network. With the ASAccessory object from the accessoryAdded event, we can use CoreBluetooth to connect to the Bluetooth peripheral."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "We’ll create a CBCentralManager as always. Since we declared AccessorySetupKit support in our Info.plist, unlike previous versions of iOS, people will not be asked for permission to use Bluetooth."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "The CBCentralManager state will only become poweredOn when your app has paired accessories. In our case, we have our pink dice paired with AccessorySetupKit. We’ll retrieve the Bluetooth peripheral of the pink dice using bluetoothIdentifier. And of course, you can always use the central manager’s scan API to scan for peripherals. Only accessories paired with your app will be returned in the scan results. We’ll then connect to the peripheral. And once it’s connected, we’ll discover its GATT service, so that we can read and get notified of updates."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "If you’re new to connecting Bluetooth accessories from your app, check out the CoreBluetooth documentation on developer.apple.com for more details. With all that, let’s try connecting to our newly setup pink dice! We are able to connect from our sample app to the dice simulator. Let’s bring out the simulator app and get rolling."
+      },
+      {
+        "timestamp": "11:32",
+        "text": "Nice! The roll results are synchronized into our sample app in real time."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "And that is how we use AccessorySetupKit to set up an accessory, and later connect to it using existing networking APIs. But what if your app has already been authorized to use Bluetooth to manage existing accessories without AccessorySetupKit? How does the app transition from that permission model to the more fine-grained model in AccessorySetupKit? Using the Bluetooth peripheral identifiers or Wi-Fi SSIDs of your existing accessories, you can create instances of ASMigrationDisplayItem, which is a subclass of ASPickerDisplayItem. Pass these migration items to the showPicker call to upgrade the existing accessories to be managed by AccessorySetupKit and for them to be found in the new Accessories settings."
+      },
+      {
+        "timestamp": "12:21",
+        "text": "If the showPicker call contained only migration items, an informational page is shown on top of your app to notify people of the migration. Note that if you choose to pass migration items along with other non-migration display items, the migration will only happen when a new accessory is discovered and set up."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "And that’s how you migrate existing accessories to be managed by AccessorySetupKit! Before we wrap up today’s session, I’d like to share some recommended design practices that can truly enhance your accessory setup experience."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "The accessory picker offers a container box of 180 by 120 in point size to house your product image. Make sure your images have enough pixel resolution so they look sharp on screens of all scale factors."
+      },
+      {
+        "timestamp": "13:08",
+        "text": "Be sure to test how your assets look in both light mode and dark mode. The background of your image should be transparent so it looks great in both modes."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "Utilize the transparent borders around your image. As the system scales the whole image to the container box, the wider the transparent borders are, the smaller the accessory appears on screen. Tune your transparent borders as a way of padding to get the perfect-sized image in the picker UI."
+      },
+      {
+        "timestamp": "13:36",
+        "text": "Keep in mind that part of your app’s UI is occluded by the accessory picker while people set up an accessory. Don’t make updates to your UI that might not be visible during setup. You can listen to the pickerDidPresent and pickerDidDismiss event to track the presentation and dismissal of the picker."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "Last but not least, while the showPicker API is free to call anytime, to avoid unexpected picker presentation, we recommend showing people enough context about adding a new accessory before you show the picker. And if possible, bind the showPicker call to a button, so that the setup experience is always user-initiated."
+      },
+      {
+        "timestamp": "14:15",
+        "text": "Finally, I wanted to reiterate a few key points from today’s session. AccessorySetupKit is a brand new way to set up Bluetooth and Wi-Fi accessories. Your app gets both Bluetooth and Wi-Fi access to accessories with just one tap. It minimizes friction during a critical time — that is, when people first experience your product."
+      },
+      {
+        "timestamp": "14:36",
+        "text": "To use it, add AccessorySetupKit items to your app’s Info.plist. Create an ASAccessorySession and wait for its activation to start your tasks. Create an ASPickerDisplayItem for each accessory you want to discover. Show the accessory picker to start your setup process and respond appropriately to events."
+      },
+      {
+        "timestamp": "14:56",
+        "text": "And if your app already manages existing accessories using system access, use ASMigrationDisplayItem to migrate the accessories to AccessorySetupKit. Pay attention to the design of your assets so your accessories can be presented to your customers in the best ways possible inside the accessory picker."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -71,5 +334,5 @@
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2024/10203/4/B5954562-4B78-4634-8C6B-7CDC4ED9E8B7/downloads/wwdc2024-10203_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2024/10203/4/B5954562-4B78-4634-8C6B-7CDC4ED9E8B7/downloads/wwdc2024-10203_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:35:44.791Z"
+  "extractedAt": "2026-10-17T18:45:41.640Z"
 }

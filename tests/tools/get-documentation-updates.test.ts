@@ -2,43 +2,34 @@ import type { Mock } from 'vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleGetDocumentationUpdates } from '../../src/tools/get-documentation-updates.js';
 import { httpClient } from '../../src/utils/http-client.js';
-import { updatesCache } from '../../src/utils/cache.js';
 
-// Mock dependencies
 vi.mock('../../src/utils/http-client.js');
-vi.mock('../../src/utils/cache.js', () => ({
-  updatesCache: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
-  generateUrlCacheKey: vi.fn((key, params) => `${key}-${JSON.stringify(params)}`),
-}));
 
 describe('get-documentation-updates', () => {
   const mockUpdatesData = {
     topicSections: [
       {
-        title: 'WWDC',
+        title: 'Release notes',
         identifiers: [
-          'doc://com.apple.Updates/documentation/Updates/wwdc2024',
-          'doc://com.apple.Updates/documentation/Updates/wwdc2023',
+          'doc://com.apple.documentation/documentation/ios-ipados-release-notes',
         ],
-        anchor: 'WWDC',
+        anchor: 'Release-notes',
       },
       {
-        title: 'Technology updates',
+        title: 'Technology and frameworks',
         identifiers: [
           'doc://com.apple.Updates/documentation/Updates/SwiftUI',
           'doc://com.apple.Updates/documentation/Updates/UIKit',
         ],
-        anchor: 'Technology-updates',
+        anchor: 'Technology-and-frameworks',
       },
       {
-        title: 'Release notes for SDKs, Xcode, and Safari',
+        title: 'Past releases',
         identifiers: [
-          'doc://com.apple.documentation/documentation/ios-ipados-release-notes',
+          'doc://com.apple.Updates/documentation/Updates/wwdc2024',
+          'doc://com.apple.Updates/documentation/Updates/wwdc2023',
         ],
-        anchor: 'Release-notes-for-SDKs-Xcode-and-Safari',
+        anchor: 'Past-releases',
       },
     ],
     references: {
@@ -95,7 +86,7 @@ describe('get-documentation-updates', () => {
           type: 'module',
           children: [
             {
-              title: 'WWDC',
+              title: 'Past releases',
               type: 'groupMarker',
             },
             {
@@ -111,7 +102,7 @@ describe('get-documentation-updates', () => {
               beta: false,
             },
             {
-              title: 'Technology updates',
+              title: 'Technology and frameworks',
               type: 'groupMarker',
             },
             {
@@ -132,33 +123,52 @@ describe('get-documentation-updates', () => {
     },
   };
 
+  const mockTechnologies = {
+    sections: [{
+      kind: 'technologies',
+      groups: [{
+        name: 'App frameworks',
+        technologies: ['SwiftUI', 'UIKit'].map((title) => ({
+          title, tags: [], languages: ['swift'],
+          destination: { identifier: `doc://com.apple.documentation/documentation/${title}` },
+        })),
+      }],
+    }],
+    references: {},
+  };
+
+  /** Apple's three files by URL: the Updates page, its sidebar and the technologies list */
+  const answering = (page: unknown, index: unknown) => (url: unknown): Promise<unknown> => {
+    const urlStr = url as string;
+    if (urlStr.includes('Updates.json')) {
+      return Promise.resolve(page);
+    }
+    if (urlStr.includes('index/updates')) {
+      return Promise.resolve(index);
+    }
+    if (urlStr.includes('technologies.json')) {
+      return Promise.resolve(mockTechnologies);
+    }
+    throw new Error('Unknown URL');
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (updatesCache.get as Mock).mockReturnValue(null);
-    (httpClient.getJson as Mock).mockImplementation((url: unknown) => {
-      const urlStr = url as string;
-      if (urlStr.includes('Updates.json')) {
-        return Promise.resolve(mockUpdatesData);
-      }
-      if (urlStr.includes('index/updates')) {
-        return Promise.resolve(mockUpdatesIndex);
-      }
-      throw new Error('Unknown URL');
-    });
+    (httpClient.getJson as Mock).mockImplementation(answering(mockUpdatesData, mockUpdatesIndex));
   });
 
   it('should fetch and format documentation updates', async () => {
-    const result = await handleGetDocumentationUpdates();
+    const result = await handleGetDocumentationUpdates(undefined, undefined, undefined, undefined, true, 50);
 
-    expect(httpClient.getJson).toHaveBeenCalledTimes(2);
+    expect(httpClient.getJson).toHaveBeenCalledTimes(3);
     expect(result).toContain('Apple Developer Documentation Updates');
     expect(result).toContain('WWDC24');
     expect(result).toContain('SwiftUI updates');
     expect(result).toContain('UIKit updates');
   });
 
-  it('should filter by category', async () => {
-    const result = await handleGetDocumentationUpdates('wwdc');
+  it('should filter by section', async () => {
+    const result = await handleGetDocumentationUpdates('past releases', undefined, undefined, undefined, true, 50);
 
     expect(result).toContain('WWDC24');
     expect(result).toContain('WWDC23');
@@ -167,7 +177,7 @@ describe('get-documentation-updates', () => {
   });
 
   it('should filter by technology', async () => {
-    const result = await handleGetDocumentationUpdates('all', 'SwiftUI');
+    const result = await handleGetDocumentationUpdates(undefined, 'SwiftUI', undefined, undefined, true, 50);
 
     expect(result).toContain('SwiftUI updates');
     expect(result).not.toContain('UIKit updates');
@@ -175,14 +185,14 @@ describe('get-documentation-updates', () => {
   });
 
   it('should filter by year for WWDC', async () => {
-    const result = await handleGetDocumentationUpdates('wwdc', undefined, '2024');
+    const result = await handleGetDocumentationUpdates('Past releases', undefined, '2024', undefined, true, 50);
 
     expect(result).toContain('WWDC24');
     expect(result).not.toContain('WWDC23');
   });
 
   it('should filter release notes', async () => {
-    const result = await handleGetDocumentationUpdates('release-notes');
+    const result = await handleGetDocumentationUpdates('Release notes', undefined, undefined, undefined, true, 50);
 
     expect(result).toContain('iOS & iPadOS Release Notes');
     expect(result).not.toContain('WWDC');
@@ -190,22 +200,22 @@ describe('get-documentation-updates', () => {
   });
 
   it('should exclude beta features when includeBeta is false', async () => {
-    const result = await handleGetDocumentationUpdates('technology', undefined, undefined, undefined, false);
+    const result = await handleGetDocumentationUpdates('Technology', undefined, undefined, undefined, false, 50);
 
-    expect(result).toContain('UIKit updates'); // Not beta
-    expect(result).not.toContain('SwiftUI updates'); // This is marked as beta
+    expect(result).toContain('UIKit updates');
+    expect(result).not.toContain('SwiftUI updates');
   });
 
   it('should include beta features when includeBeta is true', async () => {
-    const result = await handleGetDocumentationUpdates('technology', undefined, undefined, undefined, true);
+    const result = await handleGetDocumentationUpdates('Technology', undefined, undefined, undefined, true, 50);
 
     expect(result).toContain('UIKit updates');
     expect(result).toContain('SwiftUI updates');
-    expect(result).toContain('*Beta*'); // Beta badge should be shown
+    expect(result).toContain('*Beta*');
   });
 
   it('should search by query', async () => {
-    const result = await handleGetDocumentationUpdates('all', undefined, undefined, 'SwiftUI');
+    const result = await handleGetDocumentationUpdates(undefined, undefined, undefined, 'SwiftUI', true, 50);
 
     expect(result).toContain('SwiftUI updates');
     expect(result).not.toContain('UIKit updates');
@@ -213,147 +223,103 @@ describe('get-documentation-updates', () => {
   });
 
   it('should limit results', async () => {
-    const result = await handleGetDocumentationUpdates('all', undefined, undefined, undefined, true, 2);
+    const result = await handleGetDocumentationUpdates(undefined, undefined, undefined, undefined, true, 2);
 
-    // Should contain only two results
     const updateCount = (result.match(/###/g) || []).length;
     expect(updateCount).toBe(2);
   });
 
   it('should show new badges', async () => {
-    const result = await handleGetDocumentationUpdates('wwdc');
+    const result = await handleGetDocumentationUpdates('Past releases', undefined, undefined, undefined, true, 50);
 
     expect(result).toContain('WWDC24');
-    expect(result).toContain('*New*'); // WWDC24 has new.svg image
-  });
-
-  it('should use cache when available', async () => {
-    const cachedResult = '# Cached Updates\n\nThis is cached content.';
-    (updatesCache.get as Mock).mockReturnValue(cachedResult);
-
-    const result = await handleGetDocumentationUpdates();
-
-    expect(httpClient.getJson).not.toHaveBeenCalled();
-    expect(result).toBe(cachedResult);
-  });
-
-  it('should store results in cache', async () => {
-    await handleGetDocumentationUpdates('all', undefined, undefined, undefined, true, 10);
-
-    expect(updatesCache.set).toHaveBeenCalled();
-    const [cacheKey, cachedValue] = (updatesCache.set as Mock).mock.calls[0];
-    expect(cacheKey).toContain('documentation-updates');
-    expect(cachedValue).toContain('Apple Developer Documentation Updates');
+    expect(result).toContain('*New*');
   });
 
   it('should handle empty results', async () => {
-    // Mock empty data
-    (httpClient.getJson as Mock).mockImplementation((url: unknown) => {
-      const urlStr = url as string;
-      if (urlStr.includes('Updates.json')) {
-        return Promise.resolve({ topicSections: [], references: {} });
-      }
-      if (urlStr.includes('index/updates')) {
-        return Promise.resolve({ interfaceLanguages: { swift: [] } });
-      }
-      throw new Error('Unknown URL');
-    });
+    (httpClient.getJson as Mock).mockImplementation(answering(
+      { topicSections: [], references: {} }, { interfaceLanguages: { swift: [] } }));
 
-    const result = await handleGetDocumentationUpdates();
+    const result = await handleGetDocumentationUpdates(undefined, undefined, undefined, undefined, true, 50);
 
     expect(result).toBe('No documentation updates found matching the specified criteria.');
   });
 
-  it('should handle errors gracefully', async () => {
+  it('throws when Apple\'s files fail to load', async () => {
     (httpClient.getJson as Mock).mockRejectedValue(new Error('Network error'));
 
-    const result = await handleGetDocumentationUpdates();
-
-    expect(result).toContain('Error: Failed to fetch documentation updates');
-    expect(result).toContain('Network error');
+    await expect(handleGetDocumentationUpdates(undefined, undefined, undefined, undefined, true, 50))
+      .rejects.toThrow('Network error');
   });
 
   it('should handle partial data correctly', async () => {
-    // Mock data with missing references
-    (httpClient.getJson as Mock).mockImplementation((url: unknown) => {
-      const urlStr = url as string;
-      if (urlStr.includes('Updates.json')) {
-        return Promise.resolve({
-          topicSections: [
-            {
-              title: 'WWDC',
-              identifiers: ['doc://com.apple.Updates/documentation/Updates/wwdc2024'],
-              anchor: 'WWDC',
-            },
-          ],
-          references: {}, // Empty references
-        });
-      }
-      if (urlStr.includes('index/updates')) {
-        return Promise.resolve(mockUpdatesIndex);
-      }
-      throw new Error('Unknown URL');
-    });
+    (httpClient.getJson as Mock).mockImplementation(answering({
+      topicSections: [
+        {
+          title: 'Past releases',
+          identifiers: ['doc://com.apple.Updates/documentation/Updates/wwdc2024'],
+          anchor: 'Past-releases',
+        },
+      ],
+      references: {},
+    }, mockUpdatesIndex));
 
-    const result = await handleGetDocumentationUpdates();
+    const result = await handleGetDocumentationUpdates(undefined, undefined, undefined, undefined, true, 50);
 
-    // Should handle gracefully and return no results
     expect(result).toBe('No documentation updates found matching the specified criteria.');
   });
 
-  it('should extract technology from path correctly', async () => {
-    const result = await handleGetDocumentationUpdates('technology');
+  it('takes the Beta mark from the sidebar entry with the same path', async () => {
+    // A beta /updates/swift must not mark /updates/swiftui, whose path starts the same
+    const children = [
+      { path: '/documentation/updates/swift', title: 'Swift updates', type: 'article', beta: true },
+      { path: '/documentation/updates/swiftui', title: 'SwiftUI updates', type: 'article', beta: false },
+      { path: '/documentation/updates/uikit', title: 'UIKit updates', type: 'article', beta: false },
+    ];
+    (httpClient.getJson as Mock).mockImplementation(answering(mockUpdatesData,
+      { interfaceLanguages: { swift: [{ path: '/documentation/updates', title: 'Updates', type: 'module', children }] } }));
 
-    // SwiftUI should have technology extracted from path
+    const result = await handleGetDocumentationUpdates('Technology', undefined, undefined, undefined, true, 50);
+
     expect(result).toContain('SwiftUI updates');
-    // Since we're in technology category, the technology metadata is not shown (it's redundant)
-    // The technology extraction is working internally as the beta flag is correctly applied
-    expect(result).toContain('*Beta*'); // Beta status correctly extracted from index
+    expect(result).not.toContain('*Beta*');
   });
 
-  it('should group updates by category', async () => {
-    const result = await handleGetDocumentationUpdates();
+  it('groups the entries under the page\'s sections, in its order', async () => {
+    const result = await handleGetDocumentationUpdates(undefined, undefined, undefined, undefined, true, 50);
 
-    // Check proper grouping
-    const wwdcIndex = result.indexOf('## WWDC');
-    const techIndex = result.indexOf('## Technology Updates');
-    const releaseIndex = result.indexOf('## Release Notes');
+    const releaseIndex = result.indexOf('## Release notes');
+    const techIndex = result.indexOf('## Technology and frameworks');
+    const pastIndex = result.indexOf('## Past releases');
 
-    expect(wwdcIndex).toBeGreaterThan(-1);
-    expect(techIndex).toBeGreaterThan(-1);
     expect(releaseIndex).toBeGreaterThan(-1);
-
-    // WWDC should come before Technology Updates
-    expect(wwdcIndex).toBeLessThan(techIndex);
-    // Technology Updates should come before Release Notes
-    expect(techIndex).toBeLessThan(releaseIndex);
+    expect(releaseIndex).toBeLessThan(techIndex);
+    expect(techIndex).toBeLessThan(pastIndex);
   });
 
-  it('files a WWDC listed under Past releases as wwdc, with its year', async () => {
-    (httpClient.getJson as Mock).mockImplementation(async (url: unknown) => ((url as string).includes('Updates.json')
-      ? {
-        topicSections: [{
-          title: 'Past releases', identifiers: ['doc://com.apple.Updates/documentation/Updates/wwdc2025'], anchor: 'Past-releases',
+  it('finds a WWDC under Past releases by its year', async () => {
+    (httpClient.getJson as Mock).mockImplementation(answering({
+      topicSections: [{
+        title: 'Past releases', identifiers: ['doc://com.apple.Updates/documentation/Updates/wwdc2025'], anchor: 'Past-releases',
+      }],
+      references: {
+        'doc://com.apple.Updates/documentation/Updates/wwdc2025': {
+          type: 'topic', title: 'WWDC25', url: '/documentation/updates/wwdc2025', kind: 'article',
+          abstract: [{ type: 'text', text: 'Highlights of new technologies introduced at WWDC25.' }],
+        },
+      },
+    }, {
+      interfaceLanguages: {
+        swift: [{
+          path: '/documentation/updates', title: 'Updates', type: 'module',
+          children: [{ path: '/documentation/updates/wwdc2025', title: 'WWDC25', type: 'article' }],
         }],
-        references: {
-          'doc://com.apple.Updates/documentation/Updates/wwdc2025': {
-            type: 'topic', title: 'WWDC25', url: '/documentation/updates/wwdc2025', kind: 'article',
-            abstract: [{ type: 'text', text: 'Highlights of new technologies introduced at WWDC25.' }],
-          },
-        },
-      }
-      : {
-        interfaceLanguages: {
-          swift: [{
-            path: '/documentation/updates', title: 'Updates', type: 'module',
-            children: [{ path: '/documentation/updates/wwdc2025', title: 'WWDC25', type: 'article' }],
-          }],
-        },
-      }));
+      },
+    }));
 
-    const result = await handleGetDocumentationUpdates('wwdc', undefined, '2025', undefined, true, 50);
+    const result = await handleGetDocumentationUpdates('Past releases', undefined, '2025', undefined, true, 50);
 
-    expect(result).toContain('## WWDC');
+    expect(result).toContain('## Past releases');
     expect(result).toContain('[WWDC25](https://developer.apple.com/documentation/updates/wwdc2025)');
     expect(result).toContain('Year: 2025');
     expect(result).not.toContain('Technology:');

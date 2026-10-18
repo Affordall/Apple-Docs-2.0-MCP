@@ -1,48 +1,34 @@
 import type { Mocked, MockedFunction } from 'vitest';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-/**
- * Integration tests for WWDC tools
- */
 
-// Mock dependencies BEFORE any imports
 vi.mock('../../../src/utils/http-client');
 vi.mock('../../../src/utils/wwdc-data-source');
 
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
-import AppleDeveloperDocsMCPServer from '../../../src/index';
-import { registerTools } from '../../../src/tools/handlers';
 import { httpClient } from '../../../src/utils/http-client';
+import { connectClient } from '../../helpers/test-helpers.js';
 
 const mockHttpClient = httpClient as Mocked<typeof httpClient>;
 
-// Import mocked functions
 import {
   loadGlobalMetadata,
   loadTopicIndex,
   loadYearIndex,
   loadVideoData,
-  loadAllVideos,
 } from '../../../src/utils/wwdc-data-source';
 
 const mockLoadGlobalMetadata = loadGlobalMetadata as MockedFunction<typeof loadGlobalMetadata>;
 const mockLoadTopicIndex = loadTopicIndex as MockedFunction<typeof loadTopicIndex>;
 const mockLoadYearIndex = loadYearIndex as MockedFunction<typeof loadYearIndex>;
 const mockLoadVideoData = loadVideoData as MockedFunction<typeof loadVideoData>;
-const mockLoadAllVideos = loadAllVideos as MockedFunction<typeof loadAllVideos>;
 
 describe('WWDC Tools Integration', () => {
   let client: Client;
   const call = (name: string, args: Record<string, unknown>) => client.callTool({ name, arguments: args });
 
   beforeEach(async () => {
-    const server = new McpServer({ name: 'apple-docs-mcp', version: 'test' });
-    registerTools(server, new AppleDeveloperDocsMCPServer());
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-    client = new Client({ name: 'test', version: 'test' });
-    await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+    client = await connectClient();
   });
 
   afterEach(async () => {
@@ -52,7 +38,6 @@ describe('WWDC Tools Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup default mocks
     mockLoadGlobalMetadata.mockResolvedValue({
       version: '1.0',
       lastUpdated: '2025-01-01',
@@ -98,8 +83,7 @@ describe('WWDC Tools Integration', () => {
       hasTranscript: true,
       hasCode: true,
       transcript: {
-        fullText: 'Test transcript content',
-        segments: [],
+        segments: [{ timestamp: '0:00', text: 'Test transcript content' }],
       },
       codeExamples: [
         {
@@ -124,15 +108,6 @@ describe('WWDC Tools Integration', () => {
       videoCount: 10,
       videos: ['videos/2025-10001.json'],
     } as any);
-
-    mockLoadAllVideos.mockResolvedValue([
-      {
-        id: '10001',
-        title: 'Test Video',
-        year: '2025',
-        topics: ['SwiftUI'],
-      },
-    ] as any);
   });
 
   describe('list_wwdc_videos', () => {
@@ -216,20 +191,10 @@ describe('WWDC Tools Integration', () => {
   });
 
   describe('get_wwdc_code_examples', () => {
-    it('should get code examples', async () => {
-      const result = await call(
-        'get_wwdc_code_examples',
-        {}
-      );
-
-      expect(result).toHaveProperty('content');
-      expect(mockLoadGlobalMetadata).toHaveBeenCalled();
-    });
-
     it('should filter by framework', async () => {
       const result = await call(
-        'get_wwdc_code_examples',
-        { framework: 'SwiftUI' }
+        'search_wwdc_content',
+        { view: 'examples', query: 'SwiftUI' }
       );
 
       expect(result).toHaveProperty('content');
@@ -239,8 +204,8 @@ describe('WWDC Tools Integration', () => {
   describe('browse_wwdc_topics', () => {
     it('should list all topics', async () => {
       const result = await call(
-        'browse_wwdc_topics',
-        {}
+        'list_wwdc_videos',
+        { view: 'topics' }
       );
 
       expect(result.content[0].text).toContain('WWDC Topics');
@@ -249,8 +214,8 @@ describe('WWDC Tools Integration', () => {
 
     it('should show specific topic', async () => {
       const result = await call(
-        'browse_wwdc_topics',
-        { topicId: 'swiftui' }
+        'list_wwdc_videos',
+        { view: 'topics', topic: 'swiftui' }
       );
 
       expect(mockLoadTopicIndex).toHaveBeenCalledWith('swiftui');
@@ -260,8 +225,8 @@ describe('WWDC Tools Integration', () => {
   describe('find_related_wwdc_videos', () => {
     it('should find related videos', async () => {
       const result = await call(
-        'find_related_wwdc_videos',
-        { videoId: '10001', year: '2025' }
+        'get_wwdc_video',
+        { view: 'related', videoId: '10001', year: '2025' }
       );
 
       expect(result).toHaveProperty('content');
@@ -272,8 +237,8 @@ describe('WWDC Tools Integration', () => {
   describe('list_wwdc_years', () => {
     it('should list available years', async () => {
       const result = await call(
-        'list_wwdc_years',
-        {}
+        'list_wwdc_videos',
+        { view: 'years' }
       );
 
       expect(result.content[0].text).toContain('2025');
@@ -291,7 +256,8 @@ describe('WWDC Tools Integration', () => {
         {}
       );
 
-      expect(result.content[0].text).toContain('Error');
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBe('Network error');
     });
 
     it('should handle invalid video ID', async () => {
@@ -302,7 +268,8 @@ describe('WWDC Tools Integration', () => {
         { videoId: 'invalid', year: '2025' }
       );
 
-      expect(result.content[0].text).toContain('Error');
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBe('Video not found');
     });
   });
 });

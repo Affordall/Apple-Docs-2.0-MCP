@@ -1,477 +1,166 @@
+import { siteUrl } from '../utils/url-converter.js';
 import { APPLE_URLS } from '../utils/constants.js';
-import { httpClient } from '../utils/http-client.js';
-import { sampleCodeCache, generateUrlCacheKey } from '../utils/cache.js';
-import { normalizeFrameworkName } from '../utils/framework-mapper.js';
-import { technologyNames } from './list-technologies.js';
+import { cachedJson, indexCache, pageCache, sampleCodeCache } from '../utils/cache.js';
+import { exportPath, writeTsv } from '../utils/exports.js';
+import { frameworkKey, technologyNames } from './list-technologies.js';
 import type { RenderIndex, RenderIndexNode, RenderNode } from '../types/docc.js';
 import { isTopicReference } from '../types/docc.js';
 import { formatInlineContent } from './doc-formatter.js';
 
-// Types for sample code responses
-interface ParsedSampleCode {
-  id: string;
+/** One entry of Apple's Sample Code Library: a sample project, or one of the few articles the library lists */
+export interface SampleCodeEntry {
   title: string;
-  framework?: string;
-  description?: string;
-  beta: boolean;
-  featured?: boolean;
   url: string;
-  path: string;
-  depth: number;
+  kind: 'sampleCode' | 'article';
+  framework: string;
+  /** The library's sections the entry is filed under ("WWDC26", "SwiftUI"), in the library's order */
+  sections: string[];
+  summary: string;
+  featured: boolean;
+  beta: boolean;
 }
 
 interface SampleCodeFilters {
-  framework?: string;
-  beta?: 'include' | 'exclude' | 'only';
-  searchQuery?: string;
+  framework: string | undefined;
+  category: string | undefined;
+  includeBeta: boolean;
+  searchQuery: string | undefined;
 }
 
+type SidebarEntry = RenderIndexNode & { path: string };
+
+const LIBRARY = 'library';
+const LIBRARY_FILE = 'samples.tsv';
+const LIBRARY_COLUMNS = ['title', 'url', 'framework', 'sections', 'kind', 'featured', 'beta', 'summary'] as const satisfies ReadonlyArray<keyof SampleCodeEntry>;
 
 /**
- * Handles the get_sample_code tool request
+ * Apple's Sample Code Library, filtered, in its order: featured entries first, then the library's sections. Unranked:
+ * `searchQuery` keeps the entries that hold every word, and the agent greps `samples.tsv` for anything finer.
  */
-export async function handleGetSampleCode(
-  framework?: string,
-  beta: 'include' | 'exclude' | 'only' = 'include',
-  searchQuery?: string,
-  limit: number = 50,
-): Promise<string> {
-  // Generate cache key
-  const cacheKey = generateUrlCacheKey('sample-code', {
-    framework,
-    beta,
-    searchQuery,
-    limit,
-  });
+export async function handleGetSampleCode(filters: SampleCodeFilters, limit: number): Promise<string> {
+  const library = await loadLibrary();
+  const words = (filters.searchQuery ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+  const found = library.filter((entry) => keeps(entry, filters) && words.every((word) => mentions(entry, word)));
+  return `${formatLibrary(found.slice(0, limit), found.length, filters)}\n\n` +
+    `All ${library.length} entries, one a line (${LIBRARY_COLUMNS.join(', ')}): ${exportPath(LIBRARY_FILE)}`;
+}
 
-  // Try to get from cache first
-  const cachedResult = sampleCodeCache.get(cacheKey);
-  if (cachedResult) {
-    return cachedResult;
+/**
+ * The library's entries in its order, read once per cache lifetime: its sidebar lists them, its page gives sections
+ * and summaries
+ */
+async function loadLibrary(): Promise<SampleCodeEntry[]> {
+  const cached = sampleCodeCache.get(LIBRARY);
+  if (cached) {
+    return cached;
   }
-
-  // Fetch both JSON files
-  const [contentResponse, indexResponse, names] = await Promise.all([
-    httpClient.get(APPLE_URLS.SAMPLE_CODE_JSON),
-    httpClient.get(APPLE_URLS.SAMPLE_CODE_INDEX_JSON),
+  const [page, index, names] = await Promise.all([
+    cachedJson<RenderNode>(pageCache, APPLE_URLS.SAMPLE_CODE_JSON),
+    cachedJson<RenderIndex>(indexCache, APPLE_URLS.SAMPLE_CODE_INDEX_JSON),
     technologyNames(),
   ]);
+  const entries = [...librarySections(libraryEntries(page, index, names)).values()].flat();
+  await writeTsv(LIBRARY_FILE, LIBRARY_COLUMNS, entries);
+  sampleCodeCache.set(LIBRARY, entries);
+  return entries;
+}
 
-  if (!contentResponse.ok) {
-    throw new Error(`Failed to fetch sample code content: ${contentResponse.statusText}`);
-  }
-  if (!indexResponse.ok) {
-    throw new Error(`Failed to fetch sample code index: ${indexResponse.statusText}`);
-  }
-
-  const contentData = await contentResponse.json() as RenderNode;
-  const indexData = await indexResponse.json() as RenderIndex;
-
-
-  // Parse the sample codes
-  const sampleCodes = parseSampleCodes(contentData, indexData, names);
-
-  // Apply filters
-  const filters: SampleCodeFilters = {
-    framework,
-    beta,
-    searchQuery,
+function libraryEntries(page: RenderNode, index: RenderIndex, names: Map<string, string>): SampleCodeEntry[] {
+  const references = page.references ?? {};
+  // Apple's identifiers keep a framework's capitals ("…/AppIntents/…"); the sidebar's paths are lowercase
+  const pathOf = (identifier: string): string => {
+    const reference = references[identifier];
+    return isTopicReference(reference) ? reference.url.toLowerCase() : '';
   };
-  const filteredSampleCodes = applySampleCodeFilters(sampleCodes, filters);
-
-  // Sort by relevance (featured first, then alphabetically)
-  const sortedSampleCodes = filteredSampleCodes.sort((a, b) => {
-    if (a.featured && !b.featured) {
-      return -1;
-    }
-    if (!a.featured && b.featured) {
-      return 1;
-    }
-    return a.title.localeCompare(b.title);
-  });
-
-  // Apply limit
-  const limitedSampleCodes = sortedSampleCodes.slice(0, limit);
-
-  // Format the result
-  const result = formatSampleCodeResult(limitedSampleCodes, {
-    framework,
-    beta,
-    searchQuery,
-    totalFound: filteredSampleCodes.length,
-    showing: limitedSampleCodes.length,
-  });
-
-  // Cache the result
-  sampleCodeCache.set(cacheKey, result);
-  return result;
-}
-
-/**
- * Parses sample codes from the content and index data
- */
-function parseSampleCodes(content: RenderNode, index: RenderIndex, names: Map<string, string>): ParsedSampleCode[] {
-  const sampleCodes: ParsedSampleCode[] = [];
-  const featuredIds = new Set<string>();
-
-  // Extract featured sample codes from primary content sections
-  if (content.primaryContentSections) {
-    for (const section of content.primaryContentSections) {
-      if ('kind' in section && section.kind === 'content') {
-        for (const contentItem of section.content) {
-          if ('type' in contentItem && contentItem.type === 'links') {
-            for (const item of contentItem.items) {
-              featuredIds.add(item);
-            }
-          }
-        }
-      }
+  const featured = new Set((page.primaryContentSections ?? [])
+    .flatMap((section) => ('kind' in section && section.kind === 'content' ? section.content : []))
+    .flatMap((block) => ('type' in block && block.type === 'links' ? block.items : []))
+    .map(pathOf));
+  const sections = new Map<string, string[]>();
+  for (const section of page.topicSections ?? []) {
+    for (const path of section.identifiers.map(pathOf)) {
+      sections.set(path, [...(sections.get(path) ?? []), section.title ?? '']);
     }
   }
-
-  // Extract framework mapping from topic sections
-  const frameworkMap = new Map<string, string>();
-  if (content.topicSections) {
-    for (const section of content.topicSections) {
-      for (const identifier of section.identifiers) {
-        frameworkMap.set(identifier, section.title ?? '');
-      }
-    }
-  }
-
-  // Process index data
-  for (const [, nodes] of Object.entries(index.interfaceLanguages)) {
-    processSampleCodeNodes(nodes, sampleCodes, frameworkMap, featuredIds, '', 0);
-  }
-
-  // Each sample's one-line summary, from the library page's references, keyed by its path
-  const summaries = new Map(Object.values(content.references ?? {}).filter(isTopicReference)
-    .map((ref) => [ref.url, formatInlineContent(ref.abstract ?? [], content.references).trim()]));
-
-  // Deduplicate sample codes based on path; each framework as Apple's technologies index names it, not its URL path
-  return deduplicateSampleCodes(sampleCodes)
-    .map(code => ({
-      ...code,
-      framework: names.get(code.path.split('/')[2] ?? '') ?? code.framework,
-      description: summaries.get(code.path),
-    }));
-}
-
-/**
- * Deduplicates sample codes based on path
- */
-function deduplicateSampleCodes(sampleCodes: ParsedSampleCode[]): ParsedSampleCode[] {
-  const uniqueCodes = new Map<string, ParsedSampleCode>();
-
-  for (const code of sampleCodes) {
-    const existing = uniqueCodes.get(code.path);
-    if (!existing) {
-      uniqueCodes.set(code.path, code);
-    } else {
-      // Merge properties, preferring non-empty values
-      uniqueCodes.set(code.path, {
-        ...existing,
-        framework: code.framework || existing.framework,
-        featured: code.featured || existing.featured,
-        beta: code.beta || existing.beta,
-        depth: Math.min(code.depth, existing.depth),
-      });
-    }
-  }
-
-  return Array.from(uniqueCodes.values());
-}
-
-/**
- * Recursively processes sample code nodes
- */
-function processSampleCodeNodes(
-  nodes: RenderIndexNode[],
-  sampleCodes: ParsedSampleCode[],
-  frameworkMap: Map<string, string>,
-  featuredIds: Set<string>,
-  currentFramework: string,
-  depth: number,
-): void {
-  for (const node of nodes) {
-    if (node.type === 'groupMarker') {
-      // This is a framework/category marker
-      const framework = normalizeFrameworkName(node.title);
-      if (node.children) {
-        processSampleCodeNodes(node.children, sampleCodes, frameworkMap, featuredIds, framework, depth + 1);
-      }
-    } else if (node.type === 'sampleCode' && node.path) {
-      // Try to extract framework from path first
-      const frameworkFromPath = extractFrameworkFromPath(node.path);
-
-      // Convert path to doc URL format for matching with framework map
-      const docUrl = pathToDocUrl(node.path);
-      const frameworkFromMap = frameworkMap.get(docUrl);
-
-      // Priority: path > map > groupMarker
-      const framework = normalizeFrameworkName(
-        frameworkFromPath || frameworkFromMap || currentFramework,
-      );
-
-      sampleCodes.push({
-        id: node.path,
-        title: node.title,
-        framework: framework || undefined,
-        beta: node.beta || false,
-        featured: featuredIds.has(docUrl),
-        url: `https://developer.apple.com${node.path}`,
-        path: node.path,
-        depth,
-      });
-    } else if (node.children) {
-      // Process children with the same framework
-      processSampleCodeNodes(node.children, sampleCodes, frameworkMap, featuredIds, currentFramework, depth + 1);
-    }
-  }
-}
-
-/**
- * Extract framework name from URL path
- */
-function extractFrameworkFromPath(path: string): string | null {
-  // Match pattern like /documentation/framework/...
-  const match = path.match(/^\/documentation\/([^\/]+)\//);
-  if (match) {
-    const framework = match[1];
-    // Don't return generic paths like 'samplecode'
-    if (framework === 'samplecode' || framework === 'documentation') {
-      return null;
-    }
-    return normalizeFrameworkName(framework);
-  }
-  return null;
-}
-
-/**
- * Converts a path to doc URL format
- */
-function pathToDocUrl(path: string): string {
-  // Convert /documentation/framework/sample-name to doc://com.apple.documentation/documentation/framework/sample-name
-  return `doc://com.apple.documentation${path}`;
-}
-
-/**
- * Applies filters to sample codes
- */
-function applySampleCodeFilters(sampleCodes: ParsedSampleCode[], filters: SampleCodeFilters): ParsedSampleCode[] {
-  return sampleCodes.filter((code) => {
-    // Framework filter - normalize both for comparison
-    if (filters.framework) {
-      const normalizedFilterFramework = normalizeFrameworkName(filters.framework);
-      const normalizedCodeFramework = normalizeFrameworkName(code.framework || '');
-
-      // Check for exact match or inclusion
-      const frameworkLower = normalizedFilterFramework.toLowerCase();
-      const codeFrameworkLower = normalizedCodeFramework.toLowerCase();
-
-      // Also check if the filter term appears in the title or path
-      const titleLower = code.title.toLowerCase();
-      const pathLower = code.path.toLowerCase();
-
-      const frameworkMatch = frameworkLower === codeFrameworkLower ||
-                           codeFrameworkLower.includes(frameworkLower) ||
-                           titleLower.includes(frameworkLower) ||
-                           pathLower.includes(frameworkLower);
-
-      if (!frameworkMatch) {
-        return false;
-      }
-    }
-
-    // Beta filter
-    if (filters.beta === 'exclude' && code.beta) {
-      return false;
-    } else if (filters.beta === 'only' && !code.beta) {
-      return false;
-    }
-
-    // Search query filter - enhanced matching
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase();
-
-      // Score-based matching for better relevance
-      let matchScore = 0;
-
-      // Title match (highest weight)
-      const titleLower = code.title.toLowerCase();
-      if (titleLower === query) {
-        matchScore += 10; // Exact match
-      } else if (titleLower.startsWith(query)) {
-        matchScore += 5; // Starts with query
-      } else if (titleLower.includes(query)) {
-        matchScore += 3; // Contains query
-      }
-
-      // Framework match
-      const frameworkLower = (code.framework || '').toLowerCase();
-      if (frameworkLower.includes(query)) {
-        matchScore += 2;
-      }
-
-      // Path match (check if query is in the path)
-      const pathLower = code.path.toLowerCase();
-      if (pathLower.includes(query)) {
-        matchScore += 1;
-      }
-
-      // Description match (if available)
-      const descriptionLower = (code.description || '').toLowerCase();
-      if (descriptionLower.includes(query)) {
-        matchScore += 1;
-      }
-
-      // Only include if there's at least one match
-      if (matchScore === 0) {
-        return false;
-      }
-    }
-
-    return true;
+  const summaries = new Map(Object.values(references).filter(isTopicReference)
+    .map((reference) => [
+      reference.url.toLowerCase(), formatInlineContent(reference.abstract ?? [], references).trim(),
+    ]));
+  // The sidebar lists an entry under each section it is in; one entry each
+  const sidebar = new Map(Object.values(index.interfaceLanguages).flatMap(sidebarEntries)
+    .map((node) => [node.path.toLowerCase(), node]));
+  return [...sidebar.entries()].map(([path, node]): SampleCodeEntry => {
+    const segment = path.split('/')[2] ?? '';
+    return {
+      title: node.title,
+      url: siteUrl(node.path),
+      kind: node.type === 'article' ? 'article' : 'sampleCode',
+      framework: names.get(segment) ?? segment,
+      sections: sections.get(path) ?? [],
+      summary: summaries.get(path) ?? '',
+      featured: featured.has(path),
+      beta: node.beta === true,
+    };
   });
 }
 
-/**
- * Formats the sample code result
- */
-function formatSampleCodeResult(
-  sampleCodes: ParsedSampleCode[],
-  options: {
-    framework?: string;
-    beta?: string;
-    searchQuery?: string;
-    totalFound: number;
-    showing: number;
-  },
-): string {
-  const lines: string[] = [];
-
-  // Header
-  lines.push('# Apple Sample Code Library');
-  lines.push('');
-
-  // Filter summary
-  const filterParts: string[] = [];
-  if (options.framework) {
-    filterParts.push(`Framework: ${normalizeFrameworkName(options.framework)}`);
-  }
-  if (options.beta && options.beta !== 'include') {
-    filterParts.push(`Beta: ${options.beta}`);
-  }
-  if (options.searchQuery) {
-    filterParts.push(`Search: "${options.searchQuery}"`);
-  }
-
-  if (filterParts.length > 0) {
-    lines.push('## Filters Applied');
-    lines.push(filterParts.join(', '));
-    lines.push('');
-  }
-
-  // Results summary
-  lines.push(`Found ${options.totalFound} sample code projects${options.showing < options.totalFound ? `, showing ${options.showing}` : ''}`);
-  lines.push('');
-
-  if (sampleCodes.length === 0) {
-    lines.push('No sample code projects found matching your criteria.');
-    return lines.join('\n');
-  }
-
-  // Group by framework/category with normalization
-  const byCategory = new Map<string, ParsedSampleCode[]>();
-  const noCategory: ParsedSampleCode[] = [];
-
-  for (const code of sampleCodes) {
-    const category = code.framework || '';
-    if (category) {
-      // Group WWDC samples together
-      const normalizedCategory = category.match(/^WWDC\d+$/i) ? category.toUpperCase() : category;
-      if (!byCategory.has(normalizedCategory)) {
-        byCategory.set(normalizedCategory, []);
-      }
-      byCategory.get(normalizedCategory)!.push(code);
-    } else {
-      noCategory.push(code);
-    }
-  }
-
-  // Sort categories with WWDC years first (newest to oldest), then alphabetically
-  const sortedCategories = Array.from(byCategory.keys()).sort((a, b) => {
-    const aIsWWDC = a.match(/^WWDC(\d+)$/);
-    const bIsWWDC = b.match(/^WWDC(\d+)$/);
-
-    if (aIsWWDC && bIsWWDC) {
-      // Sort WWDC by year descending
-      return parseInt(bIsWWDC[1]) - parseInt(aIsWWDC[1]);
-    } else if (aIsWWDC) {
-      return -1; // WWDC comes first
-    } else if (bIsWWDC) {
-      return 1;
-    }
-
-    return a.localeCompare(b); // Alphabetical for non-WWDC
-  });
-
-  // Display featured samples first if any
-  const featuredSamples = sampleCodes.filter((c) => c.featured);
-  if (featuredSamples.length > 0) {
-    lines.push('## ⭐ Featured Samples');
-    lines.push('');
-    for (const code of featuredSamples) {
-      lines.push(formatSampleCodeItem(code, false)); // Don't show framework in featured section
-    }
-    lines.push('');
-  }
-
-  // Display by category
-  for (const category of sortedCategories) {
-    const codes = byCategory.get(category)!;
-    const nonFeaturedCodes = codes.filter(c => !c.featured);
-
-    if (nonFeaturedCodes.length > 0) {
-      lines.push(`## ${category}`);
-      lines.push('');
-      for (const code of nonFeaturedCodes) {
-        lines.push(formatSampleCodeItem(code, false)); // Framework already shown in section header
-      }
-      lines.push('');
-    }
-  }
-
-  // Display samples without category
-  if (noCategory.length > 0) {
-    const nonFeaturedOther = noCategory.filter(c => !c.featured);
-    if (nonFeaturedOther.length > 0) {
-      lines.push('## Other');
-      lines.push('');
-      for (const code of nonFeaturedOther) {
-        lines.push(formatSampleCodeItem(code, false));
-      }
-      lines.push('');
-    }
-  }
-
-  return lines.join('\n').trim();
+/** The sidebar's samples and articles; its section headings sit beside them, its root holds them all */
+function sidebarEntries(nodes: RenderIndexNode[]): SidebarEntry[] {
+  return nodes.flatMap((node): SidebarEntry[] => ((node.type === 'sampleCode' || node.type === 'article') && node.path
+    ? [{ ...node, path: node.path }]
+    : sidebarEntries(node.children ?? [])));
 }
 
-/**
- * Formats a single sample code item
- */
-function formatSampleCodeItem(code: ParsedSampleCode, showFramework: boolean = true): string {
-  const badges: string[] = [];
-  if (code.beta) {
-    badges.push('🧪 Beta');
+function keeps(entry: SampleCodeEntry, filters: SampleCodeFilters): boolean {
+  return (filters.includeBeta || !entry.beta) &&
+    (!filters.framework || matchesFramework(entry, filters.framework)) &&
+    (!filters.category || entry.sections.some((section) => section.toLowerCase().includes(filters.category?.toLowerCase() ?? '')));
+}
+
+/** A framework in any spelling ("storekit", "Store Kit"), matched against the entry's framework, title or link */
+function matchesFramework(entry: SampleCodeEntry, framework: string): boolean {
+  const wanted = frameworkKey(framework);
+  return frameworkKey(entry.framework).includes(wanted) || frameworkKey(entry.url).includes(wanted) ||
+    entry.title.toLowerCase().includes(framework.toLowerCase());
+}
+
+/** The word, lowercase, in the entry's title, sections, framework, path or summary */
+function mentions(entry: SampleCodeEntry, word: string): boolean {
+  return [entry.title, entry.sections.join(' '), entry.framework, new URL(entry.url).pathname, entry.summary]
+    .some((field) => field.toLowerCase().includes(word));
+}
+
+function formatLibrary(entries: SampleCodeEntry[], found: number, filters: SampleCodeFilters): string {
+  const applied = [
+    filters.framework ? `Framework: ${filters.framework}` : '',
+    filters.category ? `Section: ${filters.category}` : '',
+    filters.includeBeta ? '' : 'Beta: exclude',
+    filters.searchQuery ? `Search: "${filters.searchQuery}"` : '',
+  ].filter(Boolean);
+  const header = [
+    '# Apple Sample Code Library',
+    '',
+    ...(applied.length > 0 ? ['## Filters Applied', applied.join(', '), ''] : []),
+    `Found ${found} ${found === 1 ? 'entry' : 'entries'}${entries.length < found ? `, showing ${entries.length}` : ''}`,
+    '',
+  ];
+  if (entries.length === 0) {
+    return [...header, 'No entries match. search_apple_docs with type "sample" searches every sample on the site, ' +
+      'including ones this library leaves out.'].join('\n');
   }
+  const body = [...librarySections(entries).entries()]
+    .flatMap(([group, members]) => [`## ${group}`, '', ...members.map(formatEntry), '']);
+  return [...header, ...body].join('\n').trim();
+}
 
-  // Don't duplicate the featured badge as it's already in the section header
-  const badgeStr = badges.length > 0 ? ` ${badges.join(' ')}` : '';
+/** Featured entries under their own heading, then each entry under its first section, in the library's order */
+function librarySections(entries: SampleCodeEntry[]): Map<string, SampleCodeEntry[]> {
+  return Map.groupBy([...entries.filter((entry) => entry.featured), ...entries.filter((entry) => !entry.featured)],
+    (entry) => (entry.featured ? '⭐ Featured' : entry.sections[0] ?? 'Other'));
+}
 
-  // Framework info (only if requested and not in a framework-specific section)
-  const frameworkStr = showFramework && code.framework ? ` (${code.framework})` : '';
-
-  return `- [${code.title}](${code.url})${badgeStr}${frameworkStr}${code.description ? `: ${code.description}` : ''}`;
+function formatEntry(entry: SampleCodeEntry): string {
+  const notes = [entry.framework, entry.sections.join(', '), entry.kind === 'article' ? 'article' : '', entry.beta ? 'beta' : '']
+    .filter(Boolean).join(' · ');
+  return `- [${entry.title}](${entry.url}) (${notes})${entry.summary ? `: ${entry.summary}` : ''}`;
 }

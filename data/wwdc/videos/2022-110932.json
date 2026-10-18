@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110932/",
   "title": "WWDC22 Day 4 recap",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,68 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Bass-heavy electronic music ♪ It's time to review day four.\n\nRoll the tape! We checked in with Raj on how you can organize your iPad interface with SwiftUI.\n\n- Better support for state restoration, deep linking, and even richer programmatic control.\n\n- Cool.\n\n- Then Sara showed us how to bring the power of SwiftUI to your UIKit apps.\n\n- You can use the hosting controller anywhere you can use a view controller in UIKit.\n\n- Later on, Brett took us through the latest updates for Vision.\n\n- Here we compute optical flow for a short clip of this dog fetching a water bottle on a beach.\n\n- And we discovered how to create compelling SharePlay experiences.\n\n- Think of SharePlay like a portal, transporting people through their phones and into the same space.\n\n- We also got a lesson in language from Apple's interface writers.\n\n- Writing for interfaces begins with curiosity for who's on the other side of the screen.\n\n- And now for the intel on day five.\n\n♪ Check back in tomorrow for our final report.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass-heavy electronic music ♪ It's time to review day four."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Roll the tape! We checked in with Raj on how you can organize your iPad interface with SwiftUI."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "- Better support for state restoration, deep linking, and even richer programmatic control."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "- Cool."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "- Then Sara showed us how to bring the power of SwiftUI to your UIKit apps."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "- You can use the hosting controller anywhere you can use a view controller in UIKit."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "- Later on, Brett took us through the latest updates for Vision."
+      },
+      {
+        "timestamp": "0:33",
+        "text": "- Here we compute optical flow for a short clip of this dog fetching a water bottle on a beach."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "- And we discovered how to create compelling SharePlay experiences."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "- Think of SharePlay like a portal, transporting people through their phones and into the same space."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "- We also got a lesson in language from Apple's interface writers."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "- Writing for interfaces begins with curiosity for who's on the other side of the screen."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "- And now for the intel on day five."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "♪ Check back in tomorrow for our final report."
+      },
+      {
+        "timestamp": "1:13",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -93,5 +152,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110931"
     }
   ],
-  "extractedAt": "2026-10-11T16:41:35.161Z"
+  "extractedAt": "2026-10-17T18:51:31.950Z"
 }

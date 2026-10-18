@@ -1,18 +1,24 @@
-import type { Mock } from 'vitest';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { handleGetSampleCode } from '../../src/tools/get-sample-code';
 import { APPLE_URLS } from '../../src/utils/constants';
 
-// Mock the modules
 vi.mock('../../src/utils/http-client');
 vi.mock('../../src/utils/cache');
 
 describe('handleGetSampleCode', () => {
   let mockHttpClient: any;
   let mockSampleCodeCache: any;
-  let mockGenerateUrlCacheKey: Mock;
 
-  // Sample data
+  const reference = (path: string, title: string, abstract: string) => ({
+    type: 'topic',
+    role: 'sampleCode',
+    kind: 'article',
+    identifier: `doc://com.apple.documentation${path}`,
+    title,
+    url: path.toLowerCase(),
+    abstract: [{ type: 'text', text: abstract }],
+  });
+
+  // Sample data: Apple's identifiers keep a framework's capitals, the sidebar's paths are lowercase
   const mockSampleCodeContent = {
     metadata: {
       role: 'collection',
@@ -64,6 +70,12 @@ describe('handleGetSampleCode', () => {
         ],
       },
     ],
+    references: Object.fromEntries([
+      reference('/documentation/SwiftUI/Landmarks-Building-an-app-with-Liquid-Glass', 'Landmarks: Building an app with Liquid Glass', 'Enhance your app with Liquid Glass.'),
+      reference('/documentation/StoreKit/understanding-storekit-workflows', 'Understanding StoreKit workflows', 'Implement an in-app store.'),
+      reference('/documentation/FoundationModels/adding-intelligent-app-features-with-generative-models', 'Adding intelligent app features with generative models', 'Build features with the on-device model.'),
+      reference('/documentation/SwiftUI/building-rich-swiftui-text-experiences', 'Building rich SwiftUI text experiences', 'Build an editor for rich text.'),
+    ].map((entry) => [entry.identifier, entry])),
   };
 
   const mockSampleCodeIndex = {
@@ -116,111 +128,80 @@ describe('handleGetSampleCode', () => {
     },
   };
 
+  const everything = { framework: undefined, category: undefined, includeBeta: true, searchQuery: undefined };
+
+  const mockTechnologies = {
+    sections: [{
+      kind: 'technologies',
+      groups: [{
+        name: 'App frameworks',
+        technologies: ['SwiftUI', 'StoreKit', 'FoundationModels'].map((id) => ({
+          title: id === 'FoundationModels' ? 'Foundation Models' : id,
+          destination: { identifier: `doc://com.apple.documentation/documentation/${id}` },
+        })),
+      }],
+    }],
+    references: {},
+  };
+
   beforeEach(() => {
-    // Reset modules
     vi.resetModules();
     vi.clearAllMocks();
 
-    // Setup HTTP client mock
+    // The library's page and sidebar, and the technologies list, whose names the samples' frameworks take
     mockHttpClient = {
-      get: vi.fn(),
-      // The technologies index, whose names the samples' frameworks take: empty here, so their paths decide
-      getJson: vi.fn().mockResolvedValue({ sections: [] }),
+      getJson: vi.fn().mockImplementation(async (url: string) => (
+        url === APPLE_URLS.SAMPLE_CODE_JSON ? mockSampleCodeContent
+          : url === APPLE_URLS.SAMPLE_CODE_INDEX_JSON ? mockSampleCodeIndex
+            : mockTechnologies)),
     };
     vi.doMock('../../src/utils/http-client', () => ({
       httpClient: mockHttpClient,
     }));
 
-    // Setup cache mock
+    // Setup cache mock: the library's own; Apple's files go through the real caches, to the mocked client
     mockSampleCodeCache = {
-      get: vi.fn().mockReturnValue(null),
+      get: vi.fn().mockReturnValue(undefined),
       set: vi.fn(),
     };
-    mockGenerateUrlCacheKey = vi.fn().mockImplementation((prefix, params) => {
-      return `${prefix}:${JSON.stringify(params)}`;
-    });
-    vi.doMock('../../src/utils/cache', () => ({
+    vi.doMock('../../src/utils/cache', async (importOriginal) => ({
+      ...(await importOriginal<typeof import('../../src/utils/cache')>()),
       sampleCodeCache: mockSampleCodeCache,
-      generateUrlCacheKey: mockGenerateUrlCacheKey,
     }));
   });
 
   it('should fetch and return sample code data', async () => {
-    // Mock HTTP responses
-    mockHttpClient.get
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeContent),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeIndex),
-      });
-
-    // Re-import to get mocked version
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    const result = await handleGetSampleCode();
+    const result = await handleGetSampleCode(everything, 50);
 
-    // Verify API calls
-    expect(mockHttpClient.get).toHaveBeenCalledTimes(2);
-    expect(mockHttpClient.get).toHaveBeenCalledWith(APPLE_URLS.SAMPLE_CODE_JSON);
-    expect(mockHttpClient.get).toHaveBeenCalledWith(APPLE_URLS.SAMPLE_CODE_INDEX_JSON);
+    expect(mockHttpClient.getJson).toHaveBeenCalledWith(APPLE_URLS.SAMPLE_CODE_JSON);
+    expect(mockHttpClient.getJson).toHaveBeenCalledWith(APPLE_URLS.SAMPLE_CODE_INDEX_JSON);
+    expect(mockHttpClient.getJson).toHaveBeenCalledWith(APPLE_URLS.TECHNOLOGIES_JSON);
 
-    // Verify result contains expected content
+    // Verify result contains expected content: the featured samples first, then the library's sections
     expect(result).toContain('Apple Sample Code Library');
-    expect(result).toContain('Found 4 sample code projects');
-    expect(result).toContain('Landmarks: Building an app with Liquid Glass');
-    expect(result).toContain('Understanding StoreKit workflows');
-    
-    // Featured samples might not always be shown depending on the implementation
-    if (result.includes('⭐ Featured Samples')) {
-      expect(result).toContain('Featured Samples');
-    }
+    expect(result).toContain('Found 4 entries');
+    expect(result).toMatch(/## ⭐ Featured\n\n- \[Understanding StoreKit workflows\][^\n]*\n- \[Landmarks: Building an app with Liquid Glass\]/);
+    expect(result).toContain('## WWDC25\n\n- [Adding intelligent app features with generative models]');
+    expect(result).toContain('(SwiftUI · WWDC25, SwiftUI): Enhance your app with Liquid Glass.');
   });
 
   it('should filter by framework', async () => {
-    mockHttpClient.get
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeContent),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeIndex),
-      });
-
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    const result = await handleGetSampleCode('SwiftUI');
+    const result = await handleGetSampleCode({ ...everything, framework: 'SwiftUI' }, 50);
 
     expect(result).toContain('Framework: SwiftUI');
-    
-    // The framework filtering might not work perfectly with the test data
-    // So let's just check that it shows the framework filter was applied
-    if (result.includes('No sample code projects found')) {
-      expect(result).toContain('Found 0 sample code projects');
-    } else {
-      expect(result).toMatch(/Found \d+ sample code projects/);
-      // Should contain SwiftUI-related samples
-      expect(result.toLowerCase()).toContain('swiftui');
-    }
+    expect(result).toContain('Found 2 entries');
+    expect(result).toContain('Landmarks: Building an app with Liquid Glass');
+    expect(result).toContain('Building rich SwiftUI text experiences');
   });
 
   it('should filter beta samples when beta=exclude', async () => {
-    mockHttpClient.get
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeContent),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeIndex),
-      });
-
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    const result = await handleGetSampleCode(undefined, 'exclude');
+    const result = await handleGetSampleCode({ ...everything, includeBeta: false }, 50);
 
     expect(result).toContain('Beta: exclude');
-    expect(result).toContain('Found 2 sample code projects');
+    expect(result).toContain('Found 2 entries');
     expect(result).not.toContain('Adding intelligent app features');
     expect(result).not.toContain('Building rich SwiftUI text experiences');
     expect(result).toContain('Understanding StoreKit workflows');
@@ -228,53 +209,37 @@ describe('handleGetSampleCode', () => {
   });
 
   it('should return cached results when available', async () => {
-    const cachedResult = '# Cached Sample Code Data';
-    mockSampleCodeCache.get.mockReturnValue(cachedResult);
+    mockSampleCodeCache.get.mockReturnValue([{
+      title: 'Cached sample', url: 'https://developer.apple.com/documentation/swiftui/cached-sample', kind: 'sampleCode',
+      framework: 'SwiftUI', sections: ['SwiftUI'], summary: 'From the cache.', featured: false, beta: false,
+    }]);
 
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    const result = await handleGetSampleCode();
+    const result = await handleGetSampleCode(everything, 50);
 
-    expect(result).toBe(cachedResult);
-    expect(mockHttpClient.get).not.toHaveBeenCalled();
+    expect(result).toContain('[Cached sample](https://developer.apple.com/documentation/swiftui/cached-sample)');
+    expect(mockHttpClient.getJson).not.toHaveBeenCalled();
   });
 
   it('should cache results after fetching', async () => {
-    mockHttpClient.get
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeContent),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockSampleCodeIndex),
-      });
-
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    await handleGetSampleCode('SwiftUI', 'exclude', 'test', 10);
+    await handleGetSampleCode({ ...everything, framework: 'SwiftUI', searchQuery: 'test' }, 10);
 
-    expect(mockSampleCodeCache.set).toHaveBeenCalled();
-    expect(mockGenerateUrlCacheKey).toHaveBeenCalledWith('sample-code', {
-      framework: 'SwiftUI',
-      beta: 'exclude',
-      searchQuery: 'test',
-      limit: 10,
-    });
+    expect(mockSampleCodeCache.set).toHaveBeenCalledWith('library', expect.any(Array));
+    expect(mockSampleCodeCache.set.mock.calls[0][1]).toHaveLength(4);
   });
 
   it('should handle API errors gracefully', async () => {
-    mockHttpClient.get.mockRejectedValueOnce(new Error('Network error'));
+    mockHttpClient.getJson.mockRejectedValueOnce(new Error('Network error'));
 
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    await expect(handleGetSampleCode()).rejects.toThrow('Network error');
+    await expect(handleGetSampleCode(everything, 50)).rejects.toThrow('Network error');
   });
 
   it('should handle non-200 status codes', async () => {
-    mockHttpClient.get.mockResolvedValueOnce({
-      ok: false,
-      statusText: 'Not Found',
-    });
+    mockHttpClient.getJson.mockRejectedValueOnce(new Error(`GET ${APPLE_URLS.SAMPLE_CODE_JSON}: HTTP 404 Not Found`));
 
     const { handleGetSampleCode } = await import('../../src/tools/get-sample-code');
-    await expect(handleGetSampleCode()).rejects.toThrow('Failed to fetch sample code content: Not Found');
+    await expect(handleGetSampleCode(everything, 50)).rejects.toThrow('HTTP 404 Not Found');
   });
 });

@@ -3,16 +3,471 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/268/",
   "title": "Embracing Swift concurrency",
-  "speakers": [],
-  "duration": "",
+  "duration": "28:01",
   "topics": [
     "Swift"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello! I’m Doug from the Swift team, and I’m excited to talk to you about how to make the best use of Swift concurrency in your app.\n\nConcurrency allows code to perform multiple tasks at the same time. You can use concurrency in your app to improve responsiveness when waiting on data, like when reading files from disk or performing a network request. It can also be used to offload expensive computation to the background, like processing large images.\n\nSwift’s concurrency model is designed to make concurrent code easier to write correctly. It makes the introduction of concurrency explicit and identifies what data is shared across concurrent tasks.\n\nIt leverages this information to identify potential data races at compile time, so you can introduce concurrency as you need it without fear of creating hard-to-fix data races.\n\nMany apps only need to use concurrency sparingly, and some don't need concurrency at all. Concurrent code is more complex than single-threaded code, and you should only introduce concurrency as you need it.\n\nYour apps should start by running all of their code on the main thread, and you can get really far with single-threaded code. The main thread is where your app receives UI-related events and can update the UI in response. If you aren’t doing a lot of computation in your app, it’s fine to keep everything on the main thread! Eventually, you are likely to need to introduce asynchronous code, perhaps to fetch some content over the network.\n\nYour code can wait for the content to come across the network without causing the UI to hang.\n\nIf those tasks take too long to run, we can move them off to a background thread that runs concurrently with the main thread.\n\nAs we develop our app further, we may find that keeping all our data within the main thread is causing the app to perform poorly. Here, we can introduce data types for specific purposes that always run in the background.\n\nSwift concurrency provides tools like actors and tasks for expressing these kinds of concurrent operations. A large app is likely to have an architecture that looks a bit like this. But you don’t start there, and not every app needs to end up here. In this session, we’re going to talk through the steps to take an app through this journey from single-threaded to concurrent. For each step along the way, we’ll help you determine when to take that step, what Swift language features that you’ll use, how to use them effectively, and why they work the way they do. First, we’ll describe how single-threaded code works with Swift concurrency. Then, we’ll introduce asynchronous tasks to help with high-latency operations, like network access.\n\nNext, we’ll introduce concurrency to move work to a background thread and learn about sharing data across threads without introducing data races.\n\nFinally, we’ll move data off the main thread with actors.\n\nLet’s start with single-threaded code. When you run a program, code starts running on the main thread.\n\nAny code that you add stays on the main thread, until you explicitly introduce concurrency to run code somewhere else. Single-threaded code is easier to write and maintain, because the code is only doing one thing at a time. If you start to introduce concurrency later on, Swift will protect your main thread code.\n\nThe main thread and all of its data is represented by the main actor. There is no concurrency on the main actor, because there is only one main thread that can run it. We can specify that data or code is on the main actor using the @MainActor notation.\n\nSwift will ensure that main-actor code only ever runs on the main thread, and main-actor data is only ever accessed from there. We say that such code is isolated to the main actor.\n\nSwift protects your main thread code using the main actor by default.\n\nThis is like the Swift compiler writing @MainActor for you on everything in that module. It lets us freely access shared state like static variables from anywhere in our code. In main actor mode, we don't have to worry about concurrent access until we start to introduce concurrency.\n\nProtecting code with the main actor by default is driven by a build setting. Use this primarily for your main app module and any modules that are focused on UI interactions. This mode is enabled by default for new app projects created with Xcode 26. In this talk, we'll assume that main actor mode is enabled throughout the code examples.\n\nLet's add a method on our image model to fetch and display an image from a URL. We want to load an image from a local file. Then decode it, and display it in our UI.\n\nOur app has no concurrency in it at all. There is just a single, main thread doing all of the work.\n\nThis whole function runs on the main thread in one piece. So long as every operation in here is fast enough, that’s fine.\n\nRight now, we’re only able to read files locally. If we want to allow our app to fetch an image over the network, we need to use a different API.\n\nThis URLSession API lets us fetch data over the network given a URL. However, running this method on the main thread would freeze the UI until the data has been downloaded from the network.\n\nAs a developer, it’s important to keep your app responsive. That means taking care not to tie up the main thread for so long that the UI will glitch or hang. Swift concurrency provides tools to help: asynchronous tasks can be used when waiting on data, such as a network request, without tying up the main thread.\n\nTo prevent hangs like this, network access is asynchronous.\n\nWe can change fetchAndDisplayImage so that it's capable of handling asynchronous calls by making the function 'async', and calling the URL session API with 'await'.\n\nThe await indicates where the function might suspend, meaning that it stops running on the current thread until the event it’s waiting for happens. Then, it can resume execution.\n\nWe can think of this as breaking the function into two pieces: the piece that runs up until we start to fetch the image, and the piece that runs after the image has been fetched. By breaking up the function this way, we allow other work to run in between the two pieces, keeping our UI responsive.\n\nIn practice, many library APIs, like URLSession, will offload work to the background for you. We still have not introduced concurrency into our own code, because we didn't need to! We improved the responsiveness of our application by making parts of it asynchronous, and calling library APIs that offload work on our behalf. All we needed to do in our code was adopt async/await.\n\nSo far, our code is only running one async function. An async function runs in a task. A task executes independently of other code, and should be created to perform a specific operation end-to-end. It's common to create a task in response to an event, such as a button press. Here, the task performs the full fetch-and-display image operation.\n\nThere can be many asynchronous tasks in a given app. In addition to the fetch-and-display image task that we’ve been talking about, here I’ve added a second task that fetches the news, displays it, and then waits for a refresh. Each task will complete its operations in order from start to finish. Fetching happens in the background, but the other operations in each task will all run on the main thread, and only one operation can run at a time. The tasks are independent from each other, so each task can take turns on the main thread. The main thread will run the pieces of each task as they become ready to run.\n\nA single thread alternating between multiple tasks is called 'interleaving'. This improves overall performance by making the most efficient use of system resources. A thread can start making progress on any of the tasks as soon as possible, rather than leaving the thread idle while waiting for a single operation.\n\nIf fetching the image completes before fetching the news, the main thread will start decoding and displaying the image before displaying the news.\n\nBut if fetching the news finishes first, the main thread can start displaying the news before decoding the image.\n\nMultiple asynchronous tasks are great when your app needs to perform many independent operations at the same time. When you need to perform work in a specific order, you should run that work in a single task.\n\nTo make your app responsive when there are high-latency operations like a network request, use an asynchronous task to hide that latency. Libraries can help you here, by providing asynchronous APIs that might do some concurrency on your behalf, while your own code stays on the main thread. The URLSession API has already introduced some concurrency for us, because it’s handling the network access on a background thread. Our own fetch-and-display image operation is running on the main thread. We might find that the decode operation is taking too long. This could show up as UI hangs when decoding a large image.\n\nAsynchronous, single-threaded is often enough for an app. But if you start to notice that your app isn’t responsive, it’s an indication that too much is happening on the main thread. A profiling tool such as Instruments can help you determine where you are spending too much time. If it’s work that can be made faster without concurrency, do that first.\n\nIf it can’t be made faster, you might need to introduce concurrency. Concurrency is what lets parts of your code run on a background thread in parallel with the main thread, so it doesn’t block the UI. It can also be used to get work done faster by using more of the CPU cores in your system.\n\nOur goal is to get the decoding off the main thread, so that work can happen on the background thread. Because we're in the main actor by default mode, fetchAndDisplaylmage and decodelmage are both isolated to the main actor. Main actor code can freely access all data and code that is accessible only to the main thread, which is safe because there's no concurrency on the main thread.\n\nWe want to offload the call to decodeImage, Which we can do by applying the @concurrent attribute to the decodeImage function.\n\n@concurrent tells Swift to run the function in the background.\n\nChanging where decodeImage runs also changes our assumptions about what state decodeImage can access. Let's take a look at the implementation.\n\nThe implementation is checking a dictionary of cached image data that's stored on the main actor, which is only safe to do on the main thread.\n\nThe Swift compiler shows us where the function is trying to access data on the main actor. This is exactly what we need to know to make sure we're not introducing bugs as we add concurrency. There are a few strategies you can use when breaking ties to the main actor so you can introduce concurrency safely.\n\nIn some cases, you can move the main actor code into a caller that always runs on the main actor. This is a good strategy if you want to make sure that work happens synchronously.\n\nOr, you can use await to access the main actor from concurrent code asynchronously.\n\nIf the code doesn’t need to be on the main actor at all, you can add the nonisolated keyword to separate it from any actor.\n\nWe’re going to explore the first strategy now, and will talk about the others later on.\n\nI'm going to move the image caching into fetchAndDisplayImage, which runs on the main actor. Checking the cache before making any async calls is good for eliminating latency. If the image is in the cache, fetchAndDisplayImage will complete synchronously without suspending at all. This means the results will be delivered to the UI immediately, and it will only suspend if the image is not already available.\n\nAnd we can remove the url parameter from decodeImage because we don't need it anymore. Now, all we have to do is await the result of decodeImage.\n\nAn @concurrent function will always switch off of an actor to run. If you want the function to stay on whatever actor it was called on, you can use the nonisolated keyword.\n\nSwift has additional ways to introduce more concurrency. For more information, see “Beyond the basics of structured concurrency”.\n\nIf we were providing decoding APIs as part of a library for many clients to use, using @concurrent isn't always the best API choice.\n\nHow long it takes to decode data depends on how large the data is, and decoding small amounts of data is okay to do on the main thread. For libraries, it's best to provide a nonisolated API and let clients decide whether to offload work.\n\nNonisolated code is very flexible, because you can call it from anywhere: if you call it from the main actor, it will stay on the main actor. If you call it from a background thread, it will stay on a background thread. This makes it a great default for general-purpose libraries.\n\nWhen you offload work to the background, the system handles scheduling the work to run on a background thread. The concurrent thread pool contains all of the system's background threads, which can involve any number of threads. For smaller devices like a watch, there might be only be one or two threads in the pool. Large systems with more cores will have more background threads in the pool. It doesn't matter which background thread a task runs on, and you can rely on the system to make the best use of resources. For example, when a task suspends, the original thread will start running other tasks that are ready. When the task resumes, it can start running on any available thread in the concurrent pool, which might be different from the background thread it started on.\n\nNow that we have concurrency, we will be sharing data among different threads. Sharing mutable state in concurrent code is notoriously prone to mistakes that lead to hard-to-fix runtime bugs. Swift helps you catch these mistakes at compile time so you can write concurrent code with confidence. Each time we go between the main actor and the concurrent pool, we share data between different threads. When we get the URL from the UI, it’s passed from the main actor out the background thread to fetch the image.\n\nFetching the image returns data, which is passed along to image decoding.\n\nThen, after we’ve decoded the image, the image is passed back into the main actor, along with self.\n\nSwift ensures that all of these values are accessed safely in concurrent code. Let's see what happens if the UI update ends up creating additional tasks that involve the URL.\n\nFortunately, URL is a value type. That means that when we copy the URL into the background thread, the background thread has a separate copy from the one that’s on the main thread. If the user enters a new URL through the UI, code on the main thread is free to use or modify its copy, and the changes have no effect on the value used on the background thread.\n\nThis means that it is safe to share value types like URL because it isn’t really sharing after all: each copy is independent of the others.\n\nValue types have been a big part of Swift from the beginning. All of the basic types like strings, integers, and dates, are value types.\n\nCollections of value types, such as dictionaries and arrays, are also value types. And so are structs and enums that store value types in them, like this Post struct.\n\nWe refer to types that are always safe to share concurrently as Sendable types. Sendable is a protocol, and any type that conforms to Sendable is safe to share. Collections like Array define conditional conformances to Sendable, so they are Sendable when their elements are.\n\nStructs and enums are allowed to be marked Sendable when all of their instance data is Sendable.\n\nAnd main actor types are implicitly Sendable, so you don’t have to say so explicitly.\n\nActors like the main actor protect non-Sendable state by making sure it’s only ever accessed by one task at a time. Actors might store values passed into its methods, and the actor might return a reference to its protected state from its methods.\n\nWhenever a value is sent into or out of an actor, the Swift compiler checks that the value is safe to send to concurrent code. Let's focus on the async call to decodeImage.\n\nDecode image is an instance method, so we're passing an implicit self argument.\n\nHere, we see two values being sent outside the main actor, and a result value being sent back into the main actor.\n\n'self' is my image model class, which is main actor isolated. The main actor protects the mutable state, so it's safe to pass a reference to the class to the background thread. And Data is a value type, so it's Sendable.\n\nThat leaves the image type. It could be a value type, like Data, in which case it would be Sendable. Instead let’s talk about types that are not Sendable, such as classes. Classes are reference types, meaning that when you assign one variable to another, they point at the same object in memory. If you change something about the object through one variable, such as scaling the image, then those changes are immediately visible through the other variables that point at the same object.\n\nfetchAndDisplayImage does not use the image value concurrently. decodeImage runs in the background, so it can't access any state protected by an actor. It creates a new instance of an image from the given data. This image can't be referenced by any concurrent code, so it's safe to send over to the main actor and display it in the UI.\n\nLet’s see what happens when we introduce some concurrency. First, this scaleAndDisplay method loads a new image on the main thread. The image variable points to this image object, which contains the cat picture.\n\nThen, the function creates a task running on the concurrent pool, and that gets a copy of the image.\n\nFinally, the main thread moves on to display the image.\n\nNow, we have a problem. The background thread is changing the image: making the width and height different, and replacing the pixels with those of a scaled version. At the same time, the main thread is iterating over the pixels based on the old width and height.\n\nThat’s a data race. You might end up with a UI glitch, or more likely you’ll end up with a crash when your program tries to access outside of the pixel array’s bounds. Swift concurrency prevents data races with compiler errors if your code tries to share a non-Sendable type. Here, the compiler is indicating that the concurrent task is capturing the image, which is also used by the main actor to display the image. To correct this, we need to make sure that we avoid sharing the same object concurrently. If we want the image effect to be shown in the UI, the right solution is to wait for the scaling to complete before displaying the image. We can move all three of these operations into the task to make sure they happen in order.\n\ndisplayImage has to run on the main actor, so we use await to call it from a concurrent task.\n\nIf we can make scaleAndDisplay async directly, we can simplify the code to not create a new task, and perform the three operations in order in the task that calls scaleAndDisplay.\n\nOnce we send the image to the main actor to display in the UI, the main actor is free to store a reference to the image, for example by caching the image object.\n\nIf we try to change the image after it's displayed in the UI, we'll get a compiler error about unsafe concurrent access.\n\nWe can address the issue by making any changes to the image before we send it over to the main actor. If you are using classes for your data model, your model classes will likely start on the main actor, so you can present parts of them in the UI.\n\nIf you eventually decide that you need to work with them on a background thread, make them nonisolated. But they should probably not be Sendable. You don’t want to be in a position where some of the model is being updated on the main thread and other parts of the model are being updated on the background thread. Keeping model classes non-Sendable prevents this kind of concurrent modification from occurring. It's also easier, because making a class Sendable usually requires using a low-level synchronization mechanism like a lock. Like classes, closures can create shared state.\n\nHere is a function similar to one we had earlier that scales and displays an image. It creates an image object. Then, it calls perform(afterDelay:), providing it with a closure that scales the image object. This closure contains another reference to the same image. We call this a capture of the image variable. Just like non-Sendable classes, a closure with shared state is still safe as long as it isn't called concurrently.\n\nOnly make a function type Sendable if you need to share it concurrently.\n\nSendable checking occurs whenever some data passes between actors and tasks. It’s there to ensure that there are no data races that could cause bugs in your app.\n\nMany common types are Sendable, and these can be freely shared across concurrent tasks.\n\nClasses and closures can involve mutable state that is not safe to share concurrently, so use them from one task at a time.\n\nYou can still send an object from one task to another, but be sure to make all modifications to the object before sending it.\n\nMoving asynchronous tasks to background threads can free up the main thread to keep your app responsive. If you find that you have a lot of data on the main actor that is causing those asynchronous tasks to “check in” with the main thread too often, you might want to introduce actors.\n\nAs your app grows over time, you may find that the amount of state on the main actor also grows.\n\nYou’ll introduce new subsystems to handle things like managing access to the network. This can lead to a lot of state living on the main actor, for example the set of open connections handled by the network manager, which we would access whenever we need to fetch data over the network.\n\nWhen we start using these extra subsystems, the fetch-and-display image task from earlier has gotten more complicated: it’s trying to run on the background thread, but it has to hop over to the main thread because that’s where the network manager’s data is. This can lead to contention, where many tasks are trying to run code on the main actor at the same time. The individual operations might be quick, but if you have a lot of tasks doing this, it can add up to UI glitches.\n\nEarlier, we moved code off the main thread by putting it into an @concurrent function.\n\nHere, all of the work is in accessing the network manager’s data. To move that out, we can introduce our own network manager actor.\n\nLike the main actor, actors isolate their data, so you can only access that data when running on that actor.\n\nAlong with the main actor, you can define your own actor types. An actor type is similar to a main-actor class. Like a main actor-class, it will isolate its data so that only one thread can touch the data at a time.\n\nAn actor type is also Sendable, so you can freely share actor objects. Unlike the main actor, there can be many actor objects in a program, each of which is independent.\n\nIn addition, actor objects aren’t tied to a single thread like the main actor is.\n\nSo moving some state from the main actor over to an actor object will allow more code to execute on a background thread, leaving the main thread open to keep the UI responsive.\n\nUse actors when you find that storing data on the main actor is causing too much code to run on the main thread. At that point, separate out the data for one non-UI part of your code, such as the network management code, into a new actor.\n\nBe aware that most of the classes in your app probably are not meant to be actors: UI-facing classes should stay on the main actor so they can interact directly with UI state. Model classes should generally be on the main actor with the UI, or kept non-Sendable, so that you don’t encourage lots of concurrent accesses to your model.\n\nIn this talk, we started with single-threaded code.\n\nAs our needs grew, we introduced asynchronous tasks to hide latency, concurrent code to run on a background thread, and actors to move data access off the main thread.\n\nOver time, many apps will follow this same course.\n\nUse profiling tools to identify when and what code to move off the main thread.\n\nSwift concurrency will help you separate that code from the main thread correctly, improving the performance and responsiveness of your app.\n\nWe have some recommended build settings for your app to help with the introduction of concurrency. The Approachable Concurrency setting enables a suite of upcoming features that make easier to work with concurrency. We recommend that all projects adopt this setting.\n\nFor Swift modules that are primarily interacting with the UI, such as your main app module, we also recommend setting the default actor isolation to 'main actor'. This puts code on the main actor unless you’ve said otherwise. These settings work together to make single-threaded apps easier to write, and provide a more approachable path to introducing concurrency when you need it.\n\nSwift concurrency is a tool designed to help improve your app.\n\nUse it to introduce asynchronous or concurrent code when you find performance problems with your app. The Swift 6 migration guide can help answer more questions about concurrency and the road to data-race safety. And to see how the concepts in this talk apply in an example app, please watch our code-along companion talk. Thank you.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hello! I’m Doug from the Swift team, and I’m excited to talk to you about how to make the best use of Swift concurrency in your app."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "Concurrency allows code to perform multiple tasks at the same time. You can use concurrency in your app to improve responsiveness when waiting on data, like when reading files from disk or performing a network request. It can also be used to offload expensive computation to the background, like processing large images."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "Swift’s concurrency model is designed to make concurrent code easier to write correctly. It makes the introduction of concurrency explicit and identifies what data is shared across concurrent tasks."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "It leverages this information to identify potential data races at compile time, so you can introduce concurrency as you need it without fear of creating hard-to-fix data races."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Many apps only need to use concurrency sparingly, and some don't need concurrency at all. Concurrent code is more complex than single-threaded code, and you should only introduce concurrency as you need it."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "Your apps should start by running all of their code on the main thread, and you can get really far with single-threaded code. The main thread is where your app receives UI-related events and can update the UI in response. If you aren’t doing a lot of computation in your app, it’s fine to keep everything on the main thread! Eventually, you are likely to need to introduce asynchronous code, perhaps to fetch some content over the network."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "Your code can wait for the content to come across the network without causing the UI to hang."
+      },
+      {
+        "timestamp": "1:50",
+        "text": "If those tasks take too long to run, we can move them off to a background thread that runs concurrently with the main thread."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "As we develop our app further, we may find that keeping all our data within the main thread is causing the app to perform poorly. Here, we can introduce data types for specific purposes that always run in the background."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "Swift concurrency provides tools like actors and tasks for expressing these kinds of concurrent operations. A large app is likely to have an architecture that looks a bit like this. But you don’t start there, and not every app needs to end up here. In this session, we’re going to talk through the steps to take an app through this journey from single-threaded to concurrent. For each step along the way, we’ll help you determine when to take that step, what Swift language features that you’ll use, how to use them effectively, and why they work the way they do. First, we’ll describe how single-threaded code works with Swift concurrency. Then, we’ll introduce asynchronous tasks to help with high-latency operations, like network access."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "Next, we’ll introduce concurrency to move work to a background thread and learn about sharing data across threads without introducing data races."
+      },
+      {
+        "timestamp": "3:13",
+        "text": "Finally, we’ll move data off the main thread with actors."
+      },
+      {
+        "timestamp": "3:17",
+        "text": "Let’s start with single-threaded code. When you run a program, code starts running on the main thread."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Any code that you add stays on the main thread, until you explicitly introduce concurrency to run code somewhere else. Single-threaded code is easier to write and maintain, because the code is only doing one thing at a time. If you start to introduce concurrency later on, Swift will protect your main thread code."
+      },
+      {
+        "timestamp": "3:44",
+        "text": "The main thread and all of its data is represented by the main actor. There is no concurrency on the main actor, because there is only one main thread that can run it. We can specify that data or code is on the main actor using the @MainActor notation."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "Swift will ensure that main-actor code only ever runs on the main thread, and main-actor data is only ever accessed from there. We say that such code is isolated to the main actor."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "Swift protects your main thread code using the main actor by default."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "This is like the Swift compiler writing @MainActor for you on everything in that module. It lets us freely access shared state like static variables from anywhere in our code. In main actor mode, we don't have to worry about concurrent access until we start to introduce concurrency."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "Protecting code with the main actor by default is driven by a build setting. Use this primarily for your main app module and any modules that are focused on UI interactions. This mode is enabled by default for new app projects created with Xcode 26. In this talk, we'll assume that main actor mode is enabled throughout the code examples."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "Let's add a method on our image model to fetch and display an image from a URL. We want to load an image from a local file. Then decode it, and display it in our UI."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "Our app has no concurrency in it at all. There is just a single, main thread doing all of the work."
+      },
+      {
+        "timestamp": "5:18",
+        "text": "This whole function runs on the main thread in one piece. So long as every operation in here is fast enough, that’s fine."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "Right now, we’re only able to read files locally. If we want to allow our app to fetch an image over the network, we need to use a different API."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "This URLSession API lets us fetch data over the network given a URL. However, running this method on the main thread would freeze the UI until the data has been downloaded from the network."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "As a developer, it’s important to keep your app responsive. That means taking care not to tie up the main thread for so long that the UI will glitch or hang. Swift concurrency provides tools to help: asynchronous tasks can be used when waiting on data, such as a network request, without tying up the main thread."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "To prevent hangs like this, network access is asynchronous."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "We can change fetchAndDisplayImage so that it's capable of handling asynchronous calls by making the function 'async', and calling the URL session API with 'await'."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "The await indicates where the function might suspend, meaning that it stops running on the current thread until the event it’s waiting for happens. Then, it can resume execution."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "We can think of this as breaking the function into two pieces: the piece that runs up until we start to fetch the image, and the piece that runs after the image has been fetched. By breaking up the function this way, we allow other work to run in between the two pieces, keeping our UI responsive."
+      },
+      {
+        "timestamp": "6:58",
+        "text": "In practice, many library APIs, like URLSession, will offload work to the background for you. We still have not introduced concurrency into our own code, because we didn't need to! We improved the responsiveness of our application by making parts of it asynchronous, and calling library APIs that offload work on our behalf. All we needed to do in our code was adopt async/await."
+      },
+      {
+        "timestamp": "7:24",
+        "text": "So far, our code is only running one async function. An async function runs in a task. A task executes independently of other code, and should be created to perform a specific operation end-to-end. It's common to create a task in response to an event, such as a button press. Here, the task performs the full fetch-and-display image operation."
+      },
+      {
+        "timestamp": "7:49",
+        "text": "There can be many asynchronous tasks in a given app. In addition to the fetch-and-display image task that we’ve been talking about, here I’ve added a second task that fetches the news, displays it, and then waits for a refresh. Each task will complete its operations in order from start to finish. Fetching happens in the background, but the other operations in each task will all run on the main thread, and only one operation can run at a time. The tasks are independent from each other, so each task can take turns on the main thread. The main thread will run the pieces of each task as they become ready to run."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "A single thread alternating between multiple tasks is called 'interleaving'. This improves overall performance by making the most efficient use of system resources. A thread can start making progress on any of the tasks as soon as possible, rather than leaving the thread idle while waiting for a single operation."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "If fetching the image completes before fetching the news, the main thread will start decoding and displaying the image before displaying the news."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "But if fetching the news finishes first, the main thread can start displaying the news before decoding the image."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "Multiple asynchronous tasks are great when your app needs to perform many independent operations at the same time. When you need to perform work in a specific order, you should run that work in a single task."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "To make your app responsive when there are high-latency operations like a network request, use an asynchronous task to hide that latency. Libraries can help you here, by providing asynchronous APIs that might do some concurrency on your behalf, while your own code stays on the main thread. The URLSession API has already introduced some concurrency for us, because it’s handling the network access on a background thread. Our own fetch-and-display image operation is running on the main thread. We might find that the decode operation is taking too long. This could show up as UI hangs when decoding a large image."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "Asynchronous, single-threaded is often enough for an app. But if you start to notice that your app isn’t responsive, it’s an indication that too much is happening on the main thread. A profiling tool such as Instruments can help you determine where you are spending too much time. If it’s work that can be made faster without concurrency, do that first."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "If it can’t be made faster, you might need to introduce concurrency. Concurrency is what lets parts of your code run on a background thread in parallel with the main thread, so it doesn’t block the UI. It can also be used to get work done faster by using more of the CPU cores in your system."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "Our goal is to get the decoding off the main thread, so that work can happen on the background thread. Because we're in the main actor by default mode, fetchAndDisplaylmage and decodelmage are both isolated to the main actor. Main actor code can freely access all data and code that is accessible only to the main thread, which is safe because there's no concurrency on the main thread."
+      },
+      {
+        "timestamp": "11:07",
+        "text": "We want to offload the call to decodeImage, Which we can do by applying the @concurrent attribute to the decodeImage function."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "@concurrent tells Swift to run the function in the background."
+      },
+      {
+        "timestamp": "11:21",
+        "text": "Changing where decodeImage runs also changes our assumptions about what state decodeImage can access. Let's take a look at the implementation."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "The implementation is checking a dictionary of cached image data that's stored on the main actor, which is only safe to do on the main thread."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "The Swift compiler shows us where the function is trying to access data on the main actor. This is exactly what we need to know to make sure we're not introducing bugs as we add concurrency. There are a few strategies you can use when breaking ties to the main actor so you can introduce concurrency safely."
+      },
+      {
+        "timestamp": "11:59",
+        "text": "In some cases, you can move the main actor code into a caller that always runs on the main actor. This is a good strategy if you want to make sure that work happens synchronously."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "Or, you can use await to access the main actor from concurrent code asynchronously."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "If the code doesn’t need to be on the main actor at all, you can add the nonisolated keyword to separate it from any actor."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "We’re going to explore the first strategy now, and will talk about the others later on."
+      },
+      {
+        "timestamp": "12:32",
+        "text": "I'm going to move the image caching into fetchAndDisplayImage, which runs on the main actor. Checking the cache before making any async calls is good for eliminating latency. If the image is in the cache, fetchAndDisplayImage will complete synchronously without suspending at all. This means the results will be delivered to the UI immediately, and it will only suspend if the image is not already available."
+      },
+      {
+        "timestamp": "12:58",
+        "text": "And we can remove the url parameter from decodeImage because we don't need it anymore. Now, all we have to do is await the result of decodeImage."
+      },
+      {
+        "timestamp": "13:09",
+        "text": "An @concurrent function will always switch off of an actor to run. If you want the function to stay on whatever actor it was called on, you can use the nonisolated keyword."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Swift has additional ways to introduce more concurrency. For more information, see “Beyond the basics of structured concurrency”."
+      },
+      {
+        "timestamp": "13:29",
+        "text": "If we were providing decoding APIs as part of a library for many clients to use, using @concurrent isn't always the best API choice."
+      },
+      {
+        "timestamp": "13:38",
+        "text": "How long it takes to decode data depends on how large the data is, and decoding small amounts of data is okay to do on the main thread. For libraries, it's best to provide a nonisolated API and let clients decide whether to offload work."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "Nonisolated code is very flexible, because you can call it from anywhere: if you call it from the main actor, it will stay on the main actor. If you call it from a background thread, it will stay on a background thread. This makes it a great default for general-purpose libraries."
+      },
+      {
+        "timestamp": "14:14",
+        "text": "When you offload work to the background, the system handles scheduling the work to run on a background thread. The concurrent thread pool contains all of the system's background threads, which can involve any number of threads. For smaller devices like a watch, there might be only be one or two threads in the pool. Large systems with more cores will have more background threads in the pool. It doesn't matter which background thread a task runs on, and you can rely on the system to make the best use of resources. For example, when a task suspends, the original thread will start running other tasks that are ready. When the task resumes, it can start running on any available thread in the concurrent pool, which might be different from the background thread it started on."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "Now that we have concurrency, we will be sharing data among different threads. Sharing mutable state in concurrent code is notoriously prone to mistakes that lead to hard-to-fix runtime bugs. Swift helps you catch these mistakes at compile time so you can write concurrent code with confidence. Each time we go between the main actor and the concurrent pool, we share data between different threads. When we get the URL from the UI, it’s passed from the main actor out the background thread to fetch the image."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Fetching the image returns data, which is passed along to image decoding."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "Then, after we’ve decoded the image, the image is passed back into the main actor, along with self."
+      },
+      {
+        "timestamp": "15:45",
+        "text": "Swift ensures that all of these values are accessed safely in concurrent code. Let's see what happens if the UI update ends up creating additional tasks that involve the URL."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "Fortunately, URL is a value type. That means that when we copy the URL into the background thread, the background thread has a separate copy from the one that’s on the main thread. If the user enters a new URL through the UI, code on the main thread is free to use or modify its copy, and the changes have no effect on the value used on the background thread."
+      },
+      {
+        "timestamp": "16:20",
+        "text": "This means that it is safe to share value types like URL because it isn’t really sharing after all: each copy is independent of the others."
+      },
+      {
+        "timestamp": "16:30",
+        "text": "Value types have been a big part of Swift from the beginning. All of the basic types like strings, integers, and dates, are value types."
+      },
+      {
+        "timestamp": "16:40",
+        "text": "Collections of value types, such as dictionaries and arrays, are also value types. And so are structs and enums that store value types in them, like this Post struct."
+      },
+      {
+        "timestamp": "16:52",
+        "text": "We refer to types that are always safe to share concurrently as Sendable types. Sendable is a protocol, and any type that conforms to Sendable is safe to share. Collections like Array define conditional conformances to Sendable, so they are Sendable when their elements are."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Structs and enums are allowed to be marked Sendable when all of their instance data is Sendable."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "And main actor types are implicitly Sendable, so you don’t have to say so explicitly."
+      },
+      {
+        "timestamp": "17:22",
+        "text": "Actors like the main actor protect non-Sendable state by making sure it’s only ever accessed by one task at a time. Actors might store values passed into its methods, and the actor might return a reference to its protected state from its methods."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "Whenever a value is sent into or out of an actor, the Swift compiler checks that the value is safe to send to concurrent code. Let's focus on the async call to decodeImage."
+      },
+      {
+        "timestamp": "17:53",
+        "text": "Decode image is an instance method, so we're passing an implicit self argument."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "Here, we see two values being sent outside the main actor, and a result value being sent back into the main actor."
+      },
+      {
+        "timestamp": "18:07",
+        "text": "'self' is my image model class, which is main actor isolated. The main actor protects the mutable state, so it's safe to pass a reference to the class to the background thread. And Data is a value type, so it's Sendable."
+      },
+      {
+        "timestamp": "18:22",
+        "text": "That leaves the image type. It could be a value type, like Data, in which case it would be Sendable. Instead let’s talk about types that are not Sendable, such as classes. Classes are reference types, meaning that when you assign one variable to another, they point at the same object in memory. If you change something about the object through one variable, such as scaling the image, then those changes are immediately visible through the other variables that point at the same object."
+      },
+      {
+        "timestamp": "18:54",
+        "text": "fetchAndDisplayImage does not use the image value concurrently. decodeImage runs in the background, so it can't access any state protected by an actor. It creates a new instance of an image from the given data. This image can't be referenced by any concurrent code, so it's safe to send over to the main actor and display it in the UI."
+      },
+      {
+        "timestamp": "19:16",
+        "text": "Let’s see what happens when we introduce some concurrency. First, this scaleAndDisplay method loads a new image on the main thread. The image variable points to this image object, which contains the cat picture."
+      },
+      {
+        "timestamp": "19:29",
+        "text": "Then, the function creates a task running on the concurrent pool, and that gets a copy of the image."
+      },
+      {
+        "timestamp": "19:36",
+        "text": "Finally, the main thread moves on to display the image."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "Now, we have a problem. The background thread is changing the image: making the width and height different, and replacing the pixels with those of a scaled version. At the same time, the main thread is iterating over the pixels based on the old width and height."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "That’s a data race. You might end up with a UI glitch, or more likely you’ll end up with a crash when your program tries to access outside of the pixel array’s bounds. Swift concurrency prevents data races with compiler errors if your code tries to share a non-Sendable type. Here, the compiler is indicating that the concurrent task is capturing the image, which is also used by the main actor to display the image. To correct this, we need to make sure that we avoid sharing the same object concurrently. If we want the image effect to be shown in the UI, the right solution is to wait for the scaling to complete before displaying the image. We can move all three of these operations into the task to make sure they happen in order."
+      },
+      {
+        "timestamp": "20:43",
+        "text": "displayImage has to run on the main actor, so we use await to call it from a concurrent task."
+      },
+      {
+        "timestamp": "20:51",
+        "text": "If we can make scaleAndDisplay async directly, we can simplify the code to not create a new task, and perform the three operations in order in the task that calls scaleAndDisplay."
+      },
+      {
+        "timestamp": "21:02",
+        "text": "Once we send the image to the main actor to display in the UI, the main actor is free to store a reference to the image, for example by caching the image object."
+      },
+      {
+        "timestamp": "21:12",
+        "text": "If we try to change the image after it's displayed in the UI, we'll get a compiler error about unsafe concurrent access."
+      },
+      {
+        "timestamp": "21:20",
+        "text": "We can address the issue by making any changes to the image before we send it over to the main actor. If you are using classes for your data model, your model classes will likely start on the main actor, so you can present parts of them in the UI."
+      },
+      {
+        "timestamp": "21:35",
+        "text": "If you eventually decide that you need to work with them on a background thread, make them nonisolated. But they should probably not be Sendable. You don’t want to be in a position where some of the model is being updated on the main thread and other parts of the model are being updated on the background thread. Keeping model classes non-Sendable prevents this kind of concurrent modification from occurring. It's also easier, because making a class Sendable usually requires using a low-level synchronization mechanism like a lock. Like classes, closures can create shared state."
+      },
+      {
+        "timestamp": "22:10",
+        "text": "Here is a function similar to one we had earlier that scales and displays an image. It creates an image object. Then, it calls perform(afterDelay:), providing it with a closure that scales the image object. This closure contains another reference to the same image. We call this a capture of the image variable. Just like non-Sendable classes, a closure with shared state is still safe as long as it isn't called concurrently."
+      },
+      {
+        "timestamp": "22:39",
+        "text": "Only make a function type Sendable if you need to share it concurrently."
+      },
+      {
+        "timestamp": "22:44",
+        "text": "Sendable checking occurs whenever some data passes between actors and tasks. It’s there to ensure that there are no data races that could cause bugs in your app."
+      },
+      {
+        "timestamp": "22:55",
+        "text": "Many common types are Sendable, and these can be freely shared across concurrent tasks."
+      },
+      {
+        "timestamp": "23:01",
+        "text": "Classes and closures can involve mutable state that is not safe to share concurrently, so use them from one task at a time."
+      },
+      {
+        "timestamp": "23:10",
+        "text": "You can still send an object from one task to another, but be sure to make all modifications to the object before sending it."
+      },
+      {
+        "timestamp": "23:18",
+        "text": "Moving asynchronous tasks to background threads can free up the main thread to keep your app responsive. If you find that you have a lot of data on the main actor that is causing those asynchronous tasks to “check in” with the main thread too often, you might want to introduce actors."
+      },
+      {
+        "timestamp": "23:35",
+        "text": "As your app grows over time, you may find that the amount of state on the main actor also grows."
+      },
+      {
+        "timestamp": "23:42",
+        "text": "You’ll introduce new subsystems to handle things like managing access to the network. This can lead to a lot of state living on the main actor, for example the set of open connections handled by the network manager, which we would access whenever we need to fetch data over the network."
+      },
+      {
+        "timestamp": "24:00",
+        "text": "When we start using these extra subsystems, the fetch-and-display image task from earlier has gotten more complicated: it’s trying to run on the background thread, but it has to hop over to the main thread because that’s where the network manager’s data is. This can lead to contention, where many tasks are trying to run code on the main actor at the same time. The individual operations might be quick, but if you have a lot of tasks doing this, it can add up to UI glitches."
+      },
+      {
+        "timestamp": "24:29",
+        "text": "Earlier, we moved code off the main thread by putting it into an @concurrent function."
+      },
+      {
+        "timestamp": "24:35",
+        "text": "Here, all of the work is in accessing the network manager’s data. To move that out, we can introduce our own network manager actor."
+      },
+      {
+        "timestamp": "24:44",
+        "text": "Like the main actor, actors isolate their data, so you can only access that data when running on that actor."
+      },
+      {
+        "timestamp": "24:51",
+        "text": "Along with the main actor, you can define your own actor types. An actor type is similar to a main-actor class. Like a main actor-class, it will isolate its data so that only one thread can touch the data at a time."
+      },
+      {
+        "timestamp": "25:05",
+        "text": "An actor type is also Sendable, so you can freely share actor objects. Unlike the main actor, there can be many actor objects in a program, each of which is independent."
+      },
+      {
+        "timestamp": "25:17",
+        "text": "In addition, actor objects aren’t tied to a single thread like the main actor is."
+      },
+      {
+        "timestamp": "25:23",
+        "text": "So moving some state from the main actor over to an actor object will allow more code to execute on a background thread, leaving the main thread open to keep the UI responsive."
+      },
+      {
+        "timestamp": "25:34",
+        "text": "Use actors when you find that storing data on the main actor is causing too much code to run on the main thread. At that point, separate out the data for one non-UI part of your code, such as the network management code, into a new actor."
+      },
+      {
+        "timestamp": "25:50",
+        "text": "Be aware that most of the classes in your app probably are not meant to be actors: UI-facing classes should stay on the main actor so they can interact directly with UI state. Model classes should generally be on the main actor with the UI, or kept non-Sendable, so that you don’t encourage lots of concurrent accesses to your model."
+      },
+      {
+        "timestamp": "26:12",
+        "text": "In this talk, we started with single-threaded code."
+      },
+      {
+        "timestamp": "26:16",
+        "text": "As our needs grew, we introduced asynchronous tasks to hide latency, concurrent code to run on a background thread, and actors to move data access off the main thread."
+      },
+      {
+        "timestamp": "26:28",
+        "text": "Over time, many apps will follow this same course."
+      },
+      {
+        "timestamp": "26:33",
+        "text": "Use profiling tools to identify when and what code to move off the main thread."
+      },
+      {
+        "timestamp": "26:39",
+        "text": "Swift concurrency will help you separate that code from the main thread correctly, improving the performance and responsiveness of your app."
+      },
+      {
+        "timestamp": "26:48",
+        "text": "We have some recommended build settings for your app to help with the introduction of concurrency. The Approachable Concurrency setting enables a suite of upcoming features that make easier to work with concurrency. We recommend that all projects adopt this setting."
+      },
+      {
+        "timestamp": "27:04",
+        "text": "For Swift modules that are primarily interacting with the UI, such as your main app module, we also recommend setting the default actor isolation to 'main actor'. This puts code on the main actor unless you’ve said otherwise. These settings work together to make single-threaded apps easier to write, and provide a more approachable path to introducing concurrency when you need it."
+      },
+      {
+        "timestamp": "27:28",
+        "text": "Swift concurrency is a tool designed to help improve your app."
+      },
+      {
+        "timestamp": "27:31",
+        "text": "Use it to introduce asynchronous or concurrent code when you find performance problems with your app. The Swift 6 migration guide can help answer more questions about concurrency and the road to data-race safety. And to see how the concepts in this talk apply in an example app, please watch our code-along companion talk. Thank you."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -166,6 +621,78 @@
       "code": "import Foundation\n\nnonisolated class MyImage { }\n\nstruct Connection {\n  func data(from url: URL) async throws -> Data { Data() }\n}\n\nactor NetworkManager {\n  var openConnections: [URL: Connection] = [:]\n\n  func openConnection(for url: URL) async -> Connection {\n    if let connection = openConnections[url] {\n      return connection\n    }\n\n    let connection = Connection()\n    openConnections[url] = connection\n    return connection\n  }\n\n  func closeConnection(_ connection: Connection, for url: URL) async {\n    openConnections.removeValue(forKey: url)\n  }\n\n}\n\nfinal class View {\n  func displayImage(_ image: MyImage) {\n  }\n}\n\nfinal class ImageModel {\n  var cachedImage: [URL: MyImage] = [:]\n  let view = View()\n  let networkManager: NetworkManager = NetworkManager()\n\n  func fetchAndDisplayImage(url: URL) async throws {\n    if let image = cachedImage[url] {\n      view.displayImage(image)\n      return\n    }\n\n    let connection = await networkManager.openConnection(for: url)\n    let data = try await connection.data(from: url)\n    await networkManager.closeConnection(connection, for: url)\n\n    let image = await decodeImage(data)\n    view.displayImage(image)\n  }\n\n  @concurrent\n  func decodeImage(_ data: Data) async -> MyImage {\n    // decode image\n    return MyImage()\n  }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "3:17"
+    },
+    {
+      "timestamp": "3:17",
+      "title": "Single-threaded code",
+      "duration": "2:43"
+    },
+    {
+      "timestamp": "6:00",
+      "title": "Asynchronous tasks",
+      "duration": "1:24"
+    },
+    {
+      "timestamp": "7:24",
+      "title": "Interleaving",
+      "duration": "2:58"
+    },
+    {
+      "timestamp": "10:22",
+      "title": "Introducing concurrency",
+      "duration": "0:45"
+    },
+    {
+      "timestamp": "11:07",
+      "title": "Concurrent functions",
+      "duration": "2:03"
+    },
+    {
+      "timestamp": "13:10",
+      "title": "Nonisolated code",
+      "duration": "1:03"
+    },
+    {
+      "timestamp": "14:13",
+      "title": "Concurrent thread pool",
+      "duration": "0:45"
+    },
+    {
+      "timestamp": "14:58",
+      "title": "Sharing data",
+      "duration": "0:51"
+    },
+    {
+      "timestamp": "15:49",
+      "title": "Value types",
+      "duration": "1:27"
+    },
+    {
+      "timestamp": "17:16",
+      "title": "Actor-isolated types",
+      "duration": "1:14"
+    },
+    {
+      "timestamp": "18:30",
+      "title": "Classes",
+      "duration": "4:48"
+    },
+    {
+      "timestamp": "23:18",
+      "title": "Actors",
+      "duration": "2:54"
+    },
+    {
+      "timestamp": "26:12",
+      "title": "Wrap-up",
+      "duration": "1:49"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -194,5 +721,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10170"
     }
   ],
-  "extractedAt": "2026-10-11T16:33:32.682Z"
+  "extractedAt": "2026-10-17T18:43:29.711Z"
 }

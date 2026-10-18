@@ -3,8 +3,7 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10184/",
   "title": "Meet ActivityKit",
-  "speakers": [],
-  "duration": "",
+  "duration": "17:15",
   "topics": [
     "App Services",
     "Essentials"
@@ -12,8 +11,416 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ ♪ Can: Hi there, I’m Can Aran, and I’m an engineer on the iOS System Experience team.\n\nIt’s my pleasure to talk to you about Live Activities.\n\nIn this talk, I’ll be giving you an overview of Live Activities.\n\nThen I’ll go through the lifecycle of live activities. Finally, I’ll show you how to build an immersive and simple UI for your activity.\n\nTo start, I’ll dig into what Live Activities can do.\n\nLive Activities are an immersive, glanceable way to keep track of an event or the progress of a task.\n\nLive Activities have a discrete start and end, and can provide real-time updates from background app runtime or remotely using Push Notifications.\n\nHere are great examples from United Airlines and MLB.\n\nLive Activities are even more immersive on iPhone 14 Pro and Pro Max.\n\nThe Dynamic Island displays Live Activities throughout the system when your app is in the background.\n\nWhen one Live Activity is active, it’s rendered using its variable-width, “compact” presentation.\n\nThe Dynamic Island displays up to two live activities at a time.\n\nOne of these Live Activities appears attached to the TrueDepth camera, while the other renders in its own detached view.\n\nBoth of these Live Activities use their “minimal” presentation.\n\nAt any time, a person can long press a Live Activity to display its “expanded” presentation, giving them even more glanceable information.\n\nIn the expanded presentation, views can deep link to different areas within your app, providing a rich user experience. There are some new experiences for Live Activities in iOS 17. In addition to the Lock screen and Dynamic Island, Live Activities appear in StandBy. And now, iPad also supports Live Activities.\n\nEnable your implementation on iPadOS, and bring your immersive Live Activities to iPad, like this one from Crumbl Cookies.\n\nWith iOS 17, you can add interactivity to your Live Activities using WidgetKit and SwiftUI. You can add buttons or toggles to enhance the user experience. Learn more about how to bring interactivity to your widgets in Luca’s video, “Bring Widgets to life.\" Live Activities rely on the ActivityKit framework, empowering your app to request, update, and manage their lifecycles.\n\nThey are laid out declaratively using SwiftUI and WidgetKit.\n\nIf you’ve implemented a Home Screen widget before, this will feel very familiar.\n\nA Live Activity can be requested when your app is in the foreground.\n\nYour app should only request a Live Activity after discrete user action, possibly “following” an event, or explicitly beginning a task.\n\nThis is crucial to ensure a positive user experience.\n\nLive Activities are user-moderated similar to Notifications.\n\nSomeone can easily dismiss or turn them off for your app altogether.\n\nThe API requires you to support all presentations from the Lock Screen to all three Dynamic Island presentations.\n\nIn StandBy, the system scales your Lock Screen presentation to fill the screen.\n\nIn addition to relying on background runtime, your app can update Live Activities remotely by using push notifications with the “liveactivity” push type.\n\nFor more information about how to update your Live Activities with push notifications, you can check out Jeff’s video. Your app’s Live Activity goes through different phases during its lifecycle.\n\nI’m building a Live Activity where a person can choose a hero from the Emoji Rangers app and take them on an adventure.\n\nDuring the adventure, the hero will face challenges and fight with bosses. I’ll display important moments of this adventure in my Live Activity.\n\nThis live activity displays the most essential information about a hero’s adventure. It includes the hero’s name and statistics, their avatar, health level, and a description about what this hero experiences on their adventure. The Lifecycle of a Live Activity contains four main steps. Start by requesting an activity. Once it has started, update it with your latest content. In the meantime, observe your activity to react to state changes, such as people ending it.\n\nWhen the task is completed, make sure to end the activity. Requesting a Live Activity is very straightforward.\n\nMake sure your app is in the foreground, and configure your app so that you have an initial content and necessary activity request data. Before I can request a Live Activity in the Emoji Rangers app, I have to start by defining a set of static and dynamic data for my Live Activity by implementing \"ActivityAttributes.\" I call it \"AdventureAttributes.\" \"AdventureAttributes\" describes one static data, which is the hero.\n\nIt also defines the required custom \"ContentState\" which encapsulates the hero's health level and the event description.\n\nAs these properties change, my Live Activity UI will get updated and I’ll be able to show the current state of the adventure on the screen.\n\nNow that the dynamic and static data is ready, I’ll set up the adventure activity requests.\n\nI’ll start creating an instance of AdventureAttributes with the hero and set up the initial content with the hero’s health level and an event description.\n\nEach activity content can be provided with a stale date to inform the system when the content is considered out-of-date. For now, I’ll pass in nil.\n\nRelevance score for the content determines the order in which each Live Activity appears when several adventure activities are started. If I were going to start another adventure activity, I would specify different relevance scores for each.\n\nPassing a relevance score is optional.\n\nThe default value is zero.\n\nI can now request the activity.\n\nI’ll pass in the attributes, initial content, and the push notification type.\n\nPush notification type indicates if the Live Activity receives updates to its dynamic content with ActivityKit push notifications.\n\nFor this example, I’ll set it to \"nil,\" which means this activity can only receive updates locally. In order to begin this Live Activity, the Live Activity setting for the Emoji Rangers app needs to be enabled. Now that I can request my Live Activity, I’ll look into how I can update the adventure when my hero goes through thrilling tasks. The dynamic attributes tell me when to update my Live Activity.\n\nWhenever the event description or hero’s health level changes, I’ll update my activity.\n\nOh no! The hero takes a critical hit from a boss.\n\nSo I create a \"contentState\" that reflects the change in the health level and describes the events. Since hero’s health level reduced significantly, I need to send an alert.\n\nI’ll create an alert configuration for that.\n\nThis will display an alert on iPhone, iPad, or on a synced Apple Watch if some significant information changes with the Live Activity.\n\nIn this case, the hero is injured badly and needs a potion to heal.\n\nThe configuration title and body are only used on Apple Watch, and displayed as a notification.\n\nOn iPhone and on iPad, the activity UI with the updated content appears with the specified sound.\n\nNow I can call the update API on the activity object with the updated content and the alert configuration.\n\nThis will make sure that the Live Activity UI is updated and the user is alerted with this update.\n\nActivity state changes can happen any time during the lifecycle of a live activity.\n\nThere are 4 possible states: \"started,\" \"finished,\" \"dismissed\" and \"stale.\" I observe these states using the activityStateUpdates API on the activity object to receive the updates asynchronously.\n\nWhen the activity gets dismissed, I make sure that I’m not keeping track of the adventure data anymore, and update the UI in the app so that I don’t show an ongoing activity.\n\nI can also check the state through activityState API to retrieve it synchronously when needed.\n\nMy hero went through a lot.\n\nIt’s now time to end the adventure Live Activity.\n\nTo be able to end the activity, I start by creating a final content.\n\nMy content will show the final state of the adventure where the hero defeats the boss.\n\nThen I’ll determine a dismissal policy for my UI. The default policy is suitable for this case. This policy ensures that the adventure information appears on the Lock Screen for some time after it ends so that someone can glance at the Lock Screen to see what happened at the end of the adventure.\n\nI can now end the adventure activity and give the hero a rest.\n\nI’ve built all the logic around my Live Activity lifecycle.\n\nIt’s time to focus on the activity UI.\n\nEmoji Ranger widget extension currently has two widgets in its WidgetBundle.\n\nI need to add the Live Activity configuration in the WidgetBundle.\n\nI’ll call it \"AdventureActivityConfiguration.\" \"AdventureActivityConfiguration\" leverages widget infrastructure, and it needs to return a WidgetConfiguration in its body.\n\nI’ll create an ActivityConfiguration object, which describes the content of my Live Activity.\n\nFor each presentation closure, ActivityConfiguration object provides an ActivityViewContext which stores my static and dynamic attributes and the activity ID.\n\nThis context is created based on the attributes type passed into the configuration.\n\nThis type must match with the attribute that your activity is requested with.\n\nI’ll pass the \"AdventureAttributes\" type so that the activity configuration can be initialized successfully.\n\nThe first closure in \"ActivityConfiguration\" specifies the Lock Screen UI.\n\nAs my view context changes with the activity updates, this UI will be rendered for each update.\n\nSimilar to widgets, I don’t provide the size of the Lock Screen UI for my Live Activity, but let the system determine the appropriate dimensions.\n\nFor the Emoji Ranger activity, I’ll show the hero information, name and avatar, health level, and event description on the Lock Screen with a navy blue background.\n\n\"AdventureLiveActivityView\" will have all that information through the passed view context. My Live Activity on the Lock Screen looks simple, elegant, and it has all the information that I need about what the hero is going through in the adventure.\n\nNow that I wrapped up my Lock Screen UI, I need to implement my Dynamic Island presentations.\n\nThere are three presentations: compact, minimal and expanded.\n\nWhen my app’s Live Activity is the only one running on the system, it’ll be displayed using the compact presentation.\n\nThe compact presentation has two areas, leading and trailing. They appear together to form a cohesive presentation in the Dynamic Island.\n\nChoose essential content to show in the leading and trailing space, since the space is limited.\n\nUsers should be able to identify the specific activity by looking at the content here.\n\nIn the “DynamicIsland\" closure of the ActivityConfiguration object, I again have access to the view context to create my expanded, compactLeading, compactTrailing, and minimal views.\n\nI need to create a DynamicIsland view builder to represent each of those presentations. For my hero’s adventure, I’ll add the hero avatar to leading content and the health level to the trailing view. I’ll also have a dynamic tint color based on my hero’s health level.\n\nThe compact presentation for the adventure is ready now.\n\nWhen more than one app starts a Live Activity, the system chooses which Live Activities are visible and displays both of them using the minimal presentation for each: one minimal presentation appears attached to the Dynamic Island while the other appears detached.\n\nYour minimal view should only have the most critical information, as you have very limited space to work with.\n\nFor the minimal view in my Live Activity, the most important information to show is who the hero is and hero’s health, so I’ll show the avatar and the health level with a dynamic tint color.\n\nThis way, users will know when to help out their hero by looking at the minimal view. When users touch and hold a Live Activity in a compact or minimal presentation, the system displays the content in an expanded presentation. I need to support that too.\n\nFor the expanded presentation, the system divides the expanded presentation into different areas. The first closure of the DynamicIsland view builder represents the expanded content. Within that closure, each section content can be defined with the expanded region passing the specific position.\n\nI’ll add the hero name and the avatar to the leading space, hero statistics to the trailing space, and at last, the health bar and the event description into the bottom space.\n\nIn the end, my Dynamic Island UI looks simple and provides all the necessary information for the adventure.\n\nNow I’m ready to go on adventures with my favorite heroes, and follow along with the simple, yet immersive Live Activity UI that I just created. While designing your own UI, display only the most essential content in the Live Activity.\n\nKeep it simple and show additional details on your app when the user taps on the Live Activity. Check out “Design dynamic Live Activities” for more information.\n\nUse Live Activities as a powerful tool to show your glanceable and live information of an ongoing activity. With its simple configuration, create a dynamic way to engage with your users on iOS and iPadOS.\n\nTo learn more about pushing updates, check out “Update Live Activities with push notifications.” I can't wait to see what you'll build with ActivityKit.\n\nThank you for watching! ♪ ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:01",
+        "text": "♪ ♪ Can: Hi there, I’m Can Aran, and I’m an engineer on the iOS System Experience team."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "It’s my pleasure to talk to you about Live Activities."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "In this talk, I’ll be giving you an overview of Live Activities."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "Then I’ll go through the lifecycle of live activities. Finally, I’ll show you how to build an immersive and simple UI for your activity."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "To start, I’ll dig into what Live Activities can do."
+      },
+      {
+        "timestamp": "0:41",
+        "text": "Live Activities are an immersive, glanceable way to keep track of an event or the progress of a task."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "Live Activities have a discrete start and end, and can provide real-time updates from background app runtime or remotely using Push Notifications."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "Here are great examples from United Airlines and MLB."
+      },
+      {
+        "timestamp": "1:06",
+        "text": "Live Activities are even more immersive on iPhone 14 Pro and Pro Max."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "The Dynamic Island displays Live Activities throughout the system when your app is in the background."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "When one Live Activity is active, it’s rendered using its variable-width, “compact” presentation."
+      },
+      {
+        "timestamp": "1:28",
+        "text": "The Dynamic Island displays up to two live activities at a time."
+      },
+      {
+        "timestamp": "1:32",
+        "text": "One of these Live Activities appears attached to the TrueDepth camera, while the other renders in its own detached view."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "Both of these Live Activities use their “minimal” presentation."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "At any time, a person can long press a Live Activity to display its “expanded” presentation, giving them even more glanceable information."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "In the expanded presentation, views can deep link to different areas within your app, providing a rich user experience. There are some new experiences for Live Activities in iOS 17. In addition to the Lock screen and Dynamic Island, Live Activities appear in StandBy. And now, iPad also supports Live Activities."
+      },
+      {
+        "timestamp": "2:24",
+        "text": "Enable your implementation on iPadOS, and bring your immersive Live Activities to iPad, like this one from Crumbl Cookies."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "With iOS 17, you can add interactivity to your Live Activities using WidgetKit and SwiftUI. You can add buttons or toggles to enhance the user experience. Learn more about how to bring interactivity to your widgets in Luca’s video, “Bring Widgets to life.\" Live Activities rely on the ActivityKit framework, empowering your app to request, update, and manage their lifecycles."
+      },
+      {
+        "timestamp": "3:06",
+        "text": "They are laid out declaratively using SwiftUI and WidgetKit."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "If you’ve implemented a Home Screen widget before, this will feel very familiar."
+      },
+      {
+        "timestamp": "3:17",
+        "text": "A Live Activity can be requested when your app is in the foreground."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "Your app should only request a Live Activity after discrete user action, possibly “following” an event, or explicitly beginning a task."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "This is crucial to ensure a positive user experience."
+      },
+      {
+        "timestamp": "3:37",
+        "text": "Live Activities are user-moderated similar to Notifications."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "Someone can easily dismiss or turn them off for your app altogether."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "The API requires you to support all presentations from the Lock Screen to all three Dynamic Island presentations."
+      },
+      {
+        "timestamp": "3:57",
+        "text": "In StandBy, the system scales your Lock Screen presentation to fill the screen."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "In addition to relying on background runtime, your app can update Live Activities remotely by using push notifications with the “liveactivity” push type."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "For more information about how to update your Live Activities with push notifications, you can check out Jeff’s video. Your app’s Live Activity goes through different phases during its lifecycle."
+      },
+      {
+        "timestamp": "4:28",
+        "text": "I’m building a Live Activity where a person can choose a hero from the Emoji Rangers app and take them on an adventure."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "During the adventure, the hero will face challenges and fight with bosses. I’ll display important moments of this adventure in my Live Activity."
+      },
+      {
+        "timestamp": "4:48",
+        "text": "This live activity displays the most essential information about a hero’s adventure. It includes the hero’s name and statistics, their avatar, health level, and a description about what this hero experiences on their adventure. The Lifecycle of a Live Activity contains four main steps. Start by requesting an activity. Once it has started, update it with your latest content. In the meantime, observe your activity to react to state changes, such as people ending it."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "When the task is completed, make sure to end the activity. Requesting a Live Activity is very straightforward."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "Make sure your app is in the foreground, and configure your app so that you have an initial content and necessary activity request data. Before I can request a Live Activity in the Emoji Rangers app, I have to start by defining a set of static and dynamic data for my Live Activity by implementing \"ActivityAttributes.\" I call it \"AdventureAttributes.\" \"AdventureAttributes\" describes one static data, which is the hero."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "It also defines the required custom \"ContentState\" which encapsulates the hero's health level and the event description."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "As these properties change, my Live Activity UI will get updated and I’ll be able to show the current state of the adventure on the screen."
+      },
+      {
+        "timestamp": "6:21",
+        "text": "Now that the dynamic and static data is ready, I’ll set up the adventure activity requests."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "I’ll start creating an instance of AdventureAttributes with the hero and set up the initial content with the hero’s health level and an event description."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "Each activity content can be provided with a stale date to inform the system when the content is considered out-of-date. For now, I’ll pass in nil."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "Relevance score for the content determines the order in which each Live Activity appears when several adventure activities are started. If I were going to start another adventure activity, I would specify different relevance scores for each."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "Passing a relevance score is optional."
+      },
+      {
+        "timestamp": "7:11",
+        "text": "The default value is zero."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "I can now request the activity."
+      },
+      {
+        "timestamp": "7:17",
+        "text": "I’ll pass in the attributes, initial content, and the push notification type."
+      },
+      {
+        "timestamp": "7:24",
+        "text": "Push notification type indicates if the Live Activity receives updates to its dynamic content with ActivityKit push notifications."
+      },
+      {
+        "timestamp": "7:34",
+        "text": "For this example, I’ll set it to \"nil,\" which means this activity can only receive updates locally. In order to begin this Live Activity, the Live Activity setting for the Emoji Rangers app needs to be enabled. Now that I can request my Live Activity, I’ll look into how I can update the adventure when my hero goes through thrilling tasks. The dynamic attributes tell me when to update my Live Activity."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "Whenever the event description or hero’s health level changes, I’ll update my activity."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "Oh no! The hero takes a critical hit from a boss."
+      },
+      {
+        "timestamp": "8:15",
+        "text": "So I create a \"contentState\" that reflects the change in the health level and describes the events. Since hero’s health level reduced significantly, I need to send an alert."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "I’ll create an alert configuration for that."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "This will display an alert on iPhone, iPad, or on a synced Apple Watch if some significant information changes with the Live Activity."
+      },
+      {
+        "timestamp": "8:42",
+        "text": "In this case, the hero is injured badly and needs a potion to heal."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "The configuration title and body are only used on Apple Watch, and displayed as a notification."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "On iPhone and on iPad, the activity UI with the updated content appears with the specified sound."
+      },
+      {
+        "timestamp": "9:02",
+        "text": "Now I can call the update API on the activity object with the updated content and the alert configuration."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "This will make sure that the Live Activity UI is updated and the user is alerted with this update."
+      },
+      {
+        "timestamp": "9:17",
+        "text": "Activity state changes can happen any time during the lifecycle of a live activity."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "There are 4 possible states: \"started,\" \"finished,\" \"dismissed\" and \"stale.\" I observe these states using the activityStateUpdates API on the activity object to receive the updates asynchronously."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "When the activity gets dismissed, I make sure that I’m not keeping track of the adventure data anymore, and update the UI in the app so that I don’t show an ongoing activity."
+      },
+      {
+        "timestamp": "9:50",
+        "text": "I can also check the state through activityState API to retrieve it synchronously when needed."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "My hero went through a lot."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "It’s now time to end the adventure Live Activity."
+      },
+      {
+        "timestamp": "10:03",
+        "text": "To be able to end the activity, I start by creating a final content."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "My content will show the final state of the adventure where the hero defeats the boss."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "Then I’ll determine a dismissal policy for my UI. The default policy is suitable for this case. This policy ensures that the adventure information appears on the Lock Screen for some time after it ends so that someone can glance at the Lock Screen to see what happened at the end of the adventure."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "I can now end the adventure activity and give the hero a rest."
+      },
+      {
+        "timestamp": "10:43",
+        "text": "I’ve built all the logic around my Live Activity lifecycle."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "It’s time to focus on the activity UI."
+      },
+      {
+        "timestamp": "10:50",
+        "text": "Emoji Ranger widget extension currently has two widgets in its WidgetBundle."
+      },
+      {
+        "timestamp": "10:56",
+        "text": "I need to add the Live Activity configuration in the WidgetBundle."
+      },
+      {
+        "timestamp": "11:00",
+        "text": "I’ll call it \"AdventureActivityConfiguration.\" \"AdventureActivityConfiguration\" leverages widget infrastructure, and it needs to return a WidgetConfiguration in its body."
+      },
+      {
+        "timestamp": "11:13",
+        "text": "I’ll create an ActivityConfiguration object, which describes the content of my Live Activity."
+      },
+      {
+        "timestamp": "11:19",
+        "text": "For each presentation closure, ActivityConfiguration object provides an ActivityViewContext which stores my static and dynamic attributes and the activity ID."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "This context is created based on the attributes type passed into the configuration."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "This type must match with the attribute that your activity is requested with."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "I’ll pass the \"AdventureAttributes\" type so that the activity configuration can be initialized successfully."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "The first closure in \"ActivityConfiguration\" specifies the Lock Screen UI."
+      },
+      {
+        "timestamp": "11:55",
+        "text": "As my view context changes with the activity updates, this UI will be rendered for each update."
+      },
+      {
+        "timestamp": "12:02",
+        "text": "Similar to widgets, I don’t provide the size of the Lock Screen UI for my Live Activity, but let the system determine the appropriate dimensions."
+      },
+      {
+        "timestamp": "12:13",
+        "text": "For the Emoji Ranger activity, I’ll show the hero information, name and avatar, health level, and event description on the Lock Screen with a navy blue background."
+      },
+      {
+        "timestamp": "12:25",
+        "text": "\"AdventureLiveActivityView\" will have all that information through the passed view context. My Live Activity on the Lock Screen looks simple, elegant, and it has all the information that I need about what the hero is going through in the adventure."
+      },
+      {
+        "timestamp": "12:43",
+        "text": "Now that I wrapped up my Lock Screen UI, I need to implement my Dynamic Island presentations."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "There are three presentations: compact, minimal and expanded."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "When my app’s Live Activity is the only one running on the system, it’ll be displayed using the compact presentation."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "The compact presentation has two areas, leading and trailing. They appear together to form a cohesive presentation in the Dynamic Island."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "Choose essential content to show in the leading and trailing space, since the space is limited."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "Users should be able to identify the specific activity by looking at the content here."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "In the “DynamicIsland\" closure of the ActivityConfiguration object, I again have access to the view context to create my expanded, compactLeading, compactTrailing, and minimal views."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "I need to create a DynamicIsland view builder to represent each of those presentations. For my hero’s adventure, I’ll add the hero avatar to leading content and the health level to the trailing view. I’ll also have a dynamic tint color based on my hero’s health level."
+      },
+      {
+        "timestamp": "14:08",
+        "text": "The compact presentation for the adventure is ready now."
+      },
+      {
+        "timestamp": "14:15",
+        "text": "When more than one app starts a Live Activity, the system chooses which Live Activities are visible and displays both of them using the minimal presentation for each: one minimal presentation appears attached to the Dynamic Island while the other appears detached."
+      },
+      {
+        "timestamp": "14:34",
+        "text": "Your minimal view should only have the most critical information, as you have very limited space to work with."
+      },
+      {
+        "timestamp": "14:42",
+        "text": "For the minimal view in my Live Activity, the most important information to show is who the hero is and hero’s health, so I’ll show the avatar and the health level with a dynamic tint color."
+      },
+      {
+        "timestamp": "14:58",
+        "text": "This way, users will know when to help out their hero by looking at the minimal view. When users touch and hold a Live Activity in a compact or minimal presentation, the system displays the content in an expanded presentation. I need to support that too."
+      },
+      {
+        "timestamp": "15:18",
+        "text": "For the expanded presentation, the system divides the expanded presentation into different areas. The first closure of the DynamicIsland view builder represents the expanded content. Within that closure, each section content can be defined with the expanded region passing the specific position."
+      },
+      {
+        "timestamp": "15:41",
+        "text": "I’ll add the hero name and the avatar to the leading space, hero statistics to the trailing space, and at last, the health bar and the event description into the bottom space."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "In the end, my Dynamic Island UI looks simple and provides all the necessary information for the adventure."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "Now I’m ready to go on adventures with my favorite heroes, and follow along with the simple, yet immersive Live Activity UI that I just created. While designing your own UI, display only the most essential content in the Live Activity."
+      },
+      {
+        "timestamp": "16:24",
+        "text": "Keep it simple and show additional details on your app when the user taps on the Live Activity. Check out “Design dynamic Live Activities” for more information."
+      },
+      {
+        "timestamp": "16:38",
+        "text": "Use Live Activities as a powerful tool to show your glanceable and live information of an ongoing activity. With its simple configuration, create a dynamic way to engage with your users on iOS and iPadOS."
+      },
+      {
+        "timestamp": "16:54",
+        "text": "To learn more about pushing updates, check out “Update Live Activities with push notifications.” I can't wait to see what you'll build with ActivityKit."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "Thank you for watching! ♪ ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -77,6 +484,33 @@
       "code": "struct AdventureActivityConfiguration: Widget {\n    var body: some WidgetConfiguration {\n        ActivityConfiguration(for: AdventureAttributes.self) { context in\n            // ...\n        } dynamicIsland: { context in\n            DynamicIsland {\n                // Leading region\n                DynamicIslandExpandedRegion(.leading) {\n                    LiveActivityAvatarView(hero: hero)\n                }\n\n                // Expanded region\n                DynamicIslandExpandedRegion(.trailing) {\n                    StatsView(hero: hero, isStale: isStale)\n                }\n\n                // Bottom region\n                DynamicIslandExpandedRegion(.bottom) {\n                    HealthBar(currentHealthLevel: contentState.currentHealthLevel)\n                    EventDescriptionView(hero: hero, contentState: contentState)\n                }\n            } compactLeading: {\n                // ...\n            } compactTrailing: {\n                // ...\n            } minimal: {\n                // ...\n            }\n        }\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Intro",
+      "duration": "0:36"
+    },
+    {
+      "timestamp": "0:36",
+      "title": "Live Activity overview",
+      "duration": "3:47"
+    },
+    {
+      "timestamp": "4:23",
+      "title": "Lifecycle of Live Activities",
+      "duration": "6:20"
+    },
+    {
+      "timestamp": "10:43",
+      "title": "Building Live Activity UI",
+      "duration": "5:54"
+    },
+    {
+      "timestamp": "16:37",
+      "title": "Wrap-up",
+      "duration": "0:38"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -129,5 +563,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10185"
     }
   ],
-  "extractedAt": "2026-10-11T16:36:07.732Z"
+  "extractedAt": "2026-10-17T18:46:08.622Z"
 }

@@ -1,22 +1,14 @@
 import type { Mock } from 'vitest';
-/**
- * Tests for WWDC Data Source
- */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock the module before importing
 vi.mock('../../src/utils/wwdc-data-source.js');
 
-// Import after mocking
 import {
   loadGlobalMetadata,
   loadTopicIndex,
   loadYearIndex,
   loadVideoData,
-  loadAllVideos,
-  clearDataCache,
-  isDataAvailable,
 } from '../../src/utils/wwdc-data-source.js';
 
 describe('WWDC Data Source', () => {
@@ -131,71 +123,6 @@ describe('WWDC Data Source', () => {
       await expect(loadVideoData('2024', '99999')).rejects.toThrow(
         'Video not found: 2024-99999'
       );
-    });
-  });
-
-  describe('loadAllVideos', () => {
-    it('should load all videos', async () => {
-      const mockVideos = [
-        {
-          id: '10001',
-          title: 'Video 1',
-          year: '2024',
-        },
-        {
-          id: '10002',
-          title: 'Video 2',
-          year: '2024',
-        },
-      ];
-
-      (loadAllVideos as Mock).mockResolvedValue(mockVideos);
-
-      const result = await loadAllVideos();
-
-      expect(result).toEqual(mockVideos);
-      expect(loadAllVideos).toHaveBeenCalled();
-    });
-
-    it('should handle loading error', async () => {
-      (loadAllVideos as Mock).mockRejectedValue(
-        new Error('Failed to load WWDC video list')
-      );
-
-      await expect(loadAllVideos()).rejects.toThrow(
-        'Failed to load WWDC video list'
-      );
-    });
-  });
-
-  describe('clearDataCache', () => {
-    it('should clear the cache', () => {
-      (clearDataCache as Mock).mockImplementation(() => {
-        // Mock implementation
-      });
-
-      clearDataCache();
-
-      expect(clearDataCache).toHaveBeenCalled();
-    });
-  });
-
-  describe('isDataAvailable', () => {
-    it('should return true when data is available', async () => {
-      (isDataAvailable as Mock).mockResolvedValue(true);
-
-      const result = await isDataAvailable();
-
-      expect(result).toBe(true);
-      expect(isDataAvailable).toHaveBeenCalled();
-    });
-
-    it('should return false when data is not available', async () => {
-      (isDataAvailable as Mock).mockResolvedValue(false);
-
-      const result = await isDataAvailable();
-
-      expect(result).toBe(false);
     });
   });
 });

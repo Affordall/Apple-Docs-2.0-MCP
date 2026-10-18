@@ -11,7 +11,9 @@ vi.mock('../../src/utils/http-client.js');
 describe('resolve_references_batch', () => {
   it('lists the pages a page references, not its images, keeping code names in summaries', async () => {
     vi.mocked(httpClient.getJson).mockResolvedValue({
+      identifier: { url: 'doc://SwiftUI/NavigationStack', interfaceLanguage: 'swift' },
       metadata: { title: 'NavigationStack' },
+      topicSections: [{ title: 'Navigating', identifiers: ['doc://SwiftUI/Binding'] }],
       references: {
         'SwiftUI-PageImage-card.png': { type: 'image', identifier: 'SwiftUI-PageImage-card.png', variants: [] },
         'doc://SwiftUI/Binding': {

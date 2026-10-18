@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10096/",
   "title": "Explore Packages and Projects with Xcode Playgrounds",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools",
@@ -12,8 +11,264 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nWelcome to \"Explore Packages and Projects with Xcode Playgrounds.\" I'm Chris Miles, an engineering manager on the Xcode team.\n\nDevelopers love using Xcode Playgrounds to quickly try out new ideas and to learn and explore APIs and frameworks. Today, I'm excited to tell you about enhancements we've made to Xcode 12 to make Playgrounds work seamlessly with Swift packages and frameworks in your projects. In Xcode 12, Playgrounds is fully integrated with Xcode's modern build system. That integration brings with it a lot of improvements to how Playgrounds works with packages, projects and resources.\n\nFirst, I'll show you how Playgrounds now works well in Swift packages and makes a great option for package documentation containing runnable code.\n\nThen I'm going to demonstrate improvements for Playgrounds importing project targets, like frameworks and package dependencies.\n\nIn the final part of the presentation, I'm going to demonstrate working with resources that need build support, like ML models and asset catalogs, in a playground.\n\nSo, let's get started by looking at how Xcode Playgrounds works with Swift packages.\n\nHere I have a Swift package checked out called NutritionFacts. I'm gonna open it in Xcode by double-clicking \"Package.swift.\" NutritionFacts provides accurate nutritional information for many common types of food. It's a really handy package to use in recipe and food apps.\n\nWhat's great about NutritionFacts is the authors have included rich documentation explaining how to use the API, and, even better, the documentation was written as a playground. Playgrounds are great for documentation, and they now work seamlessly with packages in Xcode 12. So, let's take a look.\n\nIn the navigator, I'm gonna open the Playgrounds folder and select the NutritionFacts playground. Here, we see a description of the package followed by detailed documentation about how to use the API, along with example code snippets. And being a playground, we can run that code. Let's do that now by hitting \"execute\" in the toolbar.\n\nThe playground will execute, and on the right, we see a live view.\n\nThat is a view provided by the package. It shows NutritionFacts in a familiar format.\n\nIn the editor, we see an example of looking up an item by identifier and fetching nutritional information about it. The playground helps us understand the code by showing the result of each statement in the results bar on the right.\n\nAs you can see, Playgrounds in Xcode 12 work seamlessly with packages. This was made possible because of Playgrounds' integration with the modern build system, which knows how to build packages and make them available for importing into playground code. I recommend making use of a playground the next time you need to write documentation or a tutorial for your Swift package. Don't forget to take advantage of the fact that users can run the example code and see live results in the playground. Next, I'd like to show you how Xcode 12 makes it easier for Playgrounds to use framework and package dependencies from a project.\n\nI'm gonna use a project called Fruta, and let's open it in Xcode and run the project in the simulator. Fruta is an iOS and Mac app for browsing and ordering smoothies. You can even purchase smoothie recipes with Apple Pay so you can make your own smoothies at home.\n\nLet's take a look at the app in the simulator. We see a list of some of the smoothies available, and if we select one, we can see an option to buy it with Apple Pay, and scrolling up, we see some of the ingredients that are in the smoothie. Let's select one to see a detailed image, and tap the \"I\" button to see nutritional facts about that ingredient. Now, you may recognize this as the view provided by the NutritionFacts package. This project has a dependency on that package, as you can see in the left in the navigator.\n\nEven as a project dependency, any playgrounds in that package will still be available. Let's take a look by opening the package and opening the NutritionFacts playground that we opened earlier. Here, we see the same content, and, like before, we can execute the playground to see the results.\n\nSo, playgrounds in packages are available whether you open the package directly, like we did at the start, or whether it's part of your project as a package dependency, like it is here. Just remember that, like all files in a package dependency, the playground will be read-only.\n\nThis project also contains a framework called UtilityViews.\n\nLet's take a look at the project editor where we can see the UtilityView's framework target. It is now easier than before to use your frameworks in Playgrounds, as long as they are in the same workspace. Let me show you an example.\n\nIn the navigator, I'm gonna open the Playgrounds folder, and we see a playground called SmoothieLab. Let's open SmoothieLab. Notice some build activity at the top.\n\nThis was due to a new playground option in Xcode 12 called Build Active Scheme. Let me show you by opening the inspector, and here we see in the playground settings the new option at the bottom of the settings. When \"Build Active Scheme\" is enabled, it tells Xcode to automatically build all targets in the currently selected scheme and make any modules importable to the playground.\n\nSo, that's why when we opened the playground, Xcode built all of the targets for the currently selected scheme, and the playground could import the UtilityViews framework and the NutritionFacts package. SmoothieLab is a utility playground that we use to design new smoothies. We can select some raw ingredients, combine them in various quantities and then inspect their nutritional values.\n\nWe can even chart a calorie breakdown using a chart view from the UtilityViews framework.\n\nLet's run the playground to see the calorie breakdown for this smoothie.\n\nIn the live view, we see a chart of the calorie breakdown. Now, we usually like to keep the fat content to be less than about 25%, so let's tap the chart to take a look at the percentages.\n\nIt's about 33% in this case, so perhaps we could lower the amount of peanut butter, but I'll work on that later.\n\nAs you can see, this playground is a handy tool for helping us to combine ingredients to design well-balanced smoothies, at least from a nutritional perspective. We haven't designed an algorithm for calculating how good a smoothie might taste, but I'm fine with that as tasting is my favorite part of smoothie design. Playgrounds can now work seamlessly with project targets, such as frameworks and packages. Xcode will take care of building those targets so that they can be imported into your playground code. Just make sure to enable \"Build Active Scheme.\" The good news is that this option is enabled by default for new playgrounds.\n\nAlso make sure that the module you want to import is either part of the active scheme or a dependency on another target built by that scheme.\n\nAnother great enhancement in Xcode 12 is the availability of full build logs for playgrounds. Let's take a look at the build log for SmoothieLab. We'll switch to the report navigator, and at the top, we see the build log for the SmoothieLab playground. So, let's select it to open the build logs. In the build logs, we see all of the build details for the targets that were built as part of the active scheme, as well as the module that was built to support the playground, containing compiled sources and resources from within the playground. Build logs are invaluable for diagnosing build issues, and we're happy that they're available for playgrounds.\n\nAnother benefit of Playgrounds' integration with Xcode's modern build system, is that all resource types supported by the build system are now supported in Playgrounds. Let me show you an example of using some resources in a playground that require build system support.\n\nReturning to the Fruta project, I'd like to add a feature to Fruta where the user can point their iPhone's camera at their favorite fruit, and Fruta would magically suggest smoothies that match the fruit that it could see. To do this I'd like to use machine learning to perform object detection and image classification.\n\nThere are a number of classifiers available, so I'd like to try one of them with a few sample images to see if it would be suitable for the task, and I'm going to do that using a playground in Xcode. First, let's get some sample fruit images to test with, and I think we happen to have some already available in the Fruta project.\n\nLet's switch back to the simulator and navigate back, and remember we saw the image of some oranges before? And if we dismiss that, we see images of the other ingredients. So, let's find these in the project.\n\nI'm gonna hide the simulator, as we don't need that anymore, expand the Shared folder, and let's take a look in the asset catalog.\n\nWe see an app icon, some color sets, and in the Ingredients folder, we see all the images representing the ingredients that we put in our smoothies. I think this will be a good sample set for testing our machine-learning model. So, let's make a copy of this by Option-dragging this out to the desktop.\n\nAnd now we don't need the project open, so we'll close that, and instead create a new playground with \"File,\" \"New Playground.\" We use an iOS blank playground.\n\nAnd let's call it ML Fruta, and store it on the desktop.\n\nI'm gonna expand the size of the window to give us some more working space. Now, let's drag in the asset catalog into the resources folder of the playground. Notice that Playground compiles the asset catalog for us so that we can access the resources from our code.\n\nWe can do that using UIImage(named.\n\nSpecify the name of the folder within the asset catalog and the name of an image. And now let's execute the playground to see the results.\n\nIn the results, we see the width of the image, and if we QuickLook the image, we see a preview. That looks great. So, we have access to images from that asset catalog. Now we just need a machine-learning model.\n\nI'm gonna switch to Safari where I've been browsing the machine learning section of the Apple Developer website.\n\nIn the Core ML Models page, we see a number of image classification and object detection models. I'd like to try out this model called YOLOv3, which is able to detect multiple objects in a scene and classify each of them. I think that'd be good for pointing the camera at a bowl of fruit and having it identify all the fruit that it could see. So, let's click \"View models,\" and we can download the full-precision model at the top. To save us time, I've already done this, so let's minimize Safari.\n\nAnd I'll drag in the model from the desktop into the resources section of the playground. Xcode will automatically compile the model for us, and while it's doing that, let's select the model to see details about it in the editor. An important detail is the model class up near the top here. It tells us the name of the class that will be automatically generated by the build system for use in our Swift code. So, let's make use of that now.\n\nReturning to the playground, let's add the code to import CoreML. Then I'll call my variable yoloModel, and we'll use the class that was automatically generated for us, YOLOv3, to create a new instance with a default configuration, and we'll fetch the model property.\n\nLet's run the playground to see the results.\n\nWe get back a model description, which we can preview here, and see details about the inputs, outputs and other properties. So, that's great. We now have a machine-learning model, and images to test with, we just need to combine them together. An easy way to do that is using the Vision framework. I'm gonna replace this code and instead import the Vision framework.\n\nI'll define an array with three ingredients to start testing with, and then we can use our yoloModel to create an instance of the Vision framework's CoreMLModel. And with that, we can create a CoreMLRequest that we can use to make machine-learning requests on images.\n\nNow, I'd like to visualize the results of these requests by showing each image, and drawing a rectangle around any objects detected in the image. To help do that, I've got some code that I've used in the past. Let me QuickLook it for you. It defines a couple of structs to hold the results of our object detection and some SwiftUI views that we use to show the images and draw rectangles around any objects detected in the image. We won't go into detail about this code, but we'll make it available on our session website.\n\nSo, after dragging the support code into the sources section of the playground, Xcode will compile that, and now we can make use of the code.\n\nWe'll iterate over the ingredient names, fetch an image for each one from the asset catalog, and then we'll create an image request handler with that image.\n\nWe can use that to perform our machine-learning request. Then we just need to pass the results. Each result is a RecognizedObjectObservation.\n\nWe'll enumerate the observations, we'll fetch the label with the highest confidence and the bounding box of that object within the image, and return that as a RecognizedObject.\n\nFinally, for each image, we'll return the results as an ObjectDetectionResult, and let's preview the results that we get at the bottom.\n\nXcode will iterate over the three images, and then we can preview the results. Indeed we have a result for each image, so let's visualize them.\n\nWe can do that by setting a playground LiveView to the RecognizedObjectVisualizer, and pass it the results. Let's continue running.\n\nOn the right, we see the results of our object detection. The first image we passed in was of a banana, and the orange indicates that a banana was detected with 100% accuracy. So, that's a pretty good result.\n\nThe second image was of three oranges, and we can see that all three oranges were detected with high confidence. So, that worked really well.\n\nThe third image was of a bottle of almond milk, and we can see that the machine-learning model detected a bottle with pretty high confidence, although it didn't classify it specifically as a bottle of milk or almond milk. And that would be because this model has been trained to detect bottles but hasn't been specifically trained to detect bottles of milk or almond milk. And I think that's fine. For what this model's been trained for, it performed really well. I think this would be the model to use for our app. The next step would be to go ahead and train that model even further, with the types of ingredients that we wanna detect for our use case. To find out more about how to train your ML models, I suggest watching the WWDC 2019 session called \"Training Object Detection Models in Create ML.\" So, that was an example of using resources that require build system support in Playgrounds. Let's summarize what I've covered in this presentation. In Xcode 12, Playgrounds is fully integrated with the modern build system.\n\nWhen the new option \"Build Active Scheme\" is enabled, all targets in the currently selected scheme will be automatically built and made importable into playgrounds that are in the same workspace. Any frameworks or Swift packages can then be imported into your playground code.\n\nAll resource types the build system knows about can now be used in Playgrounds. For example, asset catalogs and ML Models, like I demonstrated.\n\nFull playground build logs are now available in the report navigator, making it much easier to diagnose playground build issues.\n\nPlaygrounds are great for documenting packages and frameworks with runnable code. And don't forget that playgrounds are a handy tool for quickly coding up new ideas or writing utility code. I look forward to hearing how playgrounds are able to help you make your packages and projects even better. Thank you for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:09",
+        "text": "Welcome to \"Explore Packages and Projects with Xcode Playgrounds.\" I'm Chris Miles, an engineering manager on the Xcode team."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "Developers love using Xcode Playgrounds to quickly try out new ideas and to learn and explore APIs and frameworks. Today, I'm excited to tell you about enhancements we've made to Xcode 12 to make Playgrounds work seamlessly with Swift packages and frameworks in your projects. In Xcode 12, Playgrounds is fully integrated with Xcode's modern build system. That integration brings with it a lot of improvements to how Playgrounds works with packages, projects and resources."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "First, I'll show you how Playgrounds now works well in Swift packages and makes a great option for package documentation containing runnable code."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "Then I'm going to demonstrate improvements for Playgrounds importing project targets, like frameworks and package dependencies."
+      },
+      {
+        "timestamp": "0:57",
+        "text": "In the final part of the presentation, I'm going to demonstrate working with resources that need build support, like ML models and asset catalogs, in a playground."
+      },
+      {
+        "timestamp": "1:06",
+        "text": "So, let's get started by looking at how Xcode Playgrounds works with Swift packages."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Here I have a Swift package checked out called NutritionFacts. I'm gonna open it in Xcode by double-clicking \"Package.swift.\" NutritionFacts provides accurate nutritional information for many common types of food. It's a really handy package to use in recipe and food apps."
+      },
+      {
+        "timestamp": "1:25",
+        "text": "What's great about NutritionFacts is the authors have included rich documentation explaining how to use the API, and, even better, the documentation was written as a playground. Playgrounds are great for documentation, and they now work seamlessly with packages in Xcode 12. So, let's take a look."
+      },
+      {
+        "timestamp": "1:40",
+        "text": "In the navigator, I'm gonna open the Playgrounds folder and select the NutritionFacts playground. Here, we see a description of the package followed by detailed documentation about how to use the API, along with example code snippets. And being a playground, we can run that code. Let's do that now by hitting \"execute\" in the toolbar."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "The playground will execute, and on the right, we see a live view."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "That is a view provided by the package. It shows NutritionFacts in a familiar format."
+      },
+      {
+        "timestamp": "2:10",
+        "text": "In the editor, we see an example of looking up an item by identifier and fetching nutritional information about it. The playground helps us understand the code by showing the result of each statement in the results bar on the right."
+      },
+      {
+        "timestamp": "2:23",
+        "text": "As you can see, Playgrounds in Xcode 12 work seamlessly with packages. This was made possible because of Playgrounds' integration with the modern build system, which knows how to build packages and make them available for importing into playground code. I recommend making use of a playground the next time you need to write documentation or a tutorial for your Swift package. Don't forget to take advantage of the fact that users can run the example code and see live results in the playground. Next, I'd like to show you how Xcode 12 makes it easier for Playgrounds to use framework and package dependencies from a project."
+      },
+      {
+        "timestamp": "2:54",
+        "text": "I'm gonna use a project called Fruta, and let's open it in Xcode and run the project in the simulator. Fruta is an iOS and Mac app for browsing and ordering smoothies. You can even purchase smoothie recipes with Apple Pay so you can make your own smoothies at home."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "Let's take a look at the app in the simulator. We see a list of some of the smoothies available, and if we select one, we can see an option to buy it with Apple Pay, and scrolling up, we see some of the ingredients that are in the smoothie. Let's select one to see a detailed image, and tap the \"I\" button to see nutritional facts about that ingredient. Now, you may recognize this as the view provided by the NutritionFacts package. This project has a dependency on that package, as you can see in the left in the navigator."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "Even as a project dependency, any playgrounds in that package will still be available. Let's take a look by opening the package and opening the NutritionFacts playground that we opened earlier. Here, we see the same content, and, like before, we can execute the playground to see the results."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "So, playgrounds in packages are available whether you open the package directly, like we did at the start, or whether it's part of your project as a package dependency, like it is here. Just remember that, like all files in a package dependency, the playground will be read-only."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "This project also contains a framework called UtilityViews."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "Let's take a look at the project editor where we can see the UtilityView's framework target. It is now easier than before to use your frameworks in Playgrounds, as long as they are in the same workspace. Let me show you an example."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "In the navigator, I'm gonna open the Playgrounds folder, and we see a playground called SmoothieLab. Let's open SmoothieLab. Notice some build activity at the top."
+      },
+      {
+        "timestamp": "4:35",
+        "text": "This was due to a new playground option in Xcode 12 called Build Active Scheme. Let me show you by opening the inspector, and here we see in the playground settings the new option at the bottom of the settings. When \"Build Active Scheme\" is enabled, it tells Xcode to automatically build all targets in the currently selected scheme and make any modules importable to the playground."
+      },
+      {
+        "timestamp": "4:56",
+        "text": "So, that's why when we opened the playground, Xcode built all of the targets for the currently selected scheme, and the playground could import the UtilityViews framework and the NutritionFacts package. SmoothieLab is a utility playground that we use to design new smoothies. We can select some raw ingredients, combine them in various quantities and then inspect their nutritional values."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "We can even chart a calorie breakdown using a chart view from the UtilityViews framework."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "Let's run the playground to see the calorie breakdown for this smoothie."
+      },
+      {
+        "timestamp": "5:32",
+        "text": "In the live view, we see a chart of the calorie breakdown. Now, we usually like to keep the fat content to be less than about 25%, so let's tap the chart to take a look at the percentages."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "It's about 33% in this case, so perhaps we could lower the amount of peanut butter, but I'll work on that later."
+      },
+      {
+        "timestamp": "5:49",
+        "text": "As you can see, this playground is a handy tool for helping us to combine ingredients to design well-balanced smoothies, at least from a nutritional perspective. We haven't designed an algorithm for calculating how good a smoothie might taste, but I'm fine with that as tasting is my favorite part of smoothie design. Playgrounds can now work seamlessly with project targets, such as frameworks and packages. Xcode will take care of building those targets so that they can be imported into your playground code. Just make sure to enable \"Build Active Scheme.\" The good news is that this option is enabled by default for new playgrounds."
+      },
+      {
+        "timestamp": "6:20",
+        "text": "Also make sure that the module you want to import is either part of the active scheme or a dependency on another target built by that scheme."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "Another great enhancement in Xcode 12 is the availability of full build logs for playgrounds. Let's take a look at the build log for SmoothieLab. We'll switch to the report navigator, and at the top, we see the build log for the SmoothieLab playground. So, let's select it to open the build logs. In the build logs, we see all of the build details for the targets that were built as part of the active scheme, as well as the module that was built to support the playground, containing compiled sources and resources from within the playground. Build logs are invaluable for diagnosing build issues, and we're happy that they're available for playgrounds."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "Another benefit of Playgrounds' integration with Xcode's modern build system, is that all resource types supported by the build system are now supported in Playgrounds. Let me show you an example of using some resources in a playground that require build system support."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "Returning to the Fruta project, I'd like to add a feature to Fruta where the user can point their iPhone's camera at their favorite fruit, and Fruta would magically suggest smoothies that match the fruit that it could see. To do this I'd like to use machine learning to perform object detection and image classification."
+      },
+      {
+        "timestamp": "7:30",
+        "text": "There are a number of classifiers available, so I'd like to try one of them with a few sample images to see if it would be suitable for the task, and I'm going to do that using a playground in Xcode. First, let's get some sample fruit images to test with, and I think we happen to have some already available in the Fruta project."
+      },
+      {
+        "timestamp": "7:45",
+        "text": "Let's switch back to the simulator and navigate back, and remember we saw the image of some oranges before? And if we dismiss that, we see images of the other ingredients. So, let's find these in the project."
+      },
+      {
+        "timestamp": "7:57",
+        "text": "I'm gonna hide the simulator, as we don't need that anymore, expand the Shared folder, and let's take a look in the asset catalog."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "We see an app icon, some color sets, and in the Ingredients folder, we see all the images representing the ingredients that we put in our smoothies. I think this will be a good sample set for testing our machine-learning model. So, let's make a copy of this by Option-dragging this out to the desktop."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "And now we don't need the project open, so we'll close that, and instead create a new playground with \"File,\" \"New Playground.\" We use an iOS blank playground."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "And let's call it ML Fruta, and store it on the desktop."
+      },
+      {
+        "timestamp": "8:38",
+        "text": "I'm gonna expand the size of the window to give us some more working space. Now, let's drag in the asset catalog into the resources folder of the playground. Notice that Playground compiles the asset catalog for us so that we can access the resources from our code."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "We can do that using UIImage(named."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "Specify the name of the folder within the asset catalog and the name of an image. And now let's execute the playground to see the results."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "In the results, we see the width of the image, and if we QuickLook the image, we see a preview. That looks great. So, we have access to images from that asset catalog. Now we just need a machine-learning model."
+      },
+      {
+        "timestamp": "9:17",
+        "text": "I'm gonna switch to Safari where I've been browsing the machine learning section of the Apple Developer website."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "In the Core ML Models page, we see a number of image classification and object detection models. I'd like to try out this model called YOLOv3, which is able to detect multiple objects in a scene and classify each of them. I think that'd be good for pointing the camera at a bowl of fruit and having it identify all the fruit that it could see. So, let's click \"View models,\" and we can download the full-precision model at the top. To save us time, I've already done this, so let's minimize Safari."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "And I'll drag in the model from the desktop into the resources section of the playground. Xcode will automatically compile the model for us, and while it's doing that, let's select the model to see details about it in the editor. An important detail is the model class up near the top here. It tells us the name of the class that will be automatically generated by the build system for use in our Swift code. So, let's make use of that now."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "Returning to the playground, let's add the code to import CoreML. Then I'll call my variable yoloModel, and we'll use the class that was automatically generated for us, YOLOv3, to create a new instance with a default configuration, and we'll fetch the model property."
+      },
+      {
+        "timestamp": "10:33",
+        "text": "Let's run the playground to see the results."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "We get back a model description, which we can preview here, and see details about the inputs, outputs and other properties. So, that's great. We now have a machine-learning model, and images to test with, we just need to combine them together. An easy way to do that is using the Vision framework. I'm gonna replace this code and instead import the Vision framework."
+      },
+      {
+        "timestamp": "10:58",
+        "text": "I'll define an array with three ingredients to start testing with, and then we can use our yoloModel to create an instance of the Vision framework's CoreMLModel. And with that, we can create a CoreMLRequest that we can use to make machine-learning requests on images."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "Now, I'd like to visualize the results of these requests by showing each image, and drawing a rectangle around any objects detected in the image. To help do that, I've got some code that I've used in the past. Let me QuickLook it for you. It defines a couple of structs to hold the results of our object detection and some SwiftUI views that we use to show the images and draw rectangles around any objects detected in the image. We won't go into detail about this code, but we'll make it available on our session website."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "So, after dragging the support code into the sources section of the playground, Xcode will compile that, and now we can make use of the code."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "We'll iterate over the ingredient names, fetch an image for each one from the asset catalog, and then we'll create an image request handler with that image."
+      },
+      {
+        "timestamp": "11:59",
+        "text": "We can use that to perform our machine-learning request. Then we just need to pass the results. Each result is a RecognizedObjectObservation."
+      },
+      {
+        "timestamp": "12:07",
+        "text": "We'll enumerate the observations, we'll fetch the label with the highest confidence and the bounding box of that object within the image, and return that as a RecognizedObject."
+      },
+      {
+        "timestamp": "12:17",
+        "text": "Finally, for each image, we'll return the results as an ObjectDetectionResult, and let's preview the results that we get at the bottom."
+      },
+      {
+        "timestamp": "12:24",
+        "text": "Xcode will iterate over the three images, and then we can preview the results. Indeed we have a result for each image, so let's visualize them."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "We can do that by setting a playground LiveView to the RecognizedObjectVisualizer, and pass it the results. Let's continue running."
+      },
+      {
+        "timestamp": "12:41",
+        "text": "On the right, we see the results of our object detection. The first image we passed in was of a banana, and the orange indicates that a banana was detected with 100% accuracy. So, that's a pretty good result."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "The second image was of three oranges, and we can see that all three oranges were detected with high confidence. So, that worked really well."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "The third image was of a bottle of almond milk, and we can see that the machine-learning model detected a bottle with pretty high confidence, although it didn't classify it specifically as a bottle of milk or almond milk. And that would be because this model has been trained to detect bottles but hasn't been specifically trained to detect bottles of milk or almond milk. And I think that's fine. For what this model's been trained for, it performed really well. I think this would be the model to use for our app. The next step would be to go ahead and train that model even further, with the types of ingredients that we wanna detect for our use case. To find out more about how to train your ML models, I suggest watching the WWDC 2019 session called \"Training Object Detection Models in Create ML.\" So, that was an example of using resources that require build system support in Playgrounds. Let's summarize what I've covered in this presentation. In Xcode 12, Playgrounds is fully integrated with the modern build system."
+      },
+      {
+        "timestamp": "13:53",
+        "text": "When the new option \"Build Active Scheme\" is enabled, all targets in the currently selected scheme will be automatically built and made importable into playgrounds that are in the same workspace. Any frameworks or Swift packages can then be imported into your playground code."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "All resource types the build system knows about can now be used in Playgrounds. For example, asset catalogs and ML Models, like I demonstrated."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "Full playground build logs are now available in the report navigator, making it much easier to diagnose playground build issues."
+      },
+      {
+        "timestamp": "14:25",
+        "text": "Playgrounds are great for documenting packages and frameworks with runnable code. And don't forget that playgrounds are a handy tool for quickly coding up new ideas or writing utility code. I look forward to hearing how playgrounds are able to help you make your packages and projects even better. Thank you for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -83,5 +338,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/424"
     }
   ],
-  "extractedAt": "2026-10-11T16:45:10.156Z"
+  "extractedAt": "2026-10-17T18:55:03.789Z"
 }

@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10141/",
   "title": "Explore USD tools and rendering",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Graphics & Games",
@@ -12,8 +11,340 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ instrumental hip hop music ♪ Hi there. Welcome to this year's WWDC. My name is Stella. And I'm Alex. Stella and I work together on the many parts of USD at Apple. Today we'll explore with you updates to USD tools and rendering. Take it away, Stella! USD is a foundational technology that, with the growing and deepening integration into content creation tools, is enabling more and more ways of creating assets and content, rendering for games, AR, film, and the web, all with USD at the center.\n\nToday, we will focus on two parts of the ecosystem: tools and rendering.\n\nLet's start with updates to our USD tools.\n\nWe'll then show you how your assets look even better with new lighting in AR Quick Look, take a deep dive into USD rendering, and last but not least, show you how to integrate Hydra.\n\nLet's get started with USD Tools in the Apple ecosystem.\n\nWe'll cover USDZ Tools, Reality Converter, and then follow up with additional tools and frameworks that can help you create USDZ content.\n\nUSDZ Tools is a package that contains essential command line USD Python tools to help you generate, validate, and inspect USDZ files. The package also includes a converter called usdzconvert that creates USDZ files from other major 3D file formats.\n\nThe Python scripts give you powerful tools for automation and batch processing. Also, they are a great way for you to explore USD and learn how to use the API.\n\nThis year, we're bringing you Python 3 and Apple Silicon support. We've also upgraded the USD version to give you simple access to new USD features and performance improvements.\n\nOn top of that, we added great new features to usdzconvert. You can now convert OBJ files with materials to USDZ with the useObjMtl flag. We also added support for points and lines from GLTF files, and scene time for animations from FBX files. To display all usdzconvert options and ways to customize your conversion, just type \"usdzconvert --help\" on the terminal.\n\nThis will show you all the options you can use with usdzconvert, such as adding copyright information or providing the diffuseColor or normalMap for your 3D model, and much more. Alternatively, if you prefer a UI editor for your workflow over using the command line, we also have Reality Converter, which is built using the USDZ tools and provides the same capabilities as usdzconvert, but in an editor window, making it easy to convert, view, and customize USD content on MacOS.\n\nSimply import common 3D file formats, such as OBJ, GLTF, and FBX, to view the converted USDZ result. This year, we've also improved the UI to streamline your workflow. You can select the texture to view more information...\n\nCustomize material properties with your own textures...\n\nAdd copyright or edit file metadata...\n\nAnd choose classic or new lighting, which we'll get into more details later in the session.\n\nYou can even preview your USDZ object under a variety of lighting conditions with built-in options and adjust exposure accordingly On the asset side, we added a new feature to let you choose texture quality while exporting a USDZ file. By default, the textures are exported in their original, uncompressed size. But, if you prefer to reduce the size of your USDZ files, you now have the option to compress textures to the JPEG format.\n\nIn this example, we used object capture to scan this chess piece in high resolution. In order to reduce the file size without losing mesh detail, we used RealityConverter to export the model with compressed textures. The visual difference is hardly noticeable, and we got a whopping 80% reduction in the resulting file size! Here is more exciting news: RealityConverter can now fix issues with your USD assets automatically! It will correct mismatched attributes and connection types, fix a stage with multiple top-level prims and a missing default prim, update deprecated attributes, and add missing stage metadata. We've also added universal binary support so now it runs natively on Apple Silicon.\n\nNow, what if you want to create 3D models from scratch? Last year, we launched Object Capture as a RealityKit API on macOS, which provides an innovative way to create USDZ assets. You can then use Reality Composer to compose a scene with multiple assets. This year, we are bringing you RoomPlan API, which lets you create parametric 3D scans of your room.\n\nI highly recommend you to check out these 3 sessions. Together, these technologies make it easier than ever for anyone to create immersive AR experiences. All these tools we covered today are available for you to download right now on our AR Creation Tools page on the Apple developer website. Please check them out! Next, let's take a look+ at AR Quick Look's new lighting.\n\nAR Quick Look is the built-in, system-wide AR viewer on iOS which enables you to place 3D USDZ objects in your physical space, like on a table, a wall, or a floor, and interact with them with simple touch gestures. You can even make interactive scenes built with Reality Composer and save them to a USDZ file which you can share with others on iMessage, Mail, Notes, and more. We constantly strive to make AR Quick Look rendering more realistic, and this year, we are introducing improved lighting in AR Quick Look, which is brighter, with enhanced contrast and improved shape definition to make your assets look even better.\n\nHere is an example of AirPods Pro in object mode with classic and new lighting. The AirPods Pro look great in both lighting conditions, and you will notice the new lighting option offers brighter color, higher contrast, and more highlights.\n\nNow let's place the AirPods Max on the desk to view it in AR mode with new lighting! Stunning, isn't it? So how do you apply the new lighting to your assets? It's really simple. You just have to pick the lighting that works best for your content by setting the new preferredIblVersion metadata in your USDZ file.\n\nHere we have set the value of the preferredIblVersion to 2, which will indicate AR Quick Look to use the new lighting system.\n\nLet's understand this in more detail. The preferredIBLVersion metadata can hold values of 0,1, and 2.\n\nAn asset with preferredIblVersion set to 0 will use the system default lighting.\n\nIf set to 1, it will continue to use the classic lighting.\n\nA value of 2 will give you the new lighting.\n\nThis means you can easily update your current assets to the new lighting as well! We recommend that you make an explicit choice and set this metadata in all of your assets. To do that, you can either use usdzconvert with the flag preferrediblversion. For example, here is how to use the flag to convert the fire hydrant OBJ file to USDZ with the new lighting. Or you can use Reality Converter, which will now use the new lighting by default.\n\nBut if you want to use the classic lighting, there is a new option in the Property Panel.\n\nHere we preview the AirPods Max asset with both the classic and new lighting.\n\nThis provides an easy way to compare the differences.\n\nBy clicking the lighting icon, the applied lighting will also be highlighted for your reference.\n\nLastly, for assets without this metadata, AR Quick Look will determine the lighting version automatically based on the file's date-time stamp.\n\nIf the asset was created after July 1st, 2022, it will use the new lighting.\n\nOlder assets will continue to use the classic lighting so they don't change how they look.\n\nNow, I'll hand it over to Alex for USD rendering. Thanks, Stella. We've already seen a lot of rendered USD assets today. Now we'll explore what makes USD rendering and Hydra a great choice for your 3D content creation pipeline and how you can integrate it in your own applications.\n\nFirst, let's take a step back and talk about rendering in general.\n\nA renderer takes a collection of 3D models, cameras, and lights as input and uses them to generate an image. There are many different renderers, and each one of them is built for a specific purpose and optimized for a different use case.\n\nSome renderers are designed for real-time applications like rendering a character in a game or an AR scene.\n\nOthers take much longer but produce a more photorealistic image, for example, producing visual effects for a Hollywood movie.\n\nAll renderers make choices about their features and are unique.\n\nDifferent USD renderers for different use cases also exist on Apple platforms. We're adding documentation about these different renderers to developer.apple.com.\n\nIt will help you understand the differences between them, explain which USD features they support, and provide guidance on how to author USDs that work best for you.\n\nOne of the renderers on Apple platforms is RealityKit, which features a photorealistic rendering system, optimized for interactive augmented reality experiences, and is used in AR Quick Look. It is the primary renderer of USDZ files.\n\nAnother option for USD rendering on macOS is Pixar's open-source renderer, Storm. It is optimized for production-grade assets and designed for real-time preview of large-scale scenes.\n\nIt's a great technology for you to visualize and iterate on assets as they flow through your content creation pipeline.\n\nStorm uses a technology called Hydra.\n\nHydra is a core aspect of the USD open source project. So next, let's understand Hydra and its connection to Storm. We start with this diagram from earlier. Here, we use Storm as the renderer.\n\nThe input is usually called \"the scene graph,\" and Storm produces a preview render of it.\n\nBut what if you want to generate a photorealistic image of the same scene using a different renderer? That's exactly what Hydra is made for. Instead of tightly coupling the scene to the renderer, Hydra acts as an abstract layer in between them to transport data from scenes to renderers.\n\nThis allows you to easily swap out your renderer based on your needs at any time without any changes to your scene graph. For example, you might use Storm and Pixar's RenderMan.\n\nIn your content creation pipeline, you can use Storm for fast renders and quick iteration, and then switch to RenderMan to produce the final image when you're ready.\n\nThe same goes for the scene graph. Your input to Hydra can be a USD scene graph or a different one.\n\nThis allows you to leverage the same renderer in multiple applications even if each one of them has their own, totally different scene graph. The interfaces which connect Hydra with scene graphs and renderers are called delegates. Scene graphs are connected to Hydra via Scene Delegates, and Renderers are connected to Hydra via Render Delegates. And that is Hydra for you! Foundry's Nuke 13 is already using Hydra to render the viewport, enabling Nuke artists on macOS to have better quality and an interactive experience in Nuke's 3D system.\n\nThis is achieved by using Hydra with a custom scene delegate and Metal-accelerated Storm.\n\nWe are excited to share that we've worked with Pixar Animation Studios to publicly release Metal accelerated Storm to open source. It is ready for you to use in USD 22.05. Now that we've seen the power of Hydra, let's go through a Hydra sample application with the typical use case of a USD scene graph and Storm as renderer. It will get you started with using Hydra to build content creation tools and 3D workflow applications.\n\nOur sample application, HydraPlayer, is very simple but powerful. It renders a USD file with Storm and lets us move the camera around it.\n\nAnd we're excited to make HydraPlayer a public sample project to get you started right away! It is available in the session resources and comes with full instructions in the readme.\n\nI encourage you to pause this video now, download the project, and then follow along as we walk through it.\n\nIn your Xcode project, you will find 4 classes: The AppDelegate, Camera, Renderer, and View Controller. The AppDelegate is basically your root object and manages interactions with the system. The camera class is a simple representation of the USD scene camera to make it easy to translate the user input.\n\nThe renderer class will handle all our interactions with USD and Hydra.\n\nLast but not least, the ViewController handles our user input.\n\nBefore we can build and launch HydraPlayer, there are three things to do: prepare the environment, use Rosetta on Apple Silicon Macs, and download and build USD & Hydra. So let's get started.\n\nFirst, we prepare our development environment. Make sure you have Xcode, Python, and CMake installed.\n\nNow let's open up a terminal for the other two steps.\n\nIf you are on an Apple Silicon Mac, you need to run under Rosetta while USD is transitioning to fully support arm64. To do this, use the arch command.\n\nOnce your environment is ready, we have to download the USD and Hydra source code. Both live in the same GitHub repository at PixarAnimationStudios/USD.\n\nNow that we have the code, we can build it. USD comes with a convenient Python build script. We add the flags \"generator Xcode\" and \"no-python\" and specify where we want to install USD to.\n\nLet's put it next to the source code at \"USDInstall.\" Once USD finished building, we are ready to build HydraPlayer! Let's go back to this diagram one more time and use it to identify key parts of HydraPlayer to check out in detail.\n\nWe'll look at how to load the 3D models, how to set up the camera, and set the scene light. Then we'll learn how to get our scene graph to Storm and finally, how to produce an image for the application window.\n\nSo let's get started with loading our 3D models from USD. In viewDidAppear in our ViewController, we create a file picker with an NSOpenPanel when the view appears the first time.\n\nOnce a file has been selected, the renderer can start setting up our scene and load the USD file.\n\nLoading the file is very simple with the USD API. We simply open the USD stage at the file path.\n\nThat's it. We have our file loaded.\n\nNext, we set up our camera. In our code, this is straightforward. In setupCamera, we first create a new scene camera.\n\nThen we calculate the world size and center based on our scene. Next, move our camera at a good distance and then focus on the center. This way, our camera captures the whole scene.\n\nGreat, now we have our camera set up. Next, lighting. We keep it easy and create one simple ambient light and set its position to match the camera, and that's it. And with that, we have our full scene with 3D models, a camera and a light! We can now pass our scene to Storm. First, we need to initialize our render engine. Here, we create a new UsdImagingGLEngine, which is the class name of Storm. The most important parameter here is the rootPath. It points the engine to our USD stage with our 3D models. To learn more about the other parameters and UsdImagingGLEngine, please check out Pixar's USD API documentation.\n\nNext, we set our camera in our engine and set our lighting setup. And last but not least, we define how we want Storm to render by setting render parameters. For example, we want to render a transparent background so that the rendered image works nicely with our app color scheme. Important for scenes with animation, this is also where we specify the time code.\n\nNow we're ready to render an image! We've already done all the necessary setup, so the render command is just one line of code. We get the result and display it in our window, and there we are! We're rendering the USD toy plane! And actually, we're rendering not just one plane. HydraPlayer can easily render thousands of animated assets with tens of millions of triangles.\n\nIf you haven't already, check out the resources for this session, download the sample project, and have fun exploring it further.\n\nTogether we explored updates to Apple's USD tools that make them more powerful and make your assets look even better. We learned about Hydra's features and went through the HydraPlayer sample project to see how you can integrate it into your own applications.\n\nTo find out more about important concepts of USD, check out the session \"Understand USD fundamentals.\n\nThank you. ♪ ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:01",
+        "text": "♪ instrumental hip hop music ♪ Hi there. Welcome to this year's WWDC. My name is Stella. And I'm Alex. Stella and I work together on the many parts of USD at Apple. Today we'll explore with you updates to USD tools and rendering. Take it away, Stella! USD is a foundational technology that, with the growing and deepening integration into content creation tools, is enabling more and more ways of creating assets and content, rendering for games, AR, film, and the web, all with USD at the center."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Today, we will focus on two parts of the ecosystem: tools and rendering."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "Let's start with updates to our USD tools."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "We'll then show you how your assets look even better with new lighting in AR Quick Look, take a deep dive into USD rendering, and last but not least, show you how to integrate Hydra."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "Let's get started with USD Tools in the Apple ecosystem."
+      },
+      {
+        "timestamp": "1:24",
+        "text": "We'll cover USDZ Tools, Reality Converter, and then follow up with additional tools and frameworks that can help you create USDZ content."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "USDZ Tools is a package that contains essential command line USD Python tools to help you generate, validate, and inspect USDZ files. The package also includes a converter called usdzconvert that creates USDZ files from other major 3D file formats."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "The Python scripts give you powerful tools for automation and batch processing. Also, they are a great way for you to explore USD and learn how to use the API."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "This year, we're bringing you Python 3 and Apple Silicon support. We've also upgraded the USD version to give you simple access to new USD features and performance improvements."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "On top of that, we added great new features to usdzconvert. You can now convert OBJ files with materials to USDZ with the useObjMtl flag. We also added support for points and lines from GLTF files, and scene time for animations from FBX files. To display all usdzconvert options and ways to customize your conversion, just type \"usdzconvert --help\" on the terminal."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "This will show you all the options you can use with usdzconvert, such as adding copyright information or providing the diffuseColor or normalMap for your 3D model, and much more. Alternatively, if you prefer a UI editor for your workflow over using the command line, we also have Reality Converter, which is built using the USDZ tools and provides the same capabilities as usdzconvert, but in an editor window, making it easy to convert, view, and customize USD content on MacOS."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "Simply import common 3D file formats, such as OBJ, GLTF, and FBX, to view the converted USDZ result. This year, we've also improved the UI to streamline your workflow. You can select the texture to view more information..."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "Customize material properties with your own textures..."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "Add copyright or edit file metadata..."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "And choose classic or new lighting, which we'll get into more details later in the session."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "You can even preview your USDZ object under a variety of lighting conditions with built-in options and adjust exposure accordingly On the asset side, we added a new feature to let you choose texture quality while exporting a USDZ file. By default, the textures are exported in their original, uncompressed size. But, if you prefer to reduce the size of your USDZ files, you now have the option to compress textures to the JPEG format."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "In this example, we used object capture to scan this chess piece in high resolution. In order to reduce the file size without losing mesh detail, we used RealityConverter to export the model with compressed textures. The visual difference is hardly noticeable, and we got a whopping 80% reduction in the resulting file size! Here is more exciting news: RealityConverter can now fix issues with your USD assets automatically! It will correct mismatched attributes and connection types, fix a stage with multiple top-level prims and a missing default prim, update deprecated attributes, and add missing stage metadata. We've also added universal binary support so now it runs natively on Apple Silicon."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "Now, what if you want to create 3D models from scratch? Last year, we launched Object Capture as a RealityKit API on macOS, which provides an innovative way to create USDZ assets. You can then use Reality Composer to compose a scene with multiple assets. This year, we are bringing you RoomPlan API, which lets you create parametric 3D scans of your room."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "I highly recommend you to check out these 3 sessions. Together, these technologies make it easier than ever for anyone to create immersive AR experiences. All these tools we covered today are available for you to download right now on our AR Creation Tools page on the Apple developer website. Please check them out! Next, let's take a look+ at AR Quick Look's new lighting."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "AR Quick Look is the built-in, system-wide AR viewer on iOS which enables you to place 3D USDZ objects in your physical space, like on a table, a wall, or a floor, and interact with them with simple touch gestures. You can even make interactive scenes built with Reality Composer and save them to a USDZ file which you can share with others on iMessage, Mail, Notes, and more. We constantly strive to make AR Quick Look rendering more realistic, and this year, we are introducing improved lighting in AR Quick Look, which is brighter, with enhanced contrast and improved shape definition to make your assets look even better."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "Here is an example of AirPods Pro in object mode with classic and new lighting. The AirPods Pro look great in both lighting conditions, and you will notice the new lighting option offers brighter color, higher contrast, and more highlights."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "Now let's place the AirPods Max on the desk to view it in AR mode with new lighting! Stunning, isn't it? So how do you apply the new lighting to your assets? It's really simple. You just have to pick the lighting that works best for your content by setting the new preferredIblVersion metadata in your USDZ file."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "Here we have set the value of the preferredIblVersion to 2, which will indicate AR Quick Look to use the new lighting system."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "Let's understand this in more detail. The preferredIBLVersion metadata can hold values of 0,1, and 2."
+      },
+      {
+        "timestamp": "9:36",
+        "text": "An asset with preferredIblVersion set to 0 will use the system default lighting."
+      },
+      {
+        "timestamp": "9:43",
+        "text": "If set to 1, it will continue to use the classic lighting."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "A value of 2 will give you the new lighting."
+      },
+      {
+        "timestamp": "9:52",
+        "text": "This means you can easily update your current assets to the new lighting as well! We recommend that you make an explicit choice and set this metadata in all of your assets. To do that, you can either use usdzconvert with the flag preferrediblversion. For example, here is how to use the flag to convert the fire hydrant OBJ file to USDZ with the new lighting. Or you can use Reality Converter, which will now use the new lighting by default."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "But if you want to use the classic lighting, there is a new option in the Property Panel."
+      },
+      {
+        "timestamp": "10:35",
+        "text": "Here we preview the AirPods Max asset with both the classic and new lighting."
+      },
+      {
+        "timestamp": "10:42",
+        "text": "This provides an easy way to compare the differences."
+      },
+      {
+        "timestamp": "10:47",
+        "text": "By clicking the lighting icon, the applied lighting will also be highlighted for your reference."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "Lastly, for assets without this metadata, AR Quick Look will determine the lighting version automatically based on the file's date-time stamp."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "If the asset was created after July 1st, 2022, it will use the new lighting."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "Older assets will continue to use the classic lighting so they don't change how they look."
+      },
+      {
+        "timestamp": "11:21",
+        "text": "Now, I'll hand it over to Alex for USD rendering. Thanks, Stella. We've already seen a lot of rendered USD assets today. Now we'll explore what makes USD rendering and Hydra a great choice for your 3D content creation pipeline and how you can integrate it in your own applications."
+      },
+      {
+        "timestamp": "11:39",
+        "text": "First, let's take a step back and talk about rendering in general."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "A renderer takes a collection of 3D models, cameras, and lights as input and uses them to generate an image. There are many different renderers, and each one of them is built for a specific purpose and optimized for a different use case."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "Some renderers are designed for real-time applications like rendering a character in a game or an AR scene."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "Others take much longer but produce a more photorealistic image, for example, producing visual effects for a Hollywood movie."
+      },
+      {
+        "timestamp": "12:17",
+        "text": "All renderers make choices about their features and are unique."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "Different USD renderers for different use cases also exist on Apple platforms. We're adding documentation about these different renderers to developer.apple.com."
+      },
+      {
+        "timestamp": "12:32",
+        "text": "It will help you understand the differences between them, explain which USD features they support, and provide guidance on how to author USDs that work best for you."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "One of the renderers on Apple platforms is RealityKit, which features a photorealistic rendering system, optimized for interactive augmented reality experiences, and is used in AR Quick Look. It is the primary renderer of USDZ files."
+      },
+      {
+        "timestamp": "13:00",
+        "text": "Another option for USD rendering on macOS is Pixar's open-source renderer, Storm. It is optimized for production-grade assets and designed for real-time preview of large-scale scenes."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "It's a great technology for you to visualize and iterate on assets as they flow through your content creation pipeline."
+      },
+      {
+        "timestamp": "13:22",
+        "text": "Storm uses a technology called Hydra."
+      },
+      {
+        "timestamp": "13:25",
+        "text": "Hydra is a core aspect of the USD open source project. So next, let's understand Hydra and its connection to Storm. We start with this diagram from earlier. Here, we use Storm as the renderer."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "The input is usually called \"the scene graph,\" and Storm produces a preview render of it."
+      },
+      {
+        "timestamp": "13:50",
+        "text": "But what if you want to generate a photorealistic image of the same scene using a different renderer? That's exactly what Hydra is made for. Instead of tightly coupling the scene to the renderer, Hydra acts as an abstract layer in between them to transport data from scenes to renderers."
+      },
+      {
+        "timestamp": "14:11",
+        "text": "This allows you to easily swap out your renderer based on your needs at any time without any changes to your scene graph. For example, you might use Storm and Pixar's RenderMan."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "In your content creation pipeline, you can use Storm for fast renders and quick iteration, and then switch to RenderMan to produce the final image when you're ready."
+      },
+      {
+        "timestamp": "14:35",
+        "text": "The same goes for the scene graph. Your input to Hydra can be a USD scene graph or a different one."
+      },
+      {
+        "timestamp": "14:43",
+        "text": "This allows you to leverage the same renderer in multiple applications even if each one of them has their own, totally different scene graph. The interfaces which connect Hydra with scene graphs and renderers are called delegates. Scene graphs are connected to Hydra via Scene Delegates, and Renderers are connected to Hydra via Render Delegates. And that is Hydra for you! Foundry's Nuke 13 is already using Hydra to render the viewport, enabling Nuke artists on macOS to have better quality and an interactive experience in Nuke's 3D system."
+      },
+      {
+        "timestamp": "15:23",
+        "text": "This is achieved by using Hydra with a custom scene delegate and Metal-accelerated Storm."
+      },
+      {
+        "timestamp": "15:30",
+        "text": "We are excited to share that we've worked with Pixar Animation Studios to publicly release Metal accelerated Storm to open source. It is ready for you to use in USD 22.05. Now that we've seen the power of Hydra, let's go through a Hydra sample application with the typical use case of a USD scene graph and Storm as renderer. It will get you started with using Hydra to build content creation tools and 3D workflow applications."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "Our sample application, HydraPlayer, is very simple but powerful. It renders a USD file with Storm and lets us move the camera around it."
+      },
+      {
+        "timestamp": "16:12",
+        "text": "And we're excited to make HydraPlayer a public sample project to get you started right away! It is available in the session resources and comes with full instructions in the readme."
+      },
+      {
+        "timestamp": "16:24",
+        "text": "I encourage you to pause this video now, download the project, and then follow along as we walk through it."
+      },
+      {
+        "timestamp": "16:32",
+        "text": "In your Xcode project, you will find 4 classes: The AppDelegate, Camera, Renderer, and View Controller. The AppDelegate is basically your root object and manages interactions with the system. The camera class is a simple representation of the USD scene camera to make it easy to translate the user input."
+      },
+      {
+        "timestamp": "16:54",
+        "text": "The renderer class will handle all our interactions with USD and Hydra."
+      },
+      {
+        "timestamp": "16:59",
+        "text": "Last but not least, the ViewController handles our user input."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "Before we can build and launch HydraPlayer, there are three things to do: prepare the environment, use Rosetta on Apple Silicon Macs, and download and build USD & Hydra. So let's get started."
+      },
+      {
+        "timestamp": "17:20",
+        "text": "First, we prepare our development environment. Make sure you have Xcode, Python, and CMake installed."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "Now let's open up a terminal for the other two steps."
+      },
+      {
+        "timestamp": "17:34",
+        "text": "If you are on an Apple Silicon Mac, you need to run under Rosetta while USD is transitioning to fully support arm64. To do this, use the arch command."
+      },
+      {
+        "timestamp": "17:46",
+        "text": "Once your environment is ready, we have to download the USD and Hydra source code. Both live in the same GitHub repository at PixarAnimationStudios/USD."
+      },
+      {
+        "timestamp": "17:57",
+        "text": "Now that we have the code, we can build it. USD comes with a convenient Python build script. We add the flags \"generator Xcode\" and \"no-python\" and specify where we want to install USD to."
+      },
+      {
+        "timestamp": "18:13",
+        "text": "Let's put it next to the source code at \"USDInstall.\" Once USD finished building, we are ready to build HydraPlayer! Let's go back to this diagram one more time and use it to identify key parts of HydraPlayer to check out in detail."
+      },
+      {
+        "timestamp": "18:30",
+        "text": "We'll look at how to load the 3D models, how to set up the camera, and set the scene light. Then we'll learn how to get our scene graph to Storm and finally, how to produce an image for the application window."
+      },
+      {
+        "timestamp": "18:47",
+        "text": "So let's get started with loading our 3D models from USD. In viewDidAppear in our ViewController, we create a file picker with an NSOpenPanel when the view appears the first time."
+      },
+      {
+        "timestamp": "19:01",
+        "text": "Once a file has been selected, the renderer can start setting up our scene and load the USD file."
+      },
+      {
+        "timestamp": "19:09",
+        "text": "Loading the file is very simple with the USD API. We simply open the USD stage at the file path."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "That's it. We have our file loaded."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "Next, we set up our camera. In our code, this is straightforward. In setupCamera, we first create a new scene camera."
+      },
+      {
+        "timestamp": "19:31",
+        "text": "Then we calculate the world size and center based on our scene. Next, move our camera at a good distance and then focus on the center. This way, our camera captures the whole scene."
+      },
+      {
+        "timestamp": "19:47",
+        "text": "Great, now we have our camera set up. Next, lighting. We keep it easy and create one simple ambient light and set its position to match the camera, and that's it. And with that, we have our full scene with 3D models, a camera and a light! We can now pass our scene to Storm. First, we need to initialize our render engine. Here, we create a new UsdImagingGLEngine, which is the class name of Storm. The most important parameter here is the rootPath. It points the engine to our USD stage with our 3D models. To learn more about the other parameters and UsdImagingGLEngine, please check out Pixar's USD API documentation."
+      },
+      {
+        "timestamp": "20:41",
+        "text": "Next, we set our camera in our engine and set our lighting setup. And last but not least, we define how we want Storm to render by setting render parameters. For example, we want to render a transparent background so that the rendered image works nicely with our app color scheme. Important for scenes with animation, this is also where we specify the time code."
+      },
+      {
+        "timestamp": "21:10",
+        "text": "Now we're ready to render an image! We've already done all the necessary setup, so the render command is just one line of code. We get the result and display it in our window, and there we are! We're rendering the USD toy plane! And actually, we're rendering not just one plane. HydraPlayer can easily render thousands of animated assets with tens of millions of triangles."
+      },
+      {
+        "timestamp": "21:39",
+        "text": "If you haven't already, check out the resources for this session, download the sample project, and have fun exploring it further."
+      },
+      {
+        "timestamp": "21:47",
+        "text": "Together we explored updates to Apple's USD tools that make them more powerful and make your assets look even better. We learned about Hydra's features and went through the HydraPlayer sample project to see how you can integrate it into your own applications."
+      },
+      {
+        "timestamp": "22:04",
+        "text": "To find out more about important concepts of USD, check out the session \"Understand USD fundamentals."
+      },
+      {
+        "timestamp": "22:12",
+        "text": "Thank you. ♪ ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -107,5 +438,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10601"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:18.141Z"
+  "extractedAt": "2026-10-17T18:50:16.933Z"
 }

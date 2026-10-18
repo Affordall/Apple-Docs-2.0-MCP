@@ -3,16 +3,115 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/369/",
   "title": "Find your accessory with Bluetooth Channel Sounding",
-  "speakers": [],
-  "duration": "",
+  "duration": "8:12",
   "topics": [
     "System Services"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi! I'm Gretchen and I work on Core Bluetooth. Today, I'm excited to introduce a way to find nearby Bluetooth accessories, using Channel Sounding. First, I will give you some ideas for how you could use Channel Sounding, and how it works. Then I will explain how to implement it in your app, using Core Bluetooth to get distance, or with Nearby Interaction to get distance and direction to your accessory.\n\nNext, I will give you some tips for building hardware that supports Channel Sounding. And I will end with some next steps.\n\nLet's start with an overview.\n\nImagine I am hosting a party.\n\nI am cooking inside using my oven, and I have a smoker going in the backyard. I have Bluetooth thermometers in both places, to help me cook everything perfectly. I get a notification, that one of my thermometers has reached the temperature I set.\n\nWhen I open the app, it says the probe is 8 meters to my right. That must be the smoker! With Channel Sounding, I won't mix up my temperature probes. I can measure distance to each one! There are a couple ways to measure distance and direction to third-party accessories on iOS. For the best accuracy, you can add an Ultra Wideband chipset to your accessory and use the Nearby Interaction framework in your app. For more information on this, watch the video \"Explore Nearby Interaction with third-party accessories\". But if your accessory only has a Bluetooth chipset, then Bluetooth Channel Sounding is your best option. You might have used RSSI in the past to estimate distance, but with Channel Sounding you can actually measure distance. We encourage you to try Channel Sounding, where your app could benefit from better accuracy. So, how exactly does Channel Sounding work? Let's say we have an iPhone that is paired and connected to a Bluetooth accessory. In this scenario, the iPhone is called an initiator and the accessory is called a reflector. The iPhone sends a signal, or tone, to the accessory, and the accessory reflects that tone back. The iPhone measures how the signal changes in transit, from one side, to the other, and back.\n\nBy repeating this process across the channels of the 2.4GHz band, the iPhone observes the rate of change in these reflected tones, from one channel to the next, and uses that to estimate the distance between the initiator and reflector. This process of measuring distance is called a procedure. So, how do you perform Channel Sounding in your app? If you just need distance, you can use Core Bluetooth. Before you begin, you'll want to ensure your accessory is paired and set up, using AccessorySetupKit, and connected through Core Bluetooth. You can refer to the documentation for more on how this is done. Now let's look at the code to measure distances. First, check that Channel Sounding is supported on the local iOS device, using CBCentralManager.supportsFeatures method.\n\nOnce you have a connected CBPeripheral, call startChannelSoundingSession on the CBPeripheral object.\n\niOS will repeatedly perform Channel Sounding procedures. When each procedure is completed, the delegate method peripheral didReceive results will be called with the measured distance in meters.\n\nWhen you are ready to complete your Channel Sounding session, call cancelChannelSoundingSession.\n\nWhen the session ends, the delegate method peripheral didCompleteChannelSoundingSession will be called.\n\nNext, I'll tell you how to use Nearby Interaction to measure distance and direction. Again, ensure your accessory has been paired and set up through AccessorySetupKit, and connected via CoreBluetooth. Before creating a Channel Sounding session, check whether the local iOS device supports it, with the supportsBluetoothChannelSounding method.\n\nThen create a configuration object, passing in the peripheral.identifier from CoreBluetooth as the bluetoothChannelSoundingIdentifier.\n\nIn order to get direction, CameraAssistance is required. Be sure to enable this if you need it.\n\nFinally, create your NISession, set the delegate, and run it with the new accessory configuration you just created. If your app knows whether the accessory is moving or stationary, you can tell Nearby Interaction, and it will use that information to produce better direction estimates. Call updateMotionState on your session with your accessory object.discoveryToken.\n\nFor example, if your accessory is a mounted tag on a wall, pass .stationary. If it's attached to a moving object, pass .moving. The delegate callback is identical to what you'd get with UWB. You will receive NINearbyObjects updates with distance and direction.\n\nBoth the distance and the direction results benefit from the fusion of raw Bluetooth Channel Sounding measurements and camera inputs.\n\nRemember that both, distance and direction, are optional. Distance may be nil, if the Channel Sounding measurement failed.\n\niOS automatically filters outliers and smooths your results for a better user experience. In iOS 27, use Channel Sounding when your app is in the foreground. When your app moves to the background, your Channel Sounding session will be paused.\n\nAlso be aware, that iOS may reduce the frequency of Channel Sounding measurements, if other Bluetooth or Wi-Fi activity increases. Channel Sounding is available on iPhones with the N1 chip.\n\nNow I will explain how to make your accessories work well, with Channel Sounding on iOS.\n\nYour accessory must support Bluetooth 6.3, and the inline PCT feature is required.\n\niOS uses phase based ranging, so your chipset must also support mode-0 and mode-2, as defined by the Bluetooth spec.\n\nT_FCS is the interspace timing between tones. Make sure your accessory supports T_FCS of at least 100µs.\n\nAlright, you've heard all about Channel Sounding, but what's next? Try out the APIs with a compatible accessory. Imagine how measuring distance would improve how people interact with your app. Ask your questions on the Developer Forums and send us feedback using Feedback Assistant. Thank you!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi! I'm Gretchen and I work on Core Bluetooth. Today, I'm excited to introduce a way to find nearby Bluetooth accessories, using Channel Sounding. First, I will give you some ideas for how you could use Channel Sounding, and how it works. Then I will explain how to implement it in your app, using Core Bluetooth to get distance, or with Nearby Interaction to get distance and direction to your accessory."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "Next, I will give you some tips for building hardware that supports Channel Sounding. And I will end with some next steps."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "Let's start with an overview."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "Imagine I am hosting a party."
+      },
+      {
+        "timestamp": "0:55",
+        "text": "I am cooking inside using my oven, and I have a smoker going in the backyard. I have Bluetooth thermometers in both places, to help me cook everything perfectly. I get a notification, that one of my thermometers has reached the temperature I set."
+      },
+      {
+        "timestamp": "1:13",
+        "text": "When I open the app, it says the probe is 8 meters to my right. That must be the smoker! With Channel Sounding, I won't mix up my temperature probes. I can measure distance to each one! There are a couple ways to measure distance and direction to third-party accessories on iOS. For the best accuracy, you can add an Ultra Wideband chipset to your accessory and use the Nearby Interaction framework in your app. For more information on this, watch the video \"Explore Nearby Interaction with third-party accessories\". But if your accessory only has a Bluetooth chipset, then Bluetooth Channel Sounding is your best option. You might have used RSSI in the past to estimate distance, but with Channel Sounding you can actually measure distance. We encourage you to try Channel Sounding, where your app could benefit from better accuracy. So, how exactly does Channel Sounding work? Let's say we have an iPhone that is paired and connected to a Bluetooth accessory. In this scenario, the iPhone is called an initiator and the accessory is called a reflector. The iPhone sends a signal, or tone, to the accessory, and the accessory reflects that tone back. The iPhone measures how the signal changes in transit, from one side, to the other, and back."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "By repeating this process across the channels of the 2.4GHz band, the iPhone observes the rate of change in these reflected tones, from one channel to the next, and uses that to estimate the distance between the initiator and reflector. This process of measuring distance is called a procedure. So, how do you perform Channel Sounding in your app? If you just need distance, you can use Core Bluetooth. Before you begin, you'll want to ensure your accessory is paired and set up, using AccessorySetupKit, and connected through Core Bluetooth. You can refer to the documentation for more on how this is done. Now let's look at the code to measure distances. First, check that Channel Sounding is supported on the local iOS device, using CBCentralManager.supportsFeatures method."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "Once you have a connected CBPeripheral, call startChannelSoundingSession on the CBPeripheral object."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "iOS will repeatedly perform Channel Sounding procedures. When each procedure is completed, the delegate method peripheral didReceive results will be called with the measured distance in meters."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "When you are ready to complete your Channel Sounding session, call cancelChannelSoundingSession."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "When the session ends, the delegate method peripheral didCompleteChannelSoundingSession will be called."
+      },
+      {
+        "timestamp": "4:34",
+        "text": "Next, I'll tell you how to use Nearby Interaction to measure distance and direction. Again, ensure your accessory has been paired and set up through AccessorySetupKit, and connected via CoreBluetooth. Before creating a Channel Sounding session, check whether the local iOS device supports it, with the supportsBluetoothChannelSounding method."
+      },
+      {
+        "timestamp": "5:00",
+        "text": "Then create a configuration object, passing in the peripheral.identifier from CoreBluetooth as the bluetoothChannelSoundingIdentifier."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "In order to get direction, CameraAssistance is required. Be sure to enable this if you need it."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "Finally, create your NISession, set the delegate, and run it with the new accessory configuration you just created. If your app knows whether the accessory is moving or stationary, you can tell Nearby Interaction, and it will use that information to produce better direction estimates. Call updateMotionState on your session with your accessory object.discoveryToken."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "For example, if your accessory is a mounted tag on a wall, pass .stationary. If it's attached to a moving object, pass .moving. The delegate callback is identical to what you'd get with UWB. You will receive NINearbyObjects updates with distance and direction."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "Both the distance and the direction results benefit from the fusion of raw Bluetooth Channel Sounding measurements and camera inputs."
+      },
+      {
+        "timestamp": "6:20",
+        "text": "Remember that both, distance and direction, are optional. Distance may be nil, if the Channel Sounding measurement failed."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "iOS automatically filters outliers and smooths your results for a better user experience. In iOS 27, use Channel Sounding when your app is in the foreground. When your app moves to the background, your Channel Sounding session will be paused."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "Also be aware, that iOS may reduce the frequency of Channel Sounding measurements, if other Bluetooth or Wi-Fi activity increases. Channel Sounding is available on iPhones with the N1 chip."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "Now I will explain how to make your accessories work well, with Channel Sounding on iOS."
+      },
+      {
+        "timestamp": "7:12",
+        "text": "Your accessory must support Bluetooth 6.3, and the inline PCT feature is required."
+      },
+      {
+        "timestamp": "7:20",
+        "text": "iOS uses phase based ranging, so your chipset must also support mode-0 and mode-2, as defined by the Bluetooth spec."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "T_FCS is the interspace timing between tones. Make sure your accessory supports T_FCS of at least 100µs."
+      },
+      {
+        "timestamp": "7:42",
+        "text": "Alright, you've heard all about Channel Sounding, but what's next? Try out the APIs with a compatible accessory. Imagine how measuring distance would improve how people interact with your app. Ask your questions on the Developer Forums and send us feedback using Feedback Assistant. Thank you!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -38,6 +137,33 @@
       "title": "Run a Nearby Interaction Channel Sounding session",
       "language": "swift",
       "code": "import CoreBluetooth\nimport NearbyInteraction\n\n// Run a Nearby Interaction Channel Sounding session\nfunc runChannelSoundingThroughNearbyInteraction(_ config: NINearbyAccessoryConfiguration) {\n    // Create an NISession\n    let session = NISession()\n    session.delegate = self\n    // Run the NISession with the accessory configuration\n    session.run(config)\n}\n\n// Improve Nearby Interaction direction outputs\nfunc updateAccessoryMotionState(_ isMoving: Bool) {\n    NIMotionActivityState motionState = isMoving ? .moving : .stationary\n    \n    // Tell NISession about.the accessory's motion state\n    session.updateMotionState(motionState, forObjectWithToken: object.discoveryToken)\n}\n\n// Receive NISession updates\nfunc session(_ session: NISession, didUpdate nearbyObjects: [NINearbyObjects]) {   \n    guard let object = nearbyObjects.first else { return }\n\n    if let distance = object.distance {\n        // Do something with distance\n    }\n\n    if let direction = object.horizontalAngle {\n        // Do something with horizontal angle\n    }\n}"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "0:50"
+    },
+    {
+      "timestamp": "0:50",
+      "title": "Overview",
+      "duration": "2:27"
+    },
+    {
+      "timestamp": "3:17",
+      "title": "Core Bluetooth API",
+      "duration": "1:17"
+    },
+    {
+      "timestamp": "4:34",
+      "title": "Nearby Interaction API",
+      "duration": "2:31"
+    },
+    {
+      "timestamp": "7:05",
+      "title": "Hardware tips",
+      "duration": "1:07"
     }
   ],
   "resources": {
@@ -76,5 +202,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10165"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:22.043Z"
+  "extractedAt": "2026-10-17T18:42:15.339Z"
 }

@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10191/",
   "title": "Deliver a great playback experience on tvOS",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video",
@@ -12,8 +11,348 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Max Stepanov: Hello! My name is Max, and I'm a software engineer on the tvOS team.\n\nToday, I'm excited to share with you a great all-new look of the media playback UI on Apple TV and what you can do to get the most out of this new functionality available to you as a developer.\n\nIn this session, we will overview the enhancements to the standard playback UI in tvOS 15; we will introduce new APIs; and finally, we'll discuss best practices that will help you create a great playback experience in your application.\n\nLet's get started.\n\nAVPlayerViewController provides the standard media playback for users on Apple TV.\n\nIt supports a wide variety of remotes, including the new Click Wheel remote, as well as skipping, scanning, scrubbing functionality, Siri command, interstitial support, and more.\n\nWe encourage you to start using AVPlayerViewController in your application to allow users to have a similar experience as with first-party applications on Apple TV.\n\nIf you haven't yet used AVPlayerViewController -- or would benefit from a refresher -- I recommend you to watch \"Delivering intuitive media playback with AVKit\" from WWDC 2019, which goes into greater detail on how to incorporate AVPlayerViewController into your application.\n\nNow, let's overview the enhancements we are bringing this year.\n\nIn tvOS 15, we entirely redesigned the standard playback UI to help viewers stay in the moment through a more consistent, interactive experience.\n\nBy adding relevant controls and options to the transport bar, we improved the discoverability of common playback tasks, such as turning on subtitles or changing audio language.\n\nThe transport bar controls are both universal in nature as well as can be application-specific.\n\nAnd with new content tabs, users can now easily access supporting information -- like Info or Chapters -- making inline navigation accessible and discoverable.\n\nContent tabs can also be used to show related content.\n\nHere in this example, I'm viewing a session from last year's WWDC and can browse content recommendations for the session without leaving the player.\n\nLastly, we added contextual actions available to users during playback.\n\nThose actions have perfect functionality, like Skip Intro or Recap.\n\nTo take advantage of the new playback UI on Apple TV, your application must be linked with tvOS 15 SDK.\n\nWe took this approach to maintain compatibility with any existing applications available to users in the App Store.\n\nThose applications will get default tvOS 14 playback UI and functionality.\n\nBy now, you're probably excited to learn how to adopt some of this new functionality in your media application.\n\nSo let's dive into the new APIs in tvOS 15...\n\n...starting with Title View.\n\nThe new Title View displayed just above the transport bar will help users to instantly know what they're watching.\n\nTo present the Title View, we'll use values for commonIdentifierTitle and iTunesMetadataTrackSubtitle from the metadata of the current AVPlayerItem.\n\nIf a media asset does not contain embedded metadata, or you need to augment it, use the externalMetadata property of AVPlayerItem.\n\nWhen playing live streaming content, the Title View will also display a badge to indicate the content state to the viewer.\n\nLastly, if your application would prefer not to display Title View, suppress it by setting the value of new property transportBarIncludesTitleView to false.\n\nNext, let's take a look at the transport bar controls.\n\nTransport bar controls is a collection of UI elements sitting right on top of the transport bar scrubber.\n\nThose controls will help users quickly and intuitively find all the playback options your application may provide.\n\nSome standard controls -- such as subtitles, audio languages, and Picture in Picture -- are provided by the system.\n\nAs a developer, you can extend the list of transport bar controls, using the new property of AVPlayerViewController, transportBarCustomMenuItems.\n\nIt supports instances of UIAction and UIMenu classes.\n\nLet's take a look at an example of using transport bar controls.\n\nHere, I'm using UIAction to let users add the current media item to their Favorites.\n\nYou could also create more advanced arrangements of actions and present them in a menu, using UIMenu class.\n\nUIMenus presented by AVPlayerViewController support up to one level of nesting, using the displayInline option.\n\nFor greater detail on using UIMenu and UIAction classes, I recommend you to watch \"Modernizing your UI for iOS 13\" from WWDC 2019.\n\nNow, let's talk about content tabs.\n\nContent tabs will allow your application to display complementary information or recommendations for more content.\n\nAVPlayerViewController will display the Info tab when a media asset contains embedded metadata or when you supplement external metadata with AVPlayerItem.\n\nAlso, when you supply navigationMarkerGroups with AVPlayerItem, AVPlayerViewController will show the Chapters tab.\n\nYour application can present additional content tabs using the new property of AVPlayerViewController, customInfoViewControllers.\n\nAnd in tvOS 15, we are deprecating the customInfoViewController property in favor of the new property that allows for multiple view controllers.\n\nTo size your content tabs appropriately, please specify the height using preferredContentSize property or define appropriate autolayout constraints.\n\nWhen calculating the required height to display content tabs, the system will size all view controllers to the height of the tallest content tab.\n\nWhen working with multiple content tabs, size your custom view controllers consistently or verify that the layout is expected at runtime.\n\nAnd don't forget to set title property on your custom view controller.\n\nWe will use it for the title of the content tab.\n\nTo help you create great-looking content tabs, this year, we are introducing new content configurations in TVUIKit framework: TVMediaItemContent Configuration and TVMonogramContent Configuration.\n\nLet's take a look at a couple examples of how these configurations can be used in your code.\n\nFor instance, to present a list of media items at 16:9 aspect ratio, you can use the wide cell from TVMediaItem ContentConfiguration.\n\nSet its properties, like image, title, or secondary text.\n\nYou could also configure it to show a badge and playback progress.\n\nWhen you're done, assign the contentConfiguration to your collection view cell.\n\nIt's that easy.\n\nIf you would like to display people or characters associated with the current media content, use TVMonogramContentConfiguration.\n\nFor more information on using content configurations, I recommend you to watch \"Modern cell configuration\" from WWDC 2020.\n\nFinally, contextual actions.\n\nContextual actions allow your application to display relevant controls during the playback.\n\nTo display contextual actions, use new contextualActions property of AVPlayerViewController and provide one or more UIActions.\n\nTypically, your application would want to present contextual actions during a relevant section of the content.\n\nTo achieve this, observe the AVPlayer timing by adding periodic or boundary time observers.\n\nTo hide contextual actions, reset the property to an empty array.\n\nSome of you may have already implemented solutions for the skip functionality within your applications.\n\nWith this new API, the user interaction with contextual controls is consistent with focus behavior, and when used, it will also maintain the Now Playing status for your application.\n\nNow, let's talk about some best practices with AVPlayerViewController on tvOS.\n\nFirst -- and most important -- avoid adding extra gestures to the player.\n\nThis will interfere with standard playback UI and most certainly might not work in the future.\n\nSecond, supplement missing metadata.\n\nSometimes we have media that doesn't have all the metadata baked in with the asset.\n\nIn those cases, provide all essential metadata -- like title, artwork, or description -- using the externalMetadata property of AVPlayerItem.\n\nAnd when you do so, we will do the rest to populate Title View and Info tab with all relevant information.\n\nLastly, consider enabling Picture in Picture in your tvOS application.\n\nIt will give your users multitasking flexibility, allowing for simultaneous video playback and the ability to swap between full-screen content and Picture in Picture.\n\nTo get started with Picture in Picture, I recommend you to watch \"Master Picture in Picture on tvOS\" from WWDC 2020.\n\nSo to recap.\n\ntvOS 15 makes it easier than ever to build great media experiences using standard playback UI.\n\nThe powerful new APIs make AVPlayerViewController more configurable and customizable than ever.\n\nThere's never been a better time to adopt it into your applications.\n\nAnd it's easy to get started.\n\nFor more information, see additional resources for this session in the Developer app.\n\nThanks for watching and enjoy the conference.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Max Stepanov: Hello! My name is Max, and I'm a software engineer on the tvOS team."
+      },
+      {
+        "timestamp": "0:13",
+        "text": "Today, I'm excited to share with you a great all-new look of the media playback UI on Apple TV and what you can do to get the most out of this new functionality available to you as a developer."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "In this session, we will overview the enhancements to the standard playback UI in tvOS 15; we will introduce new APIs; and finally, we'll discuss best practices that will help you create a great playback experience in your application."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "Let's get started."
+      },
+      {
+        "timestamp": "0:44",
+        "text": "AVPlayerViewController provides the standard media playback for users on Apple TV."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "It supports a wide variety of remotes, including the new Click Wheel remote, as well as skipping, scanning, scrubbing functionality, Siri command, interstitial support, and more."
+      },
+      {
+        "timestamp": "1:01",
+        "text": "We encourage you to start using AVPlayerViewController in your application to allow users to have a similar experience as with first-party applications on Apple TV."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "If you haven't yet used AVPlayerViewController -- or would benefit from a refresher -- I recommend you to watch \"Delivering intuitive media playback with AVKit\" from WWDC 2019, which goes into greater detail on how to incorporate AVPlayerViewController into your application."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "Now, let's overview the enhancements we are bringing this year."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "In tvOS 15, we entirely redesigned the standard playback UI to help viewers stay in the moment through a more consistent, interactive experience."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "By adding relevant controls and options to the transport bar, we improved the discoverability of common playback tasks, such as turning on subtitles or changing audio language."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "The transport bar controls are both universal in nature as well as can be application-specific."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "And with new content tabs, users can now easily access supporting information -- like Info or Chapters -- making inline navigation accessible and discoverable."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "Content tabs can also be used to show related content."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "Here in this example, I'm viewing a session from last year's WWDC and can browse content recommendations for the session without leaving the player."
+      },
+      {
+        "timestamp": "2:24",
+        "text": "Lastly, we added contextual actions available to users during playback."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "Those actions have perfect functionality, like Skip Intro or Recap."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "To take advantage of the new playback UI on Apple TV, your application must be linked with tvOS 15 SDK."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "We took this approach to maintain compatibility with any existing applications available to users in the App Store."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "Those applications will get default tvOS 14 playback UI and functionality."
+      },
+      {
+        "timestamp": "2:55",
+        "text": "By now, you're probably excited to learn how to adopt some of this new functionality in your media application."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "So let's dive into the new APIs in tvOS 15..."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "...starting with Title View."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "The new Title View displayed just above the transport bar will help users to instantly know what they're watching."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "To present the Title View, we'll use values for commonIdentifierTitle and iTunesMetadataTrackSubtitle from the metadata of the current AVPlayerItem."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "If a media asset does not contain embedded metadata, or you need to augment it, use the externalMetadata property of AVPlayerItem."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "When playing live streaming content, the Title View will also display a badge to indicate the content state to the viewer."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Lastly, if your application would prefer not to display Title View, suppress it by setting the value of new property transportBarIncludesTitleView to false."
+      },
+      {
+        "timestamp": "3:57",
+        "text": "Next, let's take a look at the transport bar controls."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "Transport bar controls is a collection of UI elements sitting right on top of the transport bar scrubber."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "Those controls will help users quickly and intuitively find all the playback options your application may provide."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "Some standard controls -- such as subtitles, audio languages, and Picture in Picture -- are provided by the system."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "As a developer, you can extend the list of transport bar controls, using the new property of AVPlayerViewController, transportBarCustomMenuItems."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "It supports instances of UIAction and UIMenu classes."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "Let's take a look at an example of using transport bar controls."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "Here, I'm using UIAction to let users add the current media item to their Favorites."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "You could also create more advanced arrangements of actions and present them in a menu, using UIMenu class."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "UIMenus presented by AVPlayerViewController support up to one level of nesting, using the displayInline option."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "For greater detail on using UIMenu and UIAction classes, I recommend you to watch \"Modernizing your UI for iOS 13\" from WWDC 2019."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "Now, let's talk about content tabs."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "Content tabs will allow your application to display complementary information or recommendations for more content."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "AVPlayerViewController will display the Info tab when a media asset contains embedded metadata or when you supplement external metadata with AVPlayerItem."
+      },
+      {
+        "timestamp": "5:42",
+        "text": "Also, when you supply navigationMarkerGroups with AVPlayerItem, AVPlayerViewController will show the Chapters tab."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "Your application can present additional content tabs using the new property of AVPlayerViewController, customInfoViewControllers."
+      },
+      {
+        "timestamp": "6:00",
+        "text": "And in tvOS 15, we are deprecating the customInfoViewController property in favor of the new property that allows for multiple view controllers."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "To size your content tabs appropriately, please specify the height using preferredContentSize property or define appropriate autolayout constraints."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "When calculating the required height to display content tabs, the system will size all view controllers to the height of the tallest content tab."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "When working with multiple content tabs, size your custom view controllers consistently or verify that the layout is expected at runtime."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "And don't forget to set title property on your custom view controller."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "We will use it for the title of the content tab."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "To help you create great-looking content tabs, this year, we are introducing new content configurations in TVUIKit framework: TVMediaItemContent Configuration and TVMonogramContent Configuration."
+      },
+      {
+        "timestamp": "7:02",
+        "text": "Let's take a look at a couple examples of how these configurations can be used in your code."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "For instance, to present a list of media items at 16:9 aspect ratio, you can use the wide cell from TVMediaItem ContentConfiguration."
+      },
+      {
+        "timestamp": "7:18",
+        "text": "Set its properties, like image, title, or secondary text."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "You could also configure it to show a badge and playback progress."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "When you're done, assign the contentConfiguration to your collection view cell."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "It's that easy."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "If you would like to display people or characters associated with the current media content, use TVMonogramContentConfiguration."
+      },
+      {
+        "timestamp": "7:42",
+        "text": "For more information on using content configurations, I recommend you to watch \"Modern cell configuration\" from WWDC 2020."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "Finally, contextual actions."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "Contextual actions allow your application to display relevant controls during the playback."
+      },
+      {
+        "timestamp": "8:00",
+        "text": "To display contextual actions, use new contextualActions property of AVPlayerViewController and provide one or more UIActions."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "Typically, your application would want to present contextual actions during a relevant section of the content."
+      },
+      {
+        "timestamp": "8:17",
+        "text": "To achieve this, observe the AVPlayer timing by adding periodic or boundary time observers."
+      },
+      {
+        "timestamp": "8:25",
+        "text": "To hide contextual actions, reset the property to an empty array."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Some of you may have already implemented solutions for the skip functionality within your applications."
+      },
+      {
+        "timestamp": "8:35",
+        "text": "With this new API, the user interaction with contextual controls is consistent with focus behavior, and when used, it will also maintain the Now Playing status for your application."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "Now, let's talk about some best practices with AVPlayerViewController on tvOS."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "First -- and most important -- avoid adding extra gestures to the player."
+      },
+      {
+        "timestamp": "9:00",
+        "text": "This will interfere with standard playback UI and most certainly might not work in the future."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "Second, supplement missing metadata."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "Sometimes we have media that doesn't have all the metadata baked in with the asset."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "In those cases, provide all essential metadata -- like title, artwork, or description -- using the externalMetadata property of AVPlayerItem."
+      },
+      {
+        "timestamp": "9:26",
+        "text": "And when you do so, we will do the rest to populate Title View and Info tab with all relevant information."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "Lastly, consider enabling Picture in Picture in your tvOS application."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "It will give your users multitasking flexibility, allowing for simultaneous video playback and the ability to swap between full-screen content and Picture in Picture."
+      },
+      {
+        "timestamp": "9:50",
+        "text": "To get started with Picture in Picture, I recommend you to watch \"Master Picture in Picture on tvOS\" from WWDC 2020."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "So to recap."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "tvOS 15 makes it easier than ever to build great media experiences using standard playback UI."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "The powerful new APIs make AVPlayerViewController more configurable and customizable than ever."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "There's never been a better time to adopt it into your applications."
+      },
+      {
+        "timestamp": "10:19",
+        "text": "And it's easy to get started."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "For more information, see additional resources for this session in the Developer app."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "Thanks for watching and enjoy the conference."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -91,5 +430,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/224"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:41.318Z"
+  "extractedAt": "2026-10-17T18:53:37.915Z"
 }

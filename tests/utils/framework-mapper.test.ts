@@ -1,27 +1,14 @@
 import { describe, it, expect } from 'vitest';
 /**
- * Framework names from what a person types, as Apple writes them.
+ * A framework's name folded for comparison; the names themselves come from Apple's technologies list.
  */
-import { normalizeFrameworkName } from '../../src/utils/framework-mapper.js';
+import { frameworkKey } from '../../src/tools/list-technologies.js';
 
-describe('normalizeFrameworkName', () => {
-  it('drops case, spaces, dashes and underscores to find the framework', () => {
+describe('frameworkKey', () => {
+  it('drops case, spaces, dashes and underscores, so each spelling of a name compares equal', () => {
     for (const typed of ['swiftui', 'SWIFTUI', 'swift-ui', 'swift_ui', ' SwiftUI ', 'swift ui']) {
-      expect(normalizeFrameworkName(typed)).toBe('SwiftUI');
+      expect(frameworkKey(typed)).toBe('swiftui');
     }
-    expect(normalizeFrameworkName('core-data')).toBe('Core Data');
-  });
-
-  it('knows the names that are not a framework\'s own', () => {
-    expect(normalizeFrameworkName('objc')).toBe('Objective-C');
-    expect(normalizeFrameworkName('cg')).toBe('Core Graphics');
-    expect(normalizeFrameworkName('touch-id')).toBe('Local Authentication');
-    expect(normalizeFrameworkName('storekit2')).toBe('StoreKit');
-  });
-
-  it('capitalizes a name it does not know, and gives an empty name for none', () => {
-    expect(normalizeFrameworkName('someNewKit')).toBe('SomeNewKit');
-    expect(normalizeFrameworkName('')).toBe('');
-    expect(normalizeFrameworkName(undefined)).toBe('');
+    expect(frameworkKey('Foundation Models')).toBe(frameworkKey('foundationmodels'));
   });
 });

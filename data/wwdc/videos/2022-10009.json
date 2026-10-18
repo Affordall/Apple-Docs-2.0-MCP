@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10009/",
   "title": "What’s new in iPad app design",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Design"
@@ -11,8 +10,688 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ instrumental hip hop music ♪ ♪ Hi, welcome to our session on iPad App design.\n\nI'm Bryant Jow.\n\nAnd I'm Grant Paul, and we're from the Apple Design Team.\n\nBryant: Today, we'll show you some of the new UIKit and SwiftUI updates in iPadOS 16, as well as some general tips for incorporating these into your app designs.\n\nWith iPadOS 16, people can take advantage of larger resolutions with extended display support and display zoom and work with their apps in a single view by using Stage Manager.\n\nSo what does this mean for iPad apps? Your app design should always embrace larger screens and different window sizes, as well as support all the different inputs of iPadOS.\n\nAnd now, your iPad apps should consider how to lean into more advanced use cases that come with using iPad like a desktop.\n\nSo that's why we're introducing a number of improvements to help apps become more powerful and easier to use.\n\nHere's a preview of the features we'll cover: toolbars and customization, document menu, editing menus, find and replace, navigation, search, tables, and selection.\n\nToday, we're going to show examples of how you can incorporate these updates in designing two kinds of experiences: document editing and content browsing.\n\nWe'll start with document editing and look at how these improvements can help people be more productive when using your app.\n\nLet's jump into toolbars.\n\nToolbars are a really important component in app design because they organize your app's functionality, and this impacts how easy it is for people to go about their workflows.\n\nHere's the previous toolbar in the Pages app in iPadOS 15.\n\nIn iPadOS 16, we're introducing a new toolbar layout that aligns titles to the left side and allows apps to offer more toolbar items in the center.\n\nLet's take a closer look.\n\nHere's the leading section of the toolbar.\n\nIt should contain items that help people navigate within and outside of the document, like the back and sidebar buttons.\n\nAnd it displays the new document title and menu, which I'll come back to later.\n\nWith more space in the toolbar, apps can elevate commonly used actions in the center.\n\nIn iPadOS 16, the Pages app shows actions for inserting content.\n\nYou should consider what are the most common workflows in your app where people could benefit from one-tap access.\n\nBut be careful not to pack your app's toolbar with too many items.\n\nLet's look at a couple more tools to consider if your app has a lot of functionality.\n\nIn iPadOS 16, you can enable customizable toolbars so people can curate the items that are most important for their workflow.\n\nIf your app has a lot of toolbar items or advanced features that not all people need, you should consider enabling customization.\n\nNote how items in the center section can be added, removed, or rearranged.\n\nItems outside of this section are not customizable because these may include navigation buttons or important features that need to be always accessible.\n\nToolbar items can also be grouped or collapsed.\n\nUse groups to keep related actions together in the toolbar or the overflow menu.\n\nIn the Pages app, similar actions like inserting tables, charts, shapes, and photos are grouped together.\n\nWhen there's not enough room in the toolbar, these actions collapse into a plus button.\n\nYou can also make wide toolbar items collapse into a compact glyph at smaller window sizes.\n\nNow, let's take a look at the trailing section of the toolbar.\n\nThis section may contain a variety of items: any button that invokes nearby inspectors, important items that should stay visible at any window size, and an optional overflow button for people to access hidden items as well as toolbar customization.\n\nWhen people resize your app, the toolbar items in the center will automatically hide into an overflow menu when there's not enough room.\n\nAnd when the window is resized even smaller, only the leading and trailing sections remain.\n\nSo make sure to arrange important items in the trailing section if you want them to be visible at most window sizes.\n\nSo here's a quick recap of toolbars.\n\nConsider if there are common workflows that you can elevate in the toolbar.\n\nArrange important toolbar items in the trailing section to avoid overflow in smaller window sizes.\n\nEnable customization if your app has many toolbar items and advanced use cases.\n\nAnd wherever possible, try to organize similar items into groups.\n\nNow let's take a look at the new document menu that we mentioned earlier.\n\nTo make it easier for people to find document-related actions in one place across apps, we're introducing a new title and menu in the toolbar.\n\nThis layout is intended for document viewers like Quick Look or document-editing apps like Keynote.\n\nNote, these apps may also have a browser view, which can appear as a back button near the document title.\n\nIf your app is primarily used for editing or viewing documents, you should consider using this new menu.\n\nLet's open Keynote's document menu by clicking the title.\n\nHere, you can see there is a combined set of standard document actions as well as app-specific ones.\n\nSo, what should go inside here? The menu should contain actions that affect the document as a whole.\n\nHere are some examples of standard actions that should go inside the document menu: Duplicate, Rename, Move, Export, and Print.\n\nYou can also add custom actions for your app.\n\nBut not everything should go inside in the document menu.\n\nActions that take content outside of your app should be placed under Share, and actions that directly affect content inside a document should support toolbar customization and appear in edit menus where appropriate.\n\nNext, I want to talk about a couple of features that can help users work more efficiently in your iPad app.\n\nLet's look at edit menus.\n\nThese menus may appear over selected text and contain edit options such as Copy and Paste.\n\nIn iPadOS 16, edit menus have a new look and are optimized for touch and pointer.\n\nWhen using touch, the menu appears horizontally and people can now scroll back and forth between the list of options like this.\n\nWhen using pointer, the edit menu shows a more comprehensive list of options in a vertical layout like this.\n\nYour app should support both styles for touch and pointer interactions.\n\nWhen you incorporate these edit menus into your app, here are a couple of things to remember.\n\nDon't remove the standard actions like Cut, Copy, and Paste.\n\nThese editing tools are important to many workflows and should be always available.\n\nAnd you should organize custom actions close to related system actions.\n\nIn iPadOS 16, the Notes app groups formatting options for checklists and text in the same section.\n\nEdit menus are not just limited to text fields.\n\nThey can also apply to objects on a document canvas.\n\nHere's an example of selecting layers in Keynote with touch.\n\nAnd that same menu when using pointer.\n\nTry to integrate these menus into any editable content so that people can be more productive when using your app.\n\nSo that's edit menus.\n\nNow, let's dive into find and replace.\n\nIn iPadOS 16, we're introducing find and replace into the system keyboard so people can quickly search for specific words, phrases, and more within a document.\n\nThis also supports advanced use cases like matching specific parts of a phrase or replacing all matches with a different word.\n\nAnd when iPad is attached to a hardware keyboard, the find and replace interface sits above the app in this compact appearance.\n\nTo make find and replace easy to access, consider adding an item inside the overflow menu as well as the system keyboard shortcuts.\n\nSo those are some of the new features we're introducing for document editing.\n\nNow I'm going to hand it off to Grant Paul, who will talk about some more improvements.\n\nGrant: Thanks, Bryant. Next up, I'm going to talk about improvements for content browsing, something that you do in a lot of different iPad apps.\n\nContent browsing experiences are everywhere on iPad, whether you're managing in your photo library in Photos, browsing Apple Music, or choosing a document in Pages.\n\niPadOS 16 has some great new features and patterns for content browsing.\n\nI'm going to focus on three areas that are important to this part of an app.\n\nThe first one is some updates to app navigation.\n\niPadOS 16 has a new style of navigation that we call \"browser-style\" navigation.\n\nFor example, the Files app uses back and forward buttons to let you easily browse between folders that might have come from different places in the sidebar.\n\nWith browser-style navigation, it's up to your app to choose the buttons that go to the left of the title.\n\nYou should make sure to keep to just those navigational buttons like back and forward, or maybe a sidebar button.\n\nBrowser-style navigation works well when your app has a complex hierarchy where people are often jumping between different levels; things like a file browser or a web browser.\n\nIf your app has a shallow or flat hierarchy, like Photos, you might not need browser-style navigation because all of the destinations in the app are already available with a single tap in the sidebar.\n\nIf you do use browser-style navigation, it goes great with another new feature in iPadOS 16: putting search in the top right of the navigation bar.\n\nSearch in the top right is great when your search bar is used to filter the content that you're looking at below on the same screen.\n\nAnd even though it's in the navigation bar, it supports suggestions.\n\nSuggestions show up right off the field as you're typing.\n\nYour app can suggest recent searches.\n\nIt can also suggest recommendations for what to search for.\n\nAnd it can suggest filters to narrow down your search.\n\nAgain, search in the top right is meant for searching the content that's showing below.\n\nIf you want to search your entire app at once, it's better to keep that in a search tab so that people can get to search from wherever they are in your app.\n\nThat's what's new for navigation.\n\nNext up, I want to talk about selection and menus.\n\niPadOS 15 introduced band selection, using the pointer to quickly select multiple notes at once.\n\nBut you still have to use the toolbar to act on the selection and to leave edit mode when you're done.\n\niPadOS 16 makes that much easier.\n\nIf you use band selection, iPadOS no longer enters editing mode automatically.\n\nYou can now use keyboard modifiers like Command and Shift to select and deselect, also without going into editing mode.\n\nAnd once you have the notes selected, it's just a secondary click to act on all of them together.\n\nWith touch, you can long press to get a context menu for those same actions.\n\nAnd these interactions work just as well with a list.\n\nYou can hold Command to select multiple notes, use drag-and-drop to move them into a folder, and bring up a context menu to act on multiple notes together.\n\nAlong with these multi-item context menus, iPadOS 16 also supports context menus in empty areas, which you can use to create something new.\n\nFor example, you can make a new folder in Files.\n\nOr, you can paste a copied event in Calendar.\n\nOK. That's a lot of things to keep in mind for selection.\n\nLet's go through the checklist.\n\nYour app should support keyboard focus to navigate around using the arrow keys and with tab.\n\nSupport band selection to quickly select multiple items in a grid by using the pointer.\n\nAllow multiple selection without entering editing mode when using the pointer or the keyboard.\n\nAdd context menus to act on multiple selected items together.\n\nAnd in the empty area, use a context menu to create new items.\n\nThe next thing I want to talk about is submenus.\n\nOn iPhone, submenus open vertically.\n\nSince space is limited and they're an extra tap away, it's best to use submenus on iPhone only when you really need one.\n\nBut on iPadOS 16, submenus open horizontally when they have space available.\n\nThis makes them much faster, especially with a pointer.\n\nFor example, Calendar uses a submenu to really quickly move an event into a different calendar.\n\nAnd Reminders uses submenus to quickly change the due date and the priority.\n\nSo on iPad, you should consider including submenus in your app's context menus to make quick changes just like these.\n\nAlong with submenus, iPadOS 16 also adds a new control for pop-up buttons in lists.\n\nJust like any other pop-up button, these show a menu to let you choose an option.\n\nLet's look at these in practice.\n\nIn the past, editing a reminder's priority meant pushing into the detail view, then popping back out.\n\nIt's a bunch of taps, and it also took you out of context.\n\nIn iPadOS 16, you change the priority right in place.\n\nIt's much faster, and you stay right where you are.\n\nSo as you've seen here, the main use for these pop-up buttons in lists is to replace navigation pushes in popovers and in modals.\n\nWhen you're using a pop-up button, choose places where you have a well-defined set of options to pick from.\n\nMake sure to only use a pop-up button if your options really do fit nicely into a menu.\n\nIf your option is better as a switch, use a switch.\n\nAnd if the options really need more controls, don't try and force it.\n\nBut if you only sometimes need more controls, a good choice can be to add a Custom option into the menu.\n\nWhen someone chooses Custom, your app can reveal the extra controls without getting in the way of the other choices.\n\nAnd if your options need an explanation, you can put that underneath the pop-up button in the list.\n\nAll right. That's what's new for selection and menus.\n\nLastly, I want to talk about tables.\n\nTables are a great new component in iPadOS 16 to make your lists of content more powerful.\n\nNow, in the past, you may have used a control called a table.\n\nBut that wasn't quite right; it's not much of a table if it only has a single column.\n\niPadOS 16 has a real table.\n\nTables in SwiftUI show multiple columns of information.\n\nAnd they let you sort just by tapping a header.\n\nNow, since iPad screens are relatively small, you'll only be able to show the most important columns.\n\nBut you can swap those columns out, like replacing Size with Kind, just by choosing a different sort option.\n\nAnd as makes sense for something that's all about having powerful access to your content, sortable tables also support all of the selection features I talked about earlier.\n\nSo tables are a really powerful control, but it's important to use them correctly.\n\nThese tables built into iOS 16 are built to show more information about a list of content, not to show a spreadsheet of data.\n\nYou can think of them as an extended version of the list views that you already have in your app.\n\nIn fact, when you resize an app to a compact width, tables will switch back into being single-column lists.\n\nAnd when they do, we recommend taking those details from the secondary columns and moving that information into a secondary line of text within each row so all of that information is still available.\n\nAnd for sorting, you can use a toolbar button to quickly reveal the sort options.\n\nSo those are the new components and features in iPadOS 16.\n\nLet's go back to Bryant to recap everything we talked about today.\n\nBryant: Thanks, Grant.\n\nA lot of the features we covered today are aimed around helping users be more productive with iPad.\n\nAs you think about how these relate to your iPad app, consider how you can make your app more powerful by offering more functionality, better organization, and make common editing and browsing tasks more efficient.\n\nEvaluate your app design in resizable windows and larger screens.\n\nAnd ensure your app works seamlessly with touch and pointer.\n\nGrant: And if you want an overview of what goes into designing a great iPad app, you should make sure to check out our previous talk, \"Designed for iPad.\" Bryant: Thanks for watching.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ instrumental hip hop music ♪ ♪ Hi, welcome to our session on iPad App design."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "I'm Bryant Jow."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "And I'm Grant Paul, and we're from the Apple Design Team."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "Bryant: Today, we'll show you some of the new UIKit and SwiftUI updates in iPadOS 16, as well as some general tips for incorporating these into your app designs."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "With iPadOS 16, people can take advantage of larger resolutions with extended display support and display zoom and work with their apps in a single view by using Stage Manager."
+      },
+      {
+        "timestamp": "0:35",
+        "text": "So what does this mean for iPad apps? Your app design should always embrace larger screens and different window sizes, as well as support all the different inputs of iPadOS."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "And now, your iPad apps should consider how to lean into more advanced use cases that come with using iPad like a desktop."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "So that's why we're introducing a number of improvements to help apps become more powerful and easier to use."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "Here's a preview of the features we'll cover: toolbars and customization, document menu, editing menus, find and replace, navigation, search, tables, and selection."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "Today, we're going to show examples of how you can incorporate these updates in designing two kinds of experiences: document editing and content browsing."
+      },
+      {
+        "timestamp": "1:28",
+        "text": "We'll start with document editing and look at how these improvements can help people be more productive when using your app."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "Let's jump into toolbars."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "Toolbars are a really important component in app design because they organize your app's functionality, and this impacts how easy it is for people to go about their workflows."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "Here's the previous toolbar in the Pages app in iPadOS 15."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "In iPadOS 16, we're introducing a new toolbar layout that aligns titles to the left side and allows apps to offer more toolbar items in the center."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "Let's take a closer look."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "Here's the leading section of the toolbar."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "It should contain items that help people navigate within and outside of the document, like the back and sidebar buttons."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "And it displays the new document title and menu, which I'll come back to later."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "With more space in the toolbar, apps can elevate commonly used actions in the center."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "In iPadOS 16, the Pages app shows actions for inserting content."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "You should consider what are the most common workflows in your app where people could benefit from one-tap access."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "But be careful not to pack your app's toolbar with too many items."
+      },
+      {
+        "timestamp": "2:31",
+        "text": "Let's look at a couple more tools to consider if your app has a lot of functionality."
+      },
+      {
+        "timestamp": "2:36",
+        "text": "In iPadOS 16, you can enable customizable toolbars so people can curate the items that are most important for their workflow."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "If your app has a lot of toolbar items or advanced features that not all people need, you should consider enabling customization."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "Note how items in the center section can be added, removed, or rearranged."
+      },
+      {
+        "timestamp": "2:55",
+        "text": "Items outside of this section are not customizable because these may include navigation buttons or important features that need to be always accessible."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "Toolbar items can also be grouped or collapsed."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "Use groups to keep related actions together in the toolbar or the overflow menu."
+      },
+      {
+        "timestamp": "3:13",
+        "text": "In the Pages app, similar actions like inserting tables, charts, shapes, and photos are grouped together."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "When there's not enough room in the toolbar, these actions collapse into a plus button."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "You can also make wide toolbar items collapse into a compact glyph at smaller window sizes."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "Now, let's take a look at the trailing section of the toolbar."
+      },
+      {
+        "timestamp": "3:35",
+        "text": "This section may contain a variety of items: any button that invokes nearby inspectors, important items that should stay visible at any window size, and an optional overflow button for people to access hidden items as well as toolbar customization."
+      },
+      {
+        "timestamp": "3:50",
+        "text": "When people resize your app, the toolbar items in the center will automatically hide into an overflow menu when there's not enough room."
+      },
+      {
+        "timestamp": "3:57",
+        "text": "And when the window is resized even smaller, only the leading and trailing sections remain."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "So make sure to arrange important items in the trailing section if you want them to be visible at most window sizes."
+      },
+      {
+        "timestamp": "4:09",
+        "text": "So here's a quick recap of toolbars."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "Consider if there are common workflows that you can elevate in the toolbar."
+      },
+      {
+        "timestamp": "4:16",
+        "text": "Arrange important toolbar items in the trailing section to avoid overflow in smaller window sizes."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "Enable customization if your app has many toolbar items and advanced use cases."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "And wherever possible, try to organize similar items into groups."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "Now let's take a look at the new document menu that we mentioned earlier."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "To make it easier for people to find document-related actions in one place across apps, we're introducing a new title and menu in the toolbar."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "This layout is intended for document viewers like Quick Look or document-editing apps like Keynote."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "Note, these apps may also have a browser view, which can appear as a back button near the document title."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "If your app is primarily used for editing or viewing documents, you should consider using this new menu."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "Let's open Keynote's document menu by clicking the title."
+      },
+      {
+        "timestamp": "5:05",
+        "text": "Here, you can see there is a combined set of standard document actions as well as app-specific ones."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "So, what should go inside here? The menu should contain actions that affect the document as a whole."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "Here are some examples of standard actions that should go inside the document menu: Duplicate, Rename, Move, Export, and Print."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "You can also add custom actions for your app."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "But not everything should go inside in the document menu."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "Actions that take content outside of your app should be placed under Share, and actions that directly affect content inside a document should support toolbar customization and appear in edit menus where appropriate."
+      },
+      {
+        "timestamp": "5:48",
+        "text": "Next, I want to talk about a couple of features that can help users work more efficiently in your iPad app."
+      },
+      {
+        "timestamp": "5:54",
+        "text": "Let's look at edit menus."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "These menus may appear over selected text and contain edit options such as Copy and Paste."
+      },
+      {
+        "timestamp": "6:01",
+        "text": "In iPadOS 16, edit menus have a new look and are optimized for touch and pointer."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "When using touch, the menu appears horizontally and people can now scroll back and forth between the list of options like this."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "When using pointer, the edit menu shows a more comprehensive list of options in a vertical layout like this."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "Your app should support both styles for touch and pointer interactions."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "When you incorporate these edit menus into your app, here are a couple of things to remember."
+      },
+      {
+        "timestamp": "6:33",
+        "text": "Don't remove the standard actions like Cut, Copy, and Paste."
+      },
+      {
+        "timestamp": "6:37",
+        "text": "These editing tools are important to many workflows and should be always available."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "And you should organize custom actions close to related system actions."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "In iPadOS 16, the Notes app groups formatting options for checklists and text in the same section."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "Edit menus are not just limited to text fields."
+      },
+      {
+        "timestamp": "6:56",
+        "text": "They can also apply to objects on a document canvas."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "Here's an example of selecting layers in Keynote with touch."
+      },
+      {
+        "timestamp": "7:04",
+        "text": "And that same menu when using pointer."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "Try to integrate these menus into any editable content so that people can be more productive when using your app."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "So that's edit menus."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "Now, let's dive into find and replace."
+      },
+      {
+        "timestamp": "7:20",
+        "text": "In iPadOS 16, we're introducing find and replace into the system keyboard so people can quickly search for specific words, phrases, and more within a document."
+      },
+      {
+        "timestamp": "7:30",
+        "text": "This also supports advanced use cases like matching specific parts of a phrase or replacing all matches with a different word."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "And when iPad is attached to a hardware keyboard, the find and replace interface sits above the app in this compact appearance."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "To make find and replace easy to access, consider adding an item inside the overflow menu as well as the system keyboard shortcuts."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "So those are some of the new features we're introducing for document editing."
+      },
+      {
+        "timestamp": "7:58",
+        "text": "Now I'm going to hand it off to Grant Paul, who will talk about some more improvements."
+      },
+      {
+        "timestamp": "8:02",
+        "text": "Grant: Thanks, Bryant. Next up, I'm going to talk about improvements for content browsing, something that you do in a lot of different iPad apps."
+      },
+      {
+        "timestamp": "8:11",
+        "text": "Content browsing experiences are everywhere on iPad, whether you're managing in your photo library in Photos, browsing Apple Music, or choosing a document in Pages."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "iPadOS 16 has some great new features and patterns for content browsing."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "I'm going to focus on three areas that are important to this part of an app."
+      },
+      {
+        "timestamp": "8:31",
+        "text": "The first one is some updates to app navigation."
+      },
+      {
+        "timestamp": "8:36",
+        "text": "iPadOS 16 has a new style of navigation that we call \"browser-style\" navigation."
+      },
+      {
+        "timestamp": "8:43",
+        "text": "For example, the Files app uses back and forward buttons to let you easily browse between folders that might have come from different places in the sidebar."
+      },
+      {
+        "timestamp": "8:53",
+        "text": "With browser-style navigation, it's up to your app to choose the buttons that go to the left of the title."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "You should make sure to keep to just those navigational buttons like back and forward, or maybe a sidebar button."
+      },
+      {
+        "timestamp": "9:09",
+        "text": "Browser-style navigation works well when your app has a complex hierarchy where people are often jumping between different levels; things like a file browser or a web browser."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "If your app has a shallow or flat hierarchy, like Photos, you might not need browser-style navigation because all of the destinations in the app are already available with a single tap in the sidebar."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "If you do use browser-style navigation, it goes great with another new feature in iPadOS 16: putting search in the top right of the navigation bar."
+      },
+      {
+        "timestamp": "9:50",
+        "text": "Search in the top right is great when your search bar is used to filter the content that you're looking at below on the same screen."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "And even though it's in the navigation bar, it supports suggestions."
+      },
+      {
+        "timestamp": "10:04",
+        "text": "Suggestions show up right off the field as you're typing."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "Your app can suggest recent searches."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "It can also suggest recommendations for what to search for."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "And it can suggest filters to narrow down your search."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "Again, search in the top right is meant for searching the content that's showing below."
+      },
+      {
+        "timestamp": "10:27",
+        "text": "If you want to search your entire app at once, it's better to keep that in a search tab so that people can get to search from wherever they are in your app."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "That's what's new for navigation."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "Next up, I want to talk about selection and menus."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "iPadOS 15 introduced band selection, using the pointer to quickly select multiple notes at once."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "But you still have to use the toolbar to act on the selection and to leave edit mode when you're done."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "iPadOS 16 makes that much easier."
+      },
+      {
+        "timestamp": "11:05",
+        "text": "If you use band selection, iPadOS no longer enters editing mode automatically."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "You can now use keyboard modifiers like Command and Shift to select and deselect, also without going into editing mode."
+      },
+      {
+        "timestamp": "11:21",
+        "text": "And once you have the notes selected, it's just a secondary click to act on all of them together."
+      },
+      {
+        "timestamp": "11:29",
+        "text": "With touch, you can long press to get a context menu for those same actions."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "And these interactions work just as well with a list."
+      },
+      {
+        "timestamp": "11:42",
+        "text": "You can hold Command to select multiple notes, use drag-and-drop to move them into a folder, and bring up a context menu to act on multiple notes together."
+      },
+      {
+        "timestamp": "11:53",
+        "text": "Along with these multi-item context menus, iPadOS 16 also supports context menus in empty areas, which you can use to create something new."
+      },
+      {
+        "timestamp": "12:04",
+        "text": "For example, you can make a new folder in Files."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "Or, you can paste a copied event in Calendar."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "OK. That's a lot of things to keep in mind for selection."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Let's go through the checklist."
+      },
+      {
+        "timestamp": "12:21",
+        "text": "Your app should support keyboard focus to navigate around using the arrow keys and with tab."
+      },
+      {
+        "timestamp": "12:28",
+        "text": "Support band selection to quickly select multiple items in a grid by using the pointer."
+      },
+      {
+        "timestamp": "12:36",
+        "text": "Allow multiple selection without entering editing mode when using the pointer or the keyboard."
+      },
+      {
+        "timestamp": "12:43",
+        "text": "Add context menus to act on multiple selected items together."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "And in the empty area, use a context menu to create new items."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "The next thing I want to talk about is submenus."
+      },
+      {
+        "timestamp": "12:58",
+        "text": "On iPhone, submenus open vertically."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "Since space is limited and they're an extra tap away, it's best to use submenus on iPhone only when you really need one."
+      },
+      {
+        "timestamp": "13:11",
+        "text": "But on iPadOS 16, submenus open horizontally when they have space available."
+      },
+      {
+        "timestamp": "13:17",
+        "text": "This makes them much faster, especially with a pointer."
+      },
+      {
+        "timestamp": "13:22",
+        "text": "For example, Calendar uses a submenu to really quickly move an event into a different calendar."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "And Reminders uses submenus to quickly change the due date and the priority."
+      },
+      {
+        "timestamp": "13:36",
+        "text": "So on iPad, you should consider including submenus in your app's context menus to make quick changes just like these."
+      },
+      {
+        "timestamp": "13:46",
+        "text": "Along with submenus, iPadOS 16 also adds a new control for pop-up buttons in lists."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "Just like any other pop-up button, these show a menu to let you choose an option."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "Let's look at these in practice."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "In the past, editing a reminder's priority meant pushing into the detail view, then popping back out."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "It's a bunch of taps, and it also took you out of context."
+      },
+      {
+        "timestamp": "14:15",
+        "text": "In iPadOS 16, you change the priority right in place."
+      },
+      {
+        "timestamp": "14:19",
+        "text": "It's much faster, and you stay right where you are."
+      },
+      {
+        "timestamp": "14:23",
+        "text": "So as you've seen here, the main use for these pop-up buttons in lists is to replace navigation pushes in popovers and in modals."
+      },
+      {
+        "timestamp": "14:34",
+        "text": "When you're using a pop-up button, choose places where you have a well-defined set of options to pick from."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "Make sure to only use a pop-up button if your options really do fit nicely into a menu."
+      },
+      {
+        "timestamp": "14:47",
+        "text": "If your option is better as a switch, use a switch."
+      },
+      {
+        "timestamp": "14:51",
+        "text": "And if the options really need more controls, don't try and force it."
+      },
+      {
+        "timestamp": "14:56",
+        "text": "But if you only sometimes need more controls, a good choice can be to add a Custom option into the menu."
+      },
+      {
+        "timestamp": "15:03",
+        "text": "When someone chooses Custom, your app can reveal the extra controls without getting in the way of the other choices."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "And if your options need an explanation, you can put that underneath the pop-up button in the list."
+      },
+      {
+        "timestamp": "15:19",
+        "text": "All right. That's what's new for selection and menus."
+      },
+      {
+        "timestamp": "15:22",
+        "text": "Lastly, I want to talk about tables."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "Tables are a great new component in iPadOS 16 to make your lists of content more powerful."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Now, in the past, you may have used a control called a table."
+      },
+      {
+        "timestamp": "15:36",
+        "text": "But that wasn't quite right; it's not much of a table if it only has a single column."
+      },
+      {
+        "timestamp": "15:42",
+        "text": "iPadOS 16 has a real table."
+      },
+      {
+        "timestamp": "15:45",
+        "text": "Tables in SwiftUI show multiple columns of information."
+      },
+      {
+        "timestamp": "15:49",
+        "text": "And they let you sort just by tapping a header."
+      },
+      {
+        "timestamp": "15:53",
+        "text": "Now, since iPad screens are relatively small, you'll only be able to show the most important columns."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "But you can swap those columns out, like replacing Size with Kind, just by choosing a different sort option."
+      },
+      {
+        "timestamp": "16:09",
+        "text": "And as makes sense for something that's all about having powerful access to your content, sortable tables also support all of the selection features I talked about earlier."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "So tables are a really powerful control, but it's important to use them correctly."
+      },
+      {
+        "timestamp": "16:27",
+        "text": "These tables built into iOS 16 are built to show more information about a list of content, not to show a spreadsheet of data."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "You can think of them as an extended version of the list views that you already have in your app."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "In fact, when you resize an app to a compact width, tables will switch back into being single-column lists."
+      },
+      {
+        "timestamp": "16:52",
+        "text": "And when they do, we recommend taking those details from the secondary columns and moving that information into a secondary line of text within each row so all of that information is still available."
+      },
+      {
+        "timestamp": "17:07",
+        "text": "And for sorting, you can use a toolbar button to quickly reveal the sort options."
+      },
+      {
+        "timestamp": "17:13",
+        "text": "So those are the new components and features in iPadOS 16."
+      },
+      {
+        "timestamp": "17:17",
+        "text": "Let's go back to Bryant to recap everything we talked about today."
+      },
+      {
+        "timestamp": "17:22",
+        "text": "Bryant: Thanks, Grant."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "A lot of the features we covered today are aimed around helping users be more productive with iPad."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "As you think about how these relate to your iPad app, consider how you can make your app more powerful by offering more functionality, better organization, and make common editing and browsing tasks more efficient."
+      },
+      {
+        "timestamp": "17:41",
+        "text": "Evaluate your app design in resizable windows and larger screens."
+      },
+      {
+        "timestamp": "17:45",
+        "text": "And ensure your app works seamlessly with touch and pointer."
+      },
+      {
+        "timestamp": "17:49",
+        "text": "Grant: And if you want an overview of what goes into designing a great iPad app, you should make sure to check out our previous talk, \"Designed for iPad.\" Bryant: Thanks for watching."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -57,5 +736,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110930"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:27.570Z"
+  "extractedAt": "2026-10-17T18:50:28.976Z"
 }

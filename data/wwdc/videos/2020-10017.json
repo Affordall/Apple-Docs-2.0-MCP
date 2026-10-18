@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10017/",
   "title": "Core Data: Sundries and maxims",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools",
@@ -13,8 +12,336 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nHello, everybody. I'm Rishi Verma from the Core Data team. This session, we'll show you how to harness Core Data to best fit the needs of an application. To start, we'll investigate how to populate and maintain your persistent store quickly and efficiently with batch operations.\n\nThen we'll go over how to tailor a fetch request to match the needs of an application.\n\nLastly, a few tips and tricks on how an application could react to changes in the persistent store.\n\nLet's start with a look at our sample, Earthquakes. It is a Swift application that has a view context to drive the UI and a background context to ingest the data provided by the US Geological Survey. Our sample has a local container for our application and gathers quake data from the USGS's JSON feed.\n\nHere, we send the JSON feed to our JSON parser, which in turn sends the data over to our background context to be turned into quake managed objects and saved to our local store.\n\nOur view context then merges changes to magically update our UI.\n\nNow, our background context could be working with a large number of managed objects that are created or fetched only to be discarded shortly after the save. But this is where batch operations shine.\n\nBatch operations allow developers to do inserts, updates and deletes with ease, while being as minimal as possible. Due to the minimalist nature of these operations, a few caveats.\n\nThere are no save notifications posted because, well, obviously we're not doing a save here.\n\nAnd because we did not manifest the managed objects, we do not get any callback or accessor logic for our changes. But wait. You can work around these two caveats with persistent history.\n\nEnable persistent history, and your batch operations are captured so that a notification can easily be acquired, and now we've worked around that first caveat of the batch operations. As for the callbacks and accessor logic, we can accommodate that by parsing our persistent history for the relevant changes to our application's current view. How about we dive deeper into batch operations? The first thing our applications generally do is load data into the persistent store, which in turn drives our UI. When we introduced NSBatchInsertRequest, it gave developers the power of a batch operation for data ingestion. It streamlined the ability to ingest a ton of data, and now we have expanded the abilities of NSBatchInsertRequest.\n\nInitially, we gave developers the ability to pass an array of dictionaries for a batch insert. The array of dictionaries represented the objects to create with the keys as attribute names and their assigned values.\n\nAnd we have a new addition, an initializer that allows developers to give a block to fill out a given dictionary or managed object. This greatly reduces the peak memory of an ingestion while also reducing the number of objects allocations even further.\n\nHow about we see an example? In this snippet of code, we're creating managed objects for our quake...\n\nand populating them with values for our quake data provided by the USGS.\n\nThen we save. Let's see how this code would look if we adopted NSBatchInsertRequest.\n\nFirst, we gather a dictionary of all the quake data and add it to our array.\n\nWe create a batch insert request and execute.\n\nSimple. Now let's see this block variant of batch insert request. We create the batch insert request with a block that will assign values to a given dictionary.\n\nWe then execute the request, and this block is called until it returns \"true\" as the indicator to stop and save. But how do these three different ways perform? Let's look at how our application performs when we ingest a large number of earthquakes. When we save the context with managed objects, we see it takes over one minute and idles out with roughly 30 megs of memory usage.\n\nThe initial peak is the JSON data, and most of that first minute isn't actually the ingestion, but the merging of change notifications since we did a huge number of transactions. But we don't have that issue with batch inserts. When we use the NSBatchInsert with an array of dictionaries, we finish the same operation with 25 megs of idle memory and are able to save the same number of objects in only 13 seconds, a fraction of the time needed for a traditional save.\n\nBut we can do even better. Let's use the new block ingestion, and we're able to ingest all of the objects in 11 seconds. Now that we've optimized our data population, let's learn a neat trick about batch inserts. Here, we have our managed-object model from the Earthquakes Sample, and I have the quake entity selected. On the right-hand side is the data model inspector for our quake entity. Let's take a closer look. We can see that the attribute \"code\" is a unique constraint. This means that only one object can have a specific value for \"code\" in the persistent store. No other quakes can have the same value for \"code.\" How does this come into play with our Earthquakes Sample? Well, our JSON feed gives us all of the quakes for the last 30 days, and every time our user hits the reload button, we ingest all of the data from the JSON feed, which is mostly the same data except for a few quakes that have happened recently, and updated data on past quakes. Here we have a quake with code 42 coming from our JSON feed into our parser.\n\nThen it is passed to our background context, which saves quake 42 into the store.\n\nThe first time it is ingested, we create a new row in our store. However, on subsequent attempts to insert the same quake, we don't want to delete the old one and insert the new one. We would really like to update any data that has changed, and in SQL that's called an UPSERT.\n\nUPSERT is an SQL term that is easier to understand if you see the SQL at the same time. So, here we have our insert of our quake object, and while inserting, if we have a conflict on code, update these properties instead of inserting. How do you get this behavior? Simply set the mergePolicy on the context, executing the batch insert request to NSMergeByPropertyObject- TrumpMergePolicy.\n\nBut there is a simpler way to do updates, and it couldn't be simpler with batch updates.\n\nWith the NSBatchUpdateRequest, there is no need to execute the fetch request only to update the managed objects and save. An NSBatchUpdateRequest can quickly and efficiently update the properties in our objects that meet the search criteria defined in the fetch request.\n\nLet's check out a quick example.\n\nUsing our Earthquakes Sample app, we could mark all of the quakes as validated if we were able to confirm them with another source. Well, let's imagine our source only validates earthquakes if they have a magnitude greater than 2.5.\n\nWell, we can build a batch update for this. This code creates a batch update request for \"Quake\" and then sets the propertiesToUpdate \"validated\" equals \"true\" and sets our predicate, magnitude greater than 2.5.\n\nThen we execute our batch update, and we're all done. It's just that simple. So we've covered inserts and updates. Let's do batch deletes.\n\nBatch deletes are very powerful and can be used to easily delete large portions of the object graph. Relationship rules are observed, so deletes will cascade and relationships will be nullified. The general use case we have seen is from expiration code that determines the time to live for objects and cleans up those objects that have reached their expiration.\n\nThis is a great use of this API. However, what seems like a simple operation can have complex ramifications. How about an example? Here, we have an example where our earthquake data expires after 30 days.\n\nAnd since this is a clean-up task, we have it dispatched asynchronously with a background priority. Our block kicks off on the managed object context and determines the expiration date. Then we build our fetch request and set our expiration predicate...\n\ncreate a batch delete request with our new fetch request, and execute.\n\nHmm. But what if we had a large number of objects that matched our batch delete search criteria? The request would take a write lock on our store for, uh-oh, possibly some unbounded amount of time.\n\nBut wait. We can fix this.\n\nLet's set a fetch limit. This way our task doesn't go unbounded, and we've saved our user from a lot of frustration.\n\nNow that we've avoided this pitfall, let's see how we can improve how to fetch data. Now that we have this rich object graph, we need to investigate and display what we have in our store. When fetching data, the data we get back can drive a lot of views and computations. But do we always need that much data? And how can we do these complex computations without the entire object graph? Well, first, the managedObjectResultType provides the easiest way to traverse the object graph to the fullest extent.\n\nThis is great when we're using the results to batch a fetchResultsController. As our managed objects are updated, our fetchResultsController magically responds and applies the diffs. Let's see this in action. Here's our Earthquakes Sample without any data, and then we fetch.\n\nAs the objects are fetched, our fetchResultsController is adding rows.\n\nAnd as we update these objects, our view is also updated. But if you notice here, our view only shows about 15 earthquakes. We fetched a lot more than that. We have some room for improvement here. By setting the batch size on our fetch request, the results will only have the first batch of a given number of objects fully hydrated with data. And when our user scrolls, the remaining objects will be hydrated, but only as far as the user needs.\n\nThe batched array is special and behaves differently than a traditional array. Let me show you.\n\nHere, we have a regular result array. All our managed objects are hydrated, and as we iterate over them, all is as expected.\n\nNow we have a batched array. Notice that we do not have managed objects but ObjectIDs that will turn into managed objects upon iterating over the array. And as I move on, the batches are released and only the ObjectID is retained for the results.\n\nLet's see this in action. Here's our Earthquakes Sample fetching data, and it shows the idle memory at roughly 17 megs.\n\nWell, what if we turn on batch fetch? When we set the batch size, we only use roughly 12 megs of memory to do the same task, and we've saved almost five megs, nearly a third of our application's memory usage.\n\nHow else can we improve our fetches? We can trim down what data the fetch fetches. If we know the result will need certain attributes or relationships, we can tailor our fetch to these requirements.\n\nFor the known attributes that will be accessed, we can set propertiesToFetch. When we work with managed objects, the default behavior is to have the relationship set as \"false,\" and the first traversal of a relationship will trigger the fetch of the related object. This is great if few relationships are traversed, or none at all. But if it is known that a relationship is highly likely to be traversed, we recommend setting that key path to be prefetched, thus avoiding having to fetch the data at a later time and inefficiently, as the faults are loaded on each traversal.\n\nHere is our baseline fetch, which sits idle at 17.6 megs.\n\nBut if we set the propertiesToFetch to only those attributes visible in our UI, we can reduce our idle memory to 16.4 megs.\n\nNow let's talk about ObjectIDs.\n\nManaged objects are large and rich with data, but these are not ideal to pass between threads, so ObjectIDResultType comes in handy. When we want to do the work and identify the objects that meet a certain criteria, these simple identifiers can be passed to other threads for further processing, avoiding that lookup cost on the processing thread. But what if we need something in between a full managed object and ObjectIDs? Like dictionary results, which are very handy as they provide a lightweight, read-only data set that can be passed to other threads.\n\nDictionary results can also be tailored to do complex data aggregation that can help reduce large computations that would normally require pulling in the relevant object graph...\n\nsuch as groupBy with aggregate functions on the entities and their properties. Let's look at an example.\n\nAverage magnitude grouped by place. First, we determine our key path expression for magnitude, then our function expression to get the average.\n\nThen we make an expression description of our average magnitude.\n\nAnd lastly, we set up our fetch request for quakes with properties to fetch, our expression description and the place, grouped by the place, and set the result to \"dictionary.\" And this leads to these results, which show us the average magnitude for earthquakes in the designated places. Our last result type to cover is the countResultType. It's simple, elegant and optimized.\n\nNeed I say more? We've optimized ingestion and fetching. Now let's look at how we can improve our application's reactions to changes in our persistent store. Core Data is rich with notifications that let you know when stores have been added or removed, or objects have been saved or changed. But we want to focus on two in particular that are really useful. This year, we've introduced ObjectID notifications that are available in addition to the traditional save notification. The ObjectID notification is a lightweight counterpart to the managed object save notification you're already familiar with, and this convenient notification is vended from persistent history transactions. Let's look at these new additions in Swift. The managed object context now has modernized notifications for Swift. We've updated some oldies but goodies to be friendlier in Swift and added these two new notifications that allow you to drive your application with ObjectIDs rather than managed objects. But that's not all that we've modernized. As part of our efforts to modernize, we've also added notification keys that make notification processing much easier in Swift.\n\nWe've also added some new keys to go with the ObjectID notifications. And the other notification we want to discuss is the remote change notification.\n\nRemote change notifications are very informative because they're posted for all operations that are done in and out of your process by any Core Data client.\n\nThis allows your application to avoid polling for changes and be able to drive that same logic with notifications.\n\nAnd when persistent history is enabled, the userInfo of a remote change notification contains a persistent history token which can be used to get an ObjectID notification. Let's see this in the works.\n\nHere we have our container and application and a table showing our persistent history that has been captured so far.\n\nThe JSON feed from the USGS comes online, and the background context ingests the JSON data into the persistent store.\n\nAnd persistent history captures the operation with great detail, much more than we can show you here.\n\nPreviously, though, our application would need to poll the store for new changes. But not with remote change notifications. Instead, we're notified that changes have been made, and the userInfo payload for the remote change notification has a history token so I can see the exact operation in persistent history. Let's see how this works as our application evolves.\n\nOur application has some new additions: a share extension, a second application that harnesses the same data, and a handy Photos extension. When one of these new additions makes a change to the persistent store, the operation is recorded in persistent history.\n\nHowever, when an application comes to the foreground, it needs to poll for history, which is really expensive.\n\nBut if we have remote change notifications enabled, we get notified when our app is brought to the foreground...\n\nand on subsequent changes by our Photos extension...\n\nand our second application...\n\nand our share extension.\n\nWhen our app relaunches, it is notified and can easily see what has changed with persistent history.\n\nThese two features make it really easy to know who, what, when, where, and how the persistent store has changed. Lastly, a quick tip on persistent history.\n\nA rather handy tip for persistent history is the same we told you earlier for fetch requests. Make sure to tailor the request to your application's needs.\n\nHere, we have an example of how to tailor the change request so that we can find all the changes for a specific ObjectID after a given date.\n\nFirst, we start off by getting our entity description for the persistent history change object...\n\nso that we can use it to build our fetch request and set the entity.\n\nThen we set our predicate here, looking for changes to a specific ObjectID, and then we create our history request, and set the fetch request.\n\nAnd voilà, execute. Our results will only be those changes for the given ObjectID after the specific date. That's all we have for this session. A quick recap: batch when possible, tailor your fetches to the intended use and harness the power of notifications and persistent history. Thanks to all of you and to the Core Data team. It's been an honor.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:07",
+        "text": "Hello, everybody. I'm Rishi Verma from the Core Data team. This session, we'll show you how to harness Core Data to best fit the needs of an application. To start, we'll investigate how to populate and maintain your persistent store quickly and efficiently with batch operations."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "Then we'll go over how to tailor a fetch request to match the needs of an application."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "Lastly, a few tips and tricks on how an application could react to changes in the persistent store."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "Let's start with a look at our sample, Earthquakes. It is a Swift application that has a view context to drive the UI and a background context to ingest the data provided by the US Geological Survey. Our sample has a local container for our application and gathers quake data from the USGS's JSON feed."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "Here, we send the JSON feed to our JSON parser, which in turn sends the data over to our background context to be turned into quake managed objects and saved to our local store."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Our view context then merges changes to magically update our UI."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "Now, our background context could be working with a large number of managed objects that are created or fetched only to be discarded shortly after the save. But this is where batch operations shine."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "Batch operations allow developers to do inserts, updates and deletes with ease, while being as minimal as possible. Due to the minimalist nature of these operations, a few caveats."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "There are no save notifications posted because, well, obviously we're not doing a save here."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "And because we did not manifest the managed objects, we do not get any callback or accessor logic for our changes. But wait. You can work around these two caveats with persistent history."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "Enable persistent history, and your batch operations are captured so that a notification can easily be acquired, and now we've worked around that first caveat of the batch operations. As for the callbacks and accessor logic, we can accommodate that by parsing our persistent history for the relevant changes to our application's current view. How about we dive deeper into batch operations? The first thing our applications generally do is load data into the persistent store, which in turn drives our UI. When we introduced NSBatchInsertRequest, it gave developers the power of a batch operation for data ingestion. It streamlined the ability to ingest a ton of data, and now we have expanded the abilities of NSBatchInsertRequest."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "Initially, we gave developers the ability to pass an array of dictionaries for a batch insert. The array of dictionaries represented the objects to create with the keys as attribute names and their assigned values."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "And we have a new addition, an initializer that allows developers to give a block to fill out a given dictionary or managed object. This greatly reduces the peak memory of an ingestion while also reducing the number of objects allocations even further."
+      },
+      {
+        "timestamp": "2:57",
+        "text": "How about we see an example? In this snippet of code, we're creating managed objects for our quake..."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "and populating them with values for our quake data provided by the USGS."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "Then we save. Let's see how this code would look if we adopted NSBatchInsertRequest."
+      },
+      {
+        "timestamp": "3:15",
+        "text": "First, we gather a dictionary of all the quake data and add it to our array."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "We create a batch insert request and execute."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Simple. Now let's see this block variant of batch insert request. We create the batch insert request with a block that will assign values to a given dictionary."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "We then execute the request, and this block is called until it returns \"true\" as the indicator to stop and save. But how do these three different ways perform? Let's look at how our application performs when we ingest a large number of earthquakes. When we save the context with managed objects, we see it takes over one minute and idles out with roughly 30 megs of memory usage."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "The initial peak is the JSON data, and most of that first minute isn't actually the ingestion, but the merging of change notifications since we did a huge number of transactions. But we don't have that issue with batch inserts. When we use the NSBatchInsert with an array of dictionaries, we finish the same operation with 25 megs of idle memory and are able to save the same number of objects in only 13 seconds, a fraction of the time needed for a traditional save."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "But we can do even better. Let's use the new block ingestion, and we're able to ingest all of the objects in 11 seconds. Now that we've optimized our data population, let's learn a neat trick about batch inserts. Here, we have our managed-object model from the Earthquakes Sample, and I have the quake entity selected. On the right-hand side is the data model inspector for our quake entity. Let's take a closer look. We can see that the attribute \"code\" is a unique constraint. This means that only one object can have a specific value for \"code\" in the persistent store. No other quakes can have the same value for \"code.\" How does this come into play with our Earthquakes Sample? Well, our JSON feed gives us all of the quakes for the last 30 days, and every time our user hits the reload button, we ingest all of the data from the JSON feed, which is mostly the same data except for a few quakes that have happened recently, and updated data on past quakes. Here we have a quake with code 42 coming from our JSON feed into our parser."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "Then it is passed to our background context, which saves quake 42 into the store."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "The first time it is ingested, we create a new row in our store. However, on subsequent attempts to insert the same quake, we don't want to delete the old one and insert the new one. We would really like to update any data that has changed, and in SQL that's called an UPSERT."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "UPSERT is an SQL term that is easier to understand if you see the SQL at the same time. So, here we have our insert of our quake object, and while inserting, if we have a conflict on code, update these properties instead of inserting. How do you get this behavior? Simply set the mergePolicy on the context, executing the batch insert request to NSMergeByPropertyObject- TrumpMergePolicy."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "But there is a simpler way to do updates, and it couldn't be simpler with batch updates."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "With the NSBatchUpdateRequest, there is no need to execute the fetch request only to update the managed objects and save. An NSBatchUpdateRequest can quickly and efficiently update the properties in our objects that meet the search criteria defined in the fetch request."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "Let's check out a quick example."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "Using our Earthquakes Sample app, we could mark all of the quakes as validated if we were able to confirm them with another source. Well, let's imagine our source only validates earthquakes if they have a magnitude greater than 2.5."
+      },
+      {
+        "timestamp": "6:44",
+        "text": "Well, we can build a batch update for this. This code creates a batch update request for \"Quake\" and then sets the propertiesToUpdate \"validated\" equals \"true\" and sets our predicate, magnitude greater than 2.5."
+      },
+      {
+        "timestamp": "6:58",
+        "text": "Then we execute our batch update, and we're all done. It's just that simple. So we've covered inserts and updates. Let's do batch deletes."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "Batch deletes are very powerful and can be used to easily delete large portions of the object graph. Relationship rules are observed, so deletes will cascade and relationships will be nullified. The general use case we have seen is from expiration code that determines the time to live for objects and cleans up those objects that have reached their expiration."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "This is a great use of this API. However, what seems like a simple operation can have complex ramifications. How about an example? Here, we have an example where our earthquake data expires after 30 days."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "And since this is a clean-up task, we have it dispatched asynchronously with a background priority. Our block kicks off on the managed object context and determines the expiration date. Then we build our fetch request and set our expiration predicate..."
+      },
+      {
+        "timestamp": "7:53",
+        "text": "create a batch delete request with our new fetch request, and execute."
+      },
+      {
+        "timestamp": "7:58",
+        "text": "Hmm. But what if we had a large number of objects that matched our batch delete search criteria? The request would take a write lock on our store for, uh-oh, possibly some unbounded amount of time."
+      },
+      {
+        "timestamp": "8:11",
+        "text": "But wait. We can fix this."
+      },
+      {
+        "timestamp": "8:13",
+        "text": "Let's set a fetch limit. This way our task doesn't go unbounded, and we've saved our user from a lot of frustration."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "Now that we've avoided this pitfall, let's see how we can improve how to fetch data. Now that we have this rich object graph, we need to investigate and display what we have in our store. When fetching data, the data we get back can drive a lot of views and computations. But do we always need that much data? And how can we do these complex computations without the entire object graph? Well, first, the managedObjectResultType provides the easiest way to traverse the object graph to the fullest extent."
+      },
+      {
+        "timestamp": "8:49",
+        "text": "This is great when we're using the results to batch a fetchResultsController. As our managed objects are updated, our fetchResultsController magically responds and applies the diffs. Let's see this in action. Here's our Earthquakes Sample without any data, and then we fetch."
+      },
+      {
+        "timestamp": "9:05",
+        "text": "As the objects are fetched, our fetchResultsController is adding rows."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "And as we update these objects, our view is also updated. But if you notice here, our view only shows about 15 earthquakes. We fetched a lot more than that. We have some room for improvement here. By setting the batch size on our fetch request, the results will only have the first batch of a given number of objects fully hydrated with data. And when our user scrolls, the remaining objects will be hydrated, but only as far as the user needs."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "The batched array is special and behaves differently than a traditional array. Let me show you."
+      },
+      {
+        "timestamp": "9:42",
+        "text": "Here, we have a regular result array. All our managed objects are hydrated, and as we iterate over them, all is as expected."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "Now we have a batched array. Notice that we do not have managed objects but ObjectIDs that will turn into managed objects upon iterating over the array. And as I move on, the batches are released and only the ObjectID is retained for the results."
+      },
+      {
+        "timestamp": "10:04",
+        "text": "Let's see this in action. Here's our Earthquakes Sample fetching data, and it shows the idle memory at roughly 17 megs."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "Well, what if we turn on batch fetch? When we set the batch size, we only use roughly 12 megs of memory to do the same task, and we've saved almost five megs, nearly a third of our application's memory usage."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "How else can we improve our fetches? We can trim down what data the fetch fetches. If we know the result will need certain attributes or relationships, we can tailor our fetch to these requirements."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "For the known attributes that will be accessed, we can set propertiesToFetch. When we work with managed objects, the default behavior is to have the relationship set as \"false,\" and the first traversal of a relationship will trigger the fetch of the related object. This is great if few relationships are traversed, or none at all. But if it is known that a relationship is highly likely to be traversed, we recommend setting that key path to be prefetched, thus avoiding having to fetch the data at a later time and inefficiently, as the faults are loaded on each traversal."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "Here is our baseline fetch, which sits idle at 17.6 megs."
+      },
+      {
+        "timestamp": "11:19",
+        "text": "But if we set the propertiesToFetch to only those attributes visible in our UI, we can reduce our idle memory to 16.4 megs."
+      },
+      {
+        "timestamp": "11:28",
+        "text": "Now let's talk about ObjectIDs."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "Managed objects are large and rich with data, but these are not ideal to pass between threads, so ObjectIDResultType comes in handy. When we want to do the work and identify the objects that meet a certain criteria, these simple identifiers can be passed to other threads for further processing, avoiding that lookup cost on the processing thread. But what if we need something in between a full managed object and ObjectIDs? Like dictionary results, which are very handy as they provide a lightweight, read-only data set that can be passed to other threads."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "Dictionary results can also be tailored to do complex data aggregation that can help reduce large computations that would normally require pulling in the relevant object graph..."
+      },
+      {
+        "timestamp": "12:12",
+        "text": "such as groupBy with aggregate functions on the entities and their properties. Let's look at an example."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Average magnitude grouped by place. First, we determine our key path expression for magnitude, then our function expression to get the average."
+      },
+      {
+        "timestamp": "12:27",
+        "text": "Then we make an expression description of our average magnitude."
+      },
+      {
+        "timestamp": "12:32",
+        "text": "And lastly, we set up our fetch request for quakes with properties to fetch, our expression description and the place, grouped by the place, and set the result to \"dictionary.\" And this leads to these results, which show us the average magnitude for earthquakes in the designated places. Our last result type to cover is the countResultType. It's simple, elegant and optimized."
+      },
+      {
+        "timestamp": "12:56",
+        "text": "Need I say more? We've optimized ingestion and fetching. Now let's look at how we can improve our application's reactions to changes in our persistent store. Core Data is rich with notifications that let you know when stores have been added or removed, or objects have been saved or changed. But we want to focus on two in particular that are really useful. This year, we've introduced ObjectID notifications that are available in addition to the traditional save notification. The ObjectID notification is a lightweight counterpart to the managed object save notification you're already familiar with, and this convenient notification is vended from persistent history transactions. Let's look at these new additions in Swift. The managed object context now has modernized notifications for Swift. We've updated some oldies but goodies to be friendlier in Swift and added these two new notifications that allow you to drive your application with ObjectIDs rather than managed objects. But that's not all that we've modernized. As part of our efforts to modernize, we've also added notification keys that make notification processing much easier in Swift."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "We've also added some new keys to go with the ObjectID notifications. And the other notification we want to discuss is the remote change notification."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "Remote change notifications are very informative because they're posted for all operations that are done in and out of your process by any Core Data client."
+      },
+      {
+        "timestamp": "14:19",
+        "text": "This allows your application to avoid polling for changes and be able to drive that same logic with notifications."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "And when persistent history is enabled, the userInfo of a remote change notification contains a persistent history token which can be used to get an ObjectID notification. Let's see this in the works."
+      },
+      {
+        "timestamp": "14:39",
+        "text": "Here we have our container and application and a table showing our persistent history that has been captured so far."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "The JSON feed from the USGS comes online, and the background context ingests the JSON data into the persistent store."
+      },
+      {
+        "timestamp": "14:54",
+        "text": "And persistent history captures the operation with great detail, much more than we can show you here."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "Previously, though, our application would need to poll the store for new changes. But not with remote change notifications. Instead, we're notified that changes have been made, and the userInfo payload for the remote change notification has a history token so I can see the exact operation in persistent history. Let's see how this works as our application evolves."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "Our application has some new additions: a share extension, a second application that harnesses the same data, and a handy Photos extension. When one of these new additions makes a change to the persistent store, the operation is recorded in persistent history."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "However, when an application comes to the foreground, it needs to poll for history, which is really expensive."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "But if we have remote change notifications enabled, we get notified when our app is brought to the foreground..."
+      },
+      {
+        "timestamp": "15:50",
+        "text": "and on subsequent changes by our Photos extension..."
+      },
+      {
+        "timestamp": "15:55",
+        "text": "and our second application..."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "and our share extension."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "When our app relaunches, it is notified and can easily see what has changed with persistent history."
+      },
+      {
+        "timestamp": "16:07",
+        "text": "These two features make it really easy to know who, what, when, where, and how the persistent store has changed. Lastly, a quick tip on persistent history."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "A rather handy tip for persistent history is the same we told you earlier for fetch requests. Make sure to tailor the request to your application's needs."
+      },
+      {
+        "timestamp": "16:28",
+        "text": "Here, we have an example of how to tailor the change request so that we can find all the changes for a specific ObjectID after a given date."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "First, we start off by getting our entity description for the persistent history change object..."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "so that we can use it to build our fetch request and set the entity."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "Then we set our predicate here, looking for changes to a specific ObjectID, and then we create our history request, and set the fetch request."
+      },
+      {
+        "timestamp": "16:58",
+        "text": "And voilà, execute. Our results will only be those changes for the given ObjectID after the specific date. That's all we have for this session. A quick recap: batch when possible, tailor your fetches to the intended use and harness the power of notifications and persistent history. Thanks to all of you and to the Core Data team. It's been an honor."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -114,5 +441,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/230"
     }
   ],
-  "extractedAt": "2026-10-11T16:46:03.263Z"
+  "extractedAt": "2026-10-17T18:55:57.795Z"
 }

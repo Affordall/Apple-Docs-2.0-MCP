@@ -3,8 +3,7 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10053/",
   "title": "What’s new in privacy",
-  "speakers": [],
-  "duration": "",
+  "duration": "32:49",
   "topics": [
     "Privacy & Security",
     "Spatial Computing"
@@ -12,8 +11,808 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop ♪ ♪ Hi there! I'm Michael from Privacy Engineering, and welcome to \"What's new in privacy.\" At Apple, we believe privacy is a fundamental human right.\n\nTo respect and protect it is all of our shared responsibility.\n\nFor this reason, privacy is a central component to how we approach designing new and improved features at Apple.\n\nMany products and services have become a central mainstay in all our lives, and so you have become a vital partner in protecting people.\n\nProviding a great privacy experience in your app, where people understand and control what data is being accessed and for what purpose, helps them trust your app, especially in sensitive parts of their lives.\n\nThe privacy pillars are a great guide for you when building privacy into your app.\n\nYou might have heard us talk about them before, as these are four central ideas we use at Apple to think about the privacy of our products and services.\n\nThe first pillar is data minimization: use only the data needed to build a feature.\n\nThis applies throughout your app's architecture, from the amount of data features accessed, to data shared with application servers, to data that might be shared with third parties.\n\nSecond is on-device processing: tap into the power of the device to process data locally and avoid sharing it with any servers.\n\nThird, transparency and control is about making sure people understand the what, why, when, and where of data access and processing, and to give them adequate controls before that happens.\n\nAnd also, enable them to change their mind later.\n\nThe last pillar is security protections: apply strong technical mitigations to enforce the other pillars, such as end-to-end encryption.\n\nTo help you implement the privacy pillars in your app, I will tell you about new tools with privacy-centric design that you can adopt, give the latest updates on important platform changes for privacy, and finally, I will talk about how the spatial input model on Apple's newest platform was designed to protect privacy.\n\nI will start with new privacy-enhancing technologies coming to Apple's platforms that make it easier for you to build great apps with great privacy.\n\nThis includes a set of new APIs that allow your app to obtain access to content seamlessly, while giving users fine-grain control over sharing, as well as new APIs to better protect communication with servers and people.\n\nI will begin with improvements to the Photos picker, designed to provide low-friction access to photos.\n\nOver the years, our photo libraries have grown massively as more and more of our precious moments are captured there, starting with embarrassing childhood photos, to the last hiking trip.\n\nFor this reason, a fundamental way to build up trust in your app is to empower people to make fine-grain decisions about which data they share with your app and when they share it.\n\nSo if someone wants to use your app to share the most scenic photos from their last trip, they can do so without granting your app access to all photos.\n\nThis is what the Photos picker allows you to do.\n\nThis API gives your app access to selected photos or videos, without requiring permission to access the entire photo library.\n\nAnd in iOS 17 and macOS Sonoma, you can fully embed the picker into your app for a completely seamless experience.\n\nEven though the photos look like they are part of your app, they are rendered by the system and only shared when selected, so the user's photos always remain in their control.\n\nWith the new customization options, you can choose whether you want to show the picker without any chrome, like this, or as a minimal, single row of photos that can be scrolled horizontally, or as an inline version of the full picker, with a new Options menu, providing controls about sharing photo metadata, such as captions or location information.\n\nThe Photos picker is a great and fast way to obtain photos, as you don't need to worry about obtaining permission for accessing the entire library, or designing and implementing a photo-picking flow.\n\nConsider adopting the picker to individually access photos instead of requesting full access.\n\nFor an in-depth explanation of the picker's new capabilities, watch the video \"Embed the Photos picker in your app.\" And in case you are developing an app that has a strong requirement for accessing the full photo library, iOS 17 has a redesigned permission dialog that includes the number of photos and a sample of what will be shared.\n\nThis helps people make the decision that is right for them about what to share.\n\nBecause the preferences might change over time, the system also periodically reminds people if your app has full access to the photo library.\n\nNext up is the Screen Capture picker, a new API in ScreenCaptureKit for macOS that enables people to share only the windows or screen your app needs when screen sharing, while providing a better experience.\n\nPrior to macOS Sonoma, when a user wants to screen share their presentation in a virtual video conference, they need to grant the conferencing app permission to record the full screen via the Settings app, resulting in a poor experience and risk of oversharing.\n\nWith the new SCContentSharingPicker API, macOS Sonoma shows a window picker on your behalf where people can pick the screen content that they want to share.\n\nmacOS makes sure to only share the selected windows or screen as soon as they are picked.\n\nBecause of the explicit action to record the screen, your app is permitted to record selected content for the duration of the screen capture session.\n\nThis means your app is not required to obtain separate permission to capture the screen or build its own screen content picker -- this is all handled by SCContentSharingPicker.\n\nTo make sure that people are always aware, macOS Sonoma also includes a new screen sharing menu bar item serving as a reminder that your app is recording the screen.\n\nKeep this in mind and only record screen content when it is expected.\n\nWhen clicked, the menu expands to provide a preview of the shared content.\n\nThis also allows quickly adding or removing screen content to the capture session or ending it altogether.\n\nSCContentSharingPicker also provides options for customization in order to adjust it based on your app's needs, such as preferred selection modes or applications.\n\nFor more details, watch \"What's new in ScreenCaptureKit.\" Calendar is another area that now enables seamless experiences in your app, especially for apps that only create new events.\n\nThe calendar provides a detailed view into people's lives, such as doctor appointments or flight information, which is why people may be surprised or even say no when your app asks for access.\n\nFor apps that are only seeking access to write calendar events, this can result in a failure to add events, frustration, and maybe even people missing a concert or a good friend's birthday party.\n\nIn order to avoid this issue, there are two important changes to Apple's platforms for Calendar access.\n\nFirst, if your app only creates new calendar events, I have great news for you: with EventKitUI, your app does not need any permission.\n\nThis is made possible by rendering EventKitUI view controllers outside of your app, without any changes to the APIs or functionality.\n\nSecond, if you prefer to provide your own UI for creating events, there is a new add-only calendar permission, allowing your app to add events without access to other events on the calendar.\n\nThis is another great way to integrate your app's events into the user's day, without them having to worry whether your app might be fetching content of their calendar.\n\nAnd, should your app need full Calendar access later, you can ask once to upgrade.\n\nIt is best to make this request when linked to user intent.\n\nWhen asked at an unexpected time or for an unexpected reason, it might be rejected and can degrade the experience in your app.\n\nHelp people understand why the access is needed, by defining a meaningful purpose string.\n\nIn order to provide the benefits of write-only access to all apps, there are two important things to remember.\n\nIf your app has been granted Calendar access previously, it defaults to write-only permission on upgrade to iOS 17 or macOS Sonoma.\n\nSimilarly, if you are linking against an older version of EventKit and your app asks for Calendar access, the system only prompts for write-only access.\n\nIn this case, when your app attempts to fetch Calendar events, the system automatically asks to upgrade your app to full access.\n\nFor more information about how to integrate EventKit and EventKitUI into your app, watch \"Discover Calendar and EventKit.\" Next is the new Oblivious HTTP API, which helps you to hide client IP addresses from your servers and potentially sensitive app usage patterns from network operators.\n\nKnowing when and which apps people use on a daily basis can provide deep insight into their lives.\n\nBecause cellular and Wi-Fi network operators can observe what servers someone connects to, they can observe their personal app usage and life patterns.\n\nAnd some network operators may be interested in using their position to learn about how people use your app.\n\nThis could be especially sensitive to them, such as dating apps or apps for specific health conditions.\n\nIP addresses are an essential element for communication on the internet; however, the IP address can be abused to determine someone's location or their identity.\n\nExposure to IP addresses can result in additional challenges for you if you want to implement features with anonymity guarantees in your app, such as client analytics.\n\nApple platforms now support Oblivious HTTP, or OHTTP for short, in order to help you protect people's app usage and IP address by separating the who from what.\n\nOHTTP is a standardized internet protocol that is designed to be lightweight, proxying encrypted messages at the application layer to allow for fast transactional server interactions.\n\nWith OHTTP, the network operator can only observe a connection to the relay provider, instead of your application server.\n\nThe cornerstone of this architecture is the relay, which knows the client's IP address and the destination server name, but none of the encrypted content.\n\nIt is assumed that the relay always sees connections to your application server, so the only meaningful information the relay gains is the client IP.\n\nThe final connection to your application server is made by the relay.\n\nWhen the relay is operated by a third party, no single party has full visibility of the source IP, destination IP, and the content.\n\nThis also enables you to add technical guarantees to features where you don't want to be able to identify or track users, such as anonymous analytics.\n\nWith OHTTP support, you have the chance to build stronger internet privacy protections that impact people meaningfully.\n\nServices like iCloud Private Relay already make use of OHTTP for its great performance and strong privacy protections.\n\nFor example, Private Relay uses it to protect all DNS queries.\n\nTo learn more about how you can adopt OHTTP, watch the network relay video.\n\nAdopting OHTTP also means you will need to think about how to replace IP addresses in your system architecture -- for example, to perform real-user detection.\n\nRefer to \"Replace CAPTCHAs with Private Access Tokens\" from WWDC22 to learn how to replace IP reputation systems with a privacy-preserving alternative.\n\nEncrypting DNS queries is another essential part of protecting app usage from networks.\n\nTo learn how, watch \"Enable Encrypted DNS\" from WWDC20.\n\nThe last new tool is Communication Safety and the new Sensitive Content Analysis framework, which utilizes on-device processing to help you protect children in your app.\n\nApple platforms and the apps you build have become an important part of many families, as children use our products and services to explore the digital world and communicate with family and friends.\n\nCommunication Safety helps families to keep children safe, by warning children and providing helpful resources if they receive or attempt to share photos that likely contain nudity.\n\nAnd it is important that these protections are applied throughout Apple's platforms, as well as in your app.\n\nTo this end, Communication Safety expands beyond Messages to also detect sensitive content when sharing via AirDrop, when leaving a message on FaceTime, when sharing contact posters in the Phone app, and in the Photos picker.\n\nWe also make these features available to everyone, no matter their age, with Sensitive Content Warning.\n\nAnd now, with the new Sensitive Content Analysis framework, you can detect sensitive content in your app too.\n\nIt taps into the same on-device technology with system-provided ML models, so you don't have to share any content with any servers.\n\nAnd with this framework, this is possible for you without having to deal with the complexity of training large ML models and packing them into your app.\n\nIntegration into your app is possible with just a few lines of code.\n\nTo get started, create an instance of SCSensitivityAnalyzer.\n\nYou can check the analysisPolicy attribute to decide whether analysis is needed, and what kind of intervention should be shown if the image or video contains nudity.\n\nThen, call the analyzeImage method with the URL of the photo, or the CGImage, that you want to analyze.\n\nFor analyzing a video, call the videoAnalysis method instead.\n\nThis returns a handler, so you can track progress and cancel the analysis if needed.\n\nTo obtain the analysis result, call hasSensitiveContent on the handler.\n\nIf isSensitive is true, the image or video likely contains nudity.\n\nIn this case, your app should provide its own intervention -- which can consist of blurring or otherwise obfuscating the image or video -- and an option to view the content.\n\nAlso, check the analysis policy to tailor the intervention depending on whether Communication Safety or Sensitive Content Warning is enabled.\n\nYou can find more detailed design guidelines for interventions in the Apple Developer documentation.\n\nThose are the new APIs to adopt to offer great privacy in your app.\n\nIn addition to that, there are a few privacy changes to existing features on Apple platforms.\n\nThis includes new ways you can protect data in your app as well as privacy improvements for Safari and Safari app extensions.\n\nFirst, our new privacy protections for macOS, designed to help you protect data in your app from other apps on the same device.\n\nLocations on disk like the Desktop, Documents, and Downloads folder have a system-managed permission.\n\nThis ensures people are in control over when apps have access to their private data.\n\nThis model works well for files that people directly interact with, like a project presentation or a spreadsheet with a budget.\n\nSome applications might store private data in different locations, such as a messaging app that has a database of sent and received messages, or a notes app with vacation plans.\n\nThese files are often stored in locations like the Library folder, or for App Sandboxed apps, the app's data container.\n\nmacOS Sonoma gives users additional control over who can access their data.\n\nSpecifically, macOS ensures that they give permission before an app can access data in an application data container from a different developer.\n\nThis can impact your application in two ways.\n\nFirst, if your application stores data outside of system-managed data stores, adopt App Sandbox in order to extend this new protection to data of your users.\n\nThen, all files created by your app will be protected.\n\nApps that are already using App Sandbox get this new protection automatically.\n\nSecond, if your app accesses data from other apps, there are a few ways that you can ask for permission.\n\nWithout any changes on your side, macOS Sonoma will ask for permission when your app accesses a file in another app's data container.\n\nThe permission is valid for as long as your app remains open, and once the app is quit, the permission resets.\n\nYou should only attempt to read other apps' files when it is expected.\n\nIf the timing of the prompt is surprising, or the purpose is unclear, your app's access might be denied.\n\nA meaningful purpose string will help people understand why your app is requesting access.\n\nThere are a few alternative ways you can get explicit permission to access files from other apps.\n\nFor seamless access to individual files and folders, use NSOpenPanel.\n\nThis shows the macOS file picker outside of your process, and your app can read or write selected resources once the user confirms the selection.\n\nNSOpenPanel also allows you to specify the path that is shown by default in the picker to make the selection even easier.\n\nFor backup utilities or disk-management tools that have already been granted Full Disk Access, no additional prompt will be shown at time of access, since people have already chosen to allow these apps access to all files.\n\nIn addition, all apps signed with your Team ID can access data in your other app's containers by default, without a permission prompt.\n\nSo if you release a new app that imports data from a previous version of your app, this will work seamlessly.\n\nHowever, there may be instances where you want to define a more restrictive policy.\n\nFor example, if you build a code interpreter such as an editor, browser, or a shell, you might want macOS to ask for permission when this app accesses data from a messaging app that you also developed.\n\nTo do so, you can specify an NSDataAccessSecurityPolicy in your app's Info.plist, to replace the default same-team policy with an explicit AllowList.\n\nWhen specified, listed processes and installer packages are permitted to access your app's data without additional consent while other apps require permission.\n\nAdvanced Data Protection is another opportunity for you to protect data of your users.\n\nAdvanced Data Protection was added in 2022, providing a way for people to enable end-to-end encryption for the vast majority of their data stored in iCloud.\n\nBy adopting CloudKit, you can end-to-end encrypt data stored in CloudKit by your app whenever someone enables Advanced Data Protection.\n\nAnd this is possible without any changes required on your end, in order to manage encryption keys, encryption operations, or complex and risky recovery flows.\n\nTo extend the great privacy benefits of Advanced Data Protection to your users, you only need to follow a few steps.\n\nFirst, make sure to use encrypted data types for all fields in your CloudKit schema.\n\nThis includes CKAsset fields by default, and for most data types in CloudKit, there is an encrypted variant, such as EncryptedString.\n\nThen, you can use the encryptedValues API, to retrieve or store data on your CloudKit records.\n\nAll encryption and decryption operations are abstracted away by this API for your convenience.\n\nAs a result, your app's data receives the full benefit of security breach and privacy protection that is available from Advanced Data Protection, whenever someone enables this feature.\n\nFor an explanation of how you can adopt CloudKit in your app, including code samples, watch \"What's New in CloudKit\" from WWDC21.\n\nNext up are new fingerprinting and tracking protections in Safari Private Browsing mode.\n\nSafari is designed with privacy at its core.\n\nPrivate Browsing Mode enables additional privacy protections in Safari, such as making sure that when a tab is closed, Safari doesn't remember the pages you visited, search history, or AutoFill information.\n\nPrivate Browsing mode in Safari 17 adds advanced tracking and fingerprinting protection, which includes two new protections for preventing tracking across websites.\n\nFirst, Safari prevents known tracking and fingerprinting resources from being loaded.\n\nIf you are a website developer, make sure to test your website's functionality in Private Browsing mode: focus testing on login flows, cross-site navigation from your website, and use of browser APIs related to screen, audio, and graphics.\n\nYou can reload without advanced tracking and fingerprinting protections, to confirm if a change in behavior of your website is due to the new protections.\n\nDo this by right-clicking on the reload button on macOS, via the page settings button on iOS, or by testing in Safari in normal browsing mode.\n\nYou can also open the Web Inspector to examine any output to the JavaScript console.\n\nNetwork requests that were blocked as a result of contacting known trackers show up as a message beginning with \"Blocked connection to known tracker.\" Another common method for cross-website tracking are unique identifiers embedded into URLs, for example, in query parameters.\n\nTo give people control over where they can be tracked, another new protection is removal of tracking parameters as part of browser navigation, and when copying a link.\n\nWhen a tracking parameter is detected, Safari strips the identifying components of the URL, while leaving nonidentifiable parts intact.\n\nRemember that ad attribution can be done without identifying individuals across websites.\n\nFor example, Private Click Measurement is a privacy-preserving alternative to tracking parameters for advertising attribution.\n\nAnd it is now also available in Private Browsing mode for direct-response advertising, where no data is written to disk and attribution is limited to a single browsing context, based on a single tab.\n\nThis follows Safari's existing strict model of ephemeral browsing and separation of tabs in Private Browsing.\n\nFor more information, check out the video \"Meet privacy-preserving ad attribution\" from WWDC21.\n\nThe last platform change is the new permission model for app extensions in Safari.\n\nWith Safari 17, the permission model Apple pioneered for web extensions is coming to app extensions as well.\n\nThis means that people are able to choose which webpages your extension is able to access on a per-site basis.\n\nWe're also giving them control over which extensions can run in Private Browsing mode.\n\nTo learn more about these changes to extensions and how permissions for your extensions can be granted per-site, you can watch the video \"What's new in Safari extensions.\" The privacy principles behind new tools for developers and our platform changes extend across all of the features we build at Apple, including the input model on our new spatial computing platform.\n\nThe system is really simple to use: just look around, decide what you want to interact with, and tap.\n\nThere are no new permissions, no extra work for every app developer, and no worrying about apps tracking where you look.\n\nThe results are a great new product with great privacy.\n\nLet's go through the privacy engineering approach to the development of eye and hand control.\n\nFirst, there are high-level goals the input model needs to achieve.\n\nThe input experience should be fast and fluid, enabling natural interaction with UI elements.\n\nIt should give real-time feedback about what people are looking at in order to provide confidence in interacting with UI elements of all kinds and sizes.\n\nIn addition, existing iPhone and iPad applications should work out of the box.\n\nAnd last, it should not require new app permissions just for apps to receive basic inputs.\n\nNext are the privacy goals for the input model.\n\nTo prevent apps from learning sensitive details about your eyes, including medical conditions, only relevant system components should be able to access the eye cameras.\n\nTo enable permissionless access, apps should be able to work without learning details about people's eyes or hands.\n\nAnd what people look at can reveal what they're thinking, so it is important that apps work without learning what people look at and only learn what they interact with.\n\nLet's go over the system Apple engineered to achieve all of these goals.\n\nThe internal and external camera data that measures eyes and hands for the input system is processed in an isolated system process.\n\nThis delivers a measurement of where the eyes and hands are located to the eye and pinch detection systems, and abstracts away complex camera processing from all other system components, including your app.\n\nThe hover feedback system combines what is shown onscreen with the eye position to determine what the user is looking at.\n\nIf they are looking at a UI element, the system adds a highlighting layer as it is rendered.\n\nThis is done by the rendering engine outside of the app's process and only visible to the person using the device, so they understand what they are looking at without revealing any information to apps.\n\nAnd as soon as a pinch gesture is detected, the system delivers a normal tap event for the highlighted UI element to your app.\n\nWith this system architecture, the complexity of translating camera data into input events is handled by the operating system.\n\nThis means, no changes are required to receive inputs on this new platform.\n\nIn addition to the default system behavior, UIKit, SwiftUI, and RealityKit make it easy to tune these effects to match your app's design, with the same privacy protections as system-provided UI elements.\n\nYou can change the type, shape, and what elements the hover effects apply to.\n\nTo learn more about how to adopt, watch \"Meet SwiftUI for spatial computing\" as well as \"Elevate your windowed app for spatial computing.\" This spatial input model is made possible by implementing the privacy pillars.\n\nThe system minimizes the amount of data each component of the system needs access to.\n\nAll of the processing takes place on the device.\n\nPeople have control, since only intentional interactions are shared with apps.\n\nAnd where you look is protected using process isolation enforced by the operating system's kernel.\n\nBy making privacy a core design goal, it is possible to deliver both great features and great privacy.\n\nWe hope that learning about the new privacy changes across Apple platforms has helped inspire you as they make it easier for you to build trust through great privacy; minimize data accessed by your app with content-picking APIs providing seamless user control; protect children in your app by adopting the Sensitive Content Analysis framework with on-device processing.\n\nAnd for protecting user data in your app, adopt security protections such App Sandbox on macOS, and make sure to encrypt data in CloudKit.\n\nThank you for watching this video.\n\nWe can't wait to see what you build.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop ♪ ♪ Hi there! I'm Michael from Privacy Engineering, and welcome to \"What's new in privacy.\" At Apple, we believe privacy is a fundamental human right."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "To respect and protect it is all of our shared responsibility."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "For this reason, privacy is a central component to how we approach designing new and improved features at Apple."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "Many products and services have become a central mainstay in all our lives, and so you have become a vital partner in protecting people."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "Providing a great privacy experience in your app, where people understand and control what data is being accessed and for what purpose, helps them trust your app, especially in sensitive parts of their lives."
+      },
+      {
+        "timestamp": "1:01",
+        "text": "The privacy pillars are a great guide for you when building privacy into your app."
+      },
+      {
+        "timestamp": "1:07",
+        "text": "You might have heard us talk about them before, as these are four central ideas we use at Apple to think about the privacy of our products and services."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "The first pillar is data minimization: use only the data needed to build a feature."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "This applies throughout your app's architecture, from the amount of data features accessed, to data shared with application servers, to data that might be shared with third parties."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "Second is on-device processing: tap into the power of the device to process data locally and avoid sharing it with any servers."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "Third, transparency and control is about making sure people understand the what, why, when, and where of data access and processing, and to give them adequate controls before that happens."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "And also, enable them to change their mind later."
+      },
+      {
+        "timestamp": "2:03",
+        "text": "The last pillar is security protections: apply strong technical mitigations to enforce the other pillars, such as end-to-end encryption."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "To help you implement the privacy pillars in your app, I will tell you about new tools with privacy-centric design that you can adopt, give the latest updates on important platform changes for privacy, and finally, I will talk about how the spatial input model on Apple's newest platform was designed to protect privacy."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "I will start with new privacy-enhancing technologies coming to Apple's platforms that make it easier for you to build great apps with great privacy."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "This includes a set of new APIs that allow your app to obtain access to content seamlessly, while giving users fine-grain control over sharing, as well as new APIs to better protect communication with servers and people."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "I will begin with improvements to the Photos picker, designed to provide low-friction access to photos."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "Over the years, our photo libraries have grown massively as more and more of our precious moments are captured there, starting with embarrassing childhood photos, to the last hiking trip."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "For this reason, a fundamental way to build up trust in your app is to empower people to make fine-grain decisions about which data they share with your app and when they share it."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "So if someone wants to use your app to share the most scenic photos from their last trip, they can do so without granting your app access to all photos."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "This is what the Photos picker allows you to do."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "This API gives your app access to selected photos or videos, without requiring permission to access the entire photo library."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "And in iOS 17 and macOS Sonoma, you can fully embed the picker into your app for a completely seamless experience."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "Even though the photos look like they are part of your app, they are rendered by the system and only shared when selected, so the user's photos always remain in their control."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "With the new customization options, you can choose whether you want to show the picker without any chrome, like this, or as a minimal, single row of photos that can be scrolled horizontally, or as an inline version of the full picker, with a new Options menu, providing controls about sharing photo metadata, such as captions or location information."
+      },
+      {
+        "timestamp": "4:45",
+        "text": "The Photos picker is a great and fast way to obtain photos, as you don't need to worry about obtaining permission for accessing the entire library, or designing and implementing a photo-picking flow."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "Consider adopting the picker to individually access photos instead of requesting full access."
+      },
+      {
+        "timestamp": "5:05",
+        "text": "For an in-depth explanation of the picker's new capabilities, watch the video \"Embed the Photos picker in your app.\" And in case you are developing an app that has a strong requirement for accessing the full photo library, iOS 17 has a redesigned permission dialog that includes the number of photos and a sample of what will be shared."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "This helps people make the decision that is right for them about what to share."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "Because the preferences might change over time, the system also periodically reminds people if your app has full access to the photo library."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "Next up is the Screen Capture picker, a new API in ScreenCaptureKit for macOS that enables people to share only the windows or screen your app needs when screen sharing, while providing a better experience."
+      },
+      {
+        "timestamp": "6:00",
+        "text": "Prior to macOS Sonoma, when a user wants to screen share their presentation in a virtual video conference, they need to grant the conferencing app permission to record the full screen via the Settings app, resulting in a poor experience and risk of oversharing."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "With the new SCContentSharingPicker API, macOS Sonoma shows a window picker on your behalf where people can pick the screen content that they want to share."
+      },
+      {
+        "timestamp": "6:29",
+        "text": "macOS makes sure to only share the selected windows or screen as soon as they are picked."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "Because of the explicit action to record the screen, your app is permitted to record selected content for the duration of the screen capture session."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "This means your app is not required to obtain separate permission to capture the screen or build its own screen content picker -- this is all handled by SCContentSharingPicker."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "To make sure that people are always aware, macOS Sonoma also includes a new screen sharing menu bar item serving as a reminder that your app is recording the screen."
+      },
+      {
+        "timestamp": "7:11",
+        "text": "Keep this in mind and only record screen content when it is expected."
+      },
+      {
+        "timestamp": "7:17",
+        "text": "When clicked, the menu expands to provide a preview of the shared content."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "This also allows quickly adding or removing screen content to the capture session or ending it altogether."
+      },
+      {
+        "timestamp": "7:30",
+        "text": "SCContentSharingPicker also provides options for customization in order to adjust it based on your app's needs, such as preferred selection modes or applications."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "For more details, watch \"What's new in ScreenCaptureKit.\" Calendar is another area that now enables seamless experiences in your app, especially for apps that only create new events."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "The calendar provides a detailed view into people's lives, such as doctor appointments or flight information, which is why people may be surprised or even say no when your app asks for access."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "For apps that are only seeking access to write calendar events, this can result in a failure to add events, frustration, and maybe even people missing a concert or a good friend's birthday party."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "In order to avoid this issue, there are two important changes to Apple's platforms for Calendar access."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "First, if your app only creates new calendar events, I have great news for you: with EventKitUI, your app does not need any permission."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "This is made possible by rendering EventKitUI view controllers outside of your app, without any changes to the APIs or functionality."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "Second, if you prefer to provide your own UI for creating events, there is a new add-only calendar permission, allowing your app to add events without access to other events on the calendar."
+      },
+      {
+        "timestamp": "9:05",
+        "text": "This is another great way to integrate your app's events into the user's day, without them having to worry whether your app might be fetching content of their calendar."
+      },
+      {
+        "timestamp": "9:16",
+        "text": "And, should your app need full Calendar access later, you can ask once to upgrade."
+      },
+      {
+        "timestamp": "9:22",
+        "text": "It is best to make this request when linked to user intent."
+      },
+      {
+        "timestamp": "9:26",
+        "text": "When asked at an unexpected time or for an unexpected reason, it might be rejected and can degrade the experience in your app."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "Help people understand why the access is needed, by defining a meaningful purpose string."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "In order to provide the benefits of write-only access to all apps, there are two important things to remember."
+      },
+      {
+        "timestamp": "9:50",
+        "text": "If your app has been granted Calendar access previously, it defaults to write-only permission on upgrade to iOS 17 or macOS Sonoma."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "Similarly, if you are linking against an older version of EventKit and your app asks for Calendar access, the system only prompts for write-only access."
+      },
+      {
+        "timestamp": "10:10",
+        "text": "In this case, when your app attempts to fetch Calendar events, the system automatically asks to upgrade your app to full access."
+      },
+      {
+        "timestamp": "10:20",
+        "text": "For more information about how to integrate EventKit and EventKitUI into your app, watch \"Discover Calendar and EventKit.\" Next is the new Oblivious HTTP API, which helps you to hide client IP addresses from your servers and potentially sensitive app usage patterns from network operators."
+      },
+      {
+        "timestamp": "10:44",
+        "text": "Knowing when and which apps people use on a daily basis can provide deep insight into their lives."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "Because cellular and Wi-Fi network operators can observe what servers someone connects to, they can observe their personal app usage and life patterns."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "And some network operators may be interested in using their position to learn about how people use your app."
+      },
+      {
+        "timestamp": "11:11",
+        "text": "This could be especially sensitive to them, such as dating apps or apps for specific health conditions."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "IP addresses are an essential element for communication on the internet; however, the IP address can be abused to determine someone's location or their identity."
+      },
+      {
+        "timestamp": "11:30",
+        "text": "Exposure to IP addresses can result in additional challenges for you if you want to implement features with anonymity guarantees in your app, such as client analytics."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "Apple platforms now support Oblivious HTTP, or OHTTP for short, in order to help you protect people's app usage and IP address by separating the who from what."
+      },
+      {
+        "timestamp": "11:58",
+        "text": "OHTTP is a standardized internet protocol that is designed to be lightweight, proxying encrypted messages at the application layer to allow for fast transactional server interactions."
+      },
+      {
+        "timestamp": "12:12",
+        "text": "With OHTTP, the network operator can only observe a connection to the relay provider, instead of your application server."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "The cornerstone of this architecture is the relay, which knows the client's IP address and the destination server name, but none of the encrypted content."
+      },
+      {
+        "timestamp": "12:32",
+        "text": "It is assumed that the relay always sees connections to your application server, so the only meaningful information the relay gains is the client IP."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "The final connection to your application server is made by the relay."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "When the relay is operated by a third party, no single party has full visibility of the source IP, destination IP, and the content."
+      },
+      {
+        "timestamp": "13:00",
+        "text": "This also enables you to add technical guarantees to features where you don't want to be able to identify or track users, such as anonymous analytics."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "With OHTTP support, you have the chance to build stronger internet privacy protections that impact people meaningfully."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "Services like iCloud Private Relay already make use of OHTTP for its great performance and strong privacy protections."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "For example, Private Relay uses it to protect all DNS queries."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "To learn more about how you can adopt OHTTP, watch the network relay video."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "Adopting OHTTP also means you will need to think about how to replace IP addresses in your system architecture -- for example, to perform real-user detection."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "Refer to \"Replace CAPTCHAs with Private Access Tokens\" from WWDC22 to learn how to replace IP reputation systems with a privacy-preserving alternative."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "Encrypting DNS queries is another essential part of protecting app usage from networks."
+      },
+      {
+        "timestamp": "14:16",
+        "text": "To learn how, watch \"Enable Encrypted DNS\" from WWDC20."
+      },
+      {
+        "timestamp": "14:22",
+        "text": "The last new tool is Communication Safety and the new Sensitive Content Analysis framework, which utilizes on-device processing to help you protect children in your app."
+      },
+      {
+        "timestamp": "14:34",
+        "text": "Apple platforms and the apps you build have become an important part of many families, as children use our products and services to explore the digital world and communicate with family and friends."
+      },
+      {
+        "timestamp": "14:48",
+        "text": "Communication Safety helps families to keep children safe, by warning children and providing helpful resources if they receive or attempt to share photos that likely contain nudity."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "And it is important that these protections are applied throughout Apple's platforms, as well as in your app."
+      },
+      {
+        "timestamp": "15:08",
+        "text": "To this end, Communication Safety expands beyond Messages to also detect sensitive content when sharing via AirDrop, when leaving a message on FaceTime, when sharing contact posters in the Phone app, and in the Photos picker."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "We also make these features available to everyone, no matter their age, with Sensitive Content Warning."
+      },
+      {
+        "timestamp": "15:34",
+        "text": "And now, with the new Sensitive Content Analysis framework, you can detect sensitive content in your app too."
+      },
+      {
+        "timestamp": "15:42",
+        "text": "It taps into the same on-device technology with system-provided ML models, so you don't have to share any content with any servers."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "And with this framework, this is possible for you without having to deal with the complexity of training large ML models and packing them into your app."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "Integration into your app is possible with just a few lines of code."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "To get started, create an instance of SCSensitivityAnalyzer."
+      },
+      {
+        "timestamp": "16:11",
+        "text": "You can check the analysisPolicy attribute to decide whether analysis is needed, and what kind of intervention should be shown if the image or video contains nudity."
+      },
+      {
+        "timestamp": "16:22",
+        "text": "Then, call the analyzeImage method with the URL of the photo, or the CGImage, that you want to analyze."
+      },
+      {
+        "timestamp": "16:31",
+        "text": "For analyzing a video, call the videoAnalysis method instead."
+      },
+      {
+        "timestamp": "16:35",
+        "text": "This returns a handler, so you can track progress and cancel the analysis if needed."
+      },
+      {
+        "timestamp": "16:42",
+        "text": "To obtain the analysis result, call hasSensitiveContent on the handler."
+      },
+      {
+        "timestamp": "16:47",
+        "text": "If isSensitive is true, the image or video likely contains nudity."
+      },
+      {
+        "timestamp": "16:53",
+        "text": "In this case, your app should provide its own intervention -- which can consist of blurring or otherwise obfuscating the image or video -- and an option to view the content."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "Also, check the analysis policy to tailor the intervention depending on whether Communication Safety or Sensitive Content Warning is enabled."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "You can find more detailed design guidelines for interventions in the Apple Developer documentation."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "Those are the new APIs to adopt to offer great privacy in your app."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "In addition to that, there are a few privacy changes to existing features on Apple platforms."
+      },
+      {
+        "timestamp": "17:36",
+        "text": "This includes new ways you can protect data in your app as well as privacy improvements for Safari and Safari app extensions."
+      },
+      {
+        "timestamp": "17:46",
+        "text": "First, our new privacy protections for macOS, designed to help you protect data in your app from other apps on the same device."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "Locations on disk like the Desktop, Documents, and Downloads folder have a system-managed permission."
+      },
+      {
+        "timestamp": "18:02",
+        "text": "This ensures people are in control over when apps have access to their private data."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "This model works well for files that people directly interact with, like a project presentation or a spreadsheet with a budget."
+      },
+      {
+        "timestamp": "18:17",
+        "text": "Some applications might store private data in different locations, such as a messaging app that has a database of sent and received messages, or a notes app with vacation plans."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "These files are often stored in locations like the Library folder, or for App Sandboxed apps, the app's data container."
+      },
+      {
+        "timestamp": "18:38",
+        "text": "macOS Sonoma gives users additional control over who can access their data."
+      },
+      {
+        "timestamp": "18:44",
+        "text": "Specifically, macOS ensures that they give permission before an app can access data in an application data container from a different developer."
+      },
+      {
+        "timestamp": "18:55",
+        "text": "This can impact your application in two ways."
+      },
+      {
+        "timestamp": "18:59",
+        "text": "First, if your application stores data outside of system-managed data stores, adopt App Sandbox in order to extend this new protection to data of your users."
+      },
+      {
+        "timestamp": "19:11",
+        "text": "Then, all files created by your app will be protected."
+      },
+      {
+        "timestamp": "19:16",
+        "text": "Apps that are already using App Sandbox get this new protection automatically."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "Second, if your app accesses data from other apps, there are a few ways that you can ask for permission."
+      },
+      {
+        "timestamp": "19:30",
+        "text": "Without any changes on your side, macOS Sonoma will ask for permission when your app accesses a file in another app's data container."
+      },
+      {
+        "timestamp": "19:40",
+        "text": "The permission is valid for as long as your app remains open, and once the app is quit, the permission resets."
+      },
+      {
+        "timestamp": "19:48",
+        "text": "You should only attempt to read other apps' files when it is expected."
+      },
+      {
+        "timestamp": "19:52",
+        "text": "If the timing of the prompt is surprising, or the purpose is unclear, your app's access might be denied."
+      },
+      {
+        "timestamp": "19:59",
+        "text": "A meaningful purpose string will help people understand why your app is requesting access."
+      },
+      {
+        "timestamp": "20:06",
+        "text": "There are a few alternative ways you can get explicit permission to access files from other apps."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "For seamless access to individual files and folders, use NSOpenPanel."
+      },
+      {
+        "timestamp": "20:19",
+        "text": "This shows the macOS file picker outside of your process, and your app can read or write selected resources once the user confirms the selection."
+      },
+      {
+        "timestamp": "20:29",
+        "text": "NSOpenPanel also allows you to specify the path that is shown by default in the picker to make the selection even easier."
+      },
+      {
+        "timestamp": "20:38",
+        "text": "For backup utilities or disk-management tools that have already been granted Full Disk Access, no additional prompt will be shown at time of access, since people have already chosen to allow these apps access to all files."
+      },
+      {
+        "timestamp": "20:54",
+        "text": "In addition, all apps signed with your Team ID can access data in your other app's containers by default, without a permission prompt."
+      },
+      {
+        "timestamp": "21:03",
+        "text": "So if you release a new app that imports data from a previous version of your app, this will work seamlessly."
+      },
+      {
+        "timestamp": "21:10",
+        "text": "However, there may be instances where you want to define a more restrictive policy."
+      },
+      {
+        "timestamp": "21:17",
+        "text": "For example, if you build a code interpreter such as an editor, browser, or a shell, you might want macOS to ask for permission when this app accesses data from a messaging app that you also developed."
+      },
+      {
+        "timestamp": "21:32",
+        "text": "To do so, you can specify an NSDataAccessSecurityPolicy in your app's Info.plist, to replace the default same-team policy with an explicit AllowList."
+      },
+      {
+        "timestamp": "21:45",
+        "text": "When specified, listed processes and installer packages are permitted to access your app's data without additional consent while other apps require permission."
+      },
+      {
+        "timestamp": "21:57",
+        "text": "Advanced Data Protection is another opportunity for you to protect data of your users."
+      },
+      {
+        "timestamp": "22:04",
+        "text": "Advanced Data Protection was added in 2022, providing a way for people to enable end-to-end encryption for the vast majority of their data stored in iCloud."
+      },
+      {
+        "timestamp": "22:15",
+        "text": "By adopting CloudKit, you can end-to-end encrypt data stored in CloudKit by your app whenever someone enables Advanced Data Protection."
+      },
+      {
+        "timestamp": "22:24",
+        "text": "And this is possible without any changes required on your end, in order to manage encryption keys, encryption operations, or complex and risky recovery flows."
+      },
+      {
+        "timestamp": "22:36",
+        "text": "To extend the great privacy benefits of Advanced Data Protection to your users, you only need to follow a few steps."
+      },
+      {
+        "timestamp": "22:45",
+        "text": "First, make sure to use encrypted data types for all fields in your CloudKit schema."
+      },
+      {
+        "timestamp": "22:52",
+        "text": "This includes CKAsset fields by default, and for most data types in CloudKit, there is an encrypted variant, such as EncryptedString."
+      },
+      {
+        "timestamp": "23:02",
+        "text": "Then, you can use the encryptedValues API, to retrieve or store data on your CloudKit records."
+      },
+      {
+        "timestamp": "23:10",
+        "text": "All encryption and decryption operations are abstracted away by this API for your convenience."
+      },
+      {
+        "timestamp": "23:18",
+        "text": "As a result, your app's data receives the full benefit of security breach and privacy protection that is available from Advanced Data Protection, whenever someone enables this feature."
+      },
+      {
+        "timestamp": "23:30",
+        "text": "For an explanation of how you can adopt CloudKit in your app, including code samples, watch \"What's New in CloudKit\" from WWDC21."
+      },
+      {
+        "timestamp": "23:41",
+        "text": "Next up are new fingerprinting and tracking protections in Safari Private Browsing mode."
+      },
+      {
+        "timestamp": "23:48",
+        "text": "Safari is designed with privacy at its core."
+      },
+      {
+        "timestamp": "23:52",
+        "text": "Private Browsing Mode enables additional privacy protections in Safari, such as making sure that when a tab is closed, Safari doesn't remember the pages you visited, search history, or AutoFill information."
+      },
+      {
+        "timestamp": "24:06",
+        "text": "Private Browsing mode in Safari 17 adds advanced tracking and fingerprinting protection, which includes two new protections for preventing tracking across websites."
+      },
+      {
+        "timestamp": "24:17",
+        "text": "First, Safari prevents known tracking and fingerprinting resources from being loaded."
+      },
+      {
+        "timestamp": "24:24",
+        "text": "If you are a website developer, make sure to test your website's functionality in Private Browsing mode: focus testing on login flows, cross-site navigation from your website, and use of browser APIs related to screen, audio, and graphics."
+      },
+      {
+        "timestamp": "24:42",
+        "text": "You can reload without advanced tracking and fingerprinting protections, to confirm if a change in behavior of your website is due to the new protections."
+      },
+      {
+        "timestamp": "24:52",
+        "text": "Do this by right-clicking on the reload button on macOS, via the page settings button on iOS, or by testing in Safari in normal browsing mode."
+      },
+      {
+        "timestamp": "25:03",
+        "text": "You can also open the Web Inspector to examine any output to the JavaScript console."
+      },
+      {
+        "timestamp": "25:09",
+        "text": "Network requests that were blocked as a result of contacting known trackers show up as a message beginning with \"Blocked connection to known tracker.\" Another common method for cross-website tracking are unique identifiers embedded into URLs, for example, in query parameters."
+      },
+      {
+        "timestamp": "25:30",
+        "text": "To give people control over where they can be tracked, another new protection is removal of tracking parameters as part of browser navigation, and when copying a link."
+      },
+      {
+        "timestamp": "25:42",
+        "text": "When a tracking parameter is detected, Safari strips the identifying components of the URL, while leaving nonidentifiable parts intact."
+      },
+      {
+        "timestamp": "25:52",
+        "text": "Remember that ad attribution can be done without identifying individuals across websites."
+      },
+      {
+        "timestamp": "25:59",
+        "text": "For example, Private Click Measurement is a privacy-preserving alternative to tracking parameters for advertising attribution."
+      },
+      {
+        "timestamp": "26:09",
+        "text": "And it is now also available in Private Browsing mode for direct-response advertising, where no data is written to disk and attribution is limited to a single browsing context, based on a single tab."
+      },
+      {
+        "timestamp": "26:23",
+        "text": "This follows Safari's existing strict model of ephemeral browsing and separation of tabs in Private Browsing."
+      },
+      {
+        "timestamp": "26:31",
+        "text": "For more information, check out the video \"Meet privacy-preserving ad attribution\" from WWDC21."
+      },
+      {
+        "timestamp": "26:40",
+        "text": "The last platform change is the new permission model for app extensions in Safari."
+      },
+      {
+        "timestamp": "26:47",
+        "text": "With Safari 17, the permission model Apple pioneered for web extensions is coming to app extensions as well."
+      },
+      {
+        "timestamp": "26:56",
+        "text": "This means that people are able to choose which webpages your extension is able to access on a per-site basis."
+      },
+      {
+        "timestamp": "27:05",
+        "text": "We're also giving them control over which extensions can run in Private Browsing mode."
+      },
+      {
+        "timestamp": "27:11",
+        "text": "To learn more about these changes to extensions and how permissions for your extensions can be granted per-site, you can watch the video \"What's new in Safari extensions.\" The privacy principles behind new tools for developers and our platform changes extend across all of the features we build at Apple, including the input model on our new spatial computing platform."
+      },
+      {
+        "timestamp": "27:37",
+        "text": "The system is really simple to use: just look around, decide what you want to interact with, and tap."
+      },
+      {
+        "timestamp": "27:48",
+        "text": "There are no new permissions, no extra work for every app developer, and no worrying about apps tracking where you look."
+      },
+      {
+        "timestamp": "27:58",
+        "text": "The results are a great new product with great privacy."
+      },
+      {
+        "timestamp": "28:03",
+        "text": "Let's go through the privacy engineering approach to the development of eye and hand control."
+      },
+      {
+        "timestamp": "28:09",
+        "text": "First, there are high-level goals the input model needs to achieve."
+      },
+      {
+        "timestamp": "28:14",
+        "text": "The input experience should be fast and fluid, enabling natural interaction with UI elements."
+      },
+      {
+        "timestamp": "28:22",
+        "text": "It should give real-time feedback about what people are looking at in order to provide confidence in interacting with UI elements of all kinds and sizes."
+      },
+      {
+        "timestamp": "28:33",
+        "text": "In addition, existing iPhone and iPad applications should work out of the box."
+      },
+      {
+        "timestamp": "28:39",
+        "text": "And last, it should not require new app permissions just for apps to receive basic inputs."
+      },
+      {
+        "timestamp": "28:47",
+        "text": "Next are the privacy goals for the input model."
+      },
+      {
+        "timestamp": "28:51",
+        "text": "To prevent apps from learning sensitive details about your eyes, including medical conditions, only relevant system components should be able to access the eye cameras."
+      },
+      {
+        "timestamp": "29:03",
+        "text": "To enable permissionless access, apps should be able to work without learning details about people's eyes or hands."
+      },
+      {
+        "timestamp": "29:12",
+        "text": "And what people look at can reveal what they're thinking, so it is important that apps work without learning what people look at and only learn what they interact with."
+      },
+      {
+        "timestamp": "29:24",
+        "text": "Let's go over the system Apple engineered to achieve all of these goals."
+      },
+      {
+        "timestamp": "29:29",
+        "text": "The internal and external camera data that measures eyes and hands for the input system is processed in an isolated system process."
+      },
+      {
+        "timestamp": "29:38",
+        "text": "This delivers a measurement of where the eyes and hands are located to the eye and pinch detection systems, and abstracts away complex camera processing from all other system components, including your app."
+      },
+      {
+        "timestamp": "29:53",
+        "text": "The hover feedback system combines what is shown onscreen with the eye position to determine what the user is looking at."
+      },
+      {
+        "timestamp": "30:02",
+        "text": "If they are looking at a UI element, the system adds a highlighting layer as it is rendered."
+      },
+      {
+        "timestamp": "30:09",
+        "text": "This is done by the rendering engine outside of the app's process and only visible to the person using the device, so they understand what they are looking at without revealing any information to apps."
+      },
+      {
+        "timestamp": "30:23",
+        "text": "And as soon as a pinch gesture is detected, the system delivers a normal tap event for the highlighted UI element to your app."
+      },
+      {
+        "timestamp": "30:32",
+        "text": "With this system architecture, the complexity of translating camera data into input events is handled by the operating system."
+      },
+      {
+        "timestamp": "30:41",
+        "text": "This means, no changes are required to receive inputs on this new platform."
+      },
+      {
+        "timestamp": "30:47",
+        "text": "In addition to the default system behavior, UIKit, SwiftUI, and RealityKit make it easy to tune these effects to match your app's design, with the same privacy protections as system-provided UI elements."
+      },
+      {
+        "timestamp": "31:01",
+        "text": "You can change the type, shape, and what elements the hover effects apply to."
+      },
+      {
+        "timestamp": "31:07",
+        "text": "To learn more about how to adopt, watch \"Meet SwiftUI for spatial computing\" as well as \"Elevate your windowed app for spatial computing.\" This spatial input model is made possible by implementing the privacy pillars."
+      },
+      {
+        "timestamp": "31:25",
+        "text": "The system minimizes the amount of data each component of the system needs access to."
+      },
+      {
+        "timestamp": "31:31",
+        "text": "All of the processing takes place on the device."
+      },
+      {
+        "timestamp": "31:35",
+        "text": "People have control, since only intentional interactions are shared with apps."
+      },
+      {
+        "timestamp": "31:41",
+        "text": "And where you look is protected using process isolation enforced by the operating system's kernel."
+      },
+      {
+        "timestamp": "31:48",
+        "text": "By making privacy a core design goal, it is possible to deliver both great features and great privacy."
+      },
+      {
+        "timestamp": "31:57",
+        "text": "We hope that learning about the new privacy changes across Apple platforms has helped inspire you as they make it easier for you to build trust through great privacy; minimize data accessed by your app with content-picking APIs providing seamless user control; protect children in your app by adopting the Sensitive Content Analysis framework with on-device processing."
+      },
+      {
+        "timestamp": "32:25",
+        "text": "And for protecting user data in your app, adopt security protections such App Sandbox on macOS, and make sure to encrypt data in CloudKit."
+      },
+      {
+        "timestamp": "32:36",
+        "text": "Thank you for watching this video."
+      },
+      {
+        "timestamp": "32:38",
+        "text": "We can't wait to see what you build."
+      },
+      {
+        "timestamp": "32:41",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -21,6 +820,63 @@
       "title": "Detect sensitive content",
       "language": "swift",
       "code": "// Analyzing photos\n\nlet analyzer = SCSensitivityAnalyzer()\nlet policy = analyzer.analysisPolicy\n\nlet result = try await analyzer.analyzeImage(at: url)\nlet result = try await analyzer.analyzeImage(image.cgImage!)\n\n// Analyzing videos\nlet handler = analyzer.videoAnalysis(forFileAt: url)\nlet result = try await handler.hasSensitiveContent()\n\nif result.isSensitive {\n    intervene(policy)\n}"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "1:01",
+      "title": "Privacy pillars",
+      "duration": "2:02"
+    },
+    {
+      "timestamp": "3:03",
+      "title": "Photos picker",
+      "duration": "2:41"
+    },
+    {
+      "timestamp": "5:44",
+      "title": "Screen capture picker",
+      "duration": "2:02"
+    },
+    {
+      "timestamp": "7:46",
+      "title": "Calendar access",
+      "duration": "2:43"
+    },
+    {
+      "timestamp": "10:29",
+      "title": "Oblivious HTTP (OHTTP)",
+      "duration": "3:53"
+    },
+    {
+      "timestamp": "14:22",
+      "title": "Communication Safety",
+      "duration": "3:24"
+    },
+    {
+      "timestamp": "17:46",
+      "title": "App sandbox",
+      "duration": "4:11"
+    },
+    {
+      "timestamp": "21:57",
+      "title": "Advanced Data Protection",
+      "duration": "1:44"
+    },
+    {
+      "timestamp": "23:41",
+      "title": "Safari Private Browsing",
+      "duration": "2:59"
+    },
+    {
+      "timestamp": "26:40",
+      "title": "Safari app extensions",
+      "duration": "0:42"
+    },
+    {
+      "timestamp": "27:22",
+      "title": "Spatial input model",
+      "duration": "5:27"
     }
   ],
   "resources": {
@@ -105,5 +961,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10047"
     }
   ],
-  "extractedAt": "2026-10-11T16:37:17.048Z"
+  "extractedAt": "2026-10-17T18:47:19.351Z"
 }

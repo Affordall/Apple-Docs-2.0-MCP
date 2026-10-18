@@ -62,4 +62,15 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
+type FlattenedDeepRequired<T> = {
+    [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
+};
+type ReadonlyArray<T> = [
+    Exclude<T, undefined>
+] extends [
+    unknown[]
+] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const nodeTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Node"]["type"]> = ["article", "associatedtype", "buildSetting", "case", "collection", "class", "container", "dictionarySymbol", "enum", "extension", "func", "groupMarker", "httpRequest", "init", "languageGroup", "learn", "macro", "method", "module", "op", "overview", "project", "property", "propertyListKey", "propertyListKeyReference", "protocol", "resources", "root", "sampleCode", "section", "struct", "subscript", "symbol", "typealias", "union", "var"];
+export const imageRenderReferenceTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ImageRenderReference"]["type"]> = ["image"];
+export const renderReferenceVariantTraitValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RenderReferenceVariantTrait"]> = ["1x", "2x", "3x", "light", "dark"];
 export type operations = Record<string, never>;

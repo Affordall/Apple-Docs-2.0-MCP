@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/282/",
   "title": "Discover the Spatial Preview framework",
-  "speakers": [],
-  "duration": "",
+  "duration": "14:45",
   "topics": [
     "Graphics & Games",
     "Spatial Computing"
@@ -12,8 +11,160 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, my name is Quincy German, and I'm a software engineer on the Vision OS team. One of the features I use the most on Apple Vision Pro is Mac Virtual Display, which lets me work on my Mac through a virtual screen provided by Vision Pro. In Mac OS and Vision OS 27, it's even easier to preview content from Mac to Vision Pro. I'm excited to present Spatial Preview. A framework that lets people leverage the spatial computing capabilities of Vision OS when working with content on their Mac. You can check out the Spatial Preview Framework in Action with the Preview app for Mac OS. alongside other features to help people work with spatial content, including 3D content editing, photorealistic rendering, camera viewpoints, and spatial media output like Apple immersive video frames and spatial photos Using Mac Virtual Display, people can share content seamlessly to Vision Pro. On Vision OS, the QuickLook app receives this content and now allows them to work immersively, like moving around to the different cameras setup for this living room scene. These are tools that are very useful to get a sense of scale and layout of a 3D design, like this one. With Spatial Preview, people can now extend content from their Mac into the world around them. And these features aren't just available in the preview app. They're also exposed as an API for you. So you can augment new or existing macOS applications to take advantage of the power of Vision Pro.\n\nThese tools enable dynamic workflows with spatial content, including live synchronization and editing across devices With real-time synchronization, apps like Cinema 4D and SketchUp are transforming the creative process, unlocking real-time, collaborative 3D workflows, like iterating on material changes live. And in this session, I'm going to cover how you can too.\n\nI'll start with an overview of the framework, designed for developers building content creation tools or any app that works with spatial content.\n\nNext, I'll walk through an example workflow showing how to share and update documents like Apple Immersive Video Frames in place.\n\nLastly, I'll show how you can create apps that fully immerse people in the 3D content they're working on, live, by using Universal Scene Description, which is a format used to describe 3D scenes. By the end of this session, you'll have everything you need to leverage the spatial preview framework and enable people to work with content from their Mac on Vision OS.\n\nNow, let's take a look at the components provided by the framework in order to get a sense of just how easy it is to set up The first step is selecting an endpoint that points to a device to share to. If someone's actively using Mac Virtual Display, it's easy to use the device that's already connected. Alternatively, you can add the device picker UI to your app so people can pick from any nearby Vision Pro on the same iCloud account.\n\nNext, create a spatial preview session for the content. There are two types of preview sessions. Document preview sessions, cover types like spatial photos, videos, and document types like PDF. USD preview sessions handle 3D content.\n\nOnce the session starts, Quick Look is launched on Vision Pro and the content your app provides to the session appears. No code is required on Vision OS to set this up.\n\nNow that you have an overview of how a spatial preview session works, let's look at an example of how to send and update documents with document preview.\n\nIn this example, I'll take a still from an Apple immersive video, which is generated out of the preview app on Mac. Then I'll use the Mac Virtual Display Endpoint to start a document preview session I'll then provide the image to the session so it appears in QuickLook. Let's look at the code to set this up.\n\nFirst, create a connected spatial endpoint observer to obtain the spatial preview endpoint from Mac Virtual Display.\n\nThen, create a document preview session, specifying the document type and a name for the session.\n\nWith the returned endpoint, start the session on the selected device and provide the content URL. Remember, Mac Virtual Display may not always be active, so consider integrating the Spatial Preview device picker as a view in your UI to select a different device. Use a sheet in Swift UI to control when it appears. Then proceed to create the document preview session, just as you saw previously, with the device endpoint selected in the UI. It's this easy to get started with spatial preview. Let's see the result. Putting the code I wrote into a button in the UI launches the content on Vision OS when pressed, and I can view it in immersive mode. This is pretty cool.\n\nLet's take this one step further and build a gallery of immersive architectural renderings.\n\nWhen you call update contents, you're reusing the same scene that was launched when you started the session. If you make a new document preview session and call start, that will launch a new scene. So for the gallery view, I'm going to want to leverage update contents to ensure I reuse the same scene.\n\nIn this view, I'll create a row of buttons for all the video frames in the gallery and make the buttons call update contents on the session to swap to a different file when selected.\n\nI also set up a task that observes the session state. If the scene is closed on Vision OS, I'll receive a state change here that the session has been invalidated. When you're done with a session, call close to end it. Visual S will automatically dismiss that scene. Now, the gallery switches between immersive renderings live within the same scene using Document Preview Session's Update Contents function. This is a great way for people to review design renders and get a better sense of the content they're working on at scale. Beyond Apple immersive video, many other content types work well with spatial preview, including spatial photos. PDFs, standard images and files, and also 3D content. Now that you've seen how easy it is to send and update documents, let's look at how to work with 3D content using USD kit with Spatial Preview If you're new to USD, I recommend starting with the video Understand USD Fundamentals. And to learn how to use the new Swift USD Kit framework, I recommend watching Discover USD Kit and What's New in OpenUSD.\n\nIn this section, I'm going to cover how to use USD Kit to work with 3D content from your macOS app on Vision OS. I'll go over how easy it is to set up a USD preview session and start navigating a 3D scene looking through cameras and applying material overrides. I'll then cover how to edit content and how people can interact and make changes to USD on Vision OS, including adding annotations and moving objects around. Last, I'll go over the events and observable properties of a spatial preview session, including events for animation playback and session synchronization progress, and how to customize the features available in a session Creating a USD preview session is similar to a document preview session, except that the content is a USD kit stage. When you call session start, a scene opens on Vision OS and the USD content appears in a volumetric view. People can then choose to go into an immersive view to see it at full scale. Let's see what the code looks like to set this up.\n\nJust like with document sharing, begin by choosing a target device endpoint. Then use USD kit to load USD content into a stage. Provide that stage to a USD preview session, and then start the session on the selected device endpoint.\n\nThe content appears in 3D on Vision OS in this bounded view. I can rotate the scene around to inspect it, and then go immersive to see it at full scale.\n\nThere are some cameras set up in this scene, as you saw before. So selecting one here will move me to that viewpoint. I can also look more closely at the geometry by overriding the materials to be in wireframe mode This is all functionality built into Vision OS when using Spatial Preview. No additional setup is required from your Mac app. USD scenes can contain incredibly high fidelity content, which might be too complex to render on Vision Pro. By default, Spatial Preview automatically optimizes the USD content before sharing, including mesh decimation, texture downsampling, and potential full scene reconstruction if necessary. all to ensure that it performs well on Vision Pro. If the scene needs to be reconstructed, it won't be editable, but people can still view it and add annotations.\n\nTo opt out of this optimization, pass the unmodified parameter when creating the session. However, if optimization is disabled, complex scenes may not be shareable to Vision Pro and an error will be thrown from the start function. For guidance on how to reduce the rendering cost of your content, check out the developer documentation.\n\nNow, let's see how editing USD content works on Mac OS and Vision OS. In a USD preview session, people can make changes from either device. A live USD stage is used to replicate content between Mac OS and Vision OS when calling regular USD kit APIs. This is very useful if someone wants to make changes to the content on their Mac and see them spatially on Vision OS, or capture the edits during a review session on Vision OS.\n\nBefore jumping into code, let's go over some details of what a USD stage is and some USD terminology.\n\nA stage is composed of one or many layers, and layers contain USD prims.\n\nA USD Prim is an object that can represent many different features like a 3D transformation or a mesh. Invariant sets can swap in alternative data on a prim.\n\nI've set up some USD variants in this living room scene that change the position and rotation of the furniture using variance sets When I select one of these variants in USD kit, the stage is changed and the edits that move the furniture to different locations are applied and synchronized between Mac OS and Vision OS. The buttons along the toolbar here switch between variants on macOS, and the resulting furniture layout is reflected on Vision OS. I can also select a variant in the QuickLook menu and see this change on Mac. This is a great way to quickly iterate on content from Mac on Vision OS. Now, let's see how to listen for changes coming from Vision OS. Changes to the USD stage are automatically synchronized, and you can observe the updates happening in a session, like when someone adds an annotation, using standard USD notices Here I subscribe to objects did change notices that give information about which USD Prim paths have changed. I can iterate through those paths and find annotations to update them in the UI.\n\nFor a text annotation, you'll want information like author and a unique identifier for the annotation in addition to the actual text note. Setting up annotation data in this way allows annotations to show up on Vision OS, as long as they are children of a USD Prim specified as a document annotation group.\n\nIn order to have USD prims be editable on Vision OS, using gestures, they need to have the spatial editable metadata set on them.\n\nPeople can also easily set this up on their USD asset using preview on macOS.\n\nLet's see this in action. When I apply an annotation on Mac OS, it appears on Vision OS. And if I comment here, I like layout A. That is reflected back in the app on Mac OS. And since this furniture has spatial editable metadata, I can move it Say I want to move this chair out the window. That would show up on macOS as well. Let's go over the events you can listen for and the options you can configure within a USD preview session.\n\nYou can control what features are available in QuickLook on Vision OS using the options set on USD Preview Session Start. By default, annotations, object manipulation, and USD export are all enabled.\n\nYou can also subscribe to non-USD events like animation playback time via spatial preview API events.\n\nYou can monitor the sharing progress of a session using Progress Reporter. This is useful if you'd like to display a loading bar on Mac OS while large data is synchronized over Division Pro.\n\nFor example, here, I've hooked up the time and playback events provided by USD preview session. Now I can hit the play button and see this hummingbird animate outside the window in both apps. When you adopt spatial preview in your app, you unlock so many new workflows for creators. And SharePlay support is built in on Vision OS, so collaborators can join the same live session to review and edit spatial content simultaneously. Here, my friend Joy flagged an issue with my room layout, so I'll adjust it in real time. Every participant's view updates immediately, eliminating the back and forth of traditional asset review.\n\nSo how can you get started with Spatial Preview today? We recommend using the USD kit Swift APIs, as Spatial Preview works seamlessly with it. If you already have USD in your Mac app. You can set up bridging to transfer edits between your USD installation and USD kit. For more information, check out the Spatial Preview Developer Documentation.\n\nNext, explore how you can leverage each type of preview session, document preview session and USD preview session. They integrate easily into your Mac app, whether you're looking to preview and update documents, or work with 3D content immersively. It's only a few lines of code to get started. You can go even deeper with 3D using USD kit and spatial preview to support live editing of a USD stage. Enabling real-time collaboration across devices, including over SharePlay. And finally, take advantage of asset review tools like material overrides, camera viewpoints, object manipulation, variants, and annotations.\n\nThe team and I can't wait to see how your apps will take advantage of Spatial Preview, whether you're making a creative app, content review tool, or something entirely new. Thanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, my name is Quincy German, and I'm a software engineer on the Vision OS team. One of the features I use the most on Apple Vision Pro is Mac Virtual Display, which lets me work on my Mac through a virtual screen provided by Vision Pro. In Mac OS and Vision OS 27, it's even easier to preview content from Mac to Vision Pro. I'm excited to present Spatial Preview. A framework that lets people leverage the spatial computing capabilities of Vision OS when working with content on their Mac. You can check out the Spatial Preview Framework in Action with the Preview app for Mac OS. alongside other features to help people work with spatial content, including 3D content editing, photorealistic rendering, camera viewpoints, and spatial media output like Apple immersive video frames and spatial photos Using Mac Virtual Display, people can share content seamlessly to Vision Pro. On Vision OS, the QuickLook app receives this content and now allows them to work immersively, like moving around to the different cameras setup for this living room scene. These are tools that are very useful to get a sense of scale and layout of a 3D design, like this one. With Spatial Preview, people can now extend content from their Mac into the world around them. And these features aren't just available in the preview app. They're also exposed as an API for you. So you can augment new or existing macOS applications to take advantage of the power of Vision Pro."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "These tools enable dynamic workflows with spatial content, including live synchronization and editing across devices With real-time synchronization, apps like Cinema 4D and SketchUp are transforming the creative process, unlocking real-time, collaborative 3D workflows, like iterating on material changes live. And in this session, I'm going to cover how you can too."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "I'll start with an overview of the framework, designed for developers building content creation tools or any app that works with spatial content."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "Next, I'll walk through an example workflow showing how to share and update documents like Apple Immersive Video Frames in place."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "Lastly, I'll show how you can create apps that fully immerse people in the 3D content they're working on, live, by using Universal Scene Description, which is a format used to describe 3D scenes. By the end of this session, you'll have everything you need to leverage the spatial preview framework and enable people to work with content from their Mac on Vision OS."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "Now, let's take a look at the components provided by the framework in order to get a sense of just how easy it is to set up The first step is selecting an endpoint that points to a device to share to. If someone's actively using Mac Virtual Display, it's easy to use the device that's already connected. Alternatively, you can add the device picker UI to your app so people can pick from any nearby Vision Pro on the same iCloud account."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "Next, create a spatial preview session for the content. There are two types of preview sessions. Document preview sessions, cover types like spatial photos, videos, and document types like PDF. USD preview sessions handle 3D content."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "Once the session starts, Quick Look is launched on Vision Pro and the content your app provides to the session appears. No code is required on Vision OS to set this up."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "Now that you have an overview of how a spatial preview session works, let's look at an example of how to send and update documents with document preview."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "In this example, I'll take a still from an Apple immersive video, which is generated out of the preview app on Mac. Then I'll use the Mac Virtual Display Endpoint to start a document preview session I'll then provide the image to the session so it appears in QuickLook. Let's look at the code to set this up."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "First, create a connected spatial endpoint observer to obtain the spatial preview endpoint from Mac Virtual Display."
+      },
+      {
+        "timestamp": "4:06",
+        "text": "Then, create a document preview session, specifying the document type and a name for the session."
+      },
+      {
+        "timestamp": "4:13",
+        "text": "With the returned endpoint, start the session on the selected device and provide the content URL. Remember, Mac Virtual Display may not always be active, so consider integrating the Spatial Preview device picker as a view in your UI to select a different device. Use a sheet in Swift UI to control when it appears. Then proceed to create the document preview session, just as you saw previously, with the device endpoint selected in the UI. It's this easy to get started with spatial preview. Let's see the result. Putting the code I wrote into a button in the UI launches the content on Vision OS when pressed, and I can view it in immersive mode. This is pretty cool."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "Let's take this one step further and build a gallery of immersive architectural renderings."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "When you call update contents, you're reusing the same scene that was launched when you started the session. If you make a new document preview session and call start, that will launch a new scene. So for the gallery view, I'm going to want to leverage update contents to ensure I reuse the same scene."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "In this view, I'll create a row of buttons for all the video frames in the gallery and make the buttons call update contents on the session to swap to a different file when selected."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "I also set up a task that observes the session state. If the scene is closed on Vision OS, I'll receive a state change here that the session has been invalidated. When you're done with a session, call close to end it. Visual S will automatically dismiss that scene. Now, the gallery switches between immersive renderings live within the same scene using Document Preview Session's Update Contents function. This is a great way for people to review design renders and get a better sense of the content they're working on at scale. Beyond Apple immersive video, many other content types work well with spatial preview, including spatial photos. PDFs, standard images and files, and also 3D content. Now that you've seen how easy it is to send and update documents, let's look at how to work with 3D content using USD kit with Spatial Preview If you're new to USD, I recommend starting with the video Understand USD Fundamentals. And to learn how to use the new Swift USD Kit framework, I recommend watching Discover USD Kit and What's New in OpenUSD."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "In this section, I'm going to cover how to use USD Kit to work with 3D content from your macOS app on Vision OS. I'll go over how easy it is to set up a USD preview session and start navigating a 3D scene looking through cameras and applying material overrides. I'll then cover how to edit content and how people can interact and make changes to USD on Vision OS, including adding annotations and moving objects around. Last, I'll go over the events and observable properties of a spatial preview session, including events for animation playback and session synchronization progress, and how to customize the features available in a session Creating a USD preview session is similar to a document preview session, except that the content is a USD kit stage. When you call session start, a scene opens on Vision OS and the USD content appears in a volumetric view. People can then choose to go into an immersive view to see it at full scale. Let's see what the code looks like to set this up."
+      },
+      {
+        "timestamp": "7:37",
+        "text": "Just like with document sharing, begin by choosing a target device endpoint. Then use USD kit to load USD content into a stage. Provide that stage to a USD preview session, and then start the session on the selected device endpoint."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "The content appears in 3D on Vision OS in this bounded view. I can rotate the scene around to inspect it, and then go immersive to see it at full scale."
+      },
+      {
+        "timestamp": "8:05",
+        "text": "There are some cameras set up in this scene, as you saw before. So selecting one here will move me to that viewpoint. I can also look more closely at the geometry by overriding the materials to be in wireframe mode This is all functionality built into Vision OS when using Spatial Preview. No additional setup is required from your Mac app. USD scenes can contain incredibly high fidelity content, which might be too complex to render on Vision Pro. By default, Spatial Preview automatically optimizes the USD content before sharing, including mesh decimation, texture downsampling, and potential full scene reconstruction if necessary. all to ensure that it performs well on Vision Pro. If the scene needs to be reconstructed, it won't be editable, but people can still view it and add annotations."
+      },
+      {
+        "timestamp": "8:56",
+        "text": "To opt out of this optimization, pass the unmodified parameter when creating the session. However, if optimization is disabled, complex scenes may not be shareable to Vision Pro and an error will be thrown from the start function. For guidance on how to reduce the rendering cost of your content, check out the developer documentation."
+      },
+      {
+        "timestamp": "9:16",
+        "text": "Now, let's see how editing USD content works on Mac OS and Vision OS. In a USD preview session, people can make changes from either device. A live USD stage is used to replicate content between Mac OS and Vision OS when calling regular USD kit APIs. This is very useful if someone wants to make changes to the content on their Mac and see them spatially on Vision OS, or capture the edits during a review session on Vision OS."
+      },
+      {
+        "timestamp": "9:46",
+        "text": "Before jumping into code, let's go over some details of what a USD stage is and some USD terminology."
+      },
+      {
+        "timestamp": "9:53",
+        "text": "A stage is composed of one or many layers, and layers contain USD prims."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "A USD Prim is an object that can represent many different features like a 3D transformation or a mesh. Invariant sets can swap in alternative data on a prim."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "I've set up some USD variants in this living room scene that change the position and rotation of the furniture using variance sets When I select one of these variants in USD kit, the stage is changed and the edits that move the furniture to different locations are applied and synchronized between Mac OS and Vision OS. The buttons along the toolbar here switch between variants on macOS, and the resulting furniture layout is reflected on Vision OS. I can also select a variant in the QuickLook menu and see this change on Mac. This is a great way to quickly iterate on content from Mac on Vision OS. Now, let's see how to listen for changes coming from Vision OS. Changes to the USD stage are automatically synchronized, and you can observe the updates happening in a session, like when someone adds an annotation, using standard USD notices Here I subscribe to objects did change notices that give information about which USD Prim paths have changed. I can iterate through those paths and find annotations to update them in the UI."
+      },
+      {
+        "timestamp": "11:13",
+        "text": "For a text annotation, you'll want information like author and a unique identifier for the annotation in addition to the actual text note. Setting up annotation data in this way allows annotations to show up on Vision OS, as long as they are children of a USD Prim specified as a document annotation group."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "In order to have USD prims be editable on Vision OS, using gestures, they need to have the spatial editable metadata set on them."
+      },
+      {
+        "timestamp": "11:42",
+        "text": "People can also easily set this up on their USD asset using preview on macOS."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "Let's see this in action. When I apply an annotation on Mac OS, it appears on Vision OS. And if I comment here, I like layout A. That is reflected back in the app on Mac OS. And since this furniture has spatial editable metadata, I can move it Say I want to move this chair out the window. That would show up on macOS as well. Let's go over the events you can listen for and the options you can configure within a USD preview session."
+      },
+      {
+        "timestamp": "12:16",
+        "text": "You can control what features are available in QuickLook on Vision OS using the options set on USD Preview Session Start. By default, annotations, object manipulation, and USD export are all enabled."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "You can also subscribe to non-USD events like animation playback time via spatial preview API events."
+      },
+      {
+        "timestamp": "12:38",
+        "text": "You can monitor the sharing progress of a session using Progress Reporter. This is useful if you'd like to display a loading bar on Mac OS while large data is synchronized over Division Pro."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "For example, here, I've hooked up the time and playback events provided by USD preview session. Now I can hit the play button and see this hummingbird animate outside the window in both apps. When you adopt spatial preview in your app, you unlock so many new workflows for creators. And SharePlay support is built in on Vision OS, so collaborators can join the same live session to review and edit spatial content simultaneously. Here, my friend Joy flagged an issue with my room layout, so I'll adjust it in real time. Every participant's view updates immediately, eliminating the back and forth of traditional asset review."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "So how can you get started with Spatial Preview today? We recommend using the USD kit Swift APIs, as Spatial Preview works seamlessly with it. If you already have USD in your Mac app. You can set up bridging to transfer edits between your USD installation and USD kit. For more information, check out the Spatial Preview Developer Documentation."
+      },
+      {
+        "timestamp": "13:49",
+        "text": "Next, explore how you can leverage each type of preview session, document preview session and USD preview session. They integrate easily into your Mac app, whether you're looking to preview and update documents, or work with 3D content immersively. It's only a few lines of code to get started. You can go even deeper with 3D using USD kit and spatial preview to support live editing of a USD stage. Enabling real-time collaboration across devices, including over SharePlay. And finally, take advantage of asset review tools like material overrides, camera viewpoints, object manipulation, variants, and annotations."
+      },
+      {
+        "timestamp": "14:27",
+        "text": "The team and I can't wait to see how your apps will take advantage of Spatial Preview, whether you're making a creative app, content review tool, or something entirely new. Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -83,6 +234,38 @@
       "code": "// Observe Spatial Preview session progress\n\nimport SpatialPreview\nimport USDKit\n\n@State private var sessionProgress: Double = 0\n\nvar body: some View {\n    ...\n    .task(id: usdSession.map { ObjectIdentifier($0) }) {\n        guard let session = usdSession else { return }\n        for await fraction in Observations({ session.progress.fractionCompleted }) {\n            sessionProgress = fraction\n        }\n    }\n    .overlay(alignment: .bottom) {\n        ProgressView(value: sessionProgress)\n            .padding()\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:37"
+    },
+    {
+      "timestamp": "2:37",
+      "title": "Learn about Spatial Preview",
+      "duration": "0:53"
+    },
+    {
+      "timestamp": "3:30",
+      "title": "Document Preview",
+      "duration": "3:06"
+    },
+    {
+      "timestamp": "6:36",
+      "title": "USD Preview",
+      "duration": "2:40"
+    },
+    {
+      "timestamp": "9:16",
+      "title": "Editing Features",
+      "duration": "4:12"
+    },
+    {
+      "timestamp": "13:28",
+      "title": "Next steps",
+      "duration": "1:17"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -125,5 +308,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10129"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:15.849Z"
+  "extractedAt": "2026-10-17T18:42:09.851Z"
 }

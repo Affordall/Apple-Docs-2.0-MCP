@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110933/",
   "title": "WWDC22 Day 5 recap",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,68 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Bass-heavy electronic music ♪ It's time for your final report.\n\n♪ First, we covered how to improve battery consumption for your apps.\n\n- Display is one of the major sources of power consumption.\n\n- We learned how to make a Swift Server app alongside an iOS app in Xcode.\n\n- Using Swift for building server components helps bridge this technology gap.\n\n- Then Neil showed us how to match audio catalogs with video using ShazamKit.\n\n- Now we have some important updates that streamline working with custom catalogs at scale.\n\n- We discovered how to create multiple windows for our iPad apps.\n\n- Here's an app I've built to keep track of the books I'm reading.\n\n- And we closed out the week with a friendly device-to-device game of tic-tac-toe.\n\n- And that's how easy it is to connect devices to Apple TV.\n\n- Our training is complete, developers.\n\nYou're ready for your mission.\n\nThis message will self-destruct in 3... 2...\n\nAh, just kidding! See you next year! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass-heavy electronic music ♪ It's time for your final report."
+      },
+      {
+        "timestamp": "0:05",
+        "text": "♪ First, we covered how to improve battery consumption for your apps."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "- Display is one of the major sources of power consumption."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "- We learned how to make a Swift Server app alongside an iOS app in Xcode."
+      },
+      {
+        "timestamp": "0:18",
+        "text": "- Using Swift for building server components helps bridge this technology gap."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "- Then Neil showed us how to match audio catalogs with video using ShazamKit."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "- Now we have some important updates that streamline working with custom catalogs at scale."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "- We discovered how to create multiple windows for our iPad apps."
+      },
+      {
+        "timestamp": "0:35",
+        "text": "- Here's an app I've built to keep track of the books I'm reading."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "- And we closed out the week with a friendly device-to-device game of tic-tac-toe."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "- And that's how easy it is to connect devices to Apple TV."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "- Our training is complete, developers."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "You're ready for your mission."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "This message will self-destruct in 3... 2..."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "Ah, just kidding! See you next year! ♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -39,5 +98,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110931"
     }
   ],
-  "extractedAt": "2026-10-11T16:42:18.208Z"
+  "extractedAt": "2026-10-17T18:52:14.088Z"
 }

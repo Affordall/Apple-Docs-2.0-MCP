@@ -1,34 +1,26 @@
-import { indexCache, generateUrlCacheKey } from '../utils/cache.js';
-import { APPLE_URLS, API_LIMITS, PROCESSING_LIMITS } from '../utils/constants.js';
-import { httpClient } from '../utils/http-client.js';
-import { logger } from '../utils/logger.js';
-import { normalizeFrameworkName } from '../utils/framework-mapper.js';
+import { siteUrl } from '../utils/url-converter.js';
+import { minimatch } from 'minimatch';
+
+import { cachedJson, indexCache } from '../utils/cache.js';
+import { APPLE_URLS } from '../utils/constants.js';
+import { technologyId, technologyNames } from './list-technologies.js';
 import type { RenderIndex, RenderIndexNode } from '../types/docc.js';
 
-/**
- * 搜索框架中的符号（类、结构体、协议等）
- */
-// Function to find symbols recursively (defined outside to reduce complexity)
 function findSymbolsRecursive(
   items: RenderIndexNode[],
   symbolType: string,
   namePattern: string | undefined,
   limit: number,
   symbols: RenderIndexNode[],
-  depth: number = 0,
 ): boolean {
-  if (depth > 6) {
-    return false;
-  }
-
   for (const item of items) {
     if (symbols.length >= limit) {
-      return true; // Limit reached
+      return true;
     }
 
     // Group markers head the symbols that follow them, and an index can list one symbol under two groups
     if (item.type !== 'groupMarker' && (symbolType === 'all' || item.type === symbolType)) {
-      if ((!namePattern || matchesPattern(item.title, namePattern)) && !symbols.some(symbol => symbol.path === item.path)) {
+      if ((!namePattern || matchesPattern(item, namePattern)) && !symbols.some(symbol => symbol.path === item.path)) {
         symbols.push(item);
       }
     }
@@ -40,7 +32,6 @@ function findSymbolsRecursive(
         namePattern,
         limit,
         symbols,
-        depth + 1,
       );
       if (limitReached) {
         return true;
@@ -53,109 +44,56 @@ function findSymbolsRecursive(
 
 export async function searchFrameworkSymbols(
   framework: string,
-  symbolType: string = 'all',
-  namePattern?: string,
-  language: string = 'swift',
-  limit: number = API_LIMITS.DEFAULT_FRAMEWORK_SYMBOLS_LIMIT,
+  symbolType: string,
+  namePattern: string | undefined,
+  limit: number,
 ): Promise<string> {
-  try {
-    // Normalize framework name for consistent processing
-    const normalizedFramework = normalizeFrameworkName(framework);
-    logger.info(`Searching ${symbolType} symbols in ${normalizedFramework} framework`);
+  const id = await technologyId(framework);
+  const [data, names] = await Promise.all([cachedJson<RenderIndex>(indexCache, `${APPLE_URLS.INDEX}${id}`), technologyNames()]);
+  // Apple's own name for the framework, however it was typed
+  const name = names.get(id) ?? framework;
+  const indexItems = data.interfaceLanguages?.swift ?? [];
+  if (indexItems.length === 0) {
+    // An Objective-C-only framework's, or a web service's (`data`), index has no Swift tree
+    const availableLanguages = Object.keys(data.interfaceLanguages ?? {});
+    return `${name}'s index has no Swift pages. Its languages: ${availableLanguages.join(', ')}`;
+  }
 
-    // 获取框架索引
-    const indexUrl = `${APPLE_URLS.TUTORIALS_DATA}index/${framework.toLowerCase()}`;
-    const cacheKey = generateUrlCacheKey(indexUrl, { framework: normalizedFramework, symbolType, namePattern, language, limit });
+  const symbols: RenderIndexNode[] = [];
+  findSymbolsRecursive(indexItems, symbolType, namePattern, limit, symbols);
 
-    // Check cache
-    const cachedResult = indexCache.get(cacheKey);
-    if (cachedResult) {
-      return cachedResult;
-    }
+  // Apple's own kinds, as the index names them and the docs map prints them
+  const scope = `${namePattern ? ` matching "${namePattern}"` : ''}${symbolType === 'all' ? '' : ` of kind ${symbolType}`}`;
+  let result = `# ${name} index${scope}\n\n`;
 
-    const data = await httpClient.getJson<RenderIndex>(indexUrl);
+  if (symbols.length === 0) {
+    result += `No page in the ${name} index${scope}.\n`;
+  } else {
+    result += `**Found:** ${symbols.length} ${symbols.length === 1 ? 'page' : 'pages'}\n\n`;
 
-    // Get language-specific index
-    const indexItems = data.interfaceLanguages?.[language] || [];
-
-    if (indexItems.length === 0) {
-      const availableLanguages = Object.keys(data.interfaceLanguages || {});
-      return `Language "${language}" not available for ${framework}. Available languages: ${availableLanguages.join(', ')}`;
-    }
-
-    // Find all symbols recursively
-    const symbols: RenderIndexNode[] = [];
-    findSymbolsRecursive(indexItems, symbolType, namePattern, limit, symbols);
-
-    // Format results
-    const typeLabel = symbolType === 'all' ? 'Symbols' : pluralizeType(symbolType);
-    let result = `# ${framework} Framework ${typeLabel}\n\n`;
-
-    if (symbols.length === 0) {
-      const typeText = symbolType === 'all' ? 'symbols' : pluralizeType(symbolType).toLowerCase();
-      result += `No ${typeText} found`;
-      if (namePattern) {
-        result += ` matching pattern "${namePattern}"`;
-      }
-      result += ` in ${framework} framework.\n`;
-
-      // Suggest exploring collections
-      const collections = findCollections(indexItems);
-      if (collections.length > 0) {
-        result += '\n## Try exploring these collections:\n\n';
-        for (const col of collections.slice(0, PROCESSING_LIMITS.MAX_COLLECTIONS_TO_SHOW)) {
-          result += `- [${col.title}](https://developer.apple.com${col.path})\n`;
+    if (symbolType === 'all') {
+      for (const [type, items] of Map.groupBy(symbols, (symbol) => symbol.type ?? 'other')) {
+        result += `## ${type} (${items.length})\n\n`;
+        for (const item of items) {
+          result += formatSymbolItem(item);
         }
+        result += '\n';
       }
     } else {
-      result += `**Found:** ${symbols.length} ${symbolType === 'all' ? 'symbols' : pluralizeType(symbolType).toLowerCase()}`;
-      if (namePattern) {
-        result += ` matching "${namePattern}"`;
-      }
-      result += '\n\n';
-
-      // Group by type if searching all
-      if (symbolType === 'all') {
-        const grouped = groupByType(symbols);
-        for (const [type, items] of Object.entries(grouped)) {
-          result += `## ${pluralizeType(type)} (${items.length})\n\n`;
-          for (const item of items) {
-            result += formatSymbolItem(item);
-          }
-          result += '\n';
-        }
-      } else {
-        // List symbols
-        for (const symbol of symbols) {
-          result += formatSymbolItem(symbol);
-        }
+      for (const symbol of symbols) {
+        result += formatSymbolItem(symbol);
       }
     }
-
-    // Cache result
-    indexCache.set(cacheKey, result);
-
-    return result;
-
-  } catch (error) {
-    return `Error searching classes: ${error instanceof Error ? error.message : String(error)}`;
   }
+
+  return result;
 }
 
 function formatSymbolItem(item: RenderIndexNode): string {
-  const url = `https://developer.apple.com${item.path ?? ''}`;
+  const url = siteUrl(item.path ?? '');
   let result = `- [**${item.title}**](${url})`;
 
-  const metadata = [];
-  if (item.beta) {
-    metadata.push('Beta');
-  }
-  if (item.deprecated) {
-    metadata.push('Deprecated');
-  }
-  if (item.type && item.type !== 'groupMarker') {
-    metadata.push(formatTypeLabel(item.type));
-  }
+  const metadata = [item.type ?? '', item.beta ? 'beta' : '', item.deprecated ? 'deprecated' : ''].filter(Boolean);
 
   if (metadata.length > 0) {
     result += ` *(${metadata.join(', ')})*`;
@@ -164,85 +102,14 @@ function formatSymbolItem(item: RenderIndexNode): string {
   return result + '\n';
 }
 
-function groupByType(symbols: RenderIndexNode[]): Record<string, RenderIndexNode[]> {
-  const groups: Record<string, RenderIndexNode[]> = {};
+/** Wildcards and nothing else: braces, extglobs, a leading "!" or "#" read as written, in any case */
+const NAME_PATTERN_OPTIONS = { nocase: true, nobrace: true, noext: true, nonegate: true, nocomment: true, dot: true };
 
-  for (const symbol of symbols) {
-    const type = symbol.type ?? 'other';
-    groups[type] = [...(groups[type] ?? []), symbol];
-  }
-
-  return groups;
-}
-
-function formatTypeLabel(type: string): string {
-  const typeLabels: Record<string, string> = {
-    'symbol': 'Symbol',
-    'module': 'Module',
-    'class': 'Class',
-    'struct': 'Struct',
-    'enum': 'Enum',
-    'protocol': 'Protocol',
-    'method': 'Method',
-    'property': 'Property',
-    'init': 'Initializer',
-    'case': 'Case',
-    'associatedtype': 'Associated Type',
-    'typealias': 'Type Alias',
-    'article': 'Article',
-    'sampleCode': 'Sample Code',
-    'overview': 'Overview',
-    'collection': 'Collection',
-    'func': 'Function',
-    'var': 'Variable',
-    'let': 'Constant',
-    'operator': 'Operator',
-    'macro': 'Macro',
-    'namespace': 'Namespace',
-  };
-
-  return typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1);
-}
-
-function pluralizeType(type: string): string {
-  const typeLabel = formatTypeLabel(type);
-
-  // Special cases for pluralization
-  const pluralRules: Record<string, string> = {
-    'Class': 'Classes',
-    'Property': 'Properties',
-    'Associated Type': 'Associated Types',
-    'Type Alias': 'Type Aliases',
-    'Sample Code': 'Sample Code',
-  };
-
-  return pluralRules[typeLabel] || typeLabel + 's';
-}
-
-function matchesPattern(name: string, pattern: string): boolean {
-  const regexPattern = pattern
-    .split('*')
-    .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('.*');
-
-  const regex = new RegExp(`^${regexPattern}$`, 'i');
-  return regex.test(name);
-}
-
-function findCollections(items: RenderIndexNode[]): RenderIndexNode[] {
-  const collections: RenderIndexNode[] = [];
-
-  function search(itemList: RenderIndexNode[]) {
-    for (const item of itemList) {
-      if (item.type === 'collection') {
-        collections.push(item);
-      }
-      if (item.children) {
-        search(item.children);
-      }
-    }
-  }
-
-  search(items);
-  return collections;
+/**
+ * The pattern against the symbol's title or its name in its URL: a member's title opens with its declaration
+ * ("func registerForTraitChanges(…)"), the last segment of its path is the name alone
+ */
+function matchesPattern(node: RenderIndexNode, pattern: string): boolean {
+  const name = node.path?.split('/').pop() ?? '';
+  return minimatch(node.title, pattern, NAME_PATTERN_OPTIONS) || minimatch(name, pattern, NAME_PATTERN_OPTIONS);
 }

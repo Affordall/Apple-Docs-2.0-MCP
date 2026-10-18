@@ -3,16 +3,275 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/341/",
   "title": "Support the Center Stage front camera in your iOS app",
-  "speakers": [],
-  "duration": "",
+  "duration": "17:44",
   "topics": [
     "Photos & Camera"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I’m Tracy! I’m an engineer on the Camera Software team.\n\nI’m excited to show you how to support the Center Stage front camera in your iOS app. I love taking selfies! Whether I’m traveling solo or with a group of friends. Getting the right framing isn’t always easy. If you’re anything like me, you’ve probably reached for a selfie stick or passed your phone to your friend with the longest arms. The Center Stage front camera on iPhone 17, iPhone Air, and iPhone 17 Pro takes care of this. It gives you greater flexibility in framing your shots. I'll start with an overview of the Center Stage front camera. Then, I'll cover APIs to support Center Stage for photos. I'll wrap up with how to support Center Stage for video recordings and video calls.\n\nTraditionally, smartphone front camera sensors have a 4x3 aspect ratio, which limits your framing based on the phone orientation. However, the Center Stage front camera has a square image sensor. This square shape lets you choose any aspect ratio.\n\nYou can take a portrait selfie, or a landscape one, without having to rotate your iPhone. This gives you a more secure, one-handed grip.\n\nAnd since the camera is centered, your eye contact feels more natural.\n\nThis square sensor is also paired with a lens that has a 95 degree field of view, the widest on any iPhone front camera. This wide field of view helps you better frame group selfies, stabilize videos, and keep you centered during video calls.\n\nNow that you know what the Center Stage front camera can do, I’ll show you how to bring perfect photo framing experience into your app. The key feature here is Auto Zoom and Auto Rotate. By combining the square sensor, wide field of view, and automatic face and gaze detection, the Center Stage front camera smartly adapts its orientation and adjusts between narrow and wide views. Let me show you how that works. Here, I’m taking a selfie outside. As my friend Karen joins me, the frame zooms out. As more friends get into the shot, the frame rotates to include everyone. To build this experience in your app, I'll first review the capture session setup, and then dive into two APIs: dynamic aspect ratio, and smart framing monitor. Lastly, I’ll cover sensor orientation compensation. Starting with a typical photo capture setup. First, create an AVCaptureSession.\n\nFind the Center Stage front camera, represented in the API as AVCaptureDevice with the .builtInUltraWideCamera device type.\n\nCreate an AVCaptureDeviceInput for that camera.\n\nTo get a camera preview, add an AVCaptureVideoPreviewLayer to the capture session.\n\nAlso, add an AVCapturePhotoOutput to receive photos.\n\nAs you add inputs and outputs, the capture session implicitly forms AVCaptureConnections between those with compatible media types. With that setup in place, I'll move to dynamic aspect ratio, the building block for both manual and automatic framing.\n\nStarting in iOS 26, AVCaptureDevice includes a dynamicAspectRatio property. When you set this property, the capture device crops your chosen aspect ratio out of the square image sensor as shown earlier, without rebuilding the capture session or interrupting preview. The switch is seamless and quick. Here is a table that lists example formats that support dynamic aspect ratio.\n\nIt requires the front-facing .builtInUltraWideCamera as mentioned before.\n\nIt's only supported on the square formats, with resolutions ranging from 1280 up to 4032.\n\nThere are five aspect ratios available: 3x4, 4x3, 9x16, 16x9, and 1x1.\n\nBe aware that the 4032 photo format only supports 3x4 and 4x3 because these two aspect ratios give you the highest resolution for photos.\n\nWith those format requirements in mind, let me show you how to implement a Tap to Rotate button using dynamic aspect ratio to switch between orientations.\n\nFirst, select the Center Stage front camera by creating an AVCaptureDevice.DiscoverySession.\n\nSpecify .builtInUltraWideCamera as the only device type you’re interested in, and .front as a position.\n\nSince you’ve only asked for a single device, you can just get the first element in the discovery session’s device array.\n\nFind a format that supports your desired aspect ratio. Here, I’ll use 4x3 as an example. Check each format's supportedDynamicAspectRatios property. This returns an array of aspect ratios the format supports. For simplicity, I'm picking the first match.\n\nAfter locking the device for configuration, set your chosen format as the activeFormat.\n\nNext, set the dynamic aspect ratio to 4x3.\n\nThis call returns the timestamp of the first buffer when the change takes effect.\n\nWith that code in place, your app now supports Tap to Rotate, letting you change orientation with a single tap.\n\nNext up is the smart framing monitor API. It works alongside dynamic aspect ratio to automatically adjust framing as people move in and out of the scene.\n\nStarting in iOS 26, AVCaptureDevice includes an AVCaptureSmartFramingMonitor object. This monitor gives periodic framing recommendations based on automatic face and gaze detection.\n\nEach recommendation contains an aspect ratio and a zoom factor that your app can apply or ignore.\n\nSince this monitor is designed for photo capture, it only provides recommendations when you use the 4032 photo format. Now I'll walk through how to set up the monitor in code.\n\nWith the ultra-wide front camera already selected from the dynamic aspect ratio setup, you can go ahead and find a format that supports both your desired aspect ratios and smart framing. Once you've found the format, lock the device for configuration and set the activeFormat.\n\nNext, get the smartFramingMonitor from the camera. By default, the monitor provides no recommendations. Here, I’m setting enabledFramings to all of the supportedFramings. But you can limit this to a subset of supported framings, such as just the 4x3 aspect ratio with narrow and wide zoom factors. After you configure your monitor, key-value observe the monitor’s recommendedFraming property. As the monitor recommends a new framing, apply the recommendation by setting the camera’s dynamic aspect ratio and video zoom factor. For a smooth preview transition, set the aspectRatio first, then the zoomFactor.\n\nNow you can start the monitor at any time, including while your AVCaptureSession is running. If your UI allows people to turn off automatic framing, unregister your key-value observation and stopMonitoring.\n\nYour app now supports Auto Zoom and Auto Rotate, giving people the best framing recommendations for group selfies.\n\nOne last topic for photo capture, sensor orientation compensation. Since the earliest iPhone front cameras, the sensor has been mounted in Landscape Left orientation. If you take a selfie while holding the phone in Portrait orientation, the image buffer is delivered to the photo output in the native sensor orientation.\n\nThe buffer carries an EXIF orientation metadata tag, indicating it should be rotated 270 degrees on playback.\n\nHowever, on iPhone 17, iPhone Air, and iPhone 17 Pro, the Center Stage front camera sensor is mounted in Portrait orientation.\n\nIf your app relies on rotation values that worked before, photos may appear sideways or upside down.\n\nTo handle this, AVCapturePhotoOutput automatically applies sensor orientation compensation by default. It physically rotates photos and updates EXIF metadata before delivering them to your app.\n\nThe resulting photos are in landscape left orientation, just like on previous iPhone front cameras.\n\nYou can keep using the same rotation values you used before.\n\nKeep in mind that this compensation is only applied to HEIC, JPEG, and uncompressed processed photos. It is never applied to Bayer RAW or Apple ProRAW captures. Starting in iOS 26, you can control this behavior with the cameraSensorOrientation- CompensationEnabled property. If you use AVCapturePhotoOutput, test with compensation off for best performance, and make sure photo orientation remains correct.\n\nTo learn more about image rotation handling with AVCaptureRotationCoordinator, check out the \"Support external cameras in your iPadOS app” from WWDC 2023. Now, on to Center Stage for videos. I’ll cover video recordings, and video calls.\n\nThe dynamic aspect ratio API also works great for recordings. You can Tap to Rotate for a wider view. However, QuickTime movie tracks require all samples to have the same dimensions. Video recording will need to stop if you change the dynamic aspect ratio during capture.\n\nHere's the photo capture setup I walked through before. To modify it for video recording, you can use AVCaptureMovieFileOutput instead of AVCapturePhotoOutput.\n\nIn such a setup, recording will stop automatically when the aspect ratio is changed. You can also use AVCaptureVideoDataOutput with AVAssetWriter to record videos. The setDynamicAspectRatio completion timestamp allows you to end the current recording and start a new one with the updated aspect ratio.\n\nVideo recordings also benefit from cinematic stabilization modes: cinematicExtended and cinematicExtendedEnhanced. Both are face-aware on the Center Stage front camera. They prioritize keeping the subject stable over the background. Next, I'll talk about Center Stage for video calls.\n\nHere, I’m on a FaceTime call. When a friend joins me on the trail, the camera automatically widens to include both of us. Center Stage is already supported if your video conferencing app uses the Voice over IP background mode to keep calls connected when the phone is locked.\n\nPeople can directly turn on Center Stage from Control Center's Video Effects menu.\n\nIf your app is not using Voice over IP background mode, you can still adopt the Center Stage API. This is available on the iPhone front camera, starting with iPhone 17, iPhone Air, and iPhone 17 Pro.\n\nLike all system-wide video effects, such as Portrait, Studio Light, and Gestures, Center Stage is enabled per process. Once active, it applies to any supported camera in your app.\n\nHere's the photo capture setup again. For video calls, the output is different. Video conferencing apps typically use a video data output to receive video buffers as a stream. Display, encoding, and transmission are all handled at the app layer.\n\nWith this setup in mind, here's how to enable Center Stage. First, find a supported format. Set it as the active one after locking the device.\n\nBy default, people toggle Center Stage through Control Center, not your app. Before turning it on, set a control mode: cooperative or app. Cooperative mode lets people also control it from a button in your app.\n\nThen, set isCenterStageEnabled to true. With that, Center Stage is active.\n\nFraming now automatically adjusts to keep all people centered.\n\nTo learn more about the Center Stage API when it was first added for iPad, check out \"What’s New in camera capture\" from WWDC 2021.\n\nBeyond Center Stage, there's one more way to improve your video call experience. The Center Stage front camera supports a real-time, low-latency stabilization mode starting in iOS 26. It's off by default. To turn it on, set the preferredVideoStabilizationMode on the AVCaptureConnection to lowLatency.\n\nHere’s a side-by-side comparison of the same video call with low latency stabilization on and off.\n\nIn the left video, stabilization is off. There’s noticeable shake as I walk. In the right video, stabilization is on. The footage is much more stable.\n\nWith that, you have everything you need to support the Center Stage front camera in your iOS app. Here are some next steps to further improve your app’s framing experience.\n\nFirst, incorporate framing controls into your app to support orientation switching, toggles for Auto Zoom and Auto Rotate, and Center Stage activation.\n\nSecond, optimize front camera performance. Test with sensor orientation compensation turned off.\n\nMake sure your app handles photo rotation correctly. Also consider supporting 18-megapixel photo capture for exceptional resolution and details. For best practices, check out \"Implement high resolution photo capture” from WWDC 2026.\n\nThe Center Stage front camera has completely changed the way I take selfies and make video calls on my iPhone. I look forward to seeing how it transforms your app. Thank you for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I’m Tracy! I’m an engineer on the Camera Software team."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "I’m excited to show you how to support the Center Stage front camera in your iOS app. I love taking selfies! Whether I’m traveling solo or with a group of friends. Getting the right framing isn’t always easy. If you’re anything like me, you’ve probably reached for a selfie stick or passed your phone to your friend with the longest arms. The Center Stage front camera on iPhone 17, iPhone Air, and iPhone 17 Pro takes care of this. It gives you greater flexibility in framing your shots. I'll start with an overview of the Center Stage front camera. Then, I'll cover APIs to support Center Stage for photos. I'll wrap up with how to support Center Stage for video recordings and video calls."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "Traditionally, smartphone front camera sensors have a 4x3 aspect ratio, which limits your framing based on the phone orientation. However, the Center Stage front camera has a square image sensor. This square shape lets you choose any aspect ratio."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "You can take a portrait selfie, or a landscape one, without having to rotate your iPhone. This gives you a more secure, one-handed grip."
+      },
+      {
+        "timestamp": "1:40",
+        "text": "And since the camera is centered, your eye contact feels more natural."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "This square sensor is also paired with a lens that has a 95 degree field of view, the widest on any iPhone front camera. This wide field of view helps you better frame group selfies, stabilize videos, and keep you centered during video calls."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "Now that you know what the Center Stage front camera can do, I’ll show you how to bring perfect photo framing experience into your app. The key feature here is Auto Zoom and Auto Rotate. By combining the square sensor, wide field of view, and automatic face and gaze detection, the Center Stage front camera smartly adapts its orientation and adjusts between narrow and wide views. Let me show you how that works. Here, I’m taking a selfie outside. As my friend Karen joins me, the frame zooms out. As more friends get into the shot, the frame rotates to include everyone. To build this experience in your app, I'll first review the capture session setup, and then dive into two APIs: dynamic aspect ratio, and smart framing monitor. Lastly, I’ll cover sensor orientation compensation. Starting with a typical photo capture setup. First, create an AVCaptureSession."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "Find the Center Stage front camera, represented in the API as AVCaptureDevice with the .builtInUltraWideCamera device type."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "Create an AVCaptureDeviceInput for that camera."
+      },
+      {
+        "timestamp": "3:32",
+        "text": "To get a camera preview, add an AVCaptureVideoPreviewLayer to the capture session."
+      },
+      {
+        "timestamp": "3:40",
+        "text": "Also, add an AVCapturePhotoOutput to receive photos."
+      },
+      {
+        "timestamp": "3:45",
+        "text": "As you add inputs and outputs, the capture session implicitly forms AVCaptureConnections between those with compatible media types. With that setup in place, I'll move to dynamic aspect ratio, the building block for both manual and automatic framing."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "Starting in iOS 26, AVCaptureDevice includes a dynamicAspectRatio property. When you set this property, the capture device crops your chosen aspect ratio out of the square image sensor as shown earlier, without rebuilding the capture session or interrupting preview. The switch is seamless and quick. Here is a table that lists example formats that support dynamic aspect ratio."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "It requires the front-facing .builtInUltraWideCamera as mentioned before."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "It's only supported on the square formats, with resolutions ranging from 1280 up to 4032."
+      },
+      {
+        "timestamp": "4:53",
+        "text": "There are five aspect ratios available: 3x4, 4x3, 9x16, 16x9, and 1x1."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "Be aware that the 4032 photo format only supports 3x4 and 4x3 because these two aspect ratios give you the highest resolution for photos."
+      },
+      {
+        "timestamp": "5:17",
+        "text": "With those format requirements in mind, let me show you how to implement a Tap to Rotate button using dynamic aspect ratio to switch between orientations."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "First, select the Center Stage front camera by creating an AVCaptureDevice.DiscoverySession."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "Specify .builtInUltraWideCamera as the only device type you’re interested in, and .front as a position."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "Since you’ve only asked for a single device, you can just get the first element in the discovery session’s device array."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "Find a format that supports your desired aspect ratio. Here, I’ll use 4x3 as an example. Check each format's supportedDynamicAspectRatios property. This returns an array of aspect ratios the format supports. For simplicity, I'm picking the first match."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "After locking the device for configuration, set your chosen format as the activeFormat."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "Next, set the dynamic aspect ratio to 4x3."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "This call returns the timestamp of the first buffer when the change takes effect."
+      },
+      {
+        "timestamp": "6:38",
+        "text": "With that code in place, your app now supports Tap to Rotate, letting you change orientation with a single tap."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "Next up is the smart framing monitor API. It works alongside dynamic aspect ratio to automatically adjust framing as people move in and out of the scene."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "Starting in iOS 26, AVCaptureDevice includes an AVCaptureSmartFramingMonitor object. This monitor gives periodic framing recommendations based on automatic face and gaze detection."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "Each recommendation contains an aspect ratio and a zoom factor that your app can apply or ignore."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "Since this monitor is designed for photo capture, it only provides recommendations when you use the 4032 photo format. Now I'll walk through how to set up the monitor in code."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "With the ultra-wide front camera already selected from the dynamic aspect ratio setup, you can go ahead and find a format that supports both your desired aspect ratios and smart framing. Once you've found the format, lock the device for configuration and set the activeFormat."
+      },
+      {
+        "timestamp": "8:03",
+        "text": "Next, get the smartFramingMonitor from the camera. By default, the monitor provides no recommendations. Here, I’m setting enabledFramings to all of the supportedFramings. But you can limit this to a subset of supported framings, such as just the 4x3 aspect ratio with narrow and wide zoom factors. After you configure your monitor, key-value observe the monitor’s recommendedFraming property. As the monitor recommends a new framing, apply the recommendation by setting the camera’s dynamic aspect ratio and video zoom factor. For a smooth preview transition, set the aspectRatio first, then the zoomFactor."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "Now you can start the monitor at any time, including while your AVCaptureSession is running. If your UI allows people to turn off automatic framing, unregister your key-value observation and stopMonitoring."
+      },
+      {
+        "timestamp": "9:14",
+        "text": "Your app now supports Auto Zoom and Auto Rotate, giving people the best framing recommendations for group selfies."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "One last topic for photo capture, sensor orientation compensation. Since the earliest iPhone front cameras, the sensor has been mounted in Landscape Left orientation. If you take a selfie while holding the phone in Portrait orientation, the image buffer is delivered to the photo output in the native sensor orientation."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "The buffer carries an EXIF orientation metadata tag, indicating it should be rotated 270 degrees on playback."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "However, on iPhone 17, iPhone Air, and iPhone 17 Pro, the Center Stage front camera sensor is mounted in Portrait orientation."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "If your app relies on rotation values that worked before, photos may appear sideways or upside down."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "To handle this, AVCapturePhotoOutput automatically applies sensor orientation compensation by default. It physically rotates photos and updates EXIF metadata before delivering them to your app."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "The resulting photos are in landscape left orientation, just like on previous iPhone front cameras."
+      },
+      {
+        "timestamp": "10:47",
+        "text": "You can keep using the same rotation values you used before."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "Keep in mind that this compensation is only applied to HEIC, JPEG, and uncompressed processed photos. It is never applied to Bayer RAW or Apple ProRAW captures. Starting in iOS 26, you can control this behavior with the cameraSensorOrientation- CompensationEnabled property. If you use AVCapturePhotoOutput, test with compensation off for best performance, and make sure photo orientation remains correct."
+      },
+      {
+        "timestamp": "11:28",
+        "text": "To learn more about image rotation handling with AVCaptureRotationCoordinator, check out the \"Support external cameras in your iPadOS app” from WWDC 2023. Now, on to Center Stage for videos. I’ll cover video recordings, and video calls."
+      },
+      {
+        "timestamp": "11:53",
+        "text": "The dynamic aspect ratio API also works great for recordings. You can Tap to Rotate for a wider view. However, QuickTime movie tracks require all samples to have the same dimensions. Video recording will need to stop if you change the dynamic aspect ratio during capture."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "Here's the photo capture setup I walked through before. To modify it for video recording, you can use AVCaptureMovieFileOutput instead of AVCapturePhotoOutput."
+      },
+      {
+        "timestamp": "12:28",
+        "text": "In such a setup, recording will stop automatically when the aspect ratio is changed. You can also use AVCaptureVideoDataOutput with AVAssetWriter to record videos. The setDynamicAspectRatio completion timestamp allows you to end the current recording and start a new one with the updated aspect ratio."
+      },
+      {
+        "timestamp": "12:55",
+        "text": "Video recordings also benefit from cinematic stabilization modes: cinematicExtended and cinematicExtendedEnhanced. Both are face-aware on the Center Stage front camera. They prioritize keeping the subject stable over the background. Next, I'll talk about Center Stage for video calls."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Here, I’m on a FaceTime call. When a friend joins me on the trail, the camera automatically widens to include both of us. Center Stage is already supported if your video conferencing app uses the Voice over IP background mode to keep calls connected when the phone is locked."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "People can directly turn on Center Stage from Control Center's Video Effects menu."
+      },
+      {
+        "timestamp": "13:49",
+        "text": "If your app is not using Voice over IP background mode, you can still adopt the Center Stage API. This is available on the iPhone front camera, starting with iPhone 17, iPhone Air, and iPhone 17 Pro."
+      },
+      {
+        "timestamp": "14:06",
+        "text": "Like all system-wide video effects, such as Portrait, Studio Light, and Gestures, Center Stage is enabled per process. Once active, it applies to any supported camera in your app."
+      },
+      {
+        "timestamp": "14:22",
+        "text": "Here's the photo capture setup again. For video calls, the output is different. Video conferencing apps typically use a video data output to receive video buffers as a stream. Display, encoding, and transmission are all handled at the app layer."
+      },
+      {
+        "timestamp": "14:43",
+        "text": "With this setup in mind, here's how to enable Center Stage. First, find a supported format. Set it as the active one after locking the device."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "By default, people toggle Center Stage through Control Center, not your app. Before turning it on, set a control mode: cooperative or app. Cooperative mode lets people also control it from a button in your app."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "Then, set isCenterStageEnabled to true. With that, Center Stage is active."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "Framing now automatically adjusts to keep all people centered."
+      },
+      {
+        "timestamp": "15:26",
+        "text": "To learn more about the Center Stage API when it was first added for iPad, check out \"What’s New in camera capture\" from WWDC 2021."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "Beyond Center Stage, there's one more way to improve your video call experience. The Center Stage front camera supports a real-time, low-latency stabilization mode starting in iOS 26. It's off by default. To turn it on, set the preferredVideoStabilizationMode on the AVCaptureConnection to lowLatency."
+      },
+      {
+        "timestamp": "16:02",
+        "text": "Here’s a side-by-side comparison of the same video call with low latency stabilization on and off."
+      },
+      {
+        "timestamp": "16:11",
+        "text": "In the left video, stabilization is off. There’s noticeable shake as I walk. In the right video, stabilization is on. The footage is much more stable."
+      },
+      {
+        "timestamp": "16:25",
+        "text": "With that, you have everything you need to support the Center Stage front camera in your iOS app. Here are some next steps to further improve your app’s framing experience."
+      },
+      {
+        "timestamp": "16:38",
+        "text": "First, incorporate framing controls into your app to support orientation switching, toggles for Auto Zoom and Auto Rotate, and Center Stage activation."
+      },
+      {
+        "timestamp": "16:52",
+        "text": "Second, optimize front camera performance. Test with sensor orientation compensation turned off."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "Make sure your app handles photo rotation correctly. Also consider supporting 18-megapixel photo capture for exceptional resolution and details. For best practices, check out \"Implement high resolution photo capture” from WWDC 2026."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "The Center Stage front camera has completely changed the way I take selfies and make video calls on my iPhone. I look forward to seeing how it transforms your app. Thank you for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -32,6 +291,53 @@
       "title": "Support Center Stage for video calls",
       "language": "swift",
       "code": "// Find a format that supports Center Stage\n\nimport AVFoundation\n\nfor format in camera.formats {\n    if format.isCenterStageSupported {\n        try! camera.lockForConfiguration()\n        camera.activeFormat = format\n        camera.unlockForConfiguration()\n        break\n    }\n}\n\n// Turn on Center Stage\n\nAVCaptureDevice.centerStageControlMode = .cooperative\nAVCaptureDevice.isCenterStageEnabled = true"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:07"
+    },
+    {
+      "timestamp": "1:07",
+      "title": "Center Stage front camera",
+      "duration": "1:02"
+    },
+    {
+      "timestamp": "2:09",
+      "title": "Center Stage for photos",
+      "duration": "1:00"
+    },
+    {
+      "timestamp": "3:09",
+      "title": "Capture session setup",
+      "duration": "0:47"
+    },
+    {
+      "timestamp": "3:56",
+      "title": "Dynamic aspect ratio",
+      "duration": "2:51"
+    },
+    {
+      "timestamp": "6:47",
+      "title": "Smart framing monitor",
+      "duration": "2:37"
+    },
+    {
+      "timestamp": "9:24",
+      "title": "Sensor orientation compensation",
+      "duration": "2:29"
+    },
+    {
+      "timestamp": "11:53",
+      "title": "Center Stage for video recordings",
+      "duration": "1:23"
+    },
+    {
+      "timestamp": "13:16",
+      "title": "Center Stage for video calls",
+      "duration": "4:28"
     }
   ],
   "resources": {
@@ -76,5 +382,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10047"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:56.449Z"
+  "extractedAt": "2026-10-17T18:42:50.587Z"
 }

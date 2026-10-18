@@ -1,10 +1,7 @@
-/**
- * Document formatting utilities
- */
-
 import type { PlatformAvailability, RenderInlineContent, RenderNode, RenderReference } from '../types/docc.js';
 import { isDeprecated, isTopicReference } from '../types/docc.js';
 import { APPLE_URLS } from '../utils/constants.js';
+import { siteUrl } from '../utils/url-converter.js';
 
 type References = RenderNode['references'];
 
@@ -76,7 +73,7 @@ function formatReference(inline: Extract<RenderInlineContent, { type: 'reference
  * Where an asset loads from (an image, a sample's download, a tutorial's project files): its path, with or without a
  * leading slash, is from the pages' base, as swift-docc-render resolves it; a full URL stays as it is
  */
-export function assetUrl(path: string): string {
+function assetUrl(path: string): string {
   return new URL(path.replace(/^\//, ''), APPLE_URLS.ASSETS).href;
 }
 
@@ -85,7 +82,7 @@ export function assetUrl(path: string): string {
  */
 export function referenceUrl(ref: RenderReference | undefined): string | undefined {
   if (isTopicReference(ref)) {
-    return ref.url.startsWith('http') ? ref.url : `${APPLE_URLS.BASE}${ref.url}`;
+    return siteUrl(ref.url);
   }
   if (ref?.type === 'link') {
     return ref.url;
@@ -142,65 +139,44 @@ export function formatIdentifierLine(identifier: string, references: References)
   return `- ${link}${summary ? `: ${summary}` : ''}\n`;
 }
 
-/**
- * Format document header with title and status
- */
-export function formatDocumentHeader(jsonData: RenderNode): string {
-  let content = '';
-
-  // Add title with status information
-  const title = jsonData.metadata?.title ?? 'Documentation';
-  const statusInfo = [];
-
-  // Check for beta/deprecated status
-  const isBeta = jsonData.metadata?.platforms?.some((p) => p.beta) ?? false;
-  const deprecated = jsonData.metadata?.platforms?.some(isDeprecated) ?? false;
-
-  if (isBeta) {
-    statusInfo.push('**Beta**');
-  }
-  if (deprecated) {
-    statusInfo.push('**Deprecated**');
-  }
-
-  const statusText = statusInfo.length > 0 ? ` (${statusInfo.join(', ')})` : '';
-  content += `# ${title}${statusText}\n\n`;
-
-  // Add role/type information with symbol kind
-  if (jsonData.metadata?.roleHeading) {
-    let roleInfo = `**${jsonData.metadata.roleHeading}**`;
-    if (jsonData.metadata?.symbolKind) {
-      roleInfo += ` (${jsonData.metadata.symbolKind})`;
-    }
-    content += `${roleInfo}\n\n`;
-  }
-
-  return content;
+/** Whether formatIdentifierLine can link an identifier: a page its references carry, or a doc:// address */
+export function isLinkable(identifier: string, references: References): boolean {
+  return isTopicReference(references?.[identifier]) || identifier.startsWith('doc://');
 }
 
 /**
- * Format document abstract
+ * The title with the one tag Apple's page gives it (swift-docc-render, views/DocumentationTopic.vue): Deprecated when
+ * the page's own reference is, it has a deprecation summary, or every platform deprecates it; else Beta when every
+ * platform is beta. Then the role heading, the title's eyebrow.
  */
+export function formatDocumentHeader(jsonData: RenderNode): string {
+  const platforms = jsonData.metadata?.platforms ?? [];
+  const own = jsonData.references?.[jsonData.identifier?.url ?? ''];
+  const deprecated = (isTopicReference(own) && own.deprecated === true) || (jsonData.deprecationSummary?.length ?? 0) > 0 ||
+    (platforms.length > 0 && platforms.every((platform) => platform.deprecatedAt !== undefined));
+  const beta = platforms.length > 0 && platforms.every((platform) => platform.beta === true);
+  const tag = deprecated ? ' (**Deprecated**)' : beta ? ' (**Beta**)' : '';
+  const role = jsonData.metadata?.roleHeading ? `**${jsonData.metadata.roleHeading}**\n\n` : '';
+  return `# ${jsonData.metadata?.title ?? 'Documentation'}${tag}\n\n${role}`;
+}
+
 export function formatDocumentAbstract(jsonData: RenderNode): string {
   const abstractText = formatInlineContent(jsonData.abstract ?? [], jsonData.references).trim();
   return abstractText ? `${abstractText}\n\n` : '';
 }
 
-/**
- * Format platform availability section
- */
 export function formatPlatformAvailability(jsonData: RenderNode): string {
   if (!jsonData.metadata?.platforms || !Array.isArray(jsonData.metadata.platforms)) {
     return '';
   }
 
-  let content = '## Platform Availability\n\n';
-
-  jsonData.metadata.platforms.forEach((platform) => {
-    content += formatPlatformLine(platform);
+  const platforms = jsonData.metadata.platforms;
+  // Apple's note, often the replacement, repeats on each platform it is for: once each, naming them when others lack it
+  const notes = [...new Set(platforms.flatMap((platform) => platform.message ?? []))].map((message) => {
+    const on = platforms.filter((platform) => platform.message === message).map((platform) => platform.name);
+    return `- Note: ${message}${on.length < platforms.length ? ` (${on.join(', ')})` : ''}\n`;
   });
-
-  return content + '\n';
+  return `## Platform Availability\n\n${platforms.map(formatPlatformLine).join('')}${notes.join('')}\n`;
 }
 
 /**
@@ -211,16 +187,14 @@ export function formatIntroducedVersion(platform: PlatformAvailability): string 
   return platform.introducedAt ? ` ${platform.introducedAt}+` : '';
 }
 
-/**
- * Format a single platform line
- */
 function formatPlatformLine(platform: PlatformAvailability): string {
   const platformStatus = [];
 
   if (platform.beta) {
     platformStatus.push('Beta');
   }
-  if (isDeprecated(platform)) {
+  // "Deprecated in 27.2" says it already
+  if (isDeprecated(platform) && !platform.deprecatedAt) {
     platformStatus.push('Deprecated');
   }
   if (platform.unavailable) {
@@ -239,9 +213,6 @@ function formatPlatformLine(platform: PlatformAvailability): string {
   return `${platformLine}\n`;
 }
 
-/**
- * Format See Also section
- */
 export function formatSeeAlsoSection(jsonData: RenderNode): string {
   if (!jsonData.seeAlsoSections || !Array.isArray(jsonData.seeAlsoSections)) {
     return '';
@@ -259,16 +230,10 @@ export function formatSeeAlsoSection(jsonData: RenderNode): string {
   return content;
 }
 
-/**
- * Format See Also identifiers
- */
 function formatSeeAlsoIdentifiers(identifiers: string[], references: References): string {
   return identifiers.map((identifier) => formatIdentifierLine(identifier, references)).join('') + '\n';
 }
 
-/**
- * Check if document is a specific API
- */
 export function isSpecificAPIDocument(jsonData: RenderNode): boolean {
   // A web-service endpoint has no declaration; its URL is its signature
   return jsonData.primaryContentSections?.some((section) => 'kind' in section &&

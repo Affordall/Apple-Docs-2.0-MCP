@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10649/",
   "title": "Add custom views and modifiers to the Xcode Library",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools"
@@ -11,8 +10,516 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Hello and welcome to WWDC.\n\nAnton Vladimirov: Hello, and welcome to WWDC.\n\nMy name is Anton, and in this session we're going to take some time to talk about your SwiftUI views and modifiers inside Xcode.\n\nSince the very beginning, Xcode Previews was built to put your content front and center.\n\nFor example, your views are previewable without doing any extra work, and most views and modifiers are inspectable right out of the box as well.\n\nIn Xcode 12, we are taking a step further by letting you add your SwiftUI views and modifiers to the Xcode library.\n\nLet's take a step back and talk about some benefits of the Xcode library.\n\nFirst, discoverability.\n\nAs your code base grows, it can become hard for the users of your code to know exactly what the key parts of your API are.\n\nThe library is a place where developers look to discover available visual content, and by placing your most important and most reusable views there, you make them easier to find.\n\nBut discoverability is just the beginning.\n\nSince each asset in the library comes in the compilable form, it can serve as an excellent way of educating the users of your code about how any particular view or modifier was intended to be used with a clear example that can often serve as an excellent starting point.\n\nAnd finally, every asset in the library can be dragged and dropped into the canvas, and inserting views and modifiers from the library allows Xcode previews to continue rendering, enabling rich visual editing for your content.\n\nSo now, let's look at what you need to do to expose your content in the library.\n\nAnd this is where the library takes a page from Xcode preview's playbook.\n\nSince the view or the modifier you're adding to the library is defined in Swift code, the most natural place to define how to expose it in the library is also in Swift code, right next to the view or the modifier itself.\n\nThe big advantage of doing that is that the compiler can help us ensure that the library items remain functional as your API changes.\n\nTo extend the Xcode library, we need to declare a new type that conforms to the LibraryContentProvider protocol.\n\nThis protocol has two requirements: a views property, which you can use to extend the view's Xcode library; and the modifiers function, which you can use to extend the modifiers Xcode library.\n\nThere are some differences between the two which we will discuss in a moment.\n\nBut for now, notice that both of them return an array of LibraryItems.\n\nLet's look at how to create a LibraryItem.\n\nThe minimum amount of data that Xcode needs to create a LibraryItem is a completion that will get inserted when the user picks that item from the library.\n\nBut you can also optionally specify additional information such as that library item's visibility, a more descriptive title for the item, or its category.\n\nThere's a lot to unpack here.\n\nAnd the best way to discover this API is with a demo.\n\nSo let's take a look.\n\nSo I am here in the Fruta app that my team has been working on for a while.\n\nThis is an app that allows the user to explore different kinds of smoothies.\n\nAnd in particular, I'm looking at a SmoothieRowView which is a view designed to showcase a particular smoothie with information such as its title, its ingredients, its image, and so on.\n\nThis view is used in a couple of places in our app, and so I'd like to add it to the library to make the reuse easier, and I'm going to do that now.\n\nI'm going to scroll to the bottom of this file and add a new type that conforms to the LibraryContentProvider protocol.\n\nThis type can be named anything but for the purposes of this demo, I'm going to call it LibraryContent.\n\nSince what I'm adding is a view, I'm going to add a views property.\n\nAnd now I need to add a LibraryItem.\n\nTo finish completing the LibraryItem, I need to provide a completion that represents my view.\n\nSince what I'm adding is a SmoothieRowView, I'm just going to instantiate a SmoothieRowView here.\n\nI'm going to provide some default data here for my smoothie.\n\nI'm going to pick out of the list of preexisting ones.\n\nAnd I like lemonberry, so I'm just going to pick lemonberry here.\n\nAnd that's really all we need to create a LibraryItem for this view.\n\nI'm ready to use it.\n\nI'm going to switch to the SmoothieList.\n\nAs the name implies, this is just a view that takes an array of smoothies and shows them in a navigable list.\n\nIt's empty right now, as you can see from the preview.\n\nI'm going to populate it with my SmoothieRowView.\n\nTo do that, I'm going to click on the library icon in the toolbar, which is a little plus, and I'm going to search for smoothie.\n\nAs you can see, Xcode already discovered my LibraryItem and populated the library with it.\n\nIt even gave it a category, Fruta, which matches the name of my project.\n\nThis makes local items from my project easier to find.\n\nIt also gave it a rich title, Smoothie Row View, which is based on the completion I provided.\n\nSo now I can just drag this library item right into my code and my preview will update automatically to reflect the change that I just made.\n\nNotice that all of the rows in this list right now are saying \"Lemonberry,\" and it's because Xcode inserted exactly what I specified with a lemonberry placeholder.\n\nBut there's a slight difference here.\n\nThe argument for the SmoothieRowView here, lemonberry, that I provided, is tokenized, and that's because LibraryItems are meant to be a starting point that can be customized based on the insertion context for the view that you're inserting.\n\nSo I'm going to select the lemonberry token here, and I'm going to replace it with the data from the list, in this case, just smoothie.\n\nSo the preview updates to show me the content of the list with the different smoothies provided from its preview.\n\nThat's exactly what I want.\n\nSo now let's talk about customization options for these LibraryItems.\n\nAnd for that, I'm going to go back to the LibraryContent struct that I'm working on.\n\nFirst, let's talk about the category.\n\nNow the project category is very useful for projects that are small and add a small number of items, such as this demo.\n\nBut for a larger project that adds a lot of items, this category will become pretty unwieldy pretty quickly.\n\nIf you've ever used SwiftUI's Xcode library, you notice that SwiftUI deals with that by adding categories that correspond to functionality such as controls, layout, effects, and so on.\n\nWe can do the same for our LibraryItems as well.\n\nI'm going to go back to my code, and I'm going to add an argument here to specify the category.\n\nAnd I'm going to pick control because this view is most like control; it provides data and allows me to interact with it.\n\nNow if I bring up the library with a Command-Shift-L shortcut and search for smoothie, you will see that the category of this LibraryItem was updated.\n\nIt's still prepended with Fruta, so it's still easy for me to find the local ones.\n\nBut now it's clearly indicated that my view is a control.\n\nThe icon for the LibraryItem changed as well, to indicate that it's a control with the color blue.\n\nSo views don't have to correspond to LibraryItems one-to-one.\n\nIt is perfectly reasonable to create multiple LibraryItems representing the same view in different configurations.\n\nIn this particular case, SmoothieRowView has another argument that lets me specify whether I want to see local popularity of a particular smoothie.\n\nI'm going to add a LibraryItem for that configuration as well.\n\nI'm going to go back to my views property and add another LibraryItem.\n\nAnd it also creates a SmoothieRowView, but now it also uses showNearbyPopularity flag and sets its default to true.\n\nIf I bring up my library again, I can see that my LibraryItem got added just like I would expect, but there's a problem.\n\nIt's really hard for me to tell which LibraryItem represents which instantiation.\n\nI can fix that by adding another argument to this LibraryItem instantiation that specifies its title.\n\nIn this case, I'm going to say, \"Smoothie Row View With Popularity.\" And while I'm here, I can also fix its category to match the other SmoothieRowView as well.\n\nNow if I bring up the library, I can see that my LibraryItem got updated, and it's much easier for me to tell which one is which.\n\nSo that's a quick intro in how to add a view to the Xcode library.\n\nBut what about modifiers? Turns out the idea is very similar but has a little bit of a detail.\n\nLet me set the stage here for a second.\n\nAs I audited my code, I found out that a lot of times when we use an image, we also use these three modifiers in a row: resizable, aspectRatio, and frame.\n\nAnd the result of these modifiers is to resize an image to a particular size while keeping its aspect ratio.\n\nWe use it enough that I actually separated this functionality into its own modifier.\n\nI created an extension on Image, and I created a function called resizedtoFill, which takes the width and height.\n\nAnd this function just takes the image and applies the three modifiers to it and returns the result.\n\nI'd like to add resizedToFill to the modifiers library.\n\nTo do that, I'm going to implement the second requirement of the LibraryContentProvider protocol, the modifiers function.\n\nAnd this is very similar to the views property, but it requires a base argument.\n\nWhen figuring out what the completion for the LibraryItem should be, Xcode needs a way to be able to tell which part of the completion is the modifier and which part is the thing it modifies.\n\nAnd the base is the way for us to communicate that.\n\nSo since my modifier is declared on Image, I'm going to set this type to Image.\n\nAnd then I'm going to add my LibraryItem.\n\nIts completion is base with resizedToFill called on it.\n\nAnd I just need to populate this with sample data.\n\nAnd just like that, my modifier item is ready to be used.\n\nI'm going to scroll back to my image and delete the three modifiers I'm trying to replace.\n\nI'm going to bring up the library again, but this time I'm going to switch to the modifiers tab and search for resized.\n\nAnd here's my new modifier.\n\nI can use it right now by hitting Return, and what gets inserted is exactly what I would expect.\n\nXcode stripped the base part and just inserted the modifier itself and tokenized the arguments so I can customize them here with size, and size, like it was before.\n\nAnd just like that, I used my modifier from the library.\n\nYou may have noticed that at no point during this demo, we had to build or run our project to populate the library.\n\nThis is because Xcode can harvest the library definitions by simply scanning your source for LibraryContentProviders and parsing their declarations.\n\nThere are several advantages to this.\n\nFirst, it means that if your project is not in a runnable state, you can still contribute content to the library which is really handy when you're in the middle of that UI rework.\n\nYour project doesn't run, but you still want the content of the library.\n\nIt also means that there's no additional build configuration required to enable this feature.\n\nAnd since LibraryContentProvider code is never actually executed, the compiler will strip it when your project is built for distribution.\n\nSo this approach works really well for building a library of content for your workspace or project.\n\nBut since Xcode scans all of the source files in your workspace for library content, including any dependencies you have, it actually works really well with Swift packages as well.\n\nIn our project, we actually have a dependency on the Nutrition Facts Swift package, which provides facilities for visualizing nutritional information.\n\nI'm looking for a view that will allow me to display caloric information of a smoothie in my row view.\n\nI can use the library to explore the content of Nutrition Facts package for a view I want.\n\nI'm going to bring up the library again, but this time I'm going to switch back to the views tab and scroll down until I find the Nutrition Facts category.\n\nThis is a category that Xcode created for the content of the Nutrition Facts Swift package.\n\nI can see that there's a CalorieCountView here which sounds like exactly what I want.\n\nI'm going to hit Return to insert it, and my preview will update to reflect the change that I just made.\n\nThis basically looks exactly like what I want, so all I need to do now is to populate this view with the data from my model.\n\nFortunately, I already have nutrition facts, so I can just type smoothie.nutritionFact here and have my view updated.\n\nAnd just like that, I was able to discover and use content from a Swift package without ever opening its source code.\n\nTo summarize, in this session we've learned how to extend the Xcode library by creating a type that conforms to the LibraryContentProvider protocol, implementing one or both of its requirements, and returning instances of LibraryItem that correspond to the individual items.\n\nThank you,\nand have a great WWDC.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Anton Vladimirov: Hello, and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "My name is Anton, and in this session we're going to take some time to talk about your SwiftUI views and modifiers inside Xcode."
+      },
+      {
+        "timestamp": "0:19",
+        "text": "Since the very beginning, Xcode Previews was built to put your content front and center."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "For example, your views are previewable without doing any extra work, and most views and modifiers are inspectable right out of the box as well."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "In Xcode 12, we are taking a step further by letting you add your SwiftUI views and modifiers to the Xcode library."
+      },
+      {
+        "timestamp": "0:39",
+        "text": "Let's take a step back and talk about some benefits of the Xcode library."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "First, discoverability."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "As your code base grows, it can become hard for the users of your code to know exactly what the key parts of your API are."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "The library is a place where developers look to discover available visual content, and by placing your most important and most reusable views there, you make them easier to find."
+      },
+      {
+        "timestamp": "1:01",
+        "text": "But discoverability is just the beginning."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "Since each asset in the library comes in the compilable form, it can serve as an excellent way of educating the users of your code about how any particular view or modifier was intended to be used with a clear example that can often serve as an excellent starting point."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "And finally, every asset in the library can be dragged and dropped into the canvas, and inserting views and modifiers from the library allows Xcode previews to continue rendering, enabling rich visual editing for your content."
+      },
+      {
+        "timestamp": "1:31",
+        "text": "So now, let's look at what you need to do to expose your content in the library."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "And this is where the library takes a page from Xcode preview's playbook."
+      },
+      {
+        "timestamp": "1:39",
+        "text": "Since the view or the modifier you're adding to the library is defined in Swift code, the most natural place to define how to expose it in the library is also in Swift code, right next to the view or the modifier itself."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "The big advantage of doing that is that the compiler can help us ensure that the library items remain functional as your API changes."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "To extend the Xcode library, we need to declare a new type that conforms to the LibraryContentProvider protocol."
+      },
+      {
+        "timestamp": "2:03",
+        "text": "This protocol has two requirements: a views property, which you can use to extend the view's Xcode library; and the modifiers function, which you can use to extend the modifiers Xcode library."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "There are some differences between the two which we will discuss in a moment."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "But for now, notice that both of them return an array of LibraryItems."
+      },
+      {
+        "timestamp": "2:23",
+        "text": "Let's look at how to create a LibraryItem."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "The minimum amount of data that Xcode needs to create a LibraryItem is a completion that will get inserted when the user picks that item from the library."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "But you can also optionally specify additional information such as that library item's visibility, a more descriptive title for the item, or its category."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "There's a lot to unpack here."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "And the best way to discover this API is with a demo."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "So let's take a look."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "So I am here in the Fruta app that my team has been working on for a while."
+      },
+      {
+        "timestamp": "2:57",
+        "text": "This is an app that allows the user to explore different kinds of smoothies."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "And in particular, I'm looking at a SmoothieRowView which is a view designed to showcase a particular smoothie with information such as its title, its ingredients, its image, and so on."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "This view is used in a couple of places in our app, and so I'd like to add it to the library to make the reuse easier, and I'm going to do that now."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "I'm going to scroll to the bottom of this file and add a new type that conforms to the LibraryContentProvider protocol."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "This type can be named anything but for the purposes of this demo, I'm going to call it LibraryContent."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "Since what I'm adding is a view, I'm going to add a views property."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "And now I need to add a LibraryItem."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "To finish completing the LibraryItem, I need to provide a completion that represents my view."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Since what I'm adding is a SmoothieRowView, I'm just going to instantiate a SmoothieRowView here."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "I'm going to provide some default data here for my smoothie."
+      },
+      {
+        "timestamp": "3:55",
+        "text": "I'm going to pick out of the list of preexisting ones."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "And I like lemonberry, so I'm just going to pick lemonberry here."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "And that's really all we need to create a LibraryItem for this view."
+      },
+      {
+        "timestamp": "4:06",
+        "text": "I'm ready to use it."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "I'm going to switch to the SmoothieList."
+      },
+      {
+        "timestamp": "4:10",
+        "text": "As the name implies, this is just a view that takes an array of smoothies and shows them in a navigable list."
+      },
+      {
+        "timestamp": "4:17",
+        "text": "It's empty right now, as you can see from the preview."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "I'm going to populate it with my SmoothieRowView."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "To do that, I'm going to click on the library icon in the toolbar, which is a little plus, and I'm going to search for smoothie."
+      },
+      {
+        "timestamp": "4:29",
+        "text": "As you can see, Xcode already discovered my LibraryItem and populated the library with it."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "It even gave it a category, Fruta, which matches the name of my project."
+      },
+      {
+        "timestamp": "4:40",
+        "text": "This makes local items from my project easier to find."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "It also gave it a rich title, Smoothie Row View, which is based on the completion I provided."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "So now I can just drag this library item right into my code and my preview will update automatically to reflect the change that I just made."
+      },
+      {
+        "timestamp": "5:00",
+        "text": "Notice that all of the rows in this list right now are saying \"Lemonberry,\" and it's because Xcode inserted exactly what I specified with a lemonberry placeholder."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "But there's a slight difference here."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "The argument for the SmoothieRowView here, lemonberry, that I provided, is tokenized, and that's because LibraryItems are meant to be a starting point that can be customized based on the insertion context for the view that you're inserting."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "So I'm going to select the lemonberry token here, and I'm going to replace it with the data from the list, in this case, just smoothie."
+      },
+      {
+        "timestamp": "5:35",
+        "text": "So the preview updates to show me the content of the list with the different smoothies provided from its preview."
+      },
+      {
+        "timestamp": "5:42",
+        "text": "That's exactly what I want."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "So now let's talk about customization options for these LibraryItems."
+      },
+      {
+        "timestamp": "5:48",
+        "text": "And for that, I'm going to go back to the LibraryContent struct that I'm working on."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "First, let's talk about the category."
+      },
+      {
+        "timestamp": "5:54",
+        "text": "Now the project category is very useful for projects that are small and add a small number of items, such as this demo."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "But for a larger project that adds a lot of items, this category will become pretty unwieldy pretty quickly."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "If you've ever used SwiftUI's Xcode library, you notice that SwiftUI deals with that by adding categories that correspond to functionality such as controls, layout, effects, and so on."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "We can do the same for our LibraryItems as well."
+      },
+      {
+        "timestamp": "6:29",
+        "text": "I'm going to go back to my code, and I'm going to add an argument here to specify the category."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "And I'm going to pick control because this view is most like control; it provides data and allows me to interact with it."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "Now if I bring up the library with a Command-Shift-L shortcut and search for smoothie, you will see that the category of this LibraryItem was updated."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "It's still prepended with Fruta, so it's still easy for me to find the local ones."
+      },
+      {
+        "timestamp": "6:54",
+        "text": "But now it's clearly indicated that my view is a control."
+      },
+      {
+        "timestamp": "6:58",
+        "text": "The icon for the LibraryItem changed as well, to indicate that it's a control with the color blue."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "So views don't have to correspond to LibraryItems one-to-one."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "It is perfectly reasonable to create multiple LibraryItems representing the same view in different configurations."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "In this particular case, SmoothieRowView has another argument that lets me specify whether I want to see local popularity of a particular smoothie."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "I'm going to add a LibraryItem for that configuration as well."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "I'm going to go back to my views property and add another LibraryItem."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "And it also creates a SmoothieRowView, but now it also uses showNearbyPopularity flag and sets its default to true."
+      },
+      {
+        "timestamp": "7:40",
+        "text": "If I bring up my library again, I can see that my LibraryItem got added just like I would expect, but there's a problem."
+      },
+      {
+        "timestamp": "7:49",
+        "text": "It's really hard for me to tell which LibraryItem represents which instantiation."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "I can fix that by adding another argument to this LibraryItem instantiation that specifies its title."
+      },
+      {
+        "timestamp": "8:02",
+        "text": "In this case, I'm going to say, \"Smoothie Row View With Popularity.\" And while I'm here, I can also fix its category to match the other SmoothieRowView as well."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "Now if I bring up the library, I can see that my LibraryItem got updated, and it's much easier for me to tell which one is which."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "So that's a quick intro in how to add a view to the Xcode library."
+      },
+      {
+        "timestamp": "8:25",
+        "text": "But what about modifiers? Turns out the idea is very similar but has a little bit of a detail."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Let me set the stage here for a second."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "As I audited my code, I found out that a lot of times when we use an image, we also use these three modifiers in a row: resizable, aspectRatio, and frame."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "And the result of these modifiers is to resize an image to a particular size while keeping its aspect ratio."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "We use it enough that I actually separated this functionality into its own modifier."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "I created an extension on Image, and I created a function called resizedtoFill, which takes the width and height."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "And this function just takes the image and applies the three modifiers to it and returns the result."
+      },
+      {
+        "timestamp": "9:09",
+        "text": "I'd like to add resizedToFill to the modifiers library."
+      },
+      {
+        "timestamp": "9:13",
+        "text": "To do that, I'm going to implement the second requirement of the LibraryContentProvider protocol, the modifiers function."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "And this is very similar to the views property, but it requires a base argument."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "When figuring out what the completion for the LibraryItem should be, Xcode needs a way to be able to tell which part of the completion is the modifier and which part is the thing it modifies."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "And the base is the way for us to communicate that."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "So since my modifier is declared on Image, I'm going to set this type to Image."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "And then I'm going to add my LibraryItem."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "Its completion is base with resizedToFill called on it."
+      },
+      {
+        "timestamp": "9:52",
+        "text": "And I just need to populate this with sample data."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "And just like that, my modifier item is ready to be used."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "I'm going to scroll back to my image and delete the three modifiers I'm trying to replace."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "I'm going to bring up the library again, but this time I'm going to switch to the modifiers tab and search for resized."
+      },
+      {
+        "timestamp": "10:18",
+        "text": "And here's my new modifier."
+      },
+      {
+        "timestamp": "10:19",
+        "text": "I can use it right now by hitting Return, and what gets inserted is exactly what I would expect."
+      },
+      {
+        "timestamp": "10:25",
+        "text": "Xcode stripped the base part and just inserted the modifier itself and tokenized the arguments so I can customize them here with size, and size, like it was before."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "And just like that, I used my modifier from the library."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "You may have noticed that at no point during this demo, we had to build or run our project to populate the library."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "This is because Xcode can harvest the library definitions by simply scanning your source for LibraryContentProviders and parsing their declarations."
+      },
+      {
+        "timestamp": "10:56",
+        "text": "There are several advantages to this."
+      },
+      {
+        "timestamp": "10:57",
+        "text": "First, it means that if your project is not in a runnable state, you can still contribute content to the library which is really handy when you're in the middle of that UI rework."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "Your project doesn't run, but you still want the content of the library."
+      },
+      {
+        "timestamp": "11:10",
+        "text": "It also means that there's no additional build configuration required to enable this feature."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "And since LibraryContentProvider code is never actually executed, the compiler will strip it when your project is built for distribution."
+      },
+      {
+        "timestamp": "11:22",
+        "text": "So this approach works really well for building a library of content for your workspace or project."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "But since Xcode scans all of the source files in your workspace for library content, including any dependencies you have, it actually works really well with Swift packages as well."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "In our project, we actually have a dependency on the Nutrition Facts Swift package, which provides facilities for visualizing nutritional information."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "I'm looking for a view that will allow me to display caloric information of a smoothie in my row view."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "I can use the library to explore the content of Nutrition Facts package for a view I want."
+      },
+      {
+        "timestamp": "11:55",
+        "text": "I'm going to bring up the library again, but this time I'm going to switch back to the views tab and scroll down until I find the Nutrition Facts category."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "This is a category that Xcode created for the content of the Nutrition Facts Swift package."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "I can see that there's a CalorieCountView here which sounds like exactly what I want."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "I'm going to hit Return to insert it, and my preview will update to reflect the change that I just made."
+      },
+      {
+        "timestamp": "12:21",
+        "text": "This basically looks exactly like what I want, so all I need to do now is to populate this view with the data from my model."
+      },
+      {
+        "timestamp": "12:29",
+        "text": "Fortunately, I already have nutrition facts, so I can just type smoothie.nutritionFact here and have my view updated."
+      },
+      {
+        "timestamp": "12:37",
+        "text": "And just like that, I was able to discover and use content from a Swift package without ever opening its source code."
+      },
+      {
+        "timestamp": "12:45",
+        "text": "To summarize, in this session we've learned how to extend the Xcode library by creating a type that conforms to the LibraryContentProvider protocol, implementing one or both of its requirements, and returning instances of LibraryItem that correspond to the individual items."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "Thank you, and have a great WWDC."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -65,5 +572,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10185"
     }
   ],
-  "extractedAt": "2026-10-11T16:45:00.248Z"
+  "extractedAt": "2026-10-17T18:54:54.481Z"
 }

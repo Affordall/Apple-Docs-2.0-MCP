@@ -3,8 +3,7 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/291/",
   "title": "SwiftData: Dive into inheritance and schema migration",
-  "speakers": [],
-  "duration": "",
+  "duration": "19:08",
   "topics": [
     "App Services",
     "Swift"
@@ -12,8 +11,304 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello, my name is Rishi Verma, and I’m an engineer on the SwiftData team. And I would like to welcome you to “SwiftData: Dive into inheritance and schema migration.” SwiftData was introduced in iOS 17 and allows you to model and persist your app’s data in Swift across all of Apple's platforms. It lets you write code that is fast, efficient, and safe by harnessing modern Swift language features.\n\nAnd that continues in this video with an introduction to harnessing class inheritance and learning when inheritance is the right choice. With the adoption of inheritance and the evolution of the Schema, we discussed the migration strategies used to preserve data, after which we will explore a few ways to tailor SwiftData fetches and queries for optimal performance. And lastly, a bit on how to observe changes to models done locally and remotely. For a few releases now, we have been using a familiar app, SampleTrips. This is an app written in SwiftUI to keep track of all the different trips I have planned.\n\nTo use SwiftData with the models in this app, I just need to import the framework and decorate each model with the Model macro.\n\nAnd in the app’s definition, we add the modelContainer modifier on the WindowGroup, which tells the entire view hierarchy about the model Trip.\n\nWith the modelContainer wired up, I can now update my view to harness the Query macro. Let’s remove this static data and instead populate the view using the Query macro, which will generate the code to fetch the trips from the model container.\n\nAnd that's it. The app now persists all of the trips that I create and fits perfectly into my SwiftUI views.\n\nSwiftData not only provides persistence with ease, but modeling and migration of your schema, graph management, synchronization with CloudKit, and so much more. And the latest new feature to come to SwiftData is class inheritance. New in iOS 26 is the ability to build a model graph that harnesses inheritance.\n\nClass Inheritance is a powerful tool. Let’s learn when it’s the right tool for the job.\n\nInheritance works well when your models form a natural hierarchy and share characteristics. The Trip model has a destination, startDate, and endDate, properties that every trip needs so we know where and when we're going.\n\nAnd so any new subclass of Trip will already have these properties and any of the other shared behaviors defined in Trip.\n\nThe Trip model is also a broad domain. There are so many types of trips that we take in our lives. A new subclass of Trip should be of a natural subdomain that fits within the broader domain Trip.\n\nIn our SampleTrips app, many of the trips fall into two natural subdomains: personal and business trips. With these two new models expressing natural subdomains of a trip, I want to add properties and behaviors that are specific to these subclasses.\n\nFor the personal trips, I will add an enumeration that captures the reason why I might be going on that particular trip. And for my business trip, I want to add a property to note my perdiem, so I know how much I should spend on my next work adventure. Let’s do this in the SampleTrips app and create a richer experience.\n\nHere is our Trip class with the properties we want to share with our subclasses. Let’s add two new subclasses to our Trips app, one for my business trips and one for my personal trips. And I also need to decorate them with the @available on iOS 26 or later so that it aligns with SwiftData’s inheritance support. Now let’s add the subdomain specific properties to our subclasses. I can add a perdiem to the BusinessTrip and set it’s initial value. And for our PersonalTrip, we add a Reason enumeration to capture the reason why we’re going on our personal trip.\n\nOh wait, one last thing we need to do is update our schema to include our new subclasses. Let’s add Business and Personal Trip to the modelContainer modifier and we’re ready to go.\n\nThe SampleTrips app is ready to harness the new personal trips in blue and business trips in green with no other special code needed.\n\nWhile class inheritance is a powerful tool, it is not for every problem. Let's discuss when you would utilize inheritance.\n\nThere are a few scenarios where inheritance is the right path. If your models naturally express a hierarchical relationship and have common characteristics that you want to extend, then inheritance may be the correct choice as your types form an “is-a” relationship.\n\nWhen we use our inherited models, we know that a personal trip IS-A trip, meaning whenever I work with a type Trip, such as in the Query for trips in the view here, I can expect to find all types of trips, including personal and business trips, as well as just instances of the parent class Trip. Here, we see our trips denoted as planes with the same coloring as our UI, flying from the model container to the model context backing the query.\n\nHowever, inheritance should not be harnessed to share common characteristics among models. For example, if we were to subclass all of our models that have a property called name, our class hierarchy would contain many subdomains that only share a single property for a common purpose and all of the other characteristics are isolated to their subdomains.\n\nAnd because these subdomains do not form a natural hierarchy, they are better expressed as a protocol conformance.\n\nThe protocol conformance allows for the distinct domains to share behaviors, but not other characteristics that are unrelated. Another reason to use inheritance depends on how you query or fetch your models.\n\nThere are several ways to query for data, and we currently harness the Query macro to fetch all trips from the model container to drive our views. This is an example of a deep search.\n\nIf we only harness deep searches, meaning that we always fetch all trips and utilizes only the Trip type, then we should consider Personal or Business Trip to be a property on Trip rather than a subclass.\n\nHowever, if your queries or fetches only ever fetch the leaf class types, this is known as a shallow search. In this scenario, we would consider flattening our models, since Trip is never queried or utilized as a type. But if you utilize deep and shallow searches, inheritance will help as you’re often going to search for all trips, or specific subtype, such as PersonalTrips, to drive a view tailored to that type. Let’s take a moment to see how we can update our Trips app to show only the personal or business trips.\n\nLet’s utilize a segmented control so we can show all our trips and then our specific subclasses.\n\nThe selected segment can be used to drive a predicate that will determine if the class is of a particular type via the 'is' keyword. For example, here I’m checking whether it is a PersonalTrip. We then provide the predicate and sort by the trip startDate to initialize our Query. Let's check it out in the app. It starts at the trip view so I can see all my Trips. Then I can narrow the views to the specific subclasses. Awesome sauce! That’s how we harness class inheritance in iOS 26. However, I'm not done yet. We just made some major changes to our schema and we should consider what that means for our existing app and how to migrate our data.\n\nThe SampleTrips app has gone through several evolutions over the past few releases. Let’s take a moment to capture those all here in versioned Schemas and a schema migration plan so our app will preserve the user’s data on upgrade to our latest SampleTrips app.\n\nIt all started with our first video, where we introduced SwiftData in iOS 17 and used Trips to guide the adoption.\n\nAnd through those introductory videos, we learned to make a trip’s name unique and how to alter the original name of a property to preserve the data on migration.\n\nFor iOS 17, we constructed our versioned schema with a new version identifier 2.0 and show the changed model Trip with a unique name and renamed start and end dates.\n\nNext, we added a custom migration stage so that we could deduplicate the existing Trips.\n\nHere, we utilized the ModelContext’s fetch function so that we can fetch all the trips in order to deduplicate them.\n\nIn iOS 18, we harness the index and unique macros while also marking which properties we wanted to preserve on deletion.\n\nThis allows us the ability to identify our models after deletion from the data store.\n\nIn our versioned schema for iOS 18, we mark it as version 3 and capture the changes to the Trip model. New usage of the unique and index macros to ensure our data is deduplicated and performant for fetches and queries. We also decorated those same properties with preserved value on deletion, so we can identify the deleted trip when we’re consuming persistent history.\n\nWe also added another custom migration stage to once again, deduplicate the trips when migrating from version 2 to version 3. Now in iOS 26, we will add version 4 with subclasses and a lightweight migration stage.\n\nFor our current version schema, we mark it as version 4 and list all of the models in our schema with our new subclasses.\n\nAnd because our subclasses were decorated with iOS 26 or later, so is our version schema.\n\nAnd we need to add a lightweight migration stage from version 3 to version 4 with the same availability needed before.\n\nAnd with our final version schema and migration stage constructed, we can encapsulate all of these into a schema migration plan so that we can provide the ordering of the version schemas and the migration stages to run.\n\nThe schema migration plan consists of an array of schemas in the order they were released. And when iOS 26 is available, we add our newest schema with subclasses, and then an array of migration stages so that we can go from one release to the next. And that is how we build our schema migration plan. Now that we’ve built up our version schema and its corresponding schema migration plan, The next step is to harness them when creating our model container for SampleTrips.\n\nLet’s go back to our modelContainer modifier and update it to use a model container with a schema migration plan.\n\nWe start by adding a new container property to the application in which we will construct our versioned schema with version 4 and provide the schema migration plan to the ModelContainer initializer.\n\nAnd now we update our modelContainer modifier to use the new migratable container.\n\nWith that all in place, we’ve made sure that the updates to SampleTrips to harness inheritance can easily migrate through the various iterations we shipped before, all while preserving the client's data. Now that we've handled migration, it’s time to consider where we can improve queries and fetches we utilize to drive our views and migration stages.\n\nWe last updated the query with the chosen segment via Predicate.\n\nbut in a past video, we also had a search bar. Let’s add that back and jump straight into handling the search text a client has entered.\n\nWe start by building a predicate with the searchText provided. First, we check if the text is empty. And if not, we build a compound predicate to see if the trip’s name or destination contains the given text.\n\nNext, let’s build a compound predicate with the search predicate and the class predicate. And lastly, we update our Query initializer to take the new compound predicate.\n\nWith that update, I can tap the search bar, enter some text to filter the trips, and even narrow it down further with a segmented control.\n\nFiltering and sorting are just a few ways that we can tailor queries and fetches.\n\nLet’s explore a few other ways we can tailor SwiftData fetches.\n\nHere’s our custom migration stage from version 1 to version 2. we will use the willMigrate block to fetch all of the Trips. However, in my deduplication logic, I only ever access the single property, name, since that is the unique property in version 2, and I use it to ensure there are no other duplicates. Since name is the only property I access I can update the fetchDescriptor to use propertiesToFetch with the name so that our Trip models are only packing the data we need during migration.\n\nAdditionally, if we know we may traverse a particular relationship, in this case, I know that I will reassign a living accommodation if I find a duplicate, we can do the same enhancement by utilizing relationshipsToPrefetch. Let’s add the livingAccommodation relationship here.\n\nNow that we’ve adopted prefetch properties, we can also update the existing widget code we have in SampleTrips to be a bit more performant.\n\nIn the SampleTrips widget, we have a query for the most recent trip. However, it can be improved so we only fetch a single value. Currently, the widget code only harnesses the first result of the fetch. But we can make this more efficient by setting the fetch limit.\n\nBy setting the fetch limit, the widget will get the first trip to match the predicate and will not need to worry about a scenario when I have way too many vacations planned in the future. With our queries and fetches improved, let’s explore how to know when your model has changed.\n\nAll persistent models are Observable, and so we can utilize withObservationTracking to react to changes made to properties of interest in our models.\n\nIf we wanted to observe changes to our trip start and end dates, we could add this function datesChangedAlert so that if the user changes the dates, we post an alert.\n\nWe can observe many of the local changes made to our PersistentModels this way, and it’s very useful for changes made locally. For more details in the latest on Observable, Check out What’s new in Swift. However, not all changes are Observable, only those made to your models in process, not those made to your data store from another process, such as widget or extension, or even another model container within your app. Local or internal changes to your app are when you have several model contexts using the same model container. These other model contexts can see each other’s changes, and in the case of Query, those changes are automatically applied.\n\nHowever, if you’re harnessing the fetch APIs of the model context, changes made in another model context will not be seen until a refetch is triggered.\n\nAdditionally, an external action can also change your data, such as a widget saving or another app writing to your shared App Group container. These changes will automatically update the Query backed view. However, fetch usages will need to refetch again.\n\nRefetching can be expensive, particularly if nothing of interest to our model processing has changed.\n\nFortunately for us, SwiftData has history that has persisted. We can know which models have changed, when they’ve changed, and who changed the models, even which properties were updated. We also harness preservedValueOnDeletion on several properties of Trip, so when a trip is deleted, history will have a tombstone that we can parse to identify the deleted trip. For more on history, see \"Track Model Changes with SwiftData History\" from WWDC24.\n\nLet’s harness persistent history to know if we need to refetch. The first thing we would want to do is fetch the latest history token from the container.\n\nSo we can use this token as our marker for where we last read from the database. Very much like a bookmark for where we left off reading in our favorite book.\n\nWe set up a history fetch with a history descriptor for the default history transaction. However, if we have a lot of persistent history, we could be fetching a lot of data, only to grab the last one for our token. Well, fortunately, new in iOS 26 is the ability to fetch history with a sortBy. We can specify any of the transaction properties, such as author or transactionIdentifier, as a key pass to sort our history result by. Let’s adopt the new sort by and set it to the transactionIdentifier, but in reverse, so the newest transactions are first. Then, we only care about the first transaction that is the newest, so let’s limit our result to 1. And that is all we need to do to performantly fetch the latest history token and store it. Let's save this token for later and use it on future history fetches.\n\nNow, when a new change occurs, such as the Widget updating a trip, a new entry is added to our history, and our app can fetch history to see if any changes since our last token are of interest. Now that we have a stored history token, we can build a predicate that only fetches history after that token. And in order to only find the changes we care about, we build up the entities we want to know that have changed. Here, we only want to know if a trip has changed or its living accommodations in case the widget confirmed where we are staying.\n\nAnd use the entity names in the changes predicate to filter history changes for our desired Types. Lastly, with our token predicate and change predicate, we build our compound predicate.\n\nAnd with these changes in place, when we fetch history, we only get back the history after our token and for entities we are currently concerned with processing.\n\nAnd with a better history fetch, we can avoid refetching if there are no changes of interest. Thankfully, SwiftData history makes this easy. And with that, we know how to observe local and remote changes to our models and data.\n\nI hope you found this video informative and harness SwiftData for your persistence needs. While building your model graph, consider if inheritance is the right fit and what the migration implications are as your graph evolves. When it comes to getting your data, build richer and more performant fetchers and queries. And knowing when your data has changed can be invaluable. Observation and persistent history have you covered. And that’s all I got.\n\nI hope you enjoy your trip.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hello, my name is Rishi Verma, and I’m an engineer on the SwiftData team. And I would like to welcome you to “SwiftData: Dive into inheritance and schema migration.” SwiftData was introduced in iOS 17 and allows you to model and persist your app’s data in Swift across all of Apple's platforms. It lets you write code that is fast, efficient, and safe by harnessing modern Swift language features."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "And that continues in this video with an introduction to harnessing class inheritance and learning when inheritance is the right choice. With the adoption of inheritance and the evolution of the Schema, we discussed the migration strategies used to preserve data, after which we will explore a few ways to tailor SwiftData fetches and queries for optimal performance. And lastly, a bit on how to observe changes to models done locally and remotely. For a few releases now, we have been using a familiar app, SampleTrips. This is an app written in SwiftUI to keep track of all the different trips I have planned."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "To use SwiftData with the models in this app, I just need to import the framework and decorate each model with the Model macro."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "And in the app’s definition, we add the modelContainer modifier on the WindowGroup, which tells the entire view hierarchy about the model Trip."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "With the modelContainer wired up, I can now update my view to harness the Query macro. Let’s remove this static data and instead populate the view using the Query macro, which will generate the code to fetch the trips from the model container."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "And that's it. The app now persists all of the trips that I create and fits perfectly into my SwiftUI views."
+      },
+      {
+        "timestamp": "1:51",
+        "text": "SwiftData not only provides persistence with ease, but modeling and migration of your schema, graph management, synchronization with CloudKit, and so much more. And the latest new feature to come to SwiftData is class inheritance. New in iOS 26 is the ability to build a model graph that harnesses inheritance."
+      },
+      {
+        "timestamp": "2:12",
+        "text": "Class Inheritance is a powerful tool. Let’s learn when it’s the right tool for the job."
+      },
+      {
+        "timestamp": "2:17",
+        "text": "Inheritance works well when your models form a natural hierarchy and share characteristics. The Trip model has a destination, startDate, and endDate, properties that every trip needs so we know where and when we're going."
+      },
+      {
+        "timestamp": "2:31",
+        "text": "And so any new subclass of Trip will already have these properties and any of the other shared behaviors defined in Trip."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "The Trip model is also a broad domain. There are so many types of trips that we take in our lives. A new subclass of Trip should be of a natural subdomain that fits within the broader domain Trip."
+      },
+      {
+        "timestamp": "2:51",
+        "text": "In our SampleTrips app, many of the trips fall into two natural subdomains: personal and business trips. With these two new models expressing natural subdomains of a trip, I want to add properties and behaviors that are specific to these subclasses."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "For the personal trips, I will add an enumeration that captures the reason why I might be going on that particular trip. And for my business trip, I want to add a property to note my perdiem, so I know how much I should spend on my next work adventure. Let’s do this in the SampleTrips app and create a richer experience."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "Here is our Trip class with the properties we want to share with our subclasses. Let’s add two new subclasses to our Trips app, one for my business trips and one for my personal trips. And I also need to decorate them with the @available on iOS 26 or later so that it aligns with SwiftData’s inheritance support. Now let’s add the subdomain specific properties to our subclasses. I can add a perdiem to the BusinessTrip and set it’s initial value. And for our PersonalTrip, we add a Reason enumeration to capture the reason why we’re going on our personal trip."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "Oh wait, one last thing we need to do is update our schema to include our new subclasses. Let’s add Business and Personal Trip to the modelContainer modifier and we’re ready to go."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "The SampleTrips app is ready to harness the new personal trips in blue and business trips in green with no other special code needed."
+      },
+      {
+        "timestamp": "4:24",
+        "text": "While class inheritance is a powerful tool, it is not for every problem. Let's discuss when you would utilize inheritance."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "There are a few scenarios where inheritance is the right path. If your models naturally express a hierarchical relationship and have common characteristics that you want to extend, then inheritance may be the correct choice as your types form an “is-a” relationship."
+      },
+      {
+        "timestamp": "4:52",
+        "text": "When we use our inherited models, we know that a personal trip IS-A trip, meaning whenever I work with a type Trip, such as in the Query for trips in the view here, I can expect to find all types of trips, including personal and business trips, as well as just instances of the parent class Trip. Here, we see our trips denoted as planes with the same coloring as our UI, flying from the model container to the model context backing the query."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "However, inheritance should not be harnessed to share common characteristics among models. For example, if we were to subclass all of our models that have a property called name, our class hierarchy would contain many subdomains that only share a single property for a common purpose and all of the other characteristics are isolated to their subdomains."
+      },
+      {
+        "timestamp": "5:42",
+        "text": "And because these subdomains do not form a natural hierarchy, they are better expressed as a protocol conformance."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "The protocol conformance allows for the distinct domains to share behaviors, but not other characteristics that are unrelated. Another reason to use inheritance depends on how you query or fetch your models."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "There are several ways to query for data, and we currently harness the Query macro to fetch all trips from the model container to drive our views. This is an example of a deep search."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "If we only harness deep searches, meaning that we always fetch all trips and utilizes only the Trip type, then we should consider Personal or Business Trip to be a property on Trip rather than a subclass."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "However, if your queries or fetches only ever fetch the leaf class types, this is known as a shallow search. In this scenario, we would consider flattening our models, since Trip is never queried or utilized as a type. But if you utilize deep and shallow searches, inheritance will help as you’re often going to search for all trips, or specific subtype, such as PersonalTrips, to drive a view tailored to that type. Let’s take a moment to see how we can update our Trips app to show only the personal or business trips."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "Let’s utilize a segmented control so we can show all our trips and then our specific subclasses."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "The selected segment can be used to drive a predicate that will determine if the class is of a particular type via the 'is' keyword. For example, here I’m checking whether it is a PersonalTrip. We then provide the predicate and sort by the trip startDate to initialize our Query. Let's check it out in the app. It starts at the trip view so I can see all my Trips. Then I can narrow the views to the specific subclasses. Awesome sauce! That’s how we harness class inheritance in iOS 26. However, I'm not done yet. We just made some major changes to our schema and we should consider what that means for our existing app and how to migrate our data."
+      },
+      {
+        "timestamp": "7:53",
+        "text": "The SampleTrips app has gone through several evolutions over the past few releases. Let’s take a moment to capture those all here in versioned Schemas and a schema migration plan so our app will preserve the user’s data on upgrade to our latest SampleTrips app."
+      },
+      {
+        "timestamp": "8:08",
+        "text": "It all started with our first video, where we introduced SwiftData in iOS 17 and used Trips to guide the adoption."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "And through those introductory videos, we learned to make a trip’s name unique and how to alter the original name of a property to preserve the data on migration."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "For iOS 17, we constructed our versioned schema with a new version identifier 2.0 and show the changed model Trip with a unique name and renamed start and end dates."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "Next, we added a custom migration stage so that we could deduplicate the existing Trips."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "Here, we utilized the ModelContext’s fetch function so that we can fetch all the trips in order to deduplicate them."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "In iOS 18, we harness the index and unique macros while also marking which properties we wanted to preserve on deletion."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "This allows us the ability to identify our models after deletion from the data store."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "In our versioned schema for iOS 18, we mark it as version 3 and capture the changes to the Trip model. New usage of the unique and index macros to ensure our data is deduplicated and performant for fetches and queries. We also decorated those same properties with preserved value on deletion, so we can identify the deleted trip when we’re consuming persistent history."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "We also added another custom migration stage to once again, deduplicate the trips when migrating from version 2 to version 3. Now in iOS 26, we will add version 4 with subclasses and a lightweight migration stage."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "For our current version schema, we mark it as version 4 and list all of the models in our schema with our new subclasses."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "And because our subclasses were decorated with iOS 26 or later, so is our version schema."
+      },
+      {
+        "timestamp": "10:03",
+        "text": "And we need to add a lightweight migration stage from version 3 to version 4 with the same availability needed before."
+      },
+      {
+        "timestamp": "10:10",
+        "text": "And with our final version schema and migration stage constructed, we can encapsulate all of these into a schema migration plan so that we can provide the ordering of the version schemas and the migration stages to run."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "The schema migration plan consists of an array of schemas in the order they were released. And when iOS 26 is available, we add our newest schema with subclasses, and then an array of migration stages so that we can go from one release to the next. And that is how we build our schema migration plan. Now that we’ve built up our version schema and its corresponding schema migration plan, The next step is to harness them when creating our model container for SampleTrips."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "Let’s go back to our modelContainer modifier and update it to use a model container with a schema migration plan."
+      },
+      {
+        "timestamp": "10:57",
+        "text": "We start by adding a new container property to the application in which we will construct our versioned schema with version 4 and provide the schema migration plan to the ModelContainer initializer."
+      },
+      {
+        "timestamp": "11:10",
+        "text": "And now we update our modelContainer modifier to use the new migratable container."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "With that all in place, we’ve made sure that the updates to SampleTrips to harness inheritance can easily migrate through the various iterations we shipped before, all while preserving the client's data. Now that we've handled migration, it’s time to consider where we can improve queries and fetches we utilize to drive our views and migration stages."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "We last updated the query with the chosen segment via Predicate."
+      },
+      {
+        "timestamp": "11:40",
+        "text": "but in a past video, we also had a search bar. Let’s add that back and jump straight into handling the search text a client has entered."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "We start by building a predicate with the searchText provided. First, we check if the text is empty. And if not, we build a compound predicate to see if the trip’s name or destination contains the given text."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "Next, let’s build a compound predicate with the search predicate and the class predicate. And lastly, we update our Query initializer to take the new compound predicate."
+      },
+      {
+        "timestamp": "12:13",
+        "text": "With that update, I can tap the search bar, enter some text to filter the trips, and even narrow it down further with a segmented control."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "Filtering and sorting are just a few ways that we can tailor queries and fetches."
+      },
+      {
+        "timestamp": "12:27",
+        "text": "Let’s explore a few other ways we can tailor SwiftData fetches."
+      },
+      {
+        "timestamp": "12:31",
+        "text": "Here’s our custom migration stage from version 1 to version 2. we will use the willMigrate block to fetch all of the Trips. However, in my deduplication logic, I only ever access the single property, name, since that is the unique property in version 2, and I use it to ensure there are no other duplicates. Since name is the only property I access I can update the fetchDescriptor to use propertiesToFetch with the name so that our Trip models are only packing the data we need during migration."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "Additionally, if we know we may traverse a particular relationship, in this case, I know that I will reassign a living accommodation if I find a duplicate, we can do the same enhancement by utilizing relationshipsToPrefetch. Let’s add the livingAccommodation relationship here."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Now that we’ve adopted prefetch properties, we can also update the existing widget code we have in SampleTrips to be a bit more performant."
+      },
+      {
+        "timestamp": "13:29",
+        "text": "In the SampleTrips widget, we have a query for the most recent trip. However, it can be improved so we only fetch a single value. Currently, the widget code only harnesses the first result of the fetch. But we can make this more efficient by setting the fetch limit."
+      },
+      {
+        "timestamp": "13:45",
+        "text": "By setting the fetch limit, the widget will get the first trip to match the predicate and will not need to worry about a scenario when I have way too many vacations planned in the future. With our queries and fetches improved, let’s explore how to know when your model has changed."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "All persistent models are Observable, and so we can utilize withObservationTracking to react to changes made to properties of interest in our models."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "If we wanted to observe changes to our trip start and end dates, we could add this function datesChangedAlert so that if the user changes the dates, we post an alert."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "We can observe many of the local changes made to our PersistentModels this way, and it’s very useful for changes made locally. For more details in the latest on Observable, Check out What’s new in Swift. However, not all changes are Observable, only those made to your models in process, not those made to your data store from another process, such as widget or extension, or even another model container within your app. Local or internal changes to your app are when you have several model contexts using the same model container. These other model contexts can see each other’s changes, and in the case of Query, those changes are automatically applied."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "However, if you’re harnessing the fetch APIs of the model context, changes made in another model context will not be seen until a refetch is triggered."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "Additionally, an external action can also change your data, such as a widget saving or another app writing to your shared App Group container. These changes will automatically update the Query backed view. However, fetch usages will need to refetch again."
+      },
+      {
+        "timestamp": "15:29",
+        "text": "Refetching can be expensive, particularly if nothing of interest to our model processing has changed."
+      },
+      {
+        "timestamp": "15:36",
+        "text": "Fortunately for us, SwiftData has history that has persisted. We can know which models have changed, when they’ve changed, and who changed the models, even which properties were updated. We also harness preservedValueOnDeletion on several properties of Trip, so when a trip is deleted, history will have a tombstone that we can parse to identify the deleted trip. For more on history, see \"Track Model Changes with SwiftData History\" from WWDC24."
+      },
+      {
+        "timestamp": "16:05",
+        "text": "Let’s harness persistent history to know if we need to refetch. The first thing we would want to do is fetch the latest history token from the container."
+      },
+      {
+        "timestamp": "16:15",
+        "text": "So we can use this token as our marker for where we last read from the database. Very much like a bookmark for where we left off reading in our favorite book."
+      },
+      {
+        "timestamp": "16:25",
+        "text": "We set up a history fetch with a history descriptor for the default history transaction. However, if we have a lot of persistent history, we could be fetching a lot of data, only to grab the last one for our token. Well, fortunately, new in iOS 26 is the ability to fetch history with a sortBy. We can specify any of the transaction properties, such as author or transactionIdentifier, as a key pass to sort our history result by. Let’s adopt the new sort by and set it to the transactionIdentifier, but in reverse, so the newest transactions are first. Then, we only care about the first transaction that is the newest, so let’s limit our result to 1. And that is all we need to do to performantly fetch the latest history token and store it. Let's save this token for later and use it on future history fetches."
+      },
+      {
+        "timestamp": "17:18",
+        "text": "Now, when a new change occurs, such as the Widget updating a trip, a new entry is added to our history, and our app can fetch history to see if any changes since our last token are of interest. Now that we have a stored history token, we can build a predicate that only fetches history after that token. And in order to only find the changes we care about, we build up the entities we want to know that have changed. Here, we only want to know if a trip has changed or its living accommodations in case the widget confirmed where we are staying."
+      },
+      {
+        "timestamp": "17:51",
+        "text": "And use the entity names in the changes predicate to filter history changes for our desired Types. Lastly, with our token predicate and change predicate, we build our compound predicate."
+      },
+      {
+        "timestamp": "18:04",
+        "text": "And with these changes in place, when we fetch history, we only get back the history after our token and for entities we are currently concerned with processing."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "And with a better history fetch, we can avoid refetching if there are no changes of interest. Thankfully, SwiftData history makes this easy. And with that, we know how to observe local and remote changes to our models and data."
+      },
+      {
+        "timestamp": "18:27",
+        "text": "I hope you found this video informative and harness SwiftData for your persistence needs. While building your model graph, consider if inheritance is the right fit and what the migration implications are as your graph evolves. When it comes to getting your data, build richer and more performant fetchers and queries. And knowing when your data has changed can be invaluable. Observation and persistent history have you covered. And that’s all I got."
+      },
+      {
+        "timestamp": "18:55",
+        "text": "I hope you enjoy your trip."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -137,6 +432,38 @@
       "code": "// Changes AFTER the last known token\nlet tokenPredicate = #Predicate<DefaultHistoryTransaction> { $0.token > historyToken }\n\n// Changes for ONLY entities of concern\nlet entityNames = [LivingAccommodation.self, Trip.self]\nlet changesPredicate = #Predicate<DefaultHistoryTransaction> {\n                         $0.changes.contains { change in\n                           entityNames.contains(change.changedPersistentIdentifier.entityName)\n                         }\n                       }\n\n\nlet fullPredicate = #Predicate<DefaultHistoryTransaction> {\n                      tokenPredicate.evaluate($0)\n                      &&\n                      changesPredicate.evaluate($0)\n                    }\n\nlet historyDesc = HistoryDescriptor<DefaultHistoryTransaction>(predicate: fullPredicate)\nlet transactions = try context.fetchHistory(historyDesc)"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:11"
+    },
+    {
+      "timestamp": "2:11",
+      "title": "Harness class inheritance",
+      "duration": "5:28"
+    },
+    {
+      "timestamp": "7:39",
+      "title": "Evolving data with migration",
+      "duration": "3:48"
+    },
+    {
+      "timestamp": "11:27",
+      "title": "Tailoring fetched data",
+      "duration": "2:27"
+    },
+    {
+      "timestamp": "13:54",
+      "title": "Observing changes to data",
+      "duration": "4:34"
+    },
+    {
+      "timestamp": "18:28",
+      "title": "Next steps",
+      "duration": "0:40"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -169,5 +496,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10075"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:20.894Z"
+  "extractedAt": "2026-10-17T18:44:15.372Z"
 }

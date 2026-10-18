@@ -3,8 +3,7 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/256/",
   "title": "What’s new in SwiftUI",
-  "speakers": [],
-  "duration": "",
+  "duration": "25:57",
   "topics": [
     "Developer Tools",
     "Essentials",
@@ -14,8 +13,328 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Anna. And I'm Peter. We're engineers on the SwiftUI team. We’re stoked to talk to you about what’s new in SwiftUI. From low level performance improvements all the way up through the buttons in your user interface, there are some major improvements to share across the system. It’s easier to interact with text and web-based content, and SwiftUI is in even more places. One of mine and Anna’s greatest loves right below SwiftUI is taking pictures while hiking. Peter and I have built an app to help us plan and share our trips. It uses a ton of the enhancements to SwiftUI to make it look and feel great. First, I’ll show off all the new system features and how we made our app shine with them. I'll share enhancements to performance, animations, and layout.\n\nPeter will take you through the new places you can use SwiftUI throughout all of Apple’s platforms.\n\nFinally, he’ll highlight expanded features in SwiftUI views, including support for web content and rich text.\n\nLet’s get started, with how you can make your app truly shine with a new design. The new design system enables a bright and fluid experience that's consistent across Apple platforms.\n\nAfter Peter and I re-compile our app, it gets the brand new appearance.\n\nThe structure of our app hasn't changed, but navigation containers have been updated for the new design.\n\nOn iPad and macOS, our app sidebar has a glassy appearance that reflects the content around it.\n\nTab bars have also been updated. On iPhone, they have a new, more compact appearance.\n\nBeyond tab bars, most toolbar items now appear in Liquid Glass.\n\nDuring navigation transitions, these items can even morph. Check it out.\n\nOur app uses the new toolbar spacer API to adjust the sections of toolbar items.\n\nWe use a fixed spacer to separate the up-down buttons from the settings button.\n\nTo make toolbar items more prominent, Liquid Glass in toolbars supports tinting.\n\nPeter and I apply a bordered prominent button style with a tint color to get this effect.\n\nWhen people scroll down in our app, the toolbar now applies a blur effect to the bar content on the edge that’s being scrolled. This scroll edge effect ensures our bar content remains legible regardless of whatever is underneath.\n\nTo find that next trip, people often search for it.\n\nSearch is now bottom aligned on iPhone, which makes it more ergonomic to reach.\n\nOur existing code places the searchable modifier on the outside of the NavigationSplitView.\n\nPeter and I didn’t have to make any code changes to get the bottom aligned search.\n\nWith this same placement on iPad, our app gets the new search appearance in the top trailing corner.\n\nWith searchable, it’s never been faster to find what you’re looking for.\n\nFor tab-based apps where search is a destination, the Search tab now appears separated from the rest of the tabs in the tab bar and morphs into the search field.\n\nSet your tab as having a search role to get the updated appearance.\n\nControls throughout the system also feel fresh, like toggles, segmented pickers, and sliders. Our custom views aren't left out either. There are APIs to let them take advantage of the new design too.\n\nWe apply a glass effect to our custom view, so it beautifully reflects the content around it, like our previous photos. These updates are just scratching the surface of what you can build with the new design.\n\nTo learn more about how to take advantage of it, from adoption best practices to advanced customizations, check out “Build a SwiftUI app with the new design” In iPadOS 26, there have also been some exciting improvements to the ways that people can interact with your app.\n\nWhen people swipe down, apps now display a menu bar, which provides faster access to common actions.\n\nThe commands API used to construct the menu bar on macOS now creates the same result on iPad. I've added some text editing commands, since our app allows people to jot down notes for their next trip. When planning a trip, people are often looking at multiple apps at once. Windowing on iPad has become even more flexible. People can fluidly resize your app.\n\nFor apps like ours that use split view navigation, the system automatically shows and hides columns based on the available space.\n\nTo get your app ready for resizing, Migrate off APIs that fix the screen to full size, like UIRequiresFullscreen.\n\nThis property list key is deprecated in iPadOS 26.\n\nTo learn how to design your iPad app for resizable windows and the new menu bar, watch “Elevate the design of your iPad app.” Window resizing on macOS is more fluid too.\n\nFor resizes that are caused by changes in the content view size, SwiftUI now synchronizes the animation between that content and the window.\n\nOur app has adopted the new window resize anchor to tailor where the animation originates from.\n\nIt’s great for preserving continuity between different parts of content, like switching tabs in our settings view. Enhancements to the building blocks of SwiftUI also make our app more powerful.\n\nFrom supercharged performance to ease of use improvements and new ways to lay out your content, it’s a great year to be building apps with SwiftUI. Performance improvements to the framework benefit apps across all of Apple’s platforms, from our app to yours. There are major improvements to share in several key areas. Including lists, scrolling, and profiling.\n\nI’m particularly excited about the improvements to lists on macOS.\n\nOn macOS, lists of over 100,000 items now load 6x faster.\n\nAnd these lists update up to 16x faster. Larger lists have even bigger performance gains, and there are improvements to all platforms.\n\nThis improves the experience for people using our trip planning app, whether they're viewing their trips, filtering them, or updating existing ones. Scrolling has some serious wins too.\n\nWhen people scroll in your app, the system gives SwiftUI a certain amount of time to render the next frame. If all the work isn’t done by that deadline, it causes a dropped frame. No one wants this. It can cause your app to feel glitchy or slow.\n\nNow, SwiftUI has improved scheduling of user interface updates on iOS and macOS. This improves responsiveness and lets SwiftUI do even more work to prepare for upcoming frames. All in all, it reduces the chance of your app dropping a frame while scrolling quickly at high frame rates. When you put lazy stacks, like the LazyVStack in this diagram, inside scroll views, SwiftUI delays loading the contained views until they’re about to appear. Now, nested scrollviews with lazy stacks get this same behavior. This is great for building views like photo carousels.\n\nTo understand what performance issues still remain in our app, I can use the new SwiftUI performance instrument in Xcode.\n\nIt has a variety of lanes that allow me to quickly inspect different performance problem areas, like long view body updates or platform view updates.\n\nIt looks like we still have some work to do to make our app as lightning fast as Peter can hike.\n\nTo dive deeper into the new instrument, watch “Optimize SwiftUI performance with instruments”.\n\nConcurrent programming is another fundamental part of building your app. Swift support for structured concurrency allows verifying data race safety at compile time.\n\nThis helped Peter and I find bugs in our concurrent code before they affected our app. To learn more about adding structured concurrency to your app, watch “Embracing Swift concurrency.” Follow it up with “Explore concurrency in SwiftUI” to discover how SwiftUI leverages Swift concurrency.\n\nWhile our app concurrently loads in its data, Peter and I show an animation.\n\nWe animate this using the Animatable protocol, where we define a custom animatable data property that animates all our shapes properties except the drawing direction.\n\nOnce I add that full animatable data declaration, that’s a lot of code to just exclude the drawing direction. Using the new Animatable macro, I’m able to delete the custom animatable data property and let SwiftUI automatically synthesize it for me.\n\nI use the AnimatableIgnored macro to exclude properties I don’t want to animate, like the drawing direction. Layout is in new dimensions, three dimensions to be exact.\n\nSwiftUI has new depth-based variants of modifiers you already know, making it possible to do more volumetric layout directly in SwiftUI. On visionOS, our app lets us plan our hiking routes. I want to add a feature that shows the sun in the sky based on where I’ll be hiking at that time.\n\nInstead of a normal 2D alignment, I use the new Alignment3D type to align the sun.\n\nI place the sun using the Spatial Overlay modifier and adjust the overlay’s alignment based on the time of day.\n\nThat's awesome! Now I'm never getting sunburned again.\n\nThis is just scratching the surface of what you can do with the enhancements to spatial layout in visionOS 26. Watch “Meet SwiftUI spatial layout” to learn more about new tools to build spatial experiences. Peter and I always have backpacks that are way too full. So we added a volume to our app to help us spec out our packs. The new manipulable modifier allows people to interact with the objects in our app. Here, we take a model of a water bottle and enable people to pick it up and move it.\n\nTo make it obvious which items we still need to pack, we use the new scene snapping APIs to read this information out of the environment.\n\nBased on that, we add a pedestal to items that are snapped to the table.\n\nUsing the new volumetric APIs, it's possible to build some truly special experiences.\n\nThat's awesome! SwiftUI has many more enhancements to windows, volumes, and scenes on visionOS, from window restoration to new scene types. Learn how to use them in “Set the scene with SwiftUI in visionOS.” Check out “What’s new in visionOS” to hear all about what’s new on the platform. Wow, those are some pretty picture-perfect enhancements. It seems like this is going to make preparing for our next photo hike a snap. I know! Just look at this photo I took on my last trip.\n\nIt was a real safari. That looks great, Anna. A nice spot to expand the viewfinder, just like SwiftUI this year. Your app can take advantage of SwiftUI across the system. With enhancements to Scene and new APIs in Widgets and Controls, apps can be more a part of the platform than ever. And SwiftUI works even better alongside other frameworks. Scenes are the root containers for views in your app. They represent discrete parts of your interface. You can get access to scenes by declaring them in your app’s body. For example, a WindowGroup. This year, you can also request SwiftUI scenes from your UIKit and AppKit lifecycle apps with scene bridging. Scene bridging is really cool! It allows your UIKit and AppKit lifecycle apps to interoperate with SwiftUI scenes. Apps can use it to open SwiftUI-only scene types or use SwiftUI-exclusive features right from UIKit or AppKit code. You can use scene types like MenuBarExtra and ImmersiveSpace. It also works for scene modifiers, like windowStyle and immersiveEnvironmentBehavior. Scene Bridging works with the new scene types in SwiftUI this year. Like RemoteImmersiveSpace, in macOS Tahoe and visionOS 26, your Mac app can render stereo content on Apple Vision Pro using a new scene.\n\nRemoteImmersiveSpace is a macOS scene to render stereo content on Apple Vision Pro. You render in a RemoteImmersiveSpace with CompositorServices. Your Mac app can use hover effects and input events. To learn more about CompositorServices, Metal, and using them with RemoteImmersiveSpace, Check out “What’s new in Metal rendering for immersive apps.” And AssistiveAccess, which is a special mode for users with cognitive disabilities. Your app can also show UI when someone has their iPhone in this mode by adopting the new AssistiveAccess scene type. To learn more about this API and how you can adopt AssistiveAccess in your app in iOS 26, check out “Customize your app for Assistive Access.” SwiftUI has some great enhancements to working with AppKit this year. In addition to scene bridging, you can show sheets with SwiftUI views in them. This is a great way to incrementally adopt SwiftUI in your app. You can bridge your AppKit gestures over to SwiftUI using NSGestureRecognizerRepresentable, and you can use NSHostingView in Interface Builder.\n\nSwiftUI also offers more API to work alongside RealityKit with a ton of improvements this year. These enhancements simplify every part of interacting with RealityKit from your SwiftUI code. RealityKit Entities now conform to Observable, which makes it easy to observe changes in your SwiftUI views. There’s improved coordinate conversion API. and there’s enhanced support for presentations right from RealityKit. Using a new component, it’s possible to present SwiftUI popovers like this directly from a RealityKit Entity. This is great for marking exactly where we want to go on our next photo hike.\n\nThere’s even more to the integration between SwiftUI and RealityKit, like attachment components, synchronizing animations, binding to components, and new sizing behaviors for RealityView. To learn about SwiftUI and RealityKit’s continued friendship, check out “Better Together: SwiftUI & RealityKit.” I am a big fan of Controls in Control Center. I use them frequently on my phone to control my house, control my device with shortcuts, and control camera experiences. This year, watchOS 26 and macOS Tahoe are getting custom controls. Anna and I are really jazzed about using controls on these platforms. On the Mac, you can access custom controls right from Control Center.\n\nAnd on the watch, when we’re out for a walk, we can mark our favorite photo locations with a tap. Awesome! I’m a big fan of Widgets, too. I like getting information from my apps at a glance. This year, widgets are coming to visionOS and CarPlay. On visionOS, we can customize the appearance of widgets in the shared space. We’ve added a countdown widget to our app and used the new levelOfDetail environment value.\n\nWhen we get close to the widget, it expands to show some photos we took last time we were there. This is a great way to keep an eye on when we’ll take our next photo hike. Only 7 days to go! There’s more new to widgets this year, like Live Activities on CarPlay, push-based updating API, and new APIs for relevance on watchOS. To learn more, check out “What’s new in widgets.” SwiftUI has expanded the capability of views this year. From editing with rich text to charting in 3D, there are some great new views and enhancements to existing ones in SwiftUI. To embed web content directly in your app, WebKit now has a full set of SwiftUI APIs, including WebView. WebView is a new SwiftUI view for showing web content in your app. It’s powered by WebKit, just like Safari. Your app can show URLs by initializing a WebView.\n\nTo customize and interact with the page, WebViews can also show WebPages, a new observable model type designed from the ground up for Swift. WebPage enables rich interaction with the web. You can programmatically navigate on the page and access page properties.\n\nThere’s a lot more to WebKit’s new support for SwiftUI, like customizing user agents, calling JavaScript, custom URL schemes, and more. To learn more about all these new WebKit APIs, point your Internet communicator at “Meet WebKit for SwiftUI.” We’ve been trying to convince our families that our hikes aren’t that hilly. With the new support for 3D in Swift Charts, we can show them just that.\n\nTo show 3D charts, we declare a Chart3D.\n\nChart3D shows plots in three dimensions. We can use the new Z-specific modifiers to specify scales in 3D space. No wonder I was sneezing on that last hike. It was sinusoidal! To learn more about how to add 3D charts to your app, watch “Bring Swift Charts to the third dimension.” To help us share trip data with other apps, Anna and I adopted Drag and Drop in our Mac app. Drag and Drop has some major enhancements this year for your apps.\n\nWe can drag around multiple items using the new variant of the draggable modifier, along with the new dragContainer modifier. This makes our view a container for drag items. We return the items to transfer based on the selection.\n\nThis works with the custom selection behavior in our app. When we use this modifier, SwiftUI requests drag items lazily when a drop occurs.\n\nUsing the new DragConfiguration API, we can customize the supported operations for drags from our app. Here, we allow deleting. To observe events, we use the new onDragSessionUpdated modifier. We check for the ended with delete phase before deleting the photos.\n\nNow, when we drag to the trash in the Dock, the photos are deleted.\n\nTo customize how drag previews look during a drag, we can specify a formation.\n\nThe stack formation places the items nicely on top of one another. Great! Besides plotting and sharing our trips, Anna and I also want to let our friends follow along and participate. We’ve been working on a way for them to comment on our photos. SwiftUI’s new support for rich text editing is great for experiences like this.\n\nTextView now supports AttributedString! By passing a binding to an AttributedString into TextEditor, we’ve allowed our friends to comment on our pictures with rich text using the built-in text formatting controls. Awesome! Do you smell that? Smells like delicious rich text in SwiftUI.\n\nThere’s a menu of options for rich text and localization this year. Check out “Cook up a rich text experience in SwiftUI with AttributedString” to explore more. You can customize paragraph styles, transform attributes, and even constrain attributes that people are allowed to use in your app. Enjoy dessert with “Explore localization with Xcode” to dive into crafting great experiences for every language. It’s so exciting to see all the new places to use SwiftUI. And lots of bridges to other things. Check out this pic from my last hike.\n\nWe should go there next time. Well, it’s time for us to go take some more photos using our new apps. In your apps, go check out the brand new look and feel with the new design, and use the new APIs to polish your app. Inspect the performance of your app with the new performance instrument. Take your app to new depths with the additions to volume and the new spatial layout. Add richer experiences to your apps using the enhancements to rich text and WebKit. And take advantage of controls and widgets being in more places than ever. We hope you enjoy your adventures this year in SwiftUI. I wonder if those performance improvements might help me tackle the hills on our next hike. You're ready to go? Let's do it.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hi, I'm Anna. And I'm Peter. We're engineers on the SwiftUI team. We’re stoked to talk to you about what’s new in SwiftUI. From low level performance improvements all the way up through the buttons in your user interface, there are some major improvements to share across the system. It’s easier to interact with text and web-based content, and SwiftUI is in even more places. One of mine and Anna’s greatest loves right below SwiftUI is taking pictures while hiking. Peter and I have built an app to help us plan and share our trips. It uses a ton of the enhancements to SwiftUI to make it look and feel great. First, I’ll show off all the new system features and how we made our app shine with them. I'll share enhancements to performance, animations, and layout."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Peter will take you through the new places you can use SwiftUI throughout all of Apple’s platforms."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Finally, he’ll highlight expanded features in SwiftUI views, including support for web content and rich text."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "Let’s get started, with how you can make your app truly shine with a new design. The new design system enables a bright and fluid experience that's consistent across Apple platforms."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "After Peter and I re-compile our app, it gets the brand new appearance."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "The structure of our app hasn't changed, but navigation containers have been updated for the new design."
+      },
+      {
+        "timestamp": "1:53",
+        "text": "On iPad and macOS, our app sidebar has a glassy appearance that reflects the content around it."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "Tab bars have also been updated. On iPhone, they have a new, more compact appearance."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "Beyond tab bars, most toolbar items now appear in Liquid Glass."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "During navigation transitions, these items can even morph. Check it out."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "Our app uses the new toolbar spacer API to adjust the sections of toolbar items."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "We use a fixed spacer to separate the up-down buttons from the settings button."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "To make toolbar items more prominent, Liquid Glass in toolbars supports tinting."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "Peter and I apply a bordered prominent button style with a tint color to get this effect."
+      },
+      {
+        "timestamp": "2:59",
+        "text": "When people scroll down in our app, the toolbar now applies a blur effect to the bar content on the edge that’s being scrolled. This scroll edge effect ensures our bar content remains legible regardless of whatever is underneath."
+      },
+      {
+        "timestamp": "3:18",
+        "text": "To find that next trip, people often search for it."
+      },
+      {
+        "timestamp": "3:23",
+        "text": "Search is now bottom aligned on iPhone, which makes it more ergonomic to reach."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "Our existing code places the searchable modifier on the outside of the NavigationSplitView."
+      },
+      {
+        "timestamp": "3:37",
+        "text": "Peter and I didn’t have to make any code changes to get the bottom aligned search."
+      },
+      {
+        "timestamp": "3:44",
+        "text": "With this same placement on iPad, our app gets the new search appearance in the top trailing corner."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "With searchable, it’s never been faster to find what you’re looking for."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "For tab-based apps where search is a destination, the Search tab now appears separated from the rest of the tabs in the tab bar and morphs into the search field."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "Set your tab as having a search role to get the updated appearance."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "Controls throughout the system also feel fresh, like toggles, segmented pickers, and sliders. Our custom views aren't left out either. There are APIs to let them take advantage of the new design too."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "We apply a glass effect to our custom view, so it beautifully reflects the content around it, like our previous photos. These updates are just scratching the surface of what you can build with the new design."
+      },
+      {
+        "timestamp": "4:52",
+        "text": "To learn more about how to take advantage of it, from adoption best practices to advanced customizations, check out “Build a SwiftUI app with the new design” In iPadOS 26, there have also been some exciting improvements to the ways that people can interact with your app."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "When people swipe down, apps now display a menu bar, which provides faster access to common actions."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "The commands API used to construct the menu bar on macOS now creates the same result on iPad. I've added some text editing commands, since our app allows people to jot down notes for their next trip. When planning a trip, people are often looking at multiple apps at once. Windowing on iPad has become even more flexible. People can fluidly resize your app."
+      },
+      {
+        "timestamp": "5:49",
+        "text": "For apps like ours that use split view navigation, the system automatically shows and hides columns based on the available space."
+      },
+      {
+        "timestamp": "6:00",
+        "text": "To get your app ready for resizing, Migrate off APIs that fix the screen to full size, like UIRequiresFullscreen."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "This property list key is deprecated in iPadOS 26."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "To learn how to design your iPad app for resizable windows and the new menu bar, watch “Elevate the design of your iPad app.” Window resizing on macOS is more fluid too."
+      },
+      {
+        "timestamp": "6:29",
+        "text": "For resizes that are caused by changes in the content view size, SwiftUI now synchronizes the animation between that content and the window."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "Our app has adopted the new window resize anchor to tailor where the animation originates from."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "It’s great for preserving continuity between different parts of content, like switching tabs in our settings view. Enhancements to the building blocks of SwiftUI also make our app more powerful."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "From supercharged performance to ease of use improvements and new ways to lay out your content, it’s a great year to be building apps with SwiftUI. Performance improvements to the framework benefit apps across all of Apple’s platforms, from our app to yours. There are major improvements to share in several key areas. Including lists, scrolling, and profiling."
+      },
+      {
+        "timestamp": "7:37",
+        "text": "I’m particularly excited about the improvements to lists on macOS."
+      },
+      {
+        "timestamp": "7:43",
+        "text": "On macOS, lists of over 100,000 items now load 6x faster."
+      },
+      {
+        "timestamp": "7:51",
+        "text": "And these lists update up to 16x faster. Larger lists have even bigger performance gains, and there are improvements to all platforms."
+      },
+      {
+        "timestamp": "8:05",
+        "text": "This improves the experience for people using our trip planning app, whether they're viewing their trips, filtering them, or updating existing ones. Scrolling has some serious wins too."
+      },
+      {
+        "timestamp": "8:22",
+        "text": "When people scroll in your app, the system gives SwiftUI a certain amount of time to render the next frame. If all the work isn’t done by that deadline, it causes a dropped frame. No one wants this. It can cause your app to feel glitchy or slow."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "Now, SwiftUI has improved scheduling of user interface updates on iOS and macOS. This improves responsiveness and lets SwiftUI do even more work to prepare for upcoming frames. All in all, it reduces the chance of your app dropping a frame while scrolling quickly at high frame rates. When you put lazy stacks, like the LazyVStack in this diagram, inside scroll views, SwiftUI delays loading the contained views until they’re about to appear. Now, nested scrollviews with lazy stacks get this same behavior. This is great for building views like photo carousels."
+      },
+      {
+        "timestamp": "9:36",
+        "text": "To understand what performance issues still remain in our app, I can use the new SwiftUI performance instrument in Xcode."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "It has a variety of lanes that allow me to quickly inspect different performance problem areas, like long view body updates or platform view updates."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "It looks like we still have some work to do to make our app as lightning fast as Peter can hike."
+      },
+      {
+        "timestamp": "10:07",
+        "text": "To dive deeper into the new instrument, watch “Optimize SwiftUI performance with instruments”."
+      },
+      {
+        "timestamp": "10:17",
+        "text": "Concurrent programming is another fundamental part of building your app. Swift support for structured concurrency allows verifying data race safety at compile time."
+      },
+      {
+        "timestamp": "10:30",
+        "text": "This helped Peter and I find bugs in our concurrent code before they affected our app. To learn more about adding structured concurrency to your app, watch “Embracing Swift concurrency.” Follow it up with “Explore concurrency in SwiftUI” to discover how SwiftUI leverages Swift concurrency."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "While our app concurrently loads in its data, Peter and I show an animation."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "We animate this using the Animatable protocol, where we define a custom animatable data property that animates all our shapes properties except the drawing direction."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "Once I add that full animatable data declaration, that’s a lot of code to just exclude the drawing direction. Using the new Animatable macro, I’m able to delete the custom animatable data property and let SwiftUI automatically synthesize it for me."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "I use the AnimatableIgnored macro to exclude properties I don’t want to animate, like the drawing direction. Layout is in new dimensions, three dimensions to be exact."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "SwiftUI has new depth-based variants of modifiers you already know, making it possible to do more volumetric layout directly in SwiftUI. On visionOS, our app lets us plan our hiking routes. I want to add a feature that shows the sun in the sky based on where I’ll be hiking at that time."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "Instead of a normal 2D alignment, I use the new Alignment3D type to align the sun."
+      },
+      {
+        "timestamp": "12:23",
+        "text": "I place the sun using the Spatial Overlay modifier and adjust the overlay’s alignment based on the time of day."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "That's awesome! Now I'm never getting sunburned again."
+      },
+      {
+        "timestamp": "12:39",
+        "text": "This is just scratching the surface of what you can do with the enhancements to spatial layout in visionOS 26. Watch “Meet SwiftUI spatial layout” to learn more about new tools to build spatial experiences. Peter and I always have backpacks that are way too full. So we added a volume to our app to help us spec out our packs. The new manipulable modifier allows people to interact with the objects in our app. Here, we take a model of a water bottle and enable people to pick it up and move it."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "To make it obvious which items we still need to pack, we use the new scene snapping APIs to read this information out of the environment."
+      },
+      {
+        "timestamp": "13:32",
+        "text": "Based on that, we add a pedestal to items that are snapped to the table."
+      },
+      {
+        "timestamp": "13:39",
+        "text": "Using the new volumetric APIs, it's possible to build some truly special experiences."
+      },
+      {
+        "timestamp": "13:47",
+        "text": "That's awesome! SwiftUI has many more enhancements to windows, volumes, and scenes on visionOS, from window restoration to new scene types. Learn how to use them in “Set the scene with SwiftUI in visionOS.” Check out “What’s new in visionOS” to hear all about what’s new on the platform. Wow, those are some pretty picture-perfect enhancements. It seems like this is going to make preparing for our next photo hike a snap. I know! Just look at this photo I took on my last trip."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "It was a real safari. That looks great, Anna. A nice spot to expand the viewfinder, just like SwiftUI this year. Your app can take advantage of SwiftUI across the system. With enhancements to Scene and new APIs in Widgets and Controls, apps can be more a part of the platform than ever. And SwiftUI works even better alongside other frameworks. Scenes are the root containers for views in your app. They represent discrete parts of your interface. You can get access to scenes by declaring them in your app’s body. For example, a WindowGroup. This year, you can also request SwiftUI scenes from your UIKit and AppKit lifecycle apps with scene bridging. Scene bridging is really cool! It allows your UIKit and AppKit lifecycle apps to interoperate with SwiftUI scenes. Apps can use it to open SwiftUI-only scene types or use SwiftUI-exclusive features right from UIKit or AppKit code. You can use scene types like MenuBarExtra and ImmersiveSpace. It also works for scene modifiers, like windowStyle and immersiveEnvironmentBehavior. Scene Bridging works with the new scene types in SwiftUI this year. Like RemoteImmersiveSpace, in macOS Tahoe and visionOS 26, your Mac app can render stereo content on Apple Vision Pro using a new scene."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "RemoteImmersiveSpace is a macOS scene to render stereo content on Apple Vision Pro. You render in a RemoteImmersiveSpace with CompositorServices. Your Mac app can use hover effects and input events. To learn more about CompositorServices, Metal, and using them with RemoteImmersiveSpace, Check out “What’s new in Metal rendering for immersive apps.” And AssistiveAccess, which is a special mode for users with cognitive disabilities. Your app can also show UI when someone has their iPhone in this mode by adopting the new AssistiveAccess scene type. To learn more about this API and how you can adopt AssistiveAccess in your app in iOS 26, check out “Customize your app for Assistive Access.” SwiftUI has some great enhancements to working with AppKit this year. In addition to scene bridging, you can show sheets with SwiftUI views in them. This is a great way to incrementally adopt SwiftUI in your app. You can bridge your AppKit gestures over to SwiftUI using NSGestureRecognizerRepresentable, and you can use NSHostingView in Interface Builder."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "SwiftUI also offers more API to work alongside RealityKit with a ton of improvements this year. These enhancements simplify every part of interacting with RealityKit from your SwiftUI code. RealityKit Entities now conform to Observable, which makes it easy to observe changes in your SwiftUI views. There’s improved coordinate conversion API. and there’s enhanced support for presentations right from RealityKit. Using a new component, it’s possible to present SwiftUI popovers like this directly from a RealityKit Entity. This is great for marking exactly where we want to go on our next photo hike."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "There’s even more to the integration between SwiftUI and RealityKit, like attachment components, synchronizing animations, binding to components, and new sizing behaviors for RealityView. To learn about SwiftUI and RealityKit’s continued friendship, check out “Better Together: SwiftUI & RealityKit.” I am a big fan of Controls in Control Center. I use them frequently on my phone to control my house, control my device with shortcuts, and control camera experiences. This year, watchOS 26 and macOS Tahoe are getting custom controls. Anna and I are really jazzed about using controls on these platforms. On the Mac, you can access custom controls right from Control Center."
+      },
+      {
+        "timestamp": "19:04",
+        "text": "And on the watch, when we’re out for a walk, we can mark our favorite photo locations with a tap. Awesome! I’m a big fan of Widgets, too. I like getting information from my apps at a glance. This year, widgets are coming to visionOS and CarPlay. On visionOS, we can customize the appearance of widgets in the shared space. We’ve added a countdown widget to our app and used the new levelOfDetail environment value."
+      },
+      {
+        "timestamp": "19:35",
+        "text": "When we get close to the widget, it expands to show some photos we took last time we were there. This is a great way to keep an eye on when we’ll take our next photo hike. Only 7 days to go! There’s more new to widgets this year, like Live Activities on CarPlay, push-based updating API, and new APIs for relevance on watchOS. To learn more, check out “What’s new in widgets.” SwiftUI has expanded the capability of views this year. From editing with rich text to charting in 3D, there are some great new views and enhancements to existing ones in SwiftUI. To embed web content directly in your app, WebKit now has a full set of SwiftUI APIs, including WebView. WebView is a new SwiftUI view for showing web content in your app. It’s powered by WebKit, just like Safari. Your app can show URLs by initializing a WebView."
+      },
+      {
+        "timestamp": "20:44",
+        "text": "To customize and interact with the page, WebViews can also show WebPages, a new observable model type designed from the ground up for Swift. WebPage enables rich interaction with the web. You can programmatically navigate on the page and access page properties."
+      },
+      {
+        "timestamp": "21:05",
+        "text": "There’s a lot more to WebKit’s new support for SwiftUI, like customizing user agents, calling JavaScript, custom URL schemes, and more. To learn more about all these new WebKit APIs, point your Internet communicator at “Meet WebKit for SwiftUI.” We’ve been trying to convince our families that our hikes aren’t that hilly. With the new support for 3D in Swift Charts, we can show them just that."
+      },
+      {
+        "timestamp": "21:36",
+        "text": "To show 3D charts, we declare a Chart3D."
+      },
+      {
+        "timestamp": "21:41",
+        "text": "Chart3D shows plots in three dimensions. We can use the new Z-specific modifiers to specify scales in 3D space. No wonder I was sneezing on that last hike. It was sinusoidal! To learn more about how to add 3D charts to your app, watch “Bring Swift Charts to the third dimension.” To help us share trip data with other apps, Anna and I adopted Drag and Drop in our Mac app. Drag and Drop has some major enhancements this year for your apps."
+      },
+      {
+        "timestamp": "22:18",
+        "text": "We can drag around multiple items using the new variant of the draggable modifier, along with the new dragContainer modifier. This makes our view a container for drag items. We return the items to transfer based on the selection."
+      },
+      {
+        "timestamp": "22:37",
+        "text": "This works with the custom selection behavior in our app. When we use this modifier, SwiftUI requests drag items lazily when a drop occurs."
+      },
+      {
+        "timestamp": "22:49",
+        "text": "Using the new DragConfiguration API, we can customize the supported operations for drags from our app. Here, we allow deleting. To observe events, we use the new onDragSessionUpdated modifier. We check for the ended with delete phase before deleting the photos."
+      },
+      {
+        "timestamp": "23:14",
+        "text": "Now, when we drag to the trash in the Dock, the photos are deleted."
+      },
+      {
+        "timestamp": "23:21",
+        "text": "To customize how drag previews look during a drag, we can specify a formation."
+      },
+      {
+        "timestamp": "23:30",
+        "text": "The stack formation places the items nicely on top of one another. Great! Besides plotting and sharing our trips, Anna and I also want to let our friends follow along and participate. We’ve been working on a way for them to comment on our photos. SwiftUI’s new support for rich text editing is great for experiences like this."
+      },
+      {
+        "timestamp": "23:55",
+        "text": "TextView now supports AttributedString! By passing a binding to an AttributedString into TextEditor, we’ve allowed our friends to comment on our pictures with rich text using the built-in text formatting controls. Awesome! Do you smell that? Smells like delicious rich text in SwiftUI."
+      },
+      {
+        "timestamp": "24:20",
+        "text": "There’s a menu of options for rich text and localization this year. Check out “Cook up a rich text experience in SwiftUI with AttributedString” to explore more. You can customize paragraph styles, transform attributes, and even constrain attributes that people are allowed to use in your app. Enjoy dessert with “Explore localization with Xcode” to dive into crafting great experiences for every language. It’s so exciting to see all the new places to use SwiftUI. And lots of bridges to other things. Check out this pic from my last hike."
+      },
+      {
+        "timestamp": "24:59",
+        "text": "We should go there next time. Well, it’s time for us to go take some more photos using our new apps. In your apps, go check out the brand new look and feel with the new design, and use the new APIs to polish your app. Inspect the performance of your app with the new performance instrument. Take your app to new depths with the additions to volume and the new spatial layout. Add richer experiences to your apps using the enhancements to rich text and WebKit. And take advantage of controls and widgets being in more places than ever. We hope you enjoy your adventures this year in SwiftUI. I wonder if those performance improvements might help me tackle the hills on our next hike. You're ready to go? Let's do it."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -131,6 +450,38 @@
       "title": "Rich text view",
       "language": "swift",
       "code": "import SwiftUI\n\nstruct CommentEditor: View {\n    @Binding var commentText: AttributedString\n\n    var body: some View {\n        TextEditor(text: $commentText)\n    }\n}"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:22"
+    },
+    {
+      "timestamp": "1:22",
+      "title": "Make the new design shine",
+      "duration": "5:37"
+    },
+    {
+      "timestamp": "6:59",
+      "title": "Framework foundations",
+      "duration": "7:34"
+    },
+    {
+      "timestamp": "14:33",
+      "title": "SwiftUI across the system",
+      "duration": "5:31"
+    },
+    {
+      "timestamp": "20:04",
+      "title": "Expand SwiftUI views",
+      "duration": "4:57"
+    },
+    {
+      "timestamp": "25:01",
+      "title": "Next steps",
+      "duration": "0:56"
     }
   ],
   "resources": {
@@ -253,5 +604,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2025/278"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:28.633Z"
+  "extractedAt": "2026-10-17T18:44:23.736Z"
 }

@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10113/",
   "title": "Explore EDR on iOS",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video",
@@ -14,8 +13,700 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop music ♪ ♪ Hi, my name is Denis, and I'm part of the Display and Color Technologies team here at Apple.\n\nToday I'll be exploring some exciting updates with EDR and their implications for iOS developers.\n\nYou might already be familiar with EDR if you've seen last year's presentation, but as a short recap, EDR refers to Extended Dynamic Range, and is Apple's HDR technology.\n\nEDR refers to both a rendering technology as well as a pixel representation, with EDR's pixel representation being particularly important because it consistently represents both standard, and high dynamic range content.\n\nIn well-exposed content, the subject -- in this example, the campers -- should fall within the standard dynamic range of the image, whereas specular and emissive highlights, such as the campfire, will fall into the higher range.\n\nIn a standard range representation, these elements would end up getting clipped, but with EDR they remain representable.\n\nWhile other pixel representations are designed to represent a fixed range of brightness values, EDR's representation is truly dynamic, capable of describing any arbitrary value.\n\nAdditionally by taking advantage of any unused backlight, EDR allows any display to render high dynamic range content regardless of the display's peak.\n\nAnd with HDR content becoming far more prevalent and accessible, so has the list of applications adopting EDR on macOS.\n\n\"Baldur's Gate 3,\" \"Divinity: Original Sin 2,\" and \"Shadow of the Tomb Raider\" are already shipping with EDR on macOS.\n\nBy adopting EDR, games are capable of rendering brighter and more saturated colors, as well as generating more realistic lighting, reflections, and more colorful content.\n\nWhere bright elements would be limited to the SDR peak white, with EDR they regain their vibrance and depth as the authors intended.\n\nEDR is integrated across the Apple ecosystem, including in Safari, and QuickTime player.\n\nAs a result, video-on-demand apps and services such as Apple TV and Netflix gain the ability to deliver the ever-expanding catalogue of HDR10, Dolby Vision, and ProRes content to their consumers.\n\nPro apps that adopt EDR enable their users to create stunning HDR content by providing a variety of professional workflows to accurately edit, grade, master, and review HDR stills and videos.\n\nWith all the excitement around EDR adoption on macOS, we're excited to bring several new updates to EDR.\n\nFirst and foremost, we are happy to announce that our EDR APIs are now available on iOS and iPadOS.\n\nAdditionally, as part of Apple's commitment to supporting our pro users, this year we are introducing two new pro color features on the 12.9-inch iPad Pro with Liquid Retina XDR display.\n\nReference Mode and EDR rendering over Sidecar.\n\nReference Mode is a new display mode that is designed to enable color-critical workflows such as color grading, editing, and content review by providing a reference response for a variety of common video formats, similar to the reference presets on macOS.\n\nTo do this, Reference Mode fixes the SDR peak brightness at 100 nits, and the HDR peak brightness at 1000 nits, thus giving 10 times EDR headroom.\n\nReference Mode also provides a one-to-one media to display mapping.\n\nAnd disables all dynamic display adjustments for ambient surround, such as True Tone, Auto-Brightness and Night Shift, instead allowing users to finely calibrate the white point manually.\n\nThis way the display will produce colors exactly as they are described by their respective specifications.\n\nThis chart provides a list of formats that Reference Mode supports.\n\nNote that unlike the reference presets on macOS, Reference Mode is a single toggle that supports the five most common HDR and SDR video formats, providing a consistent reference response across media types.\n\nAnd don't worry if you have content in a format that is not listed on this table.\n\nAny formats that are not supported will be color managed as they would in the default Display Mode.\n\nAs an example, let's take a look at LumaFusion in Reference Mode.\n\nBy enabling Reference Mode on iOS, LumaFusion becomes a more powerful tool for video post-production.\n\nWhen displaying HDR video, colors within the P3 color gamut up to a 1000 nit peak are rendered accurately, so users can be confident their videos are always being displayed correctly and consistently.\n\nWith the combination of Reference Mode and LumaFusion's new Video Scopes feature, color-critical workflows are now possible on iPad Pro.\n\nIf we disable Reference Mode, EDR headroom can change dynamically, which we'll see here as iOS modulates the brightness of our video.\n\nUsers can export their LumaFusion projects as XML, which can then be imported by other popular Mac post-production apps, allowing a team of content creators to easily collaborate on both platforms.\n\nIt's very exciting to see LumaFusion adopting Reference Mode, along with the value and flexibility it brings to pro content creators.\n\nBut Reference Mode isn't the only new feature.\n\nBack in 2019, we introduced Sidecar, a technology that allows Mac users to use their iPad as a secondary display.\n\nAnd now, with the introduction of Reference Mode, we are adding support for EDR rendering over Sidecar, which extends the capability of Sidecar when Reference Mode is enabled to support reference-grade SDR and HDR content, allowing pro content creators to use their iPad Pro as a secondary reference display for Apple silicon Macs.\n\nIt goes without saying that content rendered over Sidecar will provide a reference response for all the same video formats as native iOS in Reference Mode.\n\nFor example, let's take a look at this HDR10 test pattern as rendered on a Mac in the HDR video preset and compare it to the rendition on the iPad Pro using Sidecar.\n\nIn this configuration, both devices act as a reference display with P3 color and a D65 white point, since that happens to be the spec for both displays.\n\nAs you can see from the P3 primary and secondary color bars, both the Mac and iPad produce a similar response as we would expect.\n\nAdditionally, both configurations support a peak luminance of 1000 nits, and as seen in the gradient, those values are rendered faithfully while values beyond 1000 nits are clipped.\n\nWe are excited by the prospects and new opportunities that EDR rendering over Sidecar brings to our pro users.\n\nWe also look forward to seeing more developers taking advantage of these features by adopting EDR in their own apps.\n\nOn that note, let's explore how you can integrate EDR rendering into your own iOS and iPadOS apps.\n\nWe'll start by taking a look at the implication of EDR's pixel representation and render pipeline.\n\nTraditionally, the floating point representation of SDR was values in the zero to one range, zero being black and 1 being SDR white.\n\nWith EDR, SDR content is still represented in the 0 to 1 range while values above 1 represent content brighter than SDR.\n\nNote that EDR is represented in linear space, which means that 2.0 EDR is not perceptibly two times brighter than 1.0.\n\nUnlike other HDR formats, EDR does not tone map values to the 0 to 1 range, and this has some implications on rendering.\n\nIn that regard, EDR ensures that SDR content, or values from 0 to 1, are always rendered.\n\nAnd any values above 1 will be properly rendered without tone mapping up to the current EDR headroom.\n\nHowever, any values that are brighter will be clipped.\n\nInitially, this behavior may seem unideal, but it means that any content authored in HDR will be rendered as close to the intention as possible, with any highlights that are too bright clipped as they typically would be in a conventional representation.\n\nClearly then, the higher your headroom, the brighter and more dynamic your content can be.\n\nBut how much headroom do we have? Well, it should be noted that the instantaneous EDR headroom is a dynamic value and is based on many factors, including but not limited to the specific display technology of a device, as well as the current display brightness.\n\nBut as an oversimplification, your current EDR headroom is roughly equal to the maximum brightness of the display divided by the current SDR brightness.\n\nSo earlier, when I mentioned that Reference Mode provides 10 times EDR headroom, that's because we fix EDR 1.0 -- or the SDR brightness -- to 100 nits, while we fix the HDR peak brightness to 1000 nits.\n\nThus 1000 nits divided by 100 nits gives you a constant headroom of 10 times EDR.\n\nThis table gives a few more examples of different devices and their maximum potential headroom.\n\nNote that this is the potential headroom and that the true headroom will be dependent on various other factors, including the current display brightness.\n\nLater in this talk, we'll go into further detail about headroom, and show you an example of how to query and use the headroom to make informed decisions about rendering.\n\nBut for now, you should have a good understanding of EDR and when you would want it.\n\nNow, let's shift gears to actually rendering some EDR content.\n\nIn this section, we'll go over how to read your HDR content into a renderable format.\n\nThe particular example we'll be covering is an Image I/O workflow, but if you're looking for a different framework, take a look at one of our other EDR talks this year.\n\nIn the case of still media, we start off with an image file that we want to load in.\n\nThis image will typically be encoded in a biplanar YUV space.\n\nWhen we load it in initially, the image and it's buffer will be in their original format.\n\nUnfortunately, while in that format it can be difficult to interpret and work with the image in any meaningful way.\n\nSo with the help of CGBitmapContext we will decode and convert the image to a more usable format.\n\nAt which point, we can create a MTLTexture from the backing pixel data of the context and then render it with our Metal engine.\n\nMore concretely, in order to achieve this, there are four steps we need to cover.\n\nWe'll start by creating a CGImage for our HDR still, drawing that CGImage into a bitmap context, creating a Metal texture, and, finally, loading the bitmap's data into the newly created texture.\n\nIn the first step, we'll read our image and do a little bit of setup.\n\nFirst, we read our image from a URL into a CGImageSource, then create a CGImage from that source.\n\nIn this case, we created the image by passing a nil options dictionary.\n\nHowever, if you'd like floating point buffers with certain HDR formats, there is a new kCGImageSourceShouldAllowFloat option that you may wish to set.\n\nNow, we'll instantiate a CGBitmapInfo.\n\nIn this case, we are creating a 16-bit floating point context with a premultiplied alpha.\n\nRemember this because we'll want our Metal texture to use the same format.\n\nNext, we'll construct a CGBitmapContext using the bitmap info that we just created, along with the width and height of the CGImage.\n\nNote that you'll want the color space of the context to match the color space of the CAMetalLayer to which you'll be rendering.\n\nOtherwise, you will need to perform the appropriate color management yourself.\n\nLastly, we'll draw our CGImage into the bitmap context.\n\nAt this point, we can move on to creating a Metal texture from our context.\n\nTo create our Metal texture, we'll first instantiate a MTLTextureDescriptor.\n\nRecall from earlier that we opted to use half float for our bitmap context, but when rendering EDR, you can also have your 2D texture in a 32-bit packed pixel format with a 10-bit blue, green, and red, and a 2-bit alpha.\n\nWe'll go into more detail in the following sections, but for now, it's enough to know that the pixel format of the texture should match the pixel format of your content; in our case, half float.\n\nAt this point, we'll instantiate our texture with our Metal layer's device and the newly created texture descriptor.\n\nFinally, we'll grab the data from our bitmap context and copy it into our texture.\n\nWith that, we have a Metal texture containing EDR values that we can send to our Metal pipeline for rendering.\n\nThis section covered a sample workflow for sourcing an HDR still image starting from a URL and working our way down to a Metal texture.\n\nNext, we'll go over the minimum code changes required to render such a texture on iOS and iPadOS.\n\nThe process for opting into EDR with the new iOS and iPadOS APIs is identical to that on macOS.\n\nSo, if you already have EDR support for a macOS build of your app, you won't need to make any changes.\n\nIn order to opt into EDR, you need to ensure you're using a CAMetalLayer, that you set the appropriate flags and tags on that layer, and that you have bright content in a supported EDR format.\n\nFirst, take the CAMetalLayer to which you'll be rendering your content.\n\nOn that layer you'll want to enable the wantsExtendedDynamicRange Content flag.\n\nThen, on that same layer, you'll need to set a supported combination of pixel format and CGColorSpace.\n\nDepending on what sort of content you have and how you source it, the specific pixel format and color space will be different.\n\nIn our case, we loaded our image into a 16-bit floating point buffer, and here we've opted to match it with an extended linear Display P3 color space.\n\niOS supports rendering EDR in 16-bit floating point pixel buffers combined with linear color spaces.\n\nBut if you choose to use one of these combinations, be sure to use the extended variant of the color space.\n\nOtherwise, your content will be clipped to SDR.\n\niOs also supports 10-bit packed BGRA pixel buffers which we briefly mentioned earlier.\n\nSuch buffers are supported for rendering with either PQ or HLG color spaces, as outlined in this chart.\n\nIn this section, we covered the minimum code changes required on your rendering layer in order to support EDR rendering, including the wantsExtendedDynamicRangeContent flag as well as the various pixel formats and color spaces that support EDR.\n\nAt this point, if you were to render the Metal texture, we sourced from the previous section to the CAMetalLayer in this section, we would be rendering EDR.\n\nBut there are a couple more tricks we can do.\n\nAs mentioned in the overview, the default behavior of EDR is to clip to the current EDR headroom.\n\nThere are cases where you may decide that the headroom is not high enough to justify rendering your EDR content and instead go down an SDR path.\n\nOr times when you'd like to use the current headroom to tone map your content before displaying.\n\nIn either case, iOS now has new APIs that support querying the headroom, and in this section, we'll go over the calls as well as how they differ from macOS so that you can better make such decisions.\n\nOn macOS, headroom queries are found on NSScreen.\n\nOn NSScreen, we have queries for: the maximum EDR headroom the display can support, the maximum EDR headroom of the current reference preset, and the current EDR headroom.\n\nAdditionally, macOS provides a notification whenever the EDR headroom changes.\n\nOn iOS however, headroom queries are found on UIScreen, and unlike NSScreen, here we instead have queries for the maximum EDR headroom the display supports and the current EDR headroom.\n\nAdditionally, UIScreen provides the Reference Display Mode status, which is used to indicate whether Reference Mode is supported and engaged.\n\nNote that UIScreen does not provide notifications for changes in EDR headroom but will send notifications whenever the Reference Mode status changes.\n\nYou may also notice that the maximum reference headroom query is missing from the list.\n\nInstead of using a dedicated query, you can determine its value by querying the potential maximum headroom when the Reference Mode status indicates that Reference Mode is enabled.\n\nLet's take a look at some sample code to get a better feel for how to query headroom.\n\nOn UIScreen, you can query the potentialEDRHeadroom in order to see the maximum possible headroom of the display.\n\nIf you decide this value is too low, you may choose to render an SDR path instead, saving some processing power.\n\nThen, if you've decided on the EDR path, you may have a render delegate or an otherwise regularly scheduled draw call.\n\nIn this call, we can query the currentEDRHeadroom and use it to tone map our content such that none of it exceeds the headroom, and thus won't clip.\n\nIf you'd like to be aware of the Reference Mode status, you can register to receive a notification whenever the status changes using the UIScreen.referenceDisplayMode StatusDidChangeNotification.\n\nThen, whenever the status does change, you can get the new status and the new potential EDR headroom and use them to make further decisions about rendering.\n\nRegarding the Reference Mode status, there are four unique states you should be aware of.\n\nStatusEnabled indicates that Reference Mode is enabled and that it is rendering as expected.\n\nStatusLimited indicates that Reference Mode is enabled but that for some reason we are temporarily unable to achieve a reference response.\n\nNote that if this status does occur, it will be accompanied by an out-of-reference UI notification to inform users that the reference response is compromised.\n\nStatusNotEnabled indicates that Reference Mode is supported on this device, but that it hasn't been enabled.\n\nAnd finally, StatusNotSupported indicates that Reference Mode is not supported on this device.\n\nThese new APIs should give developers deeper insight into the current state of the display and provide them with the tools they need to make informed decisions on how to render their EDR content.\n\nIn the previous section, we covered how to query various headroom parameters, including the current EDR headroom, which you could use to tone map your content and avoid clipping.\n\nBut what if you don't want to dig into or implement your own tone mapping algorithms? Well, in the case of video content, you may then want to take advantage of Apple's built-in tone mapping.\n\nIf you would like to enable Apple's tone mapping on your content, you can do so using the CAEDR metadata interface, which includes metadata constructors for both HDR10 and HLG.\n\nBe aware that tone mapping is not supported on all platforms but that there is a query with which you can check if your platform has this support.\n\nTo check if your platform supports tone mapping, query CAEDRMetadata.isAvailable.\n\nIf it is available, you then need to instantiate CAEDRMetadata.\n\nWe'll go over the specific constructors in just a moment, but let's skip this step for now.\n\nOnce you have your EDR metadata, apply it to the layer on which you are rendering.\n\nThis will opt your layer into being processed by the system tone mapper based on the metadata provided.\n\nAs mentioned, there are a number of EDR metadata constructors available, which are specific to their HDR video format.\n\nHere we have the constructor for HLG metadata which takes no parameters.\n\nNext, is one of the two HDR10 constructors available.\n\nThis one takes three parameters: the minimum luminance of the mastering display in nits, the maximum luminance of the mastering display in nits, and the optical output scale which indicates the contents mapping of EDR 1.0 to brightness in nits.\n\nTypically, we set this to 100.\n\nLast, we have the second of our HDR10 constructors which takes a MasterDisplayColourVolume SEI message, a ContentLightLevelInformation SEI message, and an opticalOutputScale, which as mentioned earlier, is typically set to 100 nits.\n\nOnce you've used one of these constructors to create your CAEDRMetadata object, set it on your application's CAMetalLayer.\n\nThis will cause all content rendered on this layer to be processed by the system tone mapper, thus avoiding any clipping without having to perform the mapping yourself.\n\nWhich constructor to use depends entirely on how your content was sourced or authored, but typically, if your content is in an HLG color space, you'll want to use the HLG constructor.\n\nAnd if it is in a PQ color space, then you'll want to use an HDR10 constructor.\n\nIf your content comes with the SEI messages already attached, then we'd recommend using the second HDR10 constructor to best adhere to the author's intent.\n\nOtherwise, you will need to use the first constructor.\n\nIf you are using a linear color space, then which constructor you use is entirely dependent on how the content was authored.\n\nSo if you intend to use them with Apple's tone mapping, I highly recommend you read our developer documentation regarding HDR10 and HLG metadata.\n\nNow let's take a look at Pixelmator and their adoption of EDR.\n\nThanks to EDR, we can render images in a more vivid and true-to-life way.\n\nFor example, if we open a RAW photo and increase the exposure and highlights, the details in the brightest areas can't be rendered using the standard dynamic range of a display, also known as SDR.\n\nNow, if we turn on EDR, all the details that are beyond SDR white become visible.\n\nNote how much more vibrant the EDR content appears relative to the SDR colors of the canvas.\n\nTurning off EDR will make the visual difference between SDR and EDR all the more obvious.\n\nAnd with that, the session has come to an end.\n\nDuring this talk, we've covered a couple of new and exciting features coming to iOS and iPadOS.\n\nWe've provided a quick refresher on EDR, gone over a sample workflow for reading an HDR Image with Image I/O and converting it to a Metal texture, and looked at how to opt into EDR so that we can render that texture without clipping to SDR.\n\nWe also briefly touched on the headroom query APIs and their utility in making informed decisions about EDR rendering, as well as how to opt into Apple's system provided tone mapping for popular HDR formats.\n\nI hope that you've come away from this talk with a better understanding of EDR and how to adopt it in your iOS and iPadOS apps.\n\nIf you'd like to learn more about working with HDR, or EDR content in general, there are a couple of sessions from previous years, as well as some upcoming sessions that I would recommend.\n\nWith that said, thank you for attending our session \"Exploring EDR on iOS.\" And have a wonderful WWDC! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop music ♪ ♪ Hi, my name is Denis, and I'm part of the Display and Color Technologies team here at Apple."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "Today I'll be exploring some exciting updates with EDR and their implications for iOS developers."
+      },
+      {
+        "timestamp": "0:19",
+        "text": "You might already be familiar with EDR if you've seen last year's presentation, but as a short recap, EDR refers to Extended Dynamic Range, and is Apple's HDR technology."
+      },
+      {
+        "timestamp": "0:29",
+        "text": "EDR refers to both a rendering technology as well as a pixel representation, with EDR's pixel representation being particularly important because it consistently represents both standard, and high dynamic range content."
+      },
+      {
+        "timestamp": "0:40",
+        "text": "In well-exposed content, the subject -- in this example, the campers -- should fall within the standard dynamic range of the image, whereas specular and emissive highlights, such as the campfire, will fall into the higher range."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "In a standard range representation, these elements would end up getting clipped, but with EDR they remain representable."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "While other pixel representations are designed to represent a fixed range of brightness values, EDR's representation is truly dynamic, capable of describing any arbitrary value."
+      },
+      {
+        "timestamp": "1:07",
+        "text": "Additionally by taking advantage of any unused backlight, EDR allows any display to render high dynamic range content regardless of the display's peak."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "And with HDR content becoming far more prevalent and accessible, so has the list of applications adopting EDR on macOS."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "\"Baldur's Gate 3,\" \"Divinity: Original Sin 2,\" and \"Shadow of the Tomb Raider\" are already shipping with EDR on macOS."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "By adopting EDR, games are capable of rendering brighter and more saturated colors, as well as generating more realistic lighting, reflections, and more colorful content."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "Where bright elements would be limited to the SDR peak white, with EDR they regain their vibrance and depth as the authors intended."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "EDR is integrated across the Apple ecosystem, including in Safari, and QuickTime player."
+      },
+      {
+        "timestamp": "1:50",
+        "text": "As a result, video-on-demand apps and services such as Apple TV and Netflix gain the ability to deliver the ever-expanding catalogue of HDR10, Dolby Vision, and ProRes content to their consumers."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "Pro apps that adopt EDR enable their users to create stunning HDR content by providing a variety of professional workflows to accurately edit, grade, master, and review HDR stills and videos."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "With all the excitement around EDR adoption on macOS, we're excited to bring several new updates to EDR."
+      },
+      {
+        "timestamp": "2:20",
+        "text": "First and foremost, we are happy to announce that our EDR APIs are now available on iOS and iPadOS."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "Additionally, as part of Apple's commitment to supporting our pro users, this year we are introducing two new pro color features on the 12.9-inch iPad Pro with Liquid Retina XDR display."
+      },
+      {
+        "timestamp": "2:36",
+        "text": "Reference Mode and EDR rendering over Sidecar."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "Reference Mode is a new display mode that is designed to enable color-critical workflows such as color grading, editing, and content review by providing a reference response for a variety of common video formats, similar to the reference presets on macOS."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "To do this, Reference Mode fixes the SDR peak brightness at 100 nits, and the HDR peak brightness at 1000 nits, thus giving 10 times EDR headroom."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "Reference Mode also provides a one-to-one media to display mapping."
+      },
+      {
+        "timestamp": "3:06",
+        "text": "And disables all dynamic display adjustments for ambient surround, such as True Tone, Auto-Brightness and Night Shift, instead allowing users to finely calibrate the white point manually."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "This way the display will produce colors exactly as they are described by their respective specifications."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "This chart provides a list of formats that Reference Mode supports."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "Note that unlike the reference presets on macOS, Reference Mode is a single toggle that supports the five most common HDR and SDR video formats, providing a consistent reference response across media types."
+      },
+      {
+        "timestamp": "3:37",
+        "text": "And don't worry if you have content in a format that is not listed on this table."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "Any formats that are not supported will be color managed as they would in the default Display Mode."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "As an example, let's take a look at LumaFusion in Reference Mode."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "By enabling Reference Mode on iOS, LumaFusion becomes a more powerful tool for video post-production."
+      },
+      {
+        "timestamp": "3:55",
+        "text": "When displaying HDR video, colors within the P3 color gamut up to a 1000 nit peak are rendered accurately, so users can be confident their videos are always being displayed correctly and consistently."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "With the combination of Reference Mode and LumaFusion's new Video Scopes feature, color-critical workflows are now possible on iPad Pro."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "If we disable Reference Mode, EDR headroom can change dynamically, which we'll see here as iOS modulates the brightness of our video."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "Users can export their LumaFusion projects as XML, which can then be imported by other popular Mac post-production apps, allowing a team of content creators to easily collaborate on both platforms."
+      },
+      {
+        "timestamp": "4:29",
+        "text": "It's very exciting to see LumaFusion adopting Reference Mode, along with the value and flexibility it brings to pro content creators."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "But Reference Mode isn't the only new feature."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "Back in 2019, we introduced Sidecar, a technology that allows Mac users to use their iPad as a secondary display."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "And now, with the introduction of Reference Mode, we are adding support for EDR rendering over Sidecar, which extends the capability of Sidecar when Reference Mode is enabled to support reference-grade SDR and HDR content, allowing pro content creators to use their iPad Pro as a secondary reference display for Apple silicon Macs."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "It goes without saying that content rendered over Sidecar will provide a reference response for all the same video formats as native iOS in Reference Mode."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "For example, let's take a look at this HDR10 test pattern as rendered on a Mac in the HDR video preset and compare it to the rendition on the iPad Pro using Sidecar."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "In this configuration, both devices act as a reference display with P3 color and a D65 white point, since that happens to be the spec for both displays."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "As you can see from the P3 primary and secondary color bars, both the Mac and iPad produce a similar response as we would expect."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "Additionally, both configurations support a peak luminance of 1000 nits, and as seen in the gradient, those values are rendered faithfully while values beyond 1000 nits are clipped."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "We are excited by the prospects and new opportunities that EDR rendering over Sidecar brings to our pro users."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "We also look forward to seeing more developers taking advantage of these features by adopting EDR in their own apps."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "On that note, let's explore how you can integrate EDR rendering into your own iOS and iPadOS apps."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "We'll start by taking a look at the implication of EDR's pixel representation and render pipeline."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "Traditionally, the floating point representation of SDR was values in the zero to one range, zero being black and 1 being SDR white."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "With EDR, SDR content is still represented in the 0 to 1 range while values above 1 represent content brighter than SDR."
+      },
+      {
+        "timestamp": "6:24",
+        "text": "Note that EDR is represented in linear space, which means that 2.0 EDR is not perceptibly two times brighter than 1.0."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "Unlike other HDR formats, EDR does not tone map values to the 0 to 1 range, and this has some implications on rendering."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "In that regard, EDR ensures that SDR content, or values from 0 to 1, are always rendered."
+      },
+      {
+        "timestamp": "6:45",
+        "text": "And any values above 1 will be properly rendered without tone mapping up to the current EDR headroom."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "However, any values that are brighter will be clipped."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "Initially, this behavior may seem unideal, but it means that any content authored in HDR will be rendered as close to the intention as possible, with any highlights that are too bright clipped as they typically would be in a conventional representation."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "Clearly then, the higher your headroom, the brighter and more dynamic your content can be."
+      },
+      {
+        "timestamp": "7:11",
+        "text": "But how much headroom do we have? Well, it should be noted that the instantaneous EDR headroom is a dynamic value and is based on many factors, including but not limited to the specific display technology of a device, as well as the current display brightness."
+      },
+      {
+        "timestamp": "7:26",
+        "text": "But as an oversimplification, your current EDR headroom is roughly equal to the maximum brightness of the display divided by the current SDR brightness."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "So earlier, when I mentioned that Reference Mode provides 10 times EDR headroom, that's because we fix EDR 1.0 -- or the SDR brightness -- to 100 nits, while we fix the HDR peak brightness to 1000 nits."
+      },
+      {
+        "timestamp": "7:47",
+        "text": "Thus 1000 nits divided by 100 nits gives you a constant headroom of 10 times EDR."
+      },
+      {
+        "timestamp": "7:53",
+        "text": "This table gives a few more examples of different devices and their maximum potential headroom."
+      },
+      {
+        "timestamp": "7:58",
+        "text": "Note that this is the potential headroom and that the true headroom will be dependent on various other factors, including the current display brightness."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "Later in this talk, we'll go into further detail about headroom, and show you an example of how to query and use the headroom to make informed decisions about rendering."
+      },
+      {
+        "timestamp": "8:13",
+        "text": "But for now, you should have a good understanding of EDR and when you would want it."
+      },
+      {
+        "timestamp": "8:18",
+        "text": "Now, let's shift gears to actually rendering some EDR content."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "In this section, we'll go over how to read your HDR content into a renderable format."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "The particular example we'll be covering is an Image I/O workflow, but if you're looking for a different framework, take a look at one of our other EDR talks this year."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "In the case of still media, we start off with an image file that we want to load in."
+      },
+      {
+        "timestamp": "8:38",
+        "text": "This image will typically be encoded in a biplanar YUV space."
+      },
+      {
+        "timestamp": "8:42",
+        "text": "When we load it in initially, the image and it's buffer will be in their original format."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "Unfortunately, while in that format it can be difficult to interpret and work with the image in any meaningful way."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "So with the help of CGBitmapContext we will decode and convert the image to a more usable format."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "At which point, we can create a MTLTexture from the backing pixel data of the context and then render it with our Metal engine."
+      },
+      {
+        "timestamp": "9:05",
+        "text": "More concretely, in order to achieve this, there are four steps we need to cover."
+      },
+      {
+        "timestamp": "9:09",
+        "text": "We'll start by creating a CGImage for our HDR still, drawing that CGImage into a bitmap context, creating a Metal texture, and, finally, loading the bitmap's data into the newly created texture."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "In the first step, we'll read our image and do a little bit of setup."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "First, we read our image from a URL into a CGImageSource, then create a CGImage from that source."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "In this case, we created the image by passing a nil options dictionary."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "However, if you'd like floating point buffers with certain HDR formats, there is a new kCGImageSourceShouldAllowFloat option that you may wish to set."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "Now, we'll instantiate a CGBitmapInfo."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "In this case, we are creating a 16-bit floating point context with a premultiplied alpha."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "Remember this because we'll want our Metal texture to use the same format."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "Next, we'll construct a CGBitmapContext using the bitmap info that we just created, along with the width and height of the CGImage."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "Note that you'll want the color space of the context to match the color space of the CAMetalLayer to which you'll be rendering."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "Otherwise, you will need to perform the appropriate color management yourself."
+      },
+      {
+        "timestamp": "10:18",
+        "text": "Lastly, we'll draw our CGImage into the bitmap context."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "At this point, we can move on to creating a Metal texture from our context."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "To create our Metal texture, we'll first instantiate a MTLTextureDescriptor."
+      },
+      {
+        "timestamp": "10:32",
+        "text": "Recall from earlier that we opted to use half float for our bitmap context, but when rendering EDR, you can also have your 2D texture in a 32-bit packed pixel format with a 10-bit blue, green, and red, and a 2-bit alpha."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "We'll go into more detail in the following sections, but for now, it's enough to know that the pixel format of the texture should match the pixel format of your content; in our case, half float."
+      },
+      {
+        "timestamp": "10:55",
+        "text": "At this point, we'll instantiate our texture with our Metal layer's device and the newly created texture descriptor."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "Finally, we'll grab the data from our bitmap context and copy it into our texture."
+      },
+      {
+        "timestamp": "11:08",
+        "text": "With that, we have a Metal texture containing EDR values that we can send to our Metal pipeline for rendering."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "This section covered a sample workflow for sourcing an HDR still image starting from a URL and working our way down to a Metal texture."
+      },
+      {
+        "timestamp": "11:21",
+        "text": "Next, we'll go over the minimum code changes required to render such a texture on iOS and iPadOS."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "The process for opting into EDR with the new iOS and iPadOS APIs is identical to that on macOS."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "So, if you already have EDR support for a macOS build of your app, you won't need to make any changes."
+      },
+      {
+        "timestamp": "11:39",
+        "text": "In order to opt into EDR, you need to ensure you're using a CAMetalLayer, that you set the appropriate flags and tags on that layer, and that you have bright content in a supported EDR format."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "First, take the CAMetalLayer to which you'll be rendering your content."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "On that layer you'll want to enable the wantsExtendedDynamicRange Content flag."
+      },
+      {
+        "timestamp": "12:02",
+        "text": "Then, on that same layer, you'll need to set a supported combination of pixel format and CGColorSpace."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "Depending on what sort of content you have and how you source it, the specific pixel format and color space will be different."
+      },
+      {
+        "timestamp": "12:14",
+        "text": "In our case, we loaded our image into a 16-bit floating point buffer, and here we've opted to match it with an extended linear Display P3 color space."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "iOS supports rendering EDR in 16-bit floating point pixel buffers combined with linear color spaces."
+      },
+      {
+        "timestamp": "12:28",
+        "text": "But if you choose to use one of these combinations, be sure to use the extended variant of the color space."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "Otherwise, your content will be clipped to SDR."
+      },
+      {
+        "timestamp": "12:36",
+        "text": "iOs also supports 10-bit packed BGRA pixel buffers which we briefly mentioned earlier."
+      },
+      {
+        "timestamp": "12:42",
+        "text": "Such buffers are supported for rendering with either PQ or HLG color spaces, as outlined in this chart."
+      },
+      {
+        "timestamp": "12:48",
+        "text": "In this section, we covered the minimum code changes required on your rendering layer in order to support EDR rendering, including the wantsExtendedDynamicRangeContent flag as well as the various pixel formats and color spaces that support EDR."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "At this point, if you were to render the Metal texture, we sourced from the previous section to the CAMetalLayer in this section, we would be rendering EDR."
+      },
+      {
+        "timestamp": "13:08",
+        "text": "But there are a couple more tricks we can do."
+      },
+      {
+        "timestamp": "13:11",
+        "text": "As mentioned in the overview, the default behavior of EDR is to clip to the current EDR headroom."
+      },
+      {
+        "timestamp": "13:16",
+        "text": "There are cases where you may decide that the headroom is not high enough to justify rendering your EDR content and instead go down an SDR path."
+      },
+      {
+        "timestamp": "13:23",
+        "text": "Or times when you'd like to use the current headroom to tone map your content before displaying."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "In either case, iOS now has new APIs that support querying the headroom, and in this section, we'll go over the calls as well as how they differ from macOS so that you can better make such decisions."
+      },
+      {
+        "timestamp": "13:38",
+        "text": "On macOS, headroom queries are found on NSScreen."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "On NSScreen, we have queries for: the maximum EDR headroom the display can support, the maximum EDR headroom of the current reference preset, and the current EDR headroom."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "Additionally, macOS provides a notification whenever the EDR headroom changes."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "On iOS however, headroom queries are found on UIScreen, and unlike NSScreen, here we instead have queries for the maximum EDR headroom the display supports and the current EDR headroom."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "Additionally, UIScreen provides the Reference Display Mode status, which is used to indicate whether Reference Mode is supported and engaged."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "Note that UIScreen does not provide notifications for changes in EDR headroom but will send notifications whenever the Reference Mode status changes."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "You may also notice that the maximum reference headroom query is missing from the list."
+      },
+      {
+        "timestamp": "14:29",
+        "text": "Instead of using a dedicated query, you can determine its value by querying the potential maximum headroom when the Reference Mode status indicates that Reference Mode is enabled."
+      },
+      {
+        "timestamp": "14:37",
+        "text": "Let's take a look at some sample code to get a better feel for how to query headroom."
+      },
+      {
+        "timestamp": "14:42",
+        "text": "On UIScreen, you can query the potentialEDRHeadroom in order to see the maximum possible headroom of the display."
+      },
+      {
+        "timestamp": "14:48",
+        "text": "If you decide this value is too low, you may choose to render an SDR path instead, saving some processing power."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "Then, if you've decided on the EDR path, you may have a render delegate or an otherwise regularly scheduled draw call."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "In this call, we can query the currentEDRHeadroom and use it to tone map our content such that none of it exceeds the headroom, and thus won't clip."
+      },
+      {
+        "timestamp": "15:10",
+        "text": "If you'd like to be aware of the Reference Mode status, you can register to receive a notification whenever the status changes using the UIScreen.referenceDisplayMode StatusDidChangeNotification."
+      },
+      {
+        "timestamp": "15:21",
+        "text": "Then, whenever the status does change, you can get the new status and the new potential EDR headroom and use them to make further decisions about rendering."
+      },
+      {
+        "timestamp": "15:30",
+        "text": "Regarding the Reference Mode status, there are four unique states you should be aware of."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "StatusEnabled indicates that Reference Mode is enabled and that it is rendering as expected."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "StatusLimited indicates that Reference Mode is enabled but that for some reason we are temporarily unable to achieve a reference response."
+      },
+      {
+        "timestamp": "15:46",
+        "text": "Note that if this status does occur, it will be accompanied by an out-of-reference UI notification to inform users that the reference response is compromised."
+      },
+      {
+        "timestamp": "15:55",
+        "text": "StatusNotEnabled indicates that Reference Mode is supported on this device, but that it hasn't been enabled."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "And finally, StatusNotSupported indicates that Reference Mode is not supported on this device."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "These new APIs should give developers deeper insight into the current state of the display and provide them with the tools they need to make informed decisions on how to render their EDR content."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "In the previous section, we covered how to query various headroom parameters, including the current EDR headroom, which you could use to tone map your content and avoid clipping."
+      },
+      {
+        "timestamp": "16:24",
+        "text": "But what if you don't want to dig into or implement your own tone mapping algorithms? Well, in the case of video content, you may then want to take advantage of Apple's built-in tone mapping."
+      },
+      {
+        "timestamp": "16:33",
+        "text": "If you would like to enable Apple's tone mapping on your content, you can do so using the CAEDR metadata interface, which includes metadata constructors for both HDR10 and HLG."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "Be aware that tone mapping is not supported on all platforms but that there is a query with which you can check if your platform has this support."
+      },
+      {
+        "timestamp": "16:51",
+        "text": "To check if your platform supports tone mapping, query CAEDRMetadata.isAvailable."
+      },
+      {
+        "timestamp": "16:57",
+        "text": "If it is available, you then need to instantiate CAEDRMetadata."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "We'll go over the specific constructors in just a moment, but let's skip this step for now."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "Once you have your EDR metadata, apply it to the layer on which you are rendering."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "This will opt your layer into being processed by the system tone mapper based on the metadata provided."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "As mentioned, there are a number of EDR metadata constructors available, which are specific to their HDR video format."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "Here we have the constructor for HLG metadata which takes no parameters."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "Next, is one of the two HDR10 constructors available."
+      },
+      {
+        "timestamp": "17:32",
+        "text": "This one takes three parameters: the minimum luminance of the mastering display in nits, the maximum luminance of the mastering display in nits, and the optical output scale which indicates the contents mapping of EDR 1.0 to brightness in nits."
+      },
+      {
+        "timestamp": "17:45",
+        "text": "Typically, we set this to 100."
+      },
+      {
+        "timestamp": "17:48",
+        "text": "Last, we have the second of our HDR10 constructors which takes a MasterDisplayColourVolume SEI message, a ContentLightLevelInformation SEI message, and an opticalOutputScale, which as mentioned earlier, is typically set to 100 nits."
+      },
+      {
+        "timestamp": "18:03",
+        "text": "Once you've used one of these constructors to create your CAEDRMetadata object, set it on your application's CAMetalLayer."
+      },
+      {
+        "timestamp": "18:09",
+        "text": "This will cause all content rendered on this layer to be processed by the system tone mapper, thus avoiding any clipping without having to perform the mapping yourself."
+      },
+      {
+        "timestamp": "18:18",
+        "text": "Which constructor to use depends entirely on how your content was sourced or authored, but typically, if your content is in an HLG color space, you'll want to use the HLG constructor."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "And if it is in a PQ color space, then you'll want to use an HDR10 constructor."
+      },
+      {
+        "timestamp": "18:34",
+        "text": "If your content comes with the SEI messages already attached, then we'd recommend using the second HDR10 constructor to best adhere to the author's intent."
+      },
+      {
+        "timestamp": "18:41",
+        "text": "Otherwise, you will need to use the first constructor."
+      },
+      {
+        "timestamp": "18:45",
+        "text": "If you are using a linear color space, then which constructor you use is entirely dependent on how the content was authored."
+      },
+      {
+        "timestamp": "18:51",
+        "text": "So if you intend to use them with Apple's tone mapping, I highly recommend you read our developer documentation regarding HDR10 and HLG metadata."
+      },
+      {
+        "timestamp": "19:00",
+        "text": "Now let's take a look at Pixelmator and their adoption of EDR."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "Thanks to EDR, we can render images in a more vivid and true-to-life way."
+      },
+      {
+        "timestamp": "19:07",
+        "text": "For example, if we open a RAW photo and increase the exposure and highlights, the details in the brightest areas can't be rendered using the standard dynamic range of a display, also known as SDR."
+      },
+      {
+        "timestamp": "19:18",
+        "text": "Now, if we turn on EDR, all the details that are beyond SDR white become visible."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "Note how much more vibrant the EDR content appears relative to the SDR colors of the canvas."
+      },
+      {
+        "timestamp": "19:28",
+        "text": "Turning off EDR will make the visual difference between SDR and EDR all the more obvious."
+      },
+      {
+        "timestamp": "19:34",
+        "text": "And with that, the session has come to an end."
+      },
+      {
+        "timestamp": "19:37",
+        "text": "During this talk, we've covered a couple of new and exciting features coming to iOS and iPadOS."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "We've provided a quick refresher on EDR, gone over a sample workflow for reading an HDR Image with Image I/O and converting it to a Metal texture, and looked at how to opt into EDR so that we can render that texture without clipping to SDR."
+      },
+      {
+        "timestamp": "19:54",
+        "text": "We also briefly touched on the headroom query APIs and their utility in making informed decisions about EDR rendering, as well as how to opt into Apple's system provided tone mapping for popular HDR formats."
+      },
+      {
+        "timestamp": "20:06",
+        "text": "I hope that you've come away from this talk with a better understanding of EDR and how to adopt it in your iOS and iPadOS apps."
+      },
+      {
+        "timestamp": "20:12",
+        "text": "If you'd like to learn more about working with HDR, or EDR content in general, there are a couple of sessions from previous years, as well as some upcoming sessions that I would recommend."
+      },
+      {
+        "timestamp": "20:22",
+        "text": "With that said, thank you for attending our session \"Exploring EDR on iOS.\" And have a wonderful WWDC! ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -89,5 +780,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110565"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:17.443Z"
+  "extractedAt": "2026-10-17T18:50:15.909Z"
 }

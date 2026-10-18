@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110949/",
   "title": "Study Hall: Draw with metal-cpp",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Graphics & Games"
@@ -45,5 +44,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110667"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:30.963Z"
+  "extractedAt": "2026-10-17T18:50:32.632Z"
 }

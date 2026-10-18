@@ -1,23 +1,18 @@
-import { technologiesCache, generateUrlCacheKey } from '../utils/cache.js';
-import { APPLE_URLS, API_LIMITS } from '../utils/constants.js';
-import { httpClient } from '../utils/http-client.js';
-import { logger } from '../utils/logger.js';
-import type { TechnologiesPage } from '../types/captured/technologies.js';
+import { siteUrl } from '../utils/url-converter.js';
+import { cachedJson, pageCache } from '../utils/cache.js';
+import { APPLE_URLS } from '../utils/constants.js';
+import { exportPath, writeTsv } from '../utils/exports.js';
+import type { References, TechnologiesPage } from '../types/captured/technologies.js';
 import { docUrl } from './doc-formatter.js';
 
-/**
- * 技术信息接口
- */
 interface Technology {
   title: string;
-  identifier: string;
   tags: string[];
   languages: string[];
   beta: boolean;
-  url?: string;
-  destination?: {
-    identifier: string;
-  };
+  /** The page Apple's reference names: lowercase, or off Apple's site for the two it publishes elsewhere (CareKit) */
+  url: string;
+  summary: string;
 }
 
 interface TechnologyGroup {
@@ -25,61 +20,39 @@ interface TechnologyGroup {
   technologies: Technology[];
 }
 
+const TECHNOLOGIES_FILE = 'technologies.tsv';
+const TECHNOLOGY_COLUMNS = ['title', 'url', 'section', 'tags', 'languages', 'beta', 'summary'] as const;
+
 /**
- * 获取技术列表
+ * Apple's technologies, by its groups, filtered; `limit` counts them in all, as the samples catalog does
  */
 export async function handleListTechnologies(
-  category?: string,
-  language?: string,
-  includeBeta: boolean = true,
-  limit: number = API_LIMITS.DEFAULT_TECHNOLOGIES_LIMIT,
+  category: string | undefined,
+  language: string | undefined,
+  includeBeta: boolean,
+  limit: number,
 ): Promise<string> {
-  try {
-    logger.info('Fetching technologies list...');
-
-    // Generate cache key
-    const cacheKey = generateUrlCacheKey('technologies', { category, language, includeBeta, limit });
-
-    // Try to get from cache first
-    const cachedResult = technologiesCache.get(cacheKey);
-    if (cachedResult) {
-      logger.debug('Technologies cache hit');
-      return cachedResult;
-    }
-
-    // 获取技术列表
-    const data = await httpClient.getJson<TechnologiesPage>(APPLE_URLS.TECHNOLOGIES_JSON);
-
-    // 解析技术列表
-    const technologies = parseTechnologies(data);
-
-    // 应用过滤器
-    const filteredTechnologies = applyTechnologyFilters(technologies, {
-      category,
-      language,
-      includeBeta,
-      limit,
-    });
-
-    // 格式化输出
-    const result = formatTechnologiesList(filteredTechnologies);
-
-    // Cache the result
-    technologiesCache.set(cacheKey, result);
-
-    return result;
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return `Error: Failed to list technologies: ${errorMessage}`;
+  const groups = parseTechnologies(await technologiesPage());
+  const rows = groups.flatMap((group) => group.technologies.map((tech) => ({ ...tech, section: group.name })));
+  await writeTsv(TECHNOLOGIES_FILE, TECHNOLOGY_COLUMNS, rows);
+  const file = `All ${rows.length} technologies, one a line (${TECHNOLOGY_COLUMNS.join(', ')}): ${exportPath(TECHNOLOGIES_FILE)}`;
+  if (category && !groups.some((group) => group.technologies.some((tech) => inCategory(group, tech, category)))) {
+    return `No category or tag of Apple's technologies has "${category}" in it. Categories: ` +
+      `${groups.map((group) => group.name).join(', ')}; each technology's tags are in the file below.\n\n${file}`;
   }
+  return `${formatTechnologiesList(applyTechnologyFilters(groups, { category, language, includeBeta }), limit)}\n\n${file}`;
 }
+
+const technologiesPage = (): Promise<TechnologiesPage> => cachedJson<TechnologiesPage>(pageCache, APPLE_URLS.TECHNOLOGIES_JSON);
+
+/** A technology's name or ID with case, spaces and punctuation folded: "Foundation Models" and "foundation-models" match */
+export const frameworkKey = (name: string): string => name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /**
  * Each technology's name as Apple writes it, by the last segment of its documentation path ("pdfkit" → "PDFKit")
  */
 export async function technologyNames(): Promise<Map<string, string>> {
-  const data = await httpClient.getJson<TechnologiesPage>(APPLE_URLS.TECHNOLOGIES_JSON);
+  const data = await technologiesPage();
   return new Map(data.sections
     .filter(section => section.kind === 'technologies')
     .flatMap(section => section.groups)
@@ -88,120 +61,80 @@ export async function technologyNames(): Promise<Map<string, string>> {
 }
 
 /**
- * 解析技术数据
+ * A technology's documentation ID ("foundationmodels") from what a person types: its ID or its name, in any case and
+ * with or without spaces and dashes ("Foundation Models", "foundation-models"); else what was typed, lowercased
  */
-function parseTechnologies(data: TechnologiesPage): TechnologyGroup[] {
-  const groups: TechnologyGroup[] = [];
-  // Apple marks a beta technology on its reference, as Swift-DocC marks any beta page
-  const betaIdentifiers = new Set(Object.values(data.references)
-    .filter((reference) => 'beta' in reference && reference.beta === true)
-    .map((reference) => reference.identifier));
-
-  if (data.sections) {
-    data.sections.forEach(section => {
-      if (section.kind === 'technologies' && section.groups) {
-        section.groups.forEach(group => {
-          if (group.technologies && Array.isArray(group.technologies)) {
-            const technologies: Technology[] = group.technologies.map(tech => ({
-              title: tech.title || '',
-              identifier: tech.destination.identifier,
-              tags: tech.tags || [],
-              languages: tech.languages || [],
-              beta: betaIdentifiers.has(tech.destination.identifier),
-              url: docUrl(tech.destination.identifier),
-            }));
-
-            groups.push({
-              name: group.name,
-              technologies,
-            });
-          }
-        });
-      }
-    });
-  }
-
-  return groups;
+export async function technologyId(typed: string): Promise<string> {
+  const wanted = frameworkKey(typed);
+  const match = [...(await technologyNames()).entries()]
+    .find(([id, name]) => frameworkKey(id) === wanted || frameworkKey(name) === wanted);
+  return match?.[0] ?? typed.toLowerCase();
 }
 
 /**
- * 应用过滤器
+ * Apple's groups and their technologies; each technology's page, summary and Beta mark come from its reference, as
+ * Swift-DocC marks any beta page
  */
+function parseTechnologies(data: TechnologiesPage): TechnologyGroup[] {
+  // quicktype names each reference a key of its own, so the values' type is spelled out here
+  const references = new Map(Object.values(data.references)
+    .map((reference: References[keyof References]) => [reference.identifier, reference] as const));
+  return data.sections
+    .filter((section) => section.kind === 'technologies')
+    .flatMap((section) => section.groups)
+    .map((group) => ({
+      name: group.name,
+      technologies: group.technologies.map((tech) => {
+        const reference = references.get(tech.destination.identifier);
+        return {
+          title: tech.title,
+          tags: tech.tags,
+          languages: tech.languages,
+          // The identifier is the page's address too, in its capitals
+          url: reference && 'url' in reference ? siteUrl(reference.url) : docUrl(tech.destination.identifier),
+          summary: reference && 'abstract' in reference ? reference.abstract.map((part) => part.text).join('') : '',
+          beta: reference !== undefined && 'beta' in reference && reference.beta === true,
+        };
+      }),
+    }));
+}
+
 function applyTechnologyFilters(
   groups: TechnologyGroup[],
-  filters: {
-    category?: string;
-    language?: string;
-    includeBeta?: boolean;
-    limit?: number;
-  },
+  filters: { category: string | undefined; language: string | undefined; includeBeta: boolean },
 ): TechnologyGroup[] {
-  const category = filters.category?.toLowerCase() ?? '';
   return groups
-    .map(group => {
-      // A category is Apple's group or one of the tags it gives a technology ("Machine Learning")
-      const wholeGroup = group.name.toLowerCase().includes(category);
-      const filteredTechnologies = group.technologies.filter(tech =>
-        (wholeGroup || tech.tags.some((tag) => tag.toLowerCase().includes(category))) &&
-        (filters.includeBeta || !tech.beta) &&
-        (!filters.language || tech.languages.includes(filters.language)));
-      return { ...group, technologies: filteredTechnologies.slice(0, filters.limit) };
-    })
+    .map((group) => ({ ...group, technologies: group.technologies.filter((tech) =>
+      (!filters.category || inCategory(group, tech, filters.category)) &&
+      (filters.includeBeta || !tech.beta) &&
+      (!filters.language || tech.languages.includes(filters.language))) }))
     .filter((group) => group.technologies.length > 0);
 }
 
-/**
- * 格式化技术列表
- */
-function formatTechnologiesList(groups: TechnologyGroup[]): string {
-  if (groups.length === 0) {
+/** A category is Apple's group or one of the tags it gives a technology ("Machine Learning"), by any part, in any case */
+function inCategory(group: TechnologyGroup, tech: Technology, category: string): boolean {
+  const part = category.toLowerCase();
+  return group.name.toLowerCase().includes(part) || tech.tags.some((tag) => tag.toLowerCase().includes(part));
+}
+
+/** The first `limit` technologies, each on one line under its group, with its languages, tags and summary */
+function formatTechnologiesList(groups: TechnologyGroup[], limit: number): string {
+  const found = groups.flatMap((group) => group.technologies.map((tech) => ({ group: group.name, tech })));
+  if (found.length === 0) {
     return 'No technologies found matching the specified criteria.';
   }
+  const shown = found.slice(0, limit);
+  const beta = found.filter(({ tech }) => tech.beta).length;
+  const lines = shown.flatMap(({ group, tech }, index) => [
+    ...(group === shown[index - 1]?.group ? [] : [`${index > 0 ? '\n' : ''}## ${group}\n`]),
+    formatTechnology(tech),
+  ]);
+  return ['# Apple Developer Technologies', '',
+    `Found ${found.length} technologies${beta > 0 ? ` (${beta} in beta)` : ''}` +
+    `${shown.length < found.length ? `, showing ${shown.length}` : ''}`, '', ...lines].join('\n');
+}
 
-  let content = '# Apple Developer Technologies\n\n';
-
-  // 统计信息
-  const totalTechs = groups.reduce((sum, group) => sum + group.technologies.length, 0);
-  const betaTechs = groups.reduce((sum, group) => sum + group.technologies.filter(tech => tech.beta).length, 0);
-
-  content += `*Found ${totalTechs} technologies`;
-  if (betaTechs > 0) {
-    content += ` (${betaTechs} in beta)`;
-  }
-  content += '*\n\n';
-
-  // 按分类显示
-  groups.forEach(group => {
-    content += `## ${group.name}\n\n`;
-
-    group.technologies.forEach(tech => {
-      // Create title with status information
-      const titleWithStatus = tech.beta ? `${tech.title} (Beta)` : tech.title;
-
-      content += `### [${titleWithStatus}](${tech.url || '#'})\n`;
-
-      // Build metadata array
-      const metadata = [];
-
-      // Add languages
-      if (tech.languages.length > 0) {
-        metadata.push(`Languages: ${tech.languages.join(', ')}`);
-      }
-
-      if (tech.tags.length > 0) {
-        metadata.push(`Categories: ${tech.tags.join(', ')}`);
-      }
-
-      // Add metadata line if any
-      if (metadata.length > 0) {
-        content += `*${metadata.join(' | ')}*\n`;
-      }
-
-      content += '\n';
-    });
-  });
-
-  content += '\n---\n\n[View all technologies on Apple Developer](https://developer.apple.com/documentation/technologies)';
-
-  return content;
+function formatTechnology(tech: Technology): string {
+  const notes = [tech.languages.join(', '), tech.tags.join(', '), tech.beta ? 'beta' : ''].filter(Boolean).join(' · ');
+  return `- [${tech.title}](${tech.url})${notes ? ` (${notes})` : ''}${tech.summary ? `: ${tech.summary}` : ''}`;
 }

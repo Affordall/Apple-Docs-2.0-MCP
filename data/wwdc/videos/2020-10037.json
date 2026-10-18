@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10037/",
   "title": "App essentials in SwiftUI",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Swift",
@@ -12,8 +11,252 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nWelcome to \"App Essentials in SwiftUI.\" My name is Matt Ricketson, and I work on SwiftUI. Later on, I'll be joined by my colleague Jeff. Last year we introduced SwiftUI, a powerful new way to build great user interfaces on all of Apple's platforms. We build user interfaces using views, and SwiftUI provides a suite of APIs for modifying views and composing them together.\n\nThis year, we're extending the framework with new APIs for declaring scenes and apps, a big expansion to what you can build using SwiftUI. The bottom line is that you can now build an entire app with just SwiftUI. In this session, we're going to introduce these new APIs and explain how views, scenes and apps work together.\n\nNext, we'll go in-depth on SwiftUI's scene architecture and show how you can customize the scenes in your app. And finally, we'll give a quick overview of the different APIs available for customizing your apps and where you can go to learn more. For now, let's start by talking about views, which you will already be familiar with if you've used SwiftUI before. Views are important because each view defines a piece of your UI. When you look at an app, everything you see is a view. Individual images and pieces of text are views. The containers holding them are also views. In fact, every pixel you see on screen is in some way defined by a view.\n\nBut not all views belong to the same app, since apps do not have complete control over the entire screen. Instead, the platform controls how apps are presented, showing pieces of apps in distinct regions.\n\nIn SwiftUI, we refer to these distinct regions as \"scenes.\" A window is the most common way that a scene's content is shown on screen. Some platforms, like iPadOS, can show multiple windows side-by-side. Other platforms, such as iOS, watchOS and tvOS, prefer to show only a single full-screen window for each app. macOS is another great example of how scene content can appear in different ways. In this case, we see a collection of related windows, where each window is a manifestation of a different scene's content.\n\nmacOS also allows you to gather up related windows into a single, tabbed window. In this case, our scenes are represented as individual tabs instead.\n\nThis shared window is also represented by its own scene, serving as a container for the child scenes associated with each tab. These collections of scenes make up the entire content of an app. Together, apps, scenes and views form a unified hierarchy of ownership.\n\nAs we mentioned earlier, views serve as the basic building blocks, rendering everything you see on screen, and can be composed together to form more complex user interfaces.\n\nViews form the content of scenes, allowing them to be independently displayed by the platform.\n\nLike views, those scenes can also be composed together to form more complex scenes, like in our tabbed-window example that we saw earlier.\n\nAnd finally, all these scenes form the content of your app.\n\nNow that we understand how apps, scenes and views work together, let's look at how this plays out in your SwiftUI code.\n\nHere we see a basic app I wrote in SwiftUI to help me keep track of the books I'm reading in my book club. As you can see, apps in SwiftUI have a concise declaration, meaning basic apps like this can fit into only a handful of lines of code. Without that extra boilerplate, you can focus immediately on the code that's unique to your app.\n\nIn this case, we've defined the actual interface of our app using a view called ReadingListViewer.\n\nReadingListViewer is a custom view I built separately that allows me to browse my reading list.\n\nOur ReadingListViewer is contained within a scene called WindowGroup.\n\nThe WindowGroup scene manages the window that our ReadingListViewer will render into.\n\nIt can also create additional windows, or new tabs within the same window, on platforms that support those features. Jeff will explain how WindowGroup works in much more detail later in the talk.\n\nOur WindowGroup scene is contained within an app, represented by a custom struct conforming to the App protocol.\n\nYou'll notice that the structure of the code matches the hierarchy of ownership we saw earlier-- the app contains the scenes, and the scenes contain views.\n\nYou might also notice that our app declaration looks similar to a custom-view declaration. For example, both views and apps are able to declare data dependencies. Here, our ReadingListViewer observes a ReadingListStore object.\n\nOur app also depends on a ReadingListStore object, but declares itself as the owner of that object using the StateObject property wrapper, which is a new feature in SwiftUI this year.\n\nBoth views and apps also declare a \"body\" property, defining their user-interface content.\n\nWe talked earlier about how views are composed of other views, which is why a view's body returns a view. An app, however, is built using scenes, and so its body property returns a scene instead.\n\nFinally, you probably noticed the @main attribute decorating our app. This is a new attribute in Swift 5.3 that allows a type to serve as the entry point of our program's execution.\n\nNormally, a Swift program would require a main.swift file to execute. With the @main attribute, we can delegate that responsibility to our app struct instead, which automatically performs all the necessary setup on launch to get our app to appear on screen.\n\nNow that we've reviewed the code, let's take a step back.\n\nWhat we see here is a complete declaration for a basic app in SwiftUI, fitting into only a handful of lines of code. But don't let this deceive you. There is a ton of automatic, intelligent behavior packed into this simple declaration.\n\nTo really understand how this app works, we need to talk more about that WindowGroup scene, which manages our user interface. And for that, I'm going to hand things over to Jeff. Thanks, Matt. Hi, everyone.\n\nFirst, I'd like to show you some of the concepts that Matt outlined in practice, with a short demo, and then I'll discuss some of the finer points of WindowGroup.\n\nI'm a pretty avid reader, so I've been working on a little app to track my progress in all of the books I'm currently reading. As you can see, my app launches with an initial window on iPadOS using the view I've specified as content. Looks like I'm in the middle of quite a few books, so let's open some new windows so I can check my progress. If I open App Exposé, I can easily create a new one here and navigate to a different book. WindowGroup provides this functionality for my app automatically on iPadOS. You'll notice that each of my windows is reflecting a different state in the interface. The selected book is different in each one, and changing it in one does not affect the others. This is a key aspect to scenes in SwiftUI. An app can provide a shared model for each scene to use, but the state of the views in those scenes will be independent. I'd also like to point out something in the App Switcher. Each of my windows is showing the name of my app, as well as the name of the selected book. This is done via a new view modifier that we've introduced this year, \"navigation title,\" which on iOS can be used to populate the title in the navigation bar and the App Switcher. This is one example of a view modifier which can affect the state of its parent scene.\n\nOn the Mac, it's very common for apps to support multiple windows. By using WindowGroup in your app, SwiftUI will provide a menu item in the file menu, which supports creating new scene instances.\n\nThis item can also be invoked via the standard Command-N keyboard shortcut.\n\nYou'll notice how navigation title applies here on macOS. The book title is being displayed in the window's title-bar area.\n\nIt also will be used in the windows menu.\n\nProviding a good title here is important for the users since, in addition to giving them more context for what they're interacting with, it also helps them select their desired window from the list of open ones. Besides supporting multiple windows, macOS also supports grouping its windows together. Via the window menu, I can merge my open windows into a single, tabbed interface...\n\nwith each tab being represented by a separate scene.\n\nAgain, I didn't have to write any code for this functionality. SwiftUI provides this automatically.\n\nNow that you've seen some of the practical implications of using the WindowGroup scene in your app, let's go over a few more details. To recap what I showed you just now, WindowGroup is a scene which lets you express the primary interface of your app.\n\nThe view that you provide to it will be used as the definition of that interface.\n\nAnd this works on all of our platforms in the expected way. For example, on iOS and watchOS, your view will be presented in a window which occupies the entire screen of the device. While on macOS, this window will be sized according to your view's definition. The life cycle of scenes are managed by the platform they are running on.\n\nUsing macOS as an example, when the platform needs to create a window for your app, WindowGroup will instantiate a new child scene which by default will display its content within a window.\n\nOn platforms which support multiple windows, such as macOS and iPadOS, WindowGroup can instantiate multiple children.\n\nThis can happen in response to user actions such as clicking a menu item or invoking a multitasking gesture.\n\nWhile each scene shares the definition of its user interface, the views which make up this definition all have their own independent state.\n\nAnd this means that changing the view state in one window does not affect the state of the others.\n\nThis functionality lets you provide a template to be used for your interface, while letting your users customize this interface through the state you provide.\n\nSince the platform is in charge of the life cycle of scenes, we've introduced a new property wrapper this year to help you manage restoration of your view state. The SceneStorage property wrapper can be used to persist your view state.\n\nIt takes a unique key which identifies the state to be stored. This state will then be automatically saved and restored at the appropriate times by SwiftUI.\n\nNow that I've shown you more about how scenes and specifically WindowGroup work, I'd like to hand things back to Matt who will give you some more info about how you can customize your apps further. Thanks, Jeff. Before we finish up, I'd like to show you just a few other new app-related features available this year.\n\nThe BookClub app we saw earlier was a data-driven app backed by a shared data model. But there are other kinds of apps as well, such as document-based apps, like we see here with the ShapeEdit app.\n\nNew this year is the DocumentGroup scene type, which automatically manages opening, editing and saving document-based scenes.\n\nTo learn more, you should check out this year's \"Build Document-Based Apps in SwiftUI\" talk.\n\nNow, going back to our BookClub example, a common feature of macOS apps is a preferences window.\n\nThis year we're exposing the new \"settings\" scene type, available on macOS, which automatically sets up the standard preferences window. The settings scene will automatically set up the preferences command in the app menu and also give the window the correct style treatment.\n\nSpeaking of menu commands, SwiftUI is also providing an API for you to add custom commands to your scenes using the new \"commands\" modifier.\n\nBookCommands is a custom type that I've defined. Let's take a quick look.\n\nThe commands API is powerful and flexible, using the same declarative, state-driven programming model we use in views, scenes and apps. You can encapsulate commands in custom types, target actions based on user focus, similar to the responder chain in AppKit or UIKit, and use normal views to build the commands themselves. Check out our reference documentation for more information about working with commands. That was just a peek at the new app-related APIs available in SwiftUI this year. I'd recommend also checking out these other SwiftUI talks, which will help you with building the content of your apps.\n\n\"Data Essentials in SwiftUI\" will build your knowledge of how to properly pass data between your apps, scenes and views. And \"What's New in Swift\" will show you the latest improvements in the language that can improve all of your SwiftUI code.\n\nWe really look forward to seeing all the great SwiftUI apps you build, and we hope you share your creations with us on the forums. We love all your feedback and can't wait to see what you build next. Thanks and have a great WWDC.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Welcome to \"App Essentials in SwiftUI.\" My name is Matt Ricketson, and I work on SwiftUI. Later on, I'll be joined by my colleague Jeff. Last year we introduced SwiftUI, a powerful new way to build great user interfaces on all of Apple's platforms. We build user interfaces using views, and SwiftUI provides a suite of APIs for modifying views and composing them together."
+      },
+      {
+        "timestamp": "0:35",
+        "text": "This year, we're extending the framework with new APIs for declaring scenes and apps, a big expansion to what you can build using SwiftUI. The bottom line is that you can now build an entire app with just SwiftUI. In this session, we're going to introduce these new APIs and explain how views, scenes and apps work together."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "Next, we'll go in-depth on SwiftUI's scene architecture and show how you can customize the scenes in your app. And finally, we'll give a quick overview of the different APIs available for customizing your apps and where you can go to learn more. For now, let's start by talking about views, which you will already be familiar with if you've used SwiftUI before. Views are important because each view defines a piece of your UI. When you look at an app, everything you see is a view. Individual images and pieces of text are views. The containers holding them are also views. In fact, every pixel you see on screen is in some way defined by a view."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "But not all views belong to the same app, since apps do not have complete control over the entire screen. Instead, the platform controls how apps are presented, showing pieces of apps in distinct regions."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "In SwiftUI, we refer to these distinct regions as \"scenes.\" A window is the most common way that a scene's content is shown on screen. Some platforms, like iPadOS, can show multiple windows side-by-side. Other platforms, such as iOS, watchOS and tvOS, prefer to show only a single full-screen window for each app. macOS is another great example of how scene content can appear in different ways. In this case, we see a collection of related windows, where each window is a manifestation of a different scene's content."
+      },
+      {
+        "timestamp": "2:42",
+        "text": "macOS also allows you to gather up related windows into a single, tabbed window. In this case, our scenes are represented as individual tabs instead."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "This shared window is also represented by its own scene, serving as a container for the child scenes associated with each tab. These collections of scenes make up the entire content of an app. Together, apps, scenes and views form a unified hierarchy of ownership."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "As we mentioned earlier, views serve as the basic building blocks, rendering everything you see on screen, and can be composed together to form more complex user interfaces."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "Views form the content of scenes, allowing them to be independently displayed by the platform."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "Like views, those scenes can also be composed together to form more complex scenes, like in our tabbed-window example that we saw earlier."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "And finally, all these scenes form the content of your app."
+      },
+      {
+        "timestamp": "3:48",
+        "text": "Now that we understand how apps, scenes and views work together, let's look at how this plays out in your SwiftUI code."
+      },
+      {
+        "timestamp": "3:57",
+        "text": "Here we see a basic app I wrote in SwiftUI to help me keep track of the books I'm reading in my book club. As you can see, apps in SwiftUI have a concise declaration, meaning basic apps like this can fit into only a handful of lines of code. Without that extra boilerplate, you can focus immediately on the code that's unique to your app."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "In this case, we've defined the actual interface of our app using a view called ReadingListViewer."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "ReadingListViewer is a custom view I built separately that allows me to browse my reading list."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "Our ReadingListViewer is contained within a scene called WindowGroup."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "The WindowGroup scene manages the window that our ReadingListViewer will render into."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "It can also create additional windows, or new tabs within the same window, on platforms that support those features. Jeff will explain how WindowGroup works in much more detail later in the talk."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "Our WindowGroup scene is contained within an app, represented by a custom struct conforming to the App protocol."
+      },
+      {
+        "timestamp": "5:05",
+        "text": "You'll notice that the structure of the code matches the hierarchy of ownership we saw earlier-- the app contains the scenes, and the scenes contain views."
+      },
+      {
+        "timestamp": "5:16",
+        "text": "You might also notice that our app declaration looks similar to a custom-view declaration. For example, both views and apps are able to declare data dependencies. Here, our ReadingListViewer observes a ReadingListStore object."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "Our app also depends on a ReadingListStore object, but declares itself as the owner of that object using the StateObject property wrapper, which is a new feature in SwiftUI this year."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "Both views and apps also declare a \"body\" property, defining their user-interface content."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "We talked earlier about how views are composed of other views, which is why a view's body returns a view. An app, however, is built using scenes, and so its body property returns a scene instead."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "Finally, you probably noticed the @main attribute decorating our app. This is a new attribute in Swift 5.3 that allows a type to serve as the entry point of our program's execution."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "Normally, a Swift program would require a main.swift file to execute. With the @main attribute, we can delegate that responsibility to our app struct instead, which automatically performs all the necessary setup on launch to get our app to appear on screen."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "Now that we've reviewed the code, let's take a step back."
+      },
+      {
+        "timestamp": "6:44",
+        "text": "What we see here is a complete declaration for a basic app in SwiftUI, fitting into only a handful of lines of code. But don't let this deceive you. There is a ton of automatic, intelligent behavior packed into this simple declaration."
+      },
+      {
+        "timestamp": "7:02",
+        "text": "To really understand how this app works, we need to talk more about that WindowGroup scene, which manages our user interface. And for that, I'm going to hand things over to Jeff. Thanks, Matt. Hi, everyone."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "First, I'd like to show you some of the concepts that Matt outlined in practice, with a short demo, and then I'll discuss some of the finer points of WindowGroup."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "I'm a pretty avid reader, so I've been working on a little app to track my progress in all of the books I'm currently reading. As you can see, my app launches with an initial window on iPadOS using the view I've specified as content. Looks like I'm in the middle of quite a few books, so let's open some new windows so I can check my progress. If I open App Exposé, I can easily create a new one here and navigate to a different book. WindowGroup provides this functionality for my app automatically on iPadOS. You'll notice that each of my windows is reflecting a different state in the interface. The selected book is different in each one, and changing it in one does not affect the others. This is a key aspect to scenes in SwiftUI. An app can provide a shared model for each scene to use, but the state of the views in those scenes will be independent. I'd also like to point out something in the App Switcher. Each of my windows is showing the name of my app, as well as the name of the selected book. This is done via a new view modifier that we've introduced this year, \"navigation title,\" which on iOS can be used to populate the title in the navigation bar and the App Switcher. This is one example of a view modifier which can affect the state of its parent scene."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "On the Mac, it's very common for apps to support multiple windows. By using WindowGroup in your app, SwiftUI will provide a menu item in the file menu, which supports creating new scene instances."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "This item can also be invoked via the standard Command-N keyboard shortcut."
+      },
+      {
+        "timestamp": "9:17",
+        "text": "You'll notice how navigation title applies here on macOS. The book title is being displayed in the window's title-bar area."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "It also will be used in the windows menu."
+      },
+      {
+        "timestamp": "9:32",
+        "text": "Providing a good title here is important for the users since, in addition to giving them more context for what they're interacting with, it also helps them select their desired window from the list of open ones. Besides supporting multiple windows, macOS also supports grouping its windows together. Via the window menu, I can merge my open windows into a single, tabbed interface..."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "with each tab being represented by a separate scene."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "Again, I didn't have to write any code for this functionality. SwiftUI provides this automatically."
+      },
+      {
+        "timestamp": "10:13",
+        "text": "Now that you've seen some of the practical implications of using the WindowGroup scene in your app, let's go over a few more details. To recap what I showed you just now, WindowGroup is a scene which lets you express the primary interface of your app."
+      },
+      {
+        "timestamp": "10:32",
+        "text": "The view that you provide to it will be used as the definition of that interface."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "And this works on all of our platforms in the expected way. For example, on iOS and watchOS, your view will be presented in a window which occupies the entire screen of the device. While on macOS, this window will be sized according to your view's definition. The life cycle of scenes are managed by the platform they are running on."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "Using macOS as an example, when the platform needs to create a window for your app, WindowGroup will instantiate a new child scene which by default will display its content within a window."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "On platforms which support multiple windows, such as macOS and iPadOS, WindowGroup can instantiate multiple children."
+      },
+      {
+        "timestamp": "11:28",
+        "text": "This can happen in response to user actions such as clicking a menu item or invoking a multitasking gesture."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "While each scene shares the definition of its user interface, the views which make up this definition all have their own independent state."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "And this means that changing the view state in one window does not affect the state of the others."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "This functionality lets you provide a template to be used for your interface, while letting your users customize this interface through the state you provide."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "Since the platform is in charge of the life cycle of scenes, we've introduced a new property wrapper this year to help you manage restoration of your view state. The SceneStorage property wrapper can be used to persist your view state."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "It takes a unique key which identifies the state to be stored. This state will then be automatically saved and restored at the appropriate times by SwiftUI."
+      },
+      {
+        "timestamp": "12:39",
+        "text": "Now that I've shown you more about how scenes and specifically WindowGroup work, I'd like to hand things back to Matt who will give you some more info about how you can customize your apps further. Thanks, Jeff. Before we finish up, I'd like to show you just a few other new app-related features available this year."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "The BookClub app we saw earlier was a data-driven app backed by a shared data model. But there are other kinds of apps as well, such as document-based apps, like we see here with the ShapeEdit app."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "New this year is the DocumentGroup scene type, which automatically manages opening, editing and saving document-based scenes."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "To learn more, you should check out this year's \"Build Document-Based Apps in SwiftUI\" talk."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "Now, going back to our BookClub example, a common feature of macOS apps is a preferences window."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "This year we're exposing the new \"settings\" scene type, available on macOS, which automatically sets up the standard preferences window. The settings scene will automatically set up the preferences command in the app menu and also give the window the correct style treatment."
+      },
+      {
+        "timestamp": "13:53",
+        "text": "Speaking of menu commands, SwiftUI is also providing an API for you to add custom commands to your scenes using the new \"commands\" modifier."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "BookCommands is a custom type that I've defined. Let's take a quick look."
+      },
+      {
+        "timestamp": "14:08",
+        "text": "The commands API is powerful and flexible, using the same declarative, state-driven programming model we use in views, scenes and apps. You can encapsulate commands in custom types, target actions based on user focus, similar to the responder chain in AppKit or UIKit, and use normal views to build the commands themselves. Check out our reference documentation for more information about working with commands. That was just a peek at the new app-related APIs available in SwiftUI this year. I'd recommend also checking out these other SwiftUI talks, which will help you with building the content of your apps."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "\"Data Essentials in SwiftUI\" will build your knowledge of how to properly pass data between your apps, scenes and views. And \"What's New in Swift\" will show you the latest improvements in the language that can improve all of your SwiftUI code."
+      },
+      {
+        "timestamp": "15:05",
+        "text": "We really look forward to seeing all the great SwiftUI apps you build, and we hope you share your creations with us on the forums. We love all your feedback and can't wait to see what you build next. Thanks and have a great WWDC."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -109,5 +352,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10041"
     }
   ],
-  "extractedAt": "2026-10-11T16:45:00.920Z"
+  "extractedAt": "2026-10-17T18:54:55.147Z"
 }

@@ -1,74 +1,32 @@
-/**
- * Zod schemas for WWDC tools
- */
-
 import { z } from 'zod';
+import { WWDC_CONFIG } from '../utils/constants.js';
 
-/**
- * Schema for list_wwdc_videos
- */
+/** The topics come from the bundled WWDC data, which list_wwdc_videos' "topics" view lists: no copy of them here */
+const TOPIC = 'a topic ID, as list_wwdc_videos with view "topics" lists them, keeps that topic\'s sessions; any other text keeps the sessions whose title or topic names contain it, in any case';
+
 export const listWWDCVideosSchema = z.object({
-  year: z.string().optional().describe('WWDC year ("2025", "2024", etc.) or "all"; list_wwdc_years lists the years held. Example: "2025" for latest.'),
-  topic: z.string().optional().describe('A topic ID keeps that topic\'s sessions: "accessibility-inclusion", "app-services", "app-store-distribution-marketing", "audio-video", "business-education", "design", "developer-tools", "essentials", "graphics-games", "health-fitness", "machine-learning-ai", "maps-location", "photos-camera", "privacy-security", "safari-web", "spatial-computing", "swift", "swiftui-ui-frameworks", "system-services". Any other text keeps the sessions whose title or topic names contain it.'),
-  hasCode: z.boolean().optional().describe('Filter by code availability. true = sessions with code, false = without code. Leave empty for all.'),
-  limit: z.number().min(1).max(200).default(50).describe('Max videos to show (default: 50). Videos include title, duration, and content indicators.'),
+  view: z.enum(['sessions', 'years', 'topics']).default('sessions').describe('"sessions": the sessions by year, topic or text in the title or topic names. "years": each WWDC year with its number of sessions, then how many sessions in all have code and a transcript. "topics": the WWDC topics with their IDs and session counts or, with topic, one topic\'s sessions, newest year first.'),
+  year: z.string().optional().describe('sessions, and one topic\'s sessions: keeps one WWDC year ("2026"); left out or "all", every year.'),
+  topic: z.string().optional().describe(`sessions: ${TOPIC}. topics: one topic's ID, to list its sessions.`),
+  hasCode: z.boolean().optional().describe('sessions: true keeps the sessions with code; false, those without.'),
+  includeVideos: z.boolean().default(true).describe('topics: false shows the topic without its sessions.'),
+  limit: z.number().min(1).max(WWDC_CONFIG.MAX_VIDEO_LIMIT).optional().describe(`Most sessions to show: ${WWDC_CONFIG.DEFAULT_VIDEO_LIMIT} if left out, ${WWDC_CONFIG.DEFAULT_TOPIC_VIDEOS_LIMIT} of one topic's.`),
 });
 
-/**
- * Schema for search_wwdc_content
- */
 export const searchWWDCContentSchema = z.object({
-  query: z.string().min(1).describe('Search terms. Examples: "async await", "@Observable", "Vision Pro", "performance optimization".'),
-  searchIn: z.enum(['transcript', 'code', 'both']).default('both').describe('Search scope. "transcript" = spoken content, "code" = code examples only, "both" = everything. Default: "both"'),
-  year: z.string().optional().describe('Limit to specific year ("2025", "2024", etc.). Leave empty for all years.'),
-  language: z.string().optional().describe('Code language filter ("swift", "objc", "javascript"). Only for code search.'),
-  limit: z.number().min(1).max(100).default(20).describe('Max results (default: 20). Results include context snippets.'),
+  view: z.enum(['sessions', 'examples']).default('sessions').describe(`"sessions": the matching sessions, most matches first, each with its count of matches and up to ${WWDC_CONFIG.MAX_CONTEXT_MATCHES} passages or code excerpts, each with its time. "examples": the code examples that contain query, each with its session, year and the time it appears, newest year first.`),
+  query: z.string().min(1).describe('sessions: text a transcript paragraph or a line of code must contain, as typed, in any case ("@Observable", "Vision Pro"; "async await" finds the two words side by side). examples: text the code must contain, in any case: a type, attribute, method or framework name ("LanguageModelSession", "@Generable"); session code rarely shows its imports, so a framework\'s name finds fewer.'),
+  searchIn: z.enum(['transcript', 'code', 'both']).default('both').describe('sessions: search the transcripts, the code, or both.'),
+  year: z.string().optional().describe('Keeps one WWDC year ("2025"); left out, every year.'),
+  topic: z.string().optional().describe(`examples: ${TOPIC}.`),
+  limit: z.number().min(1).max(WWDC_CONFIG.MAX_SEARCH_LIMIT).optional().describe(`Most sessions to show, ${WWDC_CONFIG.DEFAULT_SEARCH_LIMIT} if left out; examples: most examples, ${WWDC_CONFIG.DEFAULT_CODE_EXAMPLES_LIMIT}.`),
 });
 
-/**
- * Schema for get_wwdc_video
- */
 export const getWWDCVideoSchema = z.object({
-  year: z.string().describe('WWDC year. Example: "2025"'),
-  videoId: z.string().describe('Session ID. Example: "10101" for keynote, "238" for session 238.'),
-  includeTranscript: z.boolean().default(true).describe('Include the full transcript, as plain text without timestamps. Default: true'),
-  includeCode: z.boolean().default(true).describe('Include all code examples from the session. Default: true'),
+  view: z.enum(['session', 'related']).default('session').describe('"session": the session itself. "related": the sessions related to it, first those Apple lists as related, then, across every year, sessions that share its topics, the most shared first; each with its year, link and topics, and whether it has a transcript and code.'),
+  year: z.string().describe('The session\'s WWDC year ("2025").'),
+  videoId: z.string().describe('The session\'s number, from its link: …/wwdc2025/10101/ is "10101".'),
+  includeTranscript: z.boolean().default(true).describe('session: false leaves out the transcript, which runs to tens of KB.'),
+  includeCode: z.boolean().default(true).describe('session: false leaves out the code examples.'),
+  limit: z.number().min(1).max(WWDC_CONFIG.MAX_RELATED_VIDEOS_LIMIT).default(WWDC_CONFIG.DEFAULT_RELATED_VIDEOS_LIMIT).describe('related: most sessions to show.'),
 });
-
-/**
- * Schema for get_wwdc_code_examples
- */
-export const getWWDCCodeExamplesSchema = z.object({
-  framework: z.string().optional().describe('Framework to find examples for. Examples: "SwiftUI", "SwiftData", "RealityKit".'),
-  topic: z.string().optional().describe('A topic ID from browse_wwdc_topics, such as "swift" or "swiftui-ui-frameworks", keeps that topic\'s sessions; any other text, such as "animation", keeps the sessions whose title or topic names contain it.'),
-  year: z.string().optional().describe('WWDC year filter ("2025", "2024", etc.).'),
-  language: z.string().optional().describe('Programming language: "swift", "objc", "javascript", "metal".'),
-  limit: z.number().min(1).max(100).default(30).describe('Max examples (default: 30). Each includes code and source video info.'),
-});
-
-/**
- * Schema for browse_wwdc_topics
- */
-export const browseWWDCTopicsSchema = z.object({
-  topicId: z.string().optional().describe('Topic ID to explore. Available IDs: "accessibility-inclusion", "app-services", "app-store-distribution-marketing", "audio-video", "business-education", "design", "developer-tools", "essentials", "graphics-games", "health-fitness", "machine-learning-ai", "maps-location", "photos-camera", "privacy-security", "safari-web", "spatial-computing", "swift", "swiftui-ui-frameworks", "system-services". Leave empty to see all topics with video counts.'),
-  includeVideos: z.boolean().default(true).describe('List videos in the topic. Set false for topic structure only. Default: true'),
-  year: z.string().optional().describe('Filter topic videos by year. Only when browsing specific topic.'),
-  limit: z.number().min(1).max(100).default(20).describe('Max videos per topic (default: 20).'),
-});
-
-/**
- * Schema for find_related_wwdc_videos
- */
-export const findRelatedWWDCVideosSchema = z.object({
-  videoId: z.string().describe('Source video ID. Example: "10101" for keynote.'),
-  year: z.string().describe('Source video year. Example: "2025"'),
-  includeExplicitRelated: z.boolean().default(true).describe("Include Apple's recommended related videos. Usually prerequisites or follow-ups. Default: true"),
-  includeTopicRelated: z.boolean().default(true).describe('Include videos from same topic categories. Good for comprehensive learning. Default: true'),
-  includeYearRelated: z.boolean().default(false).describe('Include other videos from same WWDC. Default: false'),
-  limit: z.number().min(1).max(50).default(15).describe('Max related videos (default: 15).'),
-});
-
-/**
- * Schema for list_wwdc_years
- */
-export const listWWDCYearsSchema = z.object({});

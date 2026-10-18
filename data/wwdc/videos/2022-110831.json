@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110831/",
   "title": "Q&A: CloudKit",
-  "speakers": [],
   "duration": "",
   "topics": [
     "System Services"
@@ -27,5 +26,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10115"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:06.627Z"
+  "extractedAt": "2026-10-17T18:50:04.308Z"
 }

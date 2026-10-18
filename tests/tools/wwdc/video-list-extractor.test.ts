@@ -1,13 +1,9 @@
 import type { Mocked } from 'vitest';
 import { vi, describe, test, expect, beforeEach } from 'vitest';
-/**
- * Tests for WWDC video list extractor
- */
 
 import { extractVideoList as extractWWDCVideoList } from '../../../src/tools/wwdc/video-list-extractor';
 import { httpClient } from '../../../src/utils/http-client';
 
-// Mock http client
 vi.mock('../../../src/utils/http-client');
 const mockHttpClient = httpClient as Mocked<typeof httpClient>;
 
@@ -57,15 +53,9 @@ describe('WWDC Video List Extractor', () => {
     expect(result[0]).toMatchObject({
       id: '10188',
       url: 'https://developer.apple.com/videos/play/wwdc2025/10188/',
-      title: 'Meet the Translation API',
-      duration: '',
-      thumbnail: '',
     });
     expect(result[1]).toMatchObject({
       id: '10189',
-      title: 'Advanced SwiftUI',
-      duration: '',
-      thumbnail: '',
     });
   });
 
@@ -121,9 +111,6 @@ describe('WWDC Video List Extractor', () => {
 
     expect(result[0]).toMatchObject({
       id: '10190',
-      title: 'SwiftData and CloudKit',
-      duration: '',
-      thumbnail: '',
     });
   });
 
@@ -155,9 +142,6 @@ describe('WWDC Video List Extractor', () => {
 
     expect(result[0]).toMatchObject({
       id: '10191',
-      title: 'Keynote',
-      duration: '',
-      thumbnail: '',
     });
   });
 
@@ -217,12 +201,10 @@ describe('WWDC Video List Extractor', () => {
     expect(result.map(v => v.id)).toEqual(['238', '10188', '501']);
   });
 
-  test('should handle HTTP errors gracefully', async () => {
+  test('throws a failed request', async () => {
     mockHttpClient.get.mockRejectedValue(new Error('Network error'));
 
-    await expect(extractWWDCVideoList('2025')).rejects.toThrow(
-      'Failed to extract video list'
-    );
+    await expect(extractWWDCVideoList('2025')).rejects.toThrow('Network error');
   });
 
   test('should handle malformed HTML gracefully', async () => {
@@ -242,7 +224,6 @@ describe('WWDC Video List Extractor', () => {
 
     const result = await extractWWDCVideoList('2025');
 
-    // Should skip videos with invalid URLs
     expect(result).toEqual([]);
   });
 
@@ -274,6 +255,5 @@ describe('WWDC Video List Extractor', () => {
     const result = await extractWWDCVideoList('2025');
 
     expect(result).toHaveLength(1);
-    expect(result[0].title).toBe('Video 1');
   });
 });

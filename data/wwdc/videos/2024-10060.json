@@ -3,8 +3,7 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10060/",
   "title": "Meet AdAttributionKit",
-  "speakers": [],
-  "duration": "",
+  "duration": "23:41",
   "topics": [
     "App Services",
     "App Store, Distribution & Marketing"
@@ -12,9 +11,517 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Hello everybody, I’m Nikhil from App Store Engineering. Today, we meet AdAttributionKit. Privacy is a big part of everything we do at Apple. Privacy preserving ad attribution enables advertising attribution while preserving user privacy.\n\nPrivacy preserving ad attribution is built on top of crowd anonymity. At a high level, crowd anonymity will send less data back to ad networks and advertisers, when there are fewer conversions.\n\nAs the crowd size scales up, more data is sent back.\n\nOnce the crowd size passes the highest level, the maximum amount of data is returned to ad networks and advertisers.\n\nSKAdNetwork was Apple’s first privacy- preserving ad attribution framework powered by crowd anonymity. Today I am happy to introduce AdAttributionKit, our new ad attribution framework for iOS and iPadOS built on top of SKAdNetwork fundamentals. Let’s begin by talking about ad attribution at a high level. Ad networks generate, sign and serve ads to publisher apps.\n\nPublisher apps display the ad to the person using them.\n\nThey install the advertised app, and as they engage with it over time, and after the measurement period has passed, a postback containing conversion information is sent to the ad network.\n\nWith that flow in mind, here are the topics I will be covering today. We will start with a discussion on fetching ads and the new ad impression format in AdAttributionKit. Then we will look at displaying ads. We’ll follow this with a discussion about postbacks. Then we’ll go into re-engagement and briefly cover testing AdAttributionKit.\n\nLet’s talk about fetching ads. Ads are the input to the attribution flow. The publisher app will fetch the ad data from the ad network. This ad data is in compact JWS format. I will now go over the fields. Here is an ad impression in JSON form.\n\nI will cover a few important fields.\n\nThe \"advertised-item-identifier\" is the app ID of the app being advertised.\n\nThe \"publisher-item-identifier\" is the app ID of the app showing the ad.\n\nThe \"source-identifier\" is a 4 digit integer used to represent campaign-related information for the ad. This field retains the same behavior from SKAdNetwork 4.0.\n\nThe fields in the JSON are described in the AdAttributionKit documentation linked to the session.\n\nWith that structure in mind let’s move on to ad impressions. AppImpression instances represent ad impressions. These instances are initialized with the ad’s compact JWS representation, which we covered in the previous section.\n\nI will now show you how to create an app impression from the compact JWS.\n\nFirst, I fetch the ad’s compact JWS representation. Note that the fetchAdImpressionJWS() method is not shown implemented since this is entirely up to how I integrate with my ad provider or ad network.\n\nI then pass this jwsString to the initializer for AppImpression. I will be using this AppImpression instance in the next section to discuss displaying ads. AdAttributionKit supports 3 different methods of displaying ads. Let’s take a look at the ads I want to display for my advertised app.\n\nThe first ad is a custom creative that is clickable. Tapping a custom click ad will navigate the user to a marketplace where they can install the advertised app.\n\nHere is a view-through ad in a different screen. An example of this type of ad content can be a video ad.\n\nAnother ad type simply recommends the advertised app. For this I can use SKOverlay which shows up as a banner within the context of my app.\n\nOr I can use SKStoreProductViewController which has more of a full-screen presentation model still within the context of the app. Both SKOverlay and SKStoreProductViewController share the iOS design language and are extremely easy to adopt and plug in to my app.\n\nHere is how to implement a custom click ad.\n\nFirst, I create the customAdView.\n\nThen I create an instance of UIEventAttributionView and add it as a subview of my ad view.\n\nNote the UIEventAttributionView has to be on top of any view that receives user interactions.\n\nWith the ad view set up, let’s handle taps on it. When the user taps on the ad view, I grab my instance of appImpression and call the handleTap() method on it.\n\nNote that handleTap has to be called within 15 minutes of when the appImpression instance is initialized. Past 15 minutes, create a new appImpression instance.\n\nWhen the click happens and you call the handleTap method, AdAttributionKit navigates the user to a marketplace from where the advertised app can be installed.\n\nFor view-through ads, I previously mentioned the usage of a video ad. However view-through ads can cover any custom ad presentation.\n\nI’ll use a simple timeline to help visualize the events and API calls involved.\n\nWhen the ad presentation starts, I call the beginView() API on my appImpression instance, and when the ad presentation finishes, I call the endView() API on my appImpression instance.\n\nIn my specific case of the video view-through ad, when the video starts playing, I call beginView() on my appImpression instance, and when the video finishes, I call endView() on my appImpression instance. A few things to note about view-through ads. Your custom ad content needs to be displayed for a minimum of 2 seconds - meaning, the time between calling beginView() and endView() should be at least 2 seconds. This matches the industry standard for this type of ad content.\n\nbeginView and endView need to be called on the same instance of appImpression, and the same ad network cannot have multiple open view-through ad presentations for the same advertised app at the same time. Every call to begin must be balanced by a call to end.\n\nMoving on to SKOverlay.\n\nImplementing SKOverlay follows the same pattern in AdAttributionKit as it did in SKAdNetwork. We use instances of AppConfiguration to set the SKOverlay up.\n\nYou will set your instance of appImpression to the new appImpression property on AppConfiguration.\n\nFinally, SKStoreProductViewController. The setup for SKStoreProductViewController is similar to how it was setup in SKAdNetwork.\n\nThe loadProduct method is called to prepare the product page UI for display.\n\nThe main difference is the impression parameter on the loadProduct method to which you will pass your appImpression instance.\n\nAnd now, postbacks.\n\nPostbacks are the outputs of the attribution system. They are the conversion signals sent to the ad network. They are also optionally sent to the developer of the advertised app.\n\nAdAttributionKit sends postbacks as a combination of a signed compact JWS and a few unsigned fields. Here is the signed portion.\n\nLet’s focus on a few important fields.\n\nThe \"conversion-type\" field carries information about the type of conversion that created this postback. The values for this field can be download, redownload, or re-engagement.\n\nThe \"marketplace-identifier\" field carries the identifier of the marketplace where the conversion occurred. In our examples, because the download is taking place on the Apple App Store, this field has the value \"com.apple.AppStore\".\n\nThe \"publisher-item-identifier\" is the identifier of the app that showed the original ad. For low levels of crowd anonymity, this will not be included in the postback.\n\nThe \"source-identifier\" has a minimum of 2 digits and a maximum of 4. Crowd anonymity determines how many digits are included in the postback.\n\nLet’s now take a look at the rest of the postback request body.\n\nThe \"jws-string\" key holds the JWS compact representation of the JSON we just covered. Note that I am showing a placeholder here and not the actual string for the sake of brevity.\n\nThe \"ad-interaction-type\" key holds information about how the user interacted with the ad. The possible values for this are \"click\" and \"view\". I will go into detail about this key in a subsequent section.\n\nThe \"conversion-value\" key holds the value of the conversion as determined by the advertised app making API calls to AdAttributionKit.\n\nNote that \"conversion-value\" is also a crowd anonymity controlled field, and as such, it is not guaranteed to be present in the postback.\n\nIf crowd anonymity determines the data allowance to not be high, instead of the \"conversion-value\", you might receive the \"coarse-conversion-value\".\n\nor you might receive no conversion value at all.\n\nGoing back to the full postback request body, I want to dive deeper on two topics. The \"conversion-value\" and the \"ad-interaction-type\".\n\nFirst, conversion values. Conversion values can be used to measure advertising effectiveness. In other words, how valuable was this ad campaign to my advertising needs? The conversion value can also be used to derive information about the return on ad spend or ROAS. This is quite an important heuristic for determining future ad spend and related optimization. Note that conversion values can be fine or coarse. This is determined by crowd anonymity. I will go over 3 scenarios where I want to measure user engagement and update the \"conversion-value\" via AdAttributionKit.\n\nLet’s look at an account creation scenario first. Assume that we are inside the method handling account creation in the app.\n\nI will first create a PostbackUpdate struct, and then I call the updateConversionValue method on the Postback type to execute the update.\n\nLet’s take a closer look at the PostbackUpdate struct’s properties.\n\nThe first argument is the fineConversionValue. This is a positive integer between 0 and 63 both values included. Note that the values for the fineConversionValue need to make semantic sense for my advertising campaign and how its effectiveness is being measured. Typically, the schema for conversion values would be determined after discussion and planning between me as the advertised app developer, my chosen ad network and any MMPs I might choose to work with.\n\nThe second argument is for locking postbacks. The lock is a way for me to tell AdAttributionKit that I am finished measuring and recording conversion values for that particular conversion window. This allows AdAttributionKit to freeze that postback and immediately schedule it for transmission.\n\nAnother way to think about this is that, a very high value event happened that I want to know about as soon as possible. The time urgency of this event beats out measuring anything else in that conversion window. Hence, I call lock, and AdAttributionKit knows to freeze and schedule this postback.\n\nAccount creation does not have enough value for me to lock the postback, therefore I use false for the lock argument.\n\nThe final argument is the coarse conversion value, which can be one of three string values: low, medium, or high. As mentioned before, the coarse value is sent in the postback when crowd anonymity determines that the fine value cannot be sent.\n\nWith the account created, the user watches their first video. I consider this a higher-value event and so I update the fineConversionValue to 38.\n\nThe value of the user watching a video is not high enough for me to lock the postback and so that argument is false.\n\nAnd if my fine value cannot make it through due to crowd anonymity, I set my coarseConversionValue to be medium as a fallback measurement.\n\nFinally, the user uploads a video. I consider this a very high-value engagement and so I update my fine value to be 42.\n\nVideo creation is a very high-value event, and I want to receive my postback as soon as possible. Therefore, I lock the postback via the lockPostback argument in the API.\n\nNote that locking the postback does not lead to its instant transmission. This delayed transmission behavior is to further protect user privacy.\n\nAgain as a fallback, I set my coarseConversionValue to be high.\n\nYou can use the PostbackUpdate structure to set your conversion value for different scenarios in your app.\n\nThe last thing to cover for postbacks is the ad interaction type. AdAttributionKit distinguishes between the user tapping an ad and simply viewing it. This information is crucial for the selection of the ad that drove the conversion.\n\nThe ad interaction type in the postback will have the value \"click\" or \"view\" depending on the user’s interaction with the ad. Let’s review the value of this field for different presentation methods.\n\nFor a custom click ad, viewing it does not create an impression.\n\nTapping it results in an ad interaction type of \"click\".\n\nFor a view-through ad, viewing it results in an ad interaction type of \"view\". Tapping it does not create an impression.\n\nFor SKOverlay, presenting it results in an ad interaction type of \"view\". Tapping it results in \"click\".\n\nSimilarly for SKStoreProductViewController, presenting it leads to ad interaction type \"view\", tapping it leads to \"click\".\n\nConversion values and ad interaction type provide details about the user engagement with your app and the ad that drove the install. And now, for something even newer - re-engagement. The main purpose of ad attribution is to attribute a conversion event to an impression event. In our examples thus far I used installation as the conversion event. The initial goal for many ad campaigns is to drive installations for the app. This makes sense since installation is the first step in the user’s journey with the app. Now, let’s talk about a new type of conversion event - re-engagement For re-engagement ad campaigns, the goal is to bring users back to the advertised app.\n\nConsider the case where the person who installed the advertised app stopped using it. The advertised app wants to recover this user.\n\nAnd so they run an ad showing a limited-time offer. When the user taps on the ad, AdAttributionKit opens the advertised app to the screen with the offer, and the re-engagement begins.\n\nLet’s take a look at a re-engagement ad impression. For opting into re-engagement, I will add one more parameter to the payload: \"eligible-for-re-engagement\".\n\nThis tells AdAttributionKit that the ad impression is to be considered for re-engagement conversions.\n\nAn ad impression configured with the \"eligible-for-re-engagement\" property, is considered for re-engagement or install depending on whether the advertised app is installed or not.\n\nFor a normal ad impression without re-engagement opt-in, it would only be considered for installs.\n\nHere is how to initiate a re-engagement in code.\n\nI create the AppImpression instance with the jwsString. Note that this is the JWS impression that has opted in for re-engagement.\n\nThen, in the tap handler for my ad view, first I get the universal link that I want the user to be navigated to within the advertised app.\n\nThen, I call the handleTap() method on the appImpression instance passing in the reengagementURL. This call tells AdAttributionKit to open the advertised app.\n\nWhen the advertised app is opened, the re-engagement URL is passed to it. Note the query parameter appended to the re-engagement URL. AdAttributionKit appends this parameter to the URL during a re-engagement.\n\nAdvertised apps can check for this parameter to tell if an open was caused by an AdAttributionKit re-engagement.\n\nSKOverlay and SKStoreProductViewController are also compatible with re-engagement.\n\nThe setup for both is very similar to an install.\n\nTo open a universal link in the advertised app, you can use the adAttributionReengagementURL property on the SKOverlay.\n\nAnd for SKStoreProductViewController, you can use the reengagementURL parameter on the loadProduct method. Let’s talk about the postbacks sent for re-engagement conversions.\n\nThe conversion type key in the postback will have the value of re-engagement.\n\nRe-engagement conversions can only have the click ad interaction type. View-through re-engagement is not supported by AdAttributionKit.\n\nThe first call to update the conversion value must be made within 48 hours of the conversion.\n\nRe-engagement postbacks can be selectively updated, separate from installation postbacks. I will show you how.\n\nLet’s bring back the PostbackUpdate struct we saw earlier.\n\nUse the conversionTypes parameter to control which postbacks get updated.\n\nFor updating only the re-engagement postbacks, I use the .reengagement value for conversionTypes.\n\nFor updating only the install postbacks, I use the .install value for conversionTypes.\n\nFor updating all postbacks, I use both .install and .reengagement for conversionTypes. AdAttributionKit also updates all postbacks if the conversionTypes parameter is nil.\n\nThat covers re-engagement, which in addition to install presents a complete picture of how people are engaging with apps. Testing AdAttributionKit can be difficult due to the asynchronous design by virtue of necessity and purpose.\n\nThis asynchronous nature is further compounded by time randomization performed in order to strengthen our privacy behavior. To improve the ease of testability, we have a new developer mode for AdAttributionKit.\n\nDeveloper mode removes time randomization from the system to make it time-deterministic. It shortens the conversion windows, so testing of conversion value updates can be done in all three windows in a test-friendly timeframe.\n\nDeveloper mode also speeds up postback transmission to help with testing. Let’s look at how to turn on developer mode.\n\nIn iOS Settings, navigate to the Developer menu and scroll down to the switch for AdAttributionKit Developer Mode.\n\nWhen the switch is turned on, AdAttributionkit begins to function in developer mode. The time durations in the system are shortened to enable faster testing.\n\nAnd that is all I have for you today on AdAttributionKit, Apple’s new privacy-preserving ad attribution framework for iOS and iPadOS.\n\nAs an ad network, if you are already registered for use with SKAdNetwork, no further enrollment is needed. If not, you start by enrolling your ad network with AdAttributionKit.\n\nAfter enrollment, the next steps would be to serve the new JWS format ads and display them using AdAttributionKit.\n\nFor advertised apps, adopt the new AdAttributionKit APIs for updating conversion values.\n\nOn the server side, receive the new JWS format postbacks and parse them for analysis.\n\nFor all the features discussed here today, note that AdAttributionKit is fully interoperable with SKAdNetwork. And for more information about SKAdNetwork, check out the WWDC22 session \"What’s new with SKAdNetwork\".\n\nAnd finally, our AdAttributionKit documentation is a fantastic resource as you get started with your AdAttributionKit integration. Thank you so much for joining me today!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hello everybody, I’m Nikhil from App Store Engineering. Today, we meet AdAttributionKit. Privacy is a big part of everything we do at Apple. Privacy preserving ad attribution enables advertising attribution while preserving user privacy."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "Privacy preserving ad attribution is built on top of crowd anonymity. At a high level, crowd anonymity will send less data back to ad networks and advertisers, when there are fewer conversions."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "As the crowd size scales up, more data is sent back."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "Once the crowd size passes the highest level, the maximum amount of data is returned to ad networks and advertisers."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "SKAdNetwork was Apple’s first privacy- preserving ad attribution framework powered by crowd anonymity. Today I am happy to introduce AdAttributionKit, our new ad attribution framework for iOS and iPadOS built on top of SKAdNetwork fundamentals. Let’s begin by talking about ad attribution at a high level. Ad networks generate, sign and serve ads to publisher apps."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "Publisher apps display the ad to the person using them."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "They install the advertised app, and as they engage with it over time, and after the measurement period has passed, a postback containing conversion information is sent to the ad network."
+      },
+      {
+        "timestamp": "1:39",
+        "text": "With that flow in mind, here are the topics I will be covering today. We will start with a discussion on fetching ads and the new ad impression format in AdAttributionKit. Then we will look at displaying ads. We’ll follow this with a discussion about postbacks. Then we’ll go into re-engagement and briefly cover testing AdAttributionKit."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Let’s talk about fetching ads. Ads are the input to the attribution flow. The publisher app will fetch the ad data from the ad network. This ad data is in compact JWS format. I will now go over the fields. Here is an ad impression in JSON form."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "I will cover a few important fields."
+      },
+      {
+        "timestamp": "2:31",
+        "text": "The \"advertised-item-identifier\" is the app ID of the app being advertised."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "The \"publisher-item-identifier\" is the app ID of the app showing the ad."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "The \"source-identifier\" is a 4 digit integer used to represent campaign-related information for the ad. This field retains the same behavior from SKAdNetwork 4.0."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "The fields in the JSON are described in the AdAttributionKit documentation linked to the session."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "With that structure in mind let’s move on to ad impressions. AppImpression instances represent ad impressions. These instances are initialized with the ad’s compact JWS representation, which we covered in the previous section."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "I will now show you how to create an app impression from the compact JWS."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "First, I fetch the ad’s compact JWS representation. Note that the fetchAdImpressionJWS() method is not shown implemented since this is entirely up to how I integrate with my ad provider or ad network."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "I then pass this jwsString to the initializer for AppImpression. I will be using this AppImpression instance in the next section to discuss displaying ads. AdAttributionKit supports 3 different methods of displaying ads. Let’s take a look at the ads I want to display for my advertised app."
+      },
+      {
+        "timestamp": "4:06",
+        "text": "The first ad is a custom creative that is clickable. Tapping a custom click ad will navigate the user to a marketplace where they can install the advertised app."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "Here is a view-through ad in a different screen. An example of this type of ad content can be a video ad."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "Another ad type simply recommends the advertised app. For this I can use SKOverlay which shows up as a banner within the context of my app."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "Or I can use SKStoreProductViewController which has more of a full-screen presentation model still within the context of the app. Both SKOverlay and SKStoreProductViewController share the iOS design language and are extremely easy to adopt and plug in to my app."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "Here is how to implement a custom click ad."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "First, I create the customAdView."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "Then I create an instance of UIEventAttributionView and add it as a subview of my ad view."
+      },
+      {
+        "timestamp": "5:16",
+        "text": "Note the UIEventAttributionView has to be on top of any view that receives user interactions."
+      },
+      {
+        "timestamp": "5:24",
+        "text": "With the ad view set up, let’s handle taps on it. When the user taps on the ad view, I grab my instance of appImpression and call the handleTap() method on it."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "Note that handleTap has to be called within 15 minutes of when the appImpression instance is initialized. Past 15 minutes, create a new appImpression instance."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "When the click happens and you call the handleTap method, AdAttributionKit navigates the user to a marketplace from where the advertised app can be installed."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "For view-through ads, I previously mentioned the usage of a video ad. However view-through ads can cover any custom ad presentation."
+      },
+      {
+        "timestamp": "6:12",
+        "text": "I’ll use a simple timeline to help visualize the events and API calls involved."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "When the ad presentation starts, I call the beginView() API on my appImpression instance, and when the ad presentation finishes, I call the endView() API on my appImpression instance."
+      },
+      {
+        "timestamp": "6:33",
+        "text": "In my specific case of the video view-through ad, when the video starts playing, I call beginView() on my appImpression instance, and when the video finishes, I call endView() on my appImpression instance. A few things to note about view-through ads. Your custom ad content needs to be displayed for a minimum of 2 seconds - meaning, the time between calling beginView() and endView() should be at least 2 seconds. This matches the industry standard for this type of ad content."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "beginView and endView need to be called on the same instance of appImpression, and the same ad network cannot have multiple open view-through ad presentations for the same advertised app at the same time. Every call to begin must be balanced by a call to end."
+      },
+      {
+        "timestamp": "7:29",
+        "text": "Moving on to SKOverlay."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "Implementing SKOverlay follows the same pattern in AdAttributionKit as it did in SKAdNetwork. We use instances of AppConfiguration to set the SKOverlay up."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "You will set your instance of appImpression to the new appImpression property on AppConfiguration."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "Finally, SKStoreProductViewController. The setup for SKStoreProductViewController is similar to how it was setup in SKAdNetwork."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "The loadProduct method is called to prepare the product page UI for display."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "The main difference is the impression parameter on the loadProduct method to which you will pass your appImpression instance."
+      },
+      {
+        "timestamp": "8:18",
+        "text": "And now, postbacks."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "Postbacks are the outputs of the attribution system. They are the conversion signals sent to the ad network. They are also optionally sent to the developer of the advertised app."
+      },
+      {
+        "timestamp": "8:35",
+        "text": "AdAttributionKit sends postbacks as a combination of a signed compact JWS and a few unsigned fields. Here is the signed portion."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "Let’s focus on a few important fields."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "The \"conversion-type\" field carries information about the type of conversion that created this postback. The values for this field can be download, redownload, or re-engagement."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "The \"marketplace-identifier\" field carries the identifier of the marketplace where the conversion occurred. In our examples, because the download is taking place on the Apple App Store, this field has the value \"com.apple.AppStore\"."
+      },
+      {
+        "timestamp": "9:21",
+        "text": "The \"publisher-item-identifier\" is the identifier of the app that showed the original ad. For low levels of crowd anonymity, this will not be included in the postback."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "The \"source-identifier\" has a minimum of 2 digits and a maximum of 4. Crowd anonymity determines how many digits are included in the postback."
+      },
+      {
+        "timestamp": "9:43",
+        "text": "Let’s now take a look at the rest of the postback request body."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "The \"jws-string\" key holds the JWS compact representation of the JSON we just covered. Note that I am showing a placeholder here and not the actual string for the sake of brevity."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "The \"ad-interaction-type\" key holds information about how the user interacted with the ad. The possible values for this are \"click\" and \"view\". I will go into detail about this key in a subsequent section."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "The \"conversion-value\" key holds the value of the conversion as determined by the advertised app making API calls to AdAttributionKit."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "Note that \"conversion-value\" is also a crowd anonymity controlled field, and as such, it is not guaranteed to be present in the postback."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "If crowd anonymity determines the data allowance to not be high, instead of the \"conversion-value\", you might receive the \"coarse-conversion-value\"."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "or you might receive no conversion value at all."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "Going back to the full postback request body, I want to dive deeper on two topics. The \"conversion-value\" and the \"ad-interaction-type\"."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "First, conversion values. Conversion values can be used to measure advertising effectiveness. In other words, how valuable was this ad campaign to my advertising needs? The conversion value can also be used to derive information about the return on ad spend or ROAS. This is quite an important heuristic for determining future ad spend and related optimization. Note that conversion values can be fine or coarse. This is determined by crowd anonymity. I will go over 3 scenarios where I want to measure user engagement and update the \"conversion-value\" via AdAttributionKit."
+      },
+      {
+        "timestamp": "11:42",
+        "text": "Let’s look at an account creation scenario first. Assume that we are inside the method handling account creation in the app."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "I will first create a PostbackUpdate struct, and then I call the updateConversionValue method on the Postback type to execute the update."
+      },
+      {
+        "timestamp": "12:04",
+        "text": "Let’s take a closer look at the PostbackUpdate struct’s properties."
+      },
+      {
+        "timestamp": "12:09",
+        "text": "The first argument is the fineConversionValue. This is a positive integer between 0 and 63 both values included. Note that the values for the fineConversionValue need to make semantic sense for my advertising campaign and how its effectiveness is being measured. Typically, the schema for conversion values would be determined after discussion and planning between me as the advertised app developer, my chosen ad network and any MMPs I might choose to work with."
+      },
+      {
+        "timestamp": "12:42",
+        "text": "The second argument is for locking postbacks. The lock is a way for me to tell AdAttributionKit that I am finished measuring and recording conversion values for that particular conversion window. This allows AdAttributionKit to freeze that postback and immediately schedule it for transmission."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "Another way to think about this is that, a very high value event happened that I want to know about as soon as possible. The time urgency of this event beats out measuring anything else in that conversion window. Hence, I call lock, and AdAttributionKit knows to freeze and schedule this postback."
+      },
+      {
+        "timestamp": "13:23",
+        "text": "Account creation does not have enough value for me to lock the postback, therefore I use false for the lock argument."
+      },
+      {
+        "timestamp": "13:32",
+        "text": "The final argument is the coarse conversion value, which can be one of three string values: low, medium, or high. As mentioned before, the coarse value is sent in the postback when crowd anonymity determines that the fine value cannot be sent."
+      },
+      {
+        "timestamp": "13:49",
+        "text": "With the account created, the user watches their first video. I consider this a higher-value event and so I update the fineConversionValue to 38."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "The value of the user watching a video is not high enough for me to lock the postback and so that argument is false."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "And if my fine value cannot make it through due to crowd anonymity, I set my coarseConversionValue to be medium as a fallback measurement."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "Finally, the user uploads a video. I consider this a very high-value engagement and so I update my fine value to be 42."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "Video creation is a very high-value event, and I want to receive my postback as soon as possible. Therefore, I lock the postback via the lockPostback argument in the API."
+      },
+      {
+        "timestamp": "14:45",
+        "text": "Note that locking the postback does not lead to its instant transmission. This delayed transmission behavior is to further protect user privacy."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "Again as a fallback, I set my coarseConversionValue to be high."
+      },
+      {
+        "timestamp": "15:02",
+        "text": "You can use the PostbackUpdate structure to set your conversion value for different scenarios in your app."
+      },
+      {
+        "timestamp": "15:09",
+        "text": "The last thing to cover for postbacks is the ad interaction type. AdAttributionKit distinguishes between the user tapping an ad and simply viewing it. This information is crucial for the selection of the ad that drove the conversion."
+      },
+      {
+        "timestamp": "15:26",
+        "text": "The ad interaction type in the postback will have the value \"click\" or \"view\" depending on the user’s interaction with the ad. Let’s review the value of this field for different presentation methods."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "For a custom click ad, viewing it does not create an impression."
+      },
+      {
+        "timestamp": "15:45",
+        "text": "Tapping it results in an ad interaction type of \"click\"."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "For a view-through ad, viewing it results in an ad interaction type of \"view\". Tapping it does not create an impression."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "For SKOverlay, presenting it results in an ad interaction type of \"view\". Tapping it results in \"click\"."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "Similarly for SKStoreProductViewController, presenting it leads to ad interaction type \"view\", tapping it leads to \"click\"."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "Conversion values and ad interaction type provide details about the user engagement with your app and the ad that drove the install. And now, for something even newer - re-engagement. The main purpose of ad attribution is to attribute a conversion event to an impression event. In our examples thus far I used installation as the conversion event. The initial goal for many ad campaigns is to drive installations for the app. This makes sense since installation is the first step in the user’s journey with the app. Now, let’s talk about a new type of conversion event - re-engagement For re-engagement ad campaigns, the goal is to bring users back to the advertised app."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "Consider the case where the person who installed the advertised app stopped using it. The advertised app wants to recover this user."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "And so they run an ad showing a limited-time offer. When the user taps on the ad, AdAttributionKit opens the advertised app to the screen with the offer, and the re-engagement begins."
+      },
+      {
+        "timestamp": "17:31",
+        "text": "Let’s take a look at a re-engagement ad impression. For opting into re-engagement, I will add one more parameter to the payload: \"eligible-for-re-engagement\"."
+      },
+      {
+        "timestamp": "17:44",
+        "text": "This tells AdAttributionKit that the ad impression is to be considered for re-engagement conversions."
+      },
+      {
+        "timestamp": "17:52",
+        "text": "An ad impression configured with the \"eligible-for-re-engagement\" property, is considered for re-engagement or install depending on whether the advertised app is installed or not."
+      },
+      {
+        "timestamp": "18:05",
+        "text": "For a normal ad impression without re-engagement opt-in, it would only be considered for installs."
+      },
+      {
+        "timestamp": "18:12",
+        "text": "Here is how to initiate a re-engagement in code."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "I create the AppImpression instance with the jwsString. Note that this is the JWS impression that has opted in for re-engagement."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "Then, in the tap handler for my ad view, first I get the universal link that I want the user to be navigated to within the advertised app."
+      },
+      {
+        "timestamp": "18:38",
+        "text": "Then, I call the handleTap() method on the appImpression instance passing in the reengagementURL. This call tells AdAttributionKit to open the advertised app."
+      },
+      {
+        "timestamp": "18:51",
+        "text": "When the advertised app is opened, the re-engagement URL is passed to it. Note the query parameter appended to the re-engagement URL. AdAttributionKit appends this parameter to the URL during a re-engagement."
+      },
+      {
+        "timestamp": "19:08",
+        "text": "Advertised apps can check for this parameter to tell if an open was caused by an AdAttributionKit re-engagement."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "SKOverlay and SKStoreProductViewController are also compatible with re-engagement."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "The setup for both is very similar to an install."
+      },
+      {
+        "timestamp": "19:28",
+        "text": "To open a universal link in the advertised app, you can use the adAttributionReengagementURL property on the SKOverlay."
+      },
+      {
+        "timestamp": "19:38",
+        "text": "And for SKStoreProductViewController, you can use the reengagementURL parameter on the loadProduct method. Let’s talk about the postbacks sent for re-engagement conversions."
+      },
+      {
+        "timestamp": "19:49",
+        "text": "The conversion type key in the postback will have the value of re-engagement."
+      },
+      {
+        "timestamp": "19:55",
+        "text": "Re-engagement conversions can only have the click ad interaction type. View-through re-engagement is not supported by AdAttributionKit."
+      },
+      {
+        "timestamp": "20:05",
+        "text": "The first call to update the conversion value must be made within 48 hours of the conversion."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "Re-engagement postbacks can be selectively updated, separate from installation postbacks. I will show you how."
+      },
+      {
+        "timestamp": "20:20",
+        "text": "Let’s bring back the PostbackUpdate struct we saw earlier."
+      },
+      {
+        "timestamp": "20:25",
+        "text": "Use the conversionTypes parameter to control which postbacks get updated."
+      },
+      {
+        "timestamp": "20:31",
+        "text": "For updating only the re-engagement postbacks, I use the .reengagement value for conversionTypes."
+      },
+      {
+        "timestamp": "20:38",
+        "text": "For updating only the install postbacks, I use the .install value for conversionTypes."
+      },
+      {
+        "timestamp": "20:46",
+        "text": "For updating all postbacks, I use both .install and .reengagement for conversionTypes. AdAttributionKit also updates all postbacks if the conversionTypes parameter is nil."
+      },
+      {
+        "timestamp": "21:00",
+        "text": "That covers re-engagement, which in addition to install presents a complete picture of how people are engaging with apps. Testing AdAttributionKit can be difficult due to the asynchronous design by virtue of necessity and purpose."
+      },
+      {
+        "timestamp": "21:17",
+        "text": "This asynchronous nature is further compounded by time randomization performed in order to strengthen our privacy behavior. To improve the ease of testability, we have a new developer mode for AdAttributionKit."
+      },
+      {
+        "timestamp": "21:32",
+        "text": "Developer mode removes time randomization from the system to make it time-deterministic. It shortens the conversion windows, so testing of conversion value updates can be done in all three windows in a test-friendly timeframe."
+      },
+      {
+        "timestamp": "21:48",
+        "text": "Developer mode also speeds up postback transmission to help with testing. Let’s look at how to turn on developer mode."
+      },
+      {
+        "timestamp": "21:57",
+        "text": "In iOS Settings, navigate to the Developer menu and scroll down to the switch for AdAttributionKit Developer Mode."
+      },
+      {
+        "timestamp": "22:06",
+        "text": "When the switch is turned on, AdAttributionkit begins to function in developer mode. The time durations in the system are shortened to enable faster testing."
+      },
+      {
+        "timestamp": "22:17",
+        "text": "And that is all I have for you today on AdAttributionKit, Apple’s new privacy-preserving ad attribution framework for iOS and iPadOS."
+      },
+      {
+        "timestamp": "22:27",
+        "text": "As an ad network, if you are already registered for use with SKAdNetwork, no further enrollment is needed. If not, you start by enrolling your ad network with AdAttributionKit."
+      },
+      {
+        "timestamp": "22:40",
+        "text": "After enrollment, the next steps would be to serve the new JWS format ads and display them using AdAttributionKit."
+      },
+      {
+        "timestamp": "22:49",
+        "text": "For advertised apps, adopt the new AdAttributionKit APIs for updating conversion values."
+      },
+      {
+        "timestamp": "22:57",
+        "text": "On the server side, receive the new JWS format postbacks and parse them for analysis."
+      },
+      {
+        "timestamp": "23:05",
+        "text": "For all the features discussed here today, note that AdAttributionKit is fully interoperable with SKAdNetwork. And for more information about SKAdNetwork, check out the WWDC22 session \"What’s new with SKAdNetwork\"."
+      },
+      {
+        "timestamp": "23:22",
+        "text": "And finally, our AdAttributionKit documentation is a fantastic resource as you get started with your AdAttributionKit integration. Thank you so much for joining me today!"
+      }
+    ]
   },
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:05"
+    },
+    {
+      "timestamp": "2:05",
+      "title": "Fetching ads",
+      "duration": "1:50"
+    },
+    {
+      "timestamp": "3:55",
+      "title": "Displaying ads",
+      "duration": "4:23"
+    },
+    {
+      "timestamp": "8:18",
+      "title": "Postbacks",
+      "duration": "8:10"
+    },
+    {
+      "timestamp": "16:28",
+      "title": "Re-engagement",
+      "duration": "4:41"
+    },
+    {
+      "timestamp": "21:09",
+      "title": "Testing AdAttributionKit",
+      "duration": "2:32"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -43,5 +550,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10038"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:57.004Z"
+  "extractedAt": "2026-10-17T18:44:55.987Z"
 }

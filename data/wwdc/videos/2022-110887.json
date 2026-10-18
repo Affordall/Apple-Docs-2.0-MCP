@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110887/",
   "title": "Meet the Presenter: Implement App Shortcuts with App Intents",
-  "speakers": [],
   "duration": "",
   "topics": [
     "App Services"
@@ -27,5 +26,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10170"
     }
   ],
-  "extractedAt": "2026-10-11T16:39:40.897Z"
+  "extractedAt": "2026-10-17T18:49:38.150Z"
 }

@@ -3,7 +3,6 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/111976/",
   "title": "18 things from WWDC24",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,13 +10,165 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Voiceover: Siri, play that one song Diego sent me.\n\n♪ \"So Happy\" (feat. Laura Mvula & Francis and the Lights) by Kassa Overall ♪ OK... Oh! How'd it do that? With Apple Intelligence.\n\nIt's AI that gets you, on your Apple products -- iPhone, iPad, Mac -- with built-in privacy.\n\nAnd you can make your own emoji.\n\nYeah.\n\nMake.\n\nYour.\n\nOwn.\n\nEmoji. Make your new profile pic with Image Playground.\n\nPull up a photo by describing it.\n\nOr clean up an otherwise very cute pic.\n\nYou can make a movie! Your life plus a description plus your camera roll equals sweet memories.\n\nWait.\n\nSiri?  When's Mom's flight landing? Oh. Where are we eating after? Ah. How do I share a password? What if I forget all this stuff? Siri: Just ask. Voiceover: Oh...\n\nApple Intelligence can TL;DR your long messages and highlights the important ones.\n\nIt can just find stuff deep in your phone like your driver's license number or that front-row concert ticket.\n\nComing to iPad...\n\nCalculator.\n\nAnd you can just handwrite a math problem.\n\nMath Note solves it for you.\n\nOr write something not even you can read, and iPad will clean it right up.\n\nSay what you really mean in Messages, with more expression, more personality, more you, now or later, from just about anywhere, even without a phone signal... ...because of satellites. Ugh! I forgot my phone.\n\nOh! I can just pull it up on Mac and use it! Digital voice: La manzana.\n\nVoiceover: Ooh! I'm going to get another coffee.\n\nHey, bud...\n\nFocus, focus.\n\nCustomize your iPhone's Home Screen and these buttons. Hide or lock the apps you want to, um, keep to yourself.\n\nSiri: Call from Dump Him.\n\nAnswer it? Voiceover: Mm-mm.\n\nJust shake or nod to reply to Siri with AirPods.\n\nSee how much effort you've put in with Apple Watch.\n\nWhew! Time to chill.\n\nTake up some space.\n\nWhoa, that's big! Revisit these cuties in Spatial.\n\nAnd immerse yourself with these guys on Vision Pro.\n\nOK, there's more than 18 things.\n\nWay more. But, whatever! You deserve it.\n\nSee you this fall.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "Voiceover: Siri, play that one song Diego sent me."
+      },
+      {
+        "timestamp": "0:02",
+        "text": "♪ \"So Happy\" (feat. Laura Mvula & Francis and the Lights) by Kassa Overall ♪ OK... Oh! How'd it do that? With Apple Intelligence."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "It's AI that gets you, on your Apple products -- iPhone, iPad, Mac -- with built-in privacy."
+      },
+      {
+        "timestamp": "0:18",
+        "text": "And you can make your own emoji."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "Yeah."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "Make."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "Your."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "Own."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "Emoji. Make your new profile pic with Image Playground."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Pull up a photo by describing it."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "Or clean up an otherwise very cute pic."
+      },
+      {
+        "timestamp": "0:37",
+        "text": "You can make a movie! Your life plus a description plus your camera roll equals sweet memories."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "Wait."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "Siri? When's Mom's flight landing? Oh. Where are we eating after? Ah. How do I share a password? What if I forget all this stuff? Siri: Just ask. Voiceover: Oh..."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "Apple Intelligence can TL;DR your long messages and highlights the important ones."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "It can just find stuff deep in your phone like your driver's license number or that front-row concert ticket."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "Coming to iPad..."
+      },
+      {
+        "timestamp": "1:14",
+        "text": "Calculator."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "And you can just handwrite a math problem."
+      },
+      {
+        "timestamp": "1:20",
+        "text": "Math Note solves it for you."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "Or write something not even you can read, and iPad will clean it right up."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "Say what you really mean in Messages, with more expression, more personality, more you, now or later, from just about anywhere, even without a phone signal... ...because of satellites. Ugh! I forgot my phone."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "Oh! I can just pull it up on Mac and use it! Digital voice: La manzana."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "Voiceover: Ooh! I'm going to get another coffee."
+      },
+      {
+        "timestamp": "1:50",
+        "text": "Hey, bud..."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "Focus, focus."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "Customize your iPhone's Home Screen and these buttons. Hide or lock the apps you want to, um, keep to yourself."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "Siri: Call from Dump Him."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "Answer it? Voiceover: Mm-mm."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Just shake or nod to reply to Siri with AirPods."
+      },
+      {
+        "timestamp": "2:10",
+        "text": "See how much effort you've put in with Apple Watch."
+      },
+      {
+        "timestamp": "2:12",
+        "text": "Whew! Time to chill."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "Take up some space."
+      },
+      {
+        "timestamp": "2:17",
+        "text": "Whoa, that's big! Revisit these cuties in Spatial."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "And immerse yourself with these guys on Vision Pro."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "OK, there's more than 18 things."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "Way more. But, whatever! You deserve it."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "See you this fall."
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2024/111976/1/FF5D2060-A995-4815-90EF-1E40B45F8C91/downloads/wwdc2024-111976_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2024/111976/1/FF5D2060-A995-4815-90EF-1E40B45F8C91/downloads/wwdc2024-111976_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:34:37.680Z"
+  "extractedAt": "2026-10-17T18:44:34.966Z"
 }

@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10023/",
   "title": "Direct and reflect focus in SwiftUI",
-  "speakers": [],
   "duration": "",
   "topics": [
     "SwiftUI & UI Frameworks"
@@ -11,8 +10,380 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Tanu Singhal: Hello, everyone.\n\nMy name is Tanu, and I'm a SwiftUI engineer on the Apple TV team.\n\nToday, we'll talk about some new ways of working with focus in SwiftUI.\n\nOne of the great things about SwiftUI is how much functionality you get for free, right out of the box.\n\nBuilt-in components base their default behavior on SwiftUI's knowledge of platform conventions, resulting in an overall experience that is sensible and familiar in various contexts.\n\nWe see this intelligence at work when we look at focus.\n\nFocus is the system that lets your app take input from keyboards, remotes, game controllers, accessible switch controls, and other sources that -- unlike touch inputs -- are not tied to specific screen coordinates.\n\nOften, the focus view is drawn with special embellishments, making it easy for people to predict where their input will be directed.\n\nFor the most part, SwiftUI manages focus on your behalf.\n\nWhen someone clicks in a text field or presses the Tab key or when someone taps an adjustable watch complication or swipes on the Siri Remote, SwiftUI decides how focus is affected and how its next placement is indicated.\n\nThis is great for simple cases where the right behavior can be decided by convention.\n\nThere are, however, some cases where you may want a more accelerated experience around focus.\n\nIn this example from the Notes app, when we select the new note button, we want focus to automatically move to the newly created note.\n\nThis type of behavior certainly requires custom implementation.\n\nOver here, we have a scenario in which we want to move focus from a button on the bottom-left side to content near the top of the screen when a user swipes right on the remote.\n\nSince the Music button and the App tiles are not adjacent to each other, SwiftUI cannot automatically guess where to move focus.\n\nIt needs more information before distant focus targets can be linked.\n\nAnd in this example from iOS, we simply want the keyboard to go away when a user selects an event.\n\nThanks to new APIs we're introducing this year, you can now do all of this in SwiftUI.\n\nIn this talk, we will focus on two kinds of use cases.\n\nWe'll see how we can move focus to a particular view without any direct input, and we'll make large navigation targets out of small views so that nothing is out of the user's reach.\n\nLet's first look an example where we may want to move focus to help direct the user's attention.\n\nWe're so ready to go on a vacation, and we've started working on a vacation planner app.\n\nThis app works across all Apple platforms, and it allows you to browse destinations as well as book trips.\n\nWhen you launch this app, we present an email field, a password field, and a Sign in with Apple button so you can log into your account.\n\nOn this login screen, if we discover that the email entered was not in the correct format, we want to programmatically move focus back to the email field.\n\nTo accomplish this behavior, we'll use the FocusState APIs.\n\nThe existing code for our login view contains a VStack that has a TextField and a SecureField.\n\nNow, we'll add a FocusState property wrapper to this view.\n\nFocusState is a new API that we have introduced this year! This is a special type of state that changes depending on the current location of focus.\n\nWe'll use FocusState to hold an identifier for the field that is focused.\n\nThe focusedField variable is of an enum type that we created for this example.\n\nYou can use strings, integers, or any other hashable value type for FocusState.\n\nNote that the FocusState value is optional.\n\nIn general, types used for FocusState must be both hashable and optional, with nil used for cases where focus is in an unrelated part of the screen.\n\nNext we'll add a focused modifier to the TextField and the SecureField.\n\nAlso new this year, this modifier creates a link between the placement of focus and the value of the focusedField property.\n\nThis simple link is a powerful tool, because it means you can use the current placement of focus for making other decisions in your app.\n\nWe can watch that play out in our login form.\n\nWhen the screen first appears, nothing has focus, so the value of focusedField is nil.\n\nBut if someone then taps on the email text field, that field gains focus and the keyboard appears.\n\nSince the focused text field is bound to a FocusState value, the value of focusedField will automatically be updated to hold the identifier for the email text field.\n\nThe link between focus placement and FocusState works both ways.\n\nThis means that we are not limited to reacting to focus changes; we can move focus programmatically just by updating our FocusState property.\n\nSo for example, if we programmatically set the value of focusedField to .password, SwiftUI will know that our SecureField is associated with the new value we're setting and focus will automatically move to the password field.\n\nNow that our focus bindings are in place, we can put them to work.\n\nIn the Vacation Planner app, when a user submits their data, we want to validate it.\n\nIf the email is not in the expected format, we set the focusedField to email.\n\nThis will send focus back to the email text field, if it's not there already.\n\nFurther, we'd like to highlight the email field with a border if the email was invalid.\n\nWe want this border to appear only while focus is on the email field.\n\nTo do that, we can easily read the value of focusedField when we create the border.\n\nLet's see how this all comes together.\n\nNote the email field doesn't have a valid address.\n\nFocus is currently on the password field.\n\nWhen we hit Go, the onSubmit callback is triggered where the focusedField is set.\n\nThis causes the cursor to move back to the email field.\n\nWhile the email field is focused, we see the red border around it.\n\nHowever, once we move focus away from the email field, our focusedField is no longer equal to the email identifier, and so the red border disappears.\n\nIn the scenario where all the form data is valid, we want to simply dismiss the keyboard.\n\nTo dismiss the keyboard, we will set our FocusState variable to nil.\n\nSince the focusedField is an optional, we use nil to indicate that focus has left this view.\n\nIn the video, notice that the email address has been updated.\n\nThis time when we submit, the keyboard gets dismissed since we have set the FocusState variable to nil.\n\nWe've seen how it can be helpful to programmatically control focus when our app has text fields.\n\nHowever, FocusStates are not just for text fields.\n\nThey can be used to programmatically control focus for any focusable view on iOS, tvOS, watchOS, or macOS! In the next section, we'll discuss the role of focus-based navigation in our apps.\n\nLet's take a look at the tvOS version of our Vacation Planner app.\n\nWe have leveraged the extra space on TV by adding photos from some destinations that you may want to visit.\n\nYou can view more photos by clicking the Browse Photos button even before you've logged in.\n\nNotice that focus is initially on the Email field.\n\nIf we swipe right on the Siri Remote, we'd expect focus to move to the Browse Photos button.\n\nHowever, that doesn't work by default.\n\nThis is because directional focus navigation is based on adjacency relationships.\n\nWhen swiping to move focus, focus will only move if there is something adjacent and focusable in the given direction.\n\nTake a look at the focusable views in this app.\n\nSince there's no focusable view adjacent to the login fields on the left, the button on the bottom is unreachable.\n\nTo make this screen navigable, we will extend the Browse button's focusable area, so it becomes adjacent to the login fields.\n\nThis is done using the new FocusSections API.\n\nLet's see how easy that is.\n\nHere we have a simplified version of the Vacation Planner code for TV.\n\nIt contains an HStack with two VStacks; one for the login fields, and another VStack for the image and the button.\n\nWe want to create a larger logical focus target around the button so focus can behave as if the button was adjacent to the login fields.\n\nThis can be done by simply adding a focusSection() modifier to the VStack that contains the button.\n\nWhen focusSection() modifier is added to any view, the frame of that view becomes capable of accepting focus if it contains any focusable subviews.\n\nSince we also want to move focus back to the login fields when swiping left on the button, we'll add another focusSection() modifier to the first VStack.\n\nNow when we run this app, users can move focus between the input fields and the Browse button by swiping left and right on the remote.\n\nAs we wrap things up, I'd encourage you to think about focus, which can often look different on different platforms.\n\nSwiftUI has great default behaviors built in for most cases.\n\nThe new focus states and FocusSections APIs can help you take advantage of focus to create even more streamlined experiences.\n\nAs you work on your apps, take a moment to observe the many ways in which focus impacts user behavior.\n\nWe hope this session has equipped you with the tools that'll help users focus on what's most important.\n\nThanks for watching, and have an awesome WWDC! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Tanu Singhal: Hello, everyone."
+      },
+      {
+        "timestamp": "0:10",
+        "text": "My name is Tanu, and I'm a SwiftUI engineer on the Apple TV team."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "Today, we'll talk about some new ways of working with focus in SwiftUI."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "One of the great things about SwiftUI is how much functionality you get for free, right out of the box."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "Built-in components base their default behavior on SwiftUI's knowledge of platform conventions, resulting in an overall experience that is sensible and familiar in various contexts."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "We see this intelligence at work when we look at focus."
+      },
+      {
+        "timestamp": "0:44",
+        "text": "Focus is the system that lets your app take input from keyboards, remotes, game controllers, accessible switch controls, and other sources that -- unlike touch inputs -- are not tied to specific screen coordinates."
+      },
+      {
+        "timestamp": "1:00",
+        "text": "Often, the focus view is drawn with special embellishments, making it easy for people to predict where their input will be directed."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "For the most part, SwiftUI manages focus on your behalf."
+      },
+      {
+        "timestamp": "1:14",
+        "text": "When someone clicks in a text field or presses the Tab key or when someone taps an adjustable watch complication or swipes on the Siri Remote, SwiftUI decides how focus is affected and how its next placement is indicated."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "This is great for simple cases where the right behavior can be decided by convention."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "There are, however, some cases where you may want a more accelerated experience around focus."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "In this example from the Notes app, when we select the new note button, we want focus to automatically move to the newly created note."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "This type of behavior certainly requires custom implementation."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "Over here, we have a scenario in which we want to move focus from a button on the bottom-left side to content near the top of the screen when a user swipes right on the remote."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "Since the Music button and the App tiles are not adjacent to each other, SwiftUI cannot automatically guess where to move focus."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "It needs more information before distant focus targets can be linked."
+      },
+      {
+        "timestamp": "2:23",
+        "text": "And in this example from iOS, we simply want the keyboard to go away when a user selects an event."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "Thanks to new APIs we're introducing this year, you can now do all of this in SwiftUI."
+      },
+      {
+        "timestamp": "2:36",
+        "text": "In this talk, we will focus on two kinds of use cases."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "We'll see how we can move focus to a particular view without any direct input, and we'll make large navigation targets out of small views so that nothing is out of the user's reach."
+      },
+      {
+        "timestamp": "2:54",
+        "text": "Let's first look an example where we may want to move focus to help direct the user's attention."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "We're so ready to go on a vacation, and we've started working on a vacation planner app."
+      },
+      {
+        "timestamp": "3:06",
+        "text": "This app works across all Apple platforms, and it allows you to browse destinations as well as book trips."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "When you launch this app, we present an email field, a password field, and a Sign in with Apple button so you can log into your account."
+      },
+      {
+        "timestamp": "3:23",
+        "text": "On this login screen, if we discover that the email entered was not in the correct format, we want to programmatically move focus back to the email field."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "To accomplish this behavior, we'll use the FocusState APIs."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "The existing code for our login view contains a VStack that has a TextField and a SecureField."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Now, we'll add a FocusState property wrapper to this view."
+      },
+      {
+        "timestamp": "3:50",
+        "text": "FocusState is a new API that we have introduced this year! This is a special type of state that changes depending on the current location of focus."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "We'll use FocusState to hold an identifier for the field that is focused."
+      },
+      {
+        "timestamp": "4:06",
+        "text": "The focusedField variable is of an enum type that we created for this example."
+      },
+      {
+        "timestamp": "4:10",
+        "text": "You can use strings, integers, or any other hashable value type for FocusState."
+      },
+      {
+        "timestamp": "4:17",
+        "text": "Note that the FocusState value is optional."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "In general, types used for FocusState must be both hashable and optional, with nil used for cases where focus is in an unrelated part of the screen."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "Next we'll add a focused modifier to the TextField and the SecureField."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "Also new this year, this modifier creates a link between the placement of focus and the value of the focusedField property."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "This simple link is a powerful tool, because it means you can use the current placement of focus for making other decisions in your app."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "We can watch that play out in our login form."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "When the screen first appears, nothing has focus, so the value of focusedField is nil."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "But if someone then taps on the email text field, that field gains focus and the keyboard appears."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "Since the focused text field is bound to a FocusState value, the value of focusedField will automatically be updated to hold the identifier for the email text field."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "The link between focus placement and FocusState works both ways."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "This means that we are not limited to reacting to focus changes; we can move focus programmatically just by updating our FocusState property."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "So for example, if we programmatically set the value of focusedField to .password, SwiftUI will know that our SecureField is associated with the new value we're setting and focus will automatically move to the password field."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "Now that our focus bindings are in place, we can put them to work."
+      },
+      {
+        "timestamp": "6:06",
+        "text": "In the Vacation Planner app, when a user submits their data, we want to validate it."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "If the email is not in the expected format, we set the focusedField to email."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "This will send focus back to the email text field, if it's not there already."
+      },
+      {
+        "timestamp": "6:24",
+        "text": "Further, we'd like to highlight the email field with a border if the email was invalid."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "We want this border to appear only while focus is on the email field."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "To do that, we can easily read the value of focusedField when we create the border."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "Let's see how this all comes together."
+      },
+      {
+        "timestamp": "6:45",
+        "text": "Note the email field doesn't have a valid address."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "Focus is currently on the password field."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "When we hit Go, the onSubmit callback is triggered where the focusedField is set."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "This causes the cursor to move back to the email field."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "While the email field is focused, we see the red border around it."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "However, once we move focus away from the email field, our focusedField is no longer equal to the email identifier, and so the red border disappears."
+      },
+      {
+        "timestamp": "7:17",
+        "text": "In the scenario where all the form data is valid, we want to simply dismiss the keyboard."
+      },
+      {
+        "timestamp": "7:23",
+        "text": "To dismiss the keyboard, we will set our FocusState variable to nil."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "Since the focusedField is an optional, we use nil to indicate that focus has left this view."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "In the video, notice that the email address has been updated."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "This time when we submit, the keyboard gets dismissed since we have set the FocusState variable to nil."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "We've seen how it can be helpful to programmatically control focus when our app has text fields."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "However, FocusStates are not just for text fields."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "They can be used to programmatically control focus for any focusable view on iOS, tvOS, watchOS, or macOS! In the next section, we'll discuss the role of focus-based navigation in our apps."
+      },
+      {
+        "timestamp": "8:11",
+        "text": "Let's take a look at the tvOS version of our Vacation Planner app."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "We have leveraged the extra space on TV by adding photos from some destinations that you may want to visit."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "You can view more photos by clicking the Browse Photos button even before you've logged in."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Notice that focus is initially on the Email field."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "If we swipe right on the Siri Remote, we'd expect focus to move to the Browse Photos button."
+      },
+      {
+        "timestamp": "8:40",
+        "text": "However, that doesn't work by default."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "This is because directional focus navigation is based on adjacency relationships."
+      },
+      {
+        "timestamp": "8:49",
+        "text": "When swiping to move focus, focus will only move if there is something adjacent and focusable in the given direction."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "Take a look at the focusable views in this app."
+      },
+      {
+        "timestamp": "9:00",
+        "text": "Since there's no focusable view adjacent to the login fields on the left, the button on the bottom is unreachable."
+      },
+      {
+        "timestamp": "9:09",
+        "text": "To make this screen navigable, we will extend the Browse button's focusable area, so it becomes adjacent to the login fields."
+      },
+      {
+        "timestamp": "9:17",
+        "text": "This is done using the new FocusSections API."
+      },
+      {
+        "timestamp": "9:21",
+        "text": "Let's see how easy that is."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "Here we have a simplified version of the Vacation Planner code for TV."
+      },
+      {
+        "timestamp": "9:29",
+        "text": "It contains an HStack with two VStacks; one for the login fields, and another VStack for the image and the button."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "We want to create a larger logical focus target around the button so focus can behave as if the button was adjacent to the login fields."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "This can be done by simply adding a focusSection() modifier to the VStack that contains the button."
+      },
+      {
+        "timestamp": "9:54",
+        "text": "When focusSection() modifier is added to any view, the frame of that view becomes capable of accepting focus if it contains any focusable subviews."
+      },
+      {
+        "timestamp": "10:05",
+        "text": "Since we also want to move focus back to the login fields when swiping left on the button, we'll add another focusSection() modifier to the first VStack."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "Now when we run this app, users can move focus between the input fields and the Browse button by swiping left and right on the remote."
+      },
+      {
+        "timestamp": "10:25",
+        "text": "As we wrap things up, I'd encourage you to think about focus, which can often look different on different platforms."
+      },
+      {
+        "timestamp": "10:33",
+        "text": "SwiftUI has great default behaviors built in for most cases."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "The new focus states and FocusSections APIs can help you take advantage of focus to create even more streamlined experiences."
+      },
+      {
+        "timestamp": "10:47",
+        "text": "As you work on your apps, take a moment to observe the many ways in which focus impacts user behavior."
+      },
+      {
+        "timestamp": "10:55",
+        "text": "We hope this session has equipped you with the tools that'll help users focus on what's most important."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "Thanks for watching, and have an awesome WWDC! ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -106,5 +477,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10018"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:43.427Z"
+  "extractedAt": "2026-10-17T18:53:40.168Z"
 }

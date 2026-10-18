@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/320/",
   "title": "Explore immersive website environments in visionOS",
-  "speakers": [],
-  "duration": "",
+  "duration": "19:09",
   "topics": [
     "Safari & Web",
     "Spatial Computing"
@@ -12,8 +11,316 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Bonjour, I'm Jean, I'm an Engineer on the visionOS Safari team.\n\nIn this session, I'm going to show you how you can elevate your websites with immersive environments. A whole new way to tell stories to your audience and engage your customers like never before.\n\nTake this ticket sales website.\n\nAs the visitors choose their seats, they get an inline preview of their selection. But more than that, they can enter the theater as an immersive environment, and literally stand at their chosen spot. And all of this from a webpage, in Safari! Well, this is one experience that I'll show you how to build today! But not the only one… Check this out. This is a marketing website for a visionOS escape game app. Transporting visitors into one of the game's escape rooms - a dimly lit chamber, with a TV screen showing a mysterious video. As it plays, it will invite the visitors to discover what's behind this door, encouraging them to download the app and find out for themselves.\n\nIn the next few minutes, you'll learn everything you need to know to start building your first website environment. I'll start by giving you a high-level overview of the immersive API for the web. Then, I'll cover how to preview environments inline in the page. After which, I'll show you how to go immersive and enter the theater from the inline preview, as well as the escape room.\n\nAnd finally, I will guide you through how you can optimize your experience with video, animations, and shadow casting, while maintaining excellent runtime performance.\n\nAlright, let me introduce you to this immersive API.\n\nIt all starts with the HTML model element, which allows you to display 3D models on your website. To use it, you need to specify your 3D asset resource. Here, a USDZ file representing a teapot. And maybe an environment map. Which is a 360-degree image that captures the lighting around your scene. With an environment map, you can add dramatic reflections and lighting on shiny objects like this teapot.\n\nThe 3D model and the environment map assets can be created through a large variety of tools. I'll be using Blender later in the session, but you can use any tool that exports a USDZ file.\n\nIf you later want to know more about this HTML element, you can check out the session \"Get started with the HTML Model Element\" which dives deeper in the element itself and its behaviors on all platforms. Now, let's get to the immersive part! If you're familiar with the JavaScript Fullscreen API, you'll feel right at home. And if you're not, well, you will be soon, because the immersive API follows the already widely used Fullscreen API pattern.\n\nThe same way you'd request a video to go fullscreen through the requestFullscreen JavaScript API, you request a model element to go immersive through the requestImmersive JavaScript API. And very similarly, you can exit the immersive presentation, detect if the feature is available, check if there currently is an immersive element, listen to changes, and error events, and even customize your layout directly in your stylesheet with a CSS pseudo-class.\n\nBut unlike the Fullscreen API, which replaces the web page content with the provided element, the immersive API transports the model element beyond the browser bounds while keeping the page visible. And both APIs can be active simultaneously, so you can have a fullscreen video player while being immersed in a virtual environment. What I find beautiful with this API, is that I can either use it very simply with just one request call on a model element, or use its full depth and combine it with other APIs to create incredible experiences. Like those immersive websites that I've showed you earlier, and in which I'll dive in right now. Starting with the venue ticket sales website, which provides an inline preview of the environment, inline previews are a great way to introduce an environment to visitors as a first step.\n\nSo I'll show you how to create a compelling one now.\n\nHere is my website, running locally on the simulator. When the visitor selects a seat, this model appears, but I left it empty so far. And I'd like to add my Inline preview in there! So, in this empty HTML div, I'll add the model element. I provide the theater model USDZ file, and its lighting map.\n\nThe inline preview now shows the whole theater model from the outside. This is because, by default, the model is scaled to fit the element's bounds. In this case, this not a very interesting view to show, we'd rather show the theater from the inside! So, to get rid of this default fitting behavior, I'll need to customize the entity transform - which controls the model's position, rotation, and scale.\n\nIn my code, after retrieving the model element, and waiting for it to be loaded and ready, I create an identity matrix. And set it to my model's entity transform.\n\nThis effectively removes all transformations from the model.\n\nNow the floor of the model currently sits at the center of the layer. That's because the origin of the theater model is on its floor. But the goal here is to show the environment at a human eye level. So, I'll translate the model down by 1 meter, which is the measured eye level height of my roommate seating on a regular chair.\n\nThis looks better! But right now, this is showing the view from the stage.\n\nWhich, honestly, looks quite nice, but I'd like the preview's point of view to match the actual seat selection. To help with that, I've created a JSON file that maps each seat to its location in the theater.\n\nEach entry contains the translation from the model's origin to the bottom of the seat, as well as an angle representing the seat's orientation towards the stage.\n\nThe values are expressed in the right handed Y-up coordinate system, which is the convention used on the web.\n\nSo back to my website's code, I've created a new function just to build the correct transform.\n\nIt currently contains the translation for previewing the model at eye level. And I can now add the current selected seat as a parameter. And apply the corresponding seat rotation, and translation to match the seat's point of view.\n\nAnd here we go — as a seat is selected, the model shows the point of view from that exact seat's location. And this inline preview also works on other platforms like macOS and iOS! I think it is a really nice experience already. But the real magic truly begins now, when the ticket buyer can step inside the theater! This is where we unlock the full potential of spatial platforms like visionOS, so let's go immersive! First, I'm checking whether the immersive API is available. This property tells me whether the current browser supports immersive presentations. With this checked, I can confidently show my Immersive Preview button, and it will only appear where the feature is actually supported. Then, I'll want to request an immersive transition on the model. This must happen in response to a user interaction. In my case, the tap of the immersive button.\n\nNow, one important thing to note is that an inline model and an immersive model have different reference frames. They have different origins and different scales. When inline, as I just showed you, the origin of the model element is at the center of the inline layer, and the scale is following CSS conventions.\n\nBut when immersive, the origin is at the person's feet, on the floor, and the scale is true to the real world. Additionally, keep in mind that the immersive environment will open from behind Safari's window. So try to keep the main focus of your model visible, without needing to reposition the window.\n\nSo, for my use case, back in the build transform function, I add a second parameter, letting me know whether the model is displayed immersively as opposed to inline in the page.\n\nWhen immersive, I add a slight rotation, so that the stage, which is my main focus here, is not hidden behind Safari's window.\n\nAdditionally, I make sure that the eye level translation is only performed when presenting the model inline in the page.\n\nNow because the entity transform depends on the immersive state of the model, it needs to be updated every time the model goes in and out of immersive.\n\nListening to the immersive change event on the model element is the right way to do this. Here, I check the current document immersive state and re-compute the entity transform with the right flag. And, while I'm here, I'll also update the page layout to reflect the current state. In my case, when going immersive, I'm adjusting the model interface, and displaying an exit button.\n\nIt's always good to present a clear exit affordance for your immersive experiences.\n\nBut also keep in mind that a visitor using an Apple Vision Pro can use the Digital Crown at any time to dismiss the immersive environment.\n\nThat's why, if your UI depends on the immersive state, it's critical to listen to immersive state changes and update your layout accordingly.\n\nAnd just like that, I've built an experience that transports the ticket buyer inside the theater, sitting right in the seat they picked. They can look around, check the view of the stage, lean over the balcony… Oh wow! This is quite high, you don't want to fall down there. Make sure to hold the safety railing……. What?! What happened with the safety railing here? Ugh.. sorry, I'm getting off topic. This experience is way too immersive.\n\nAlright, let's switch gears and dive into something a little more mysterious.\n\nSay you've built a visionOS escape game app. You've poured hours into crafting incredible environments for this game. Well, with the immersive API, you can use those same environment models to create an unforgettable marketing experience, right from your website, in Safari. Let me show you how I built this. I was surprised how little code it takes.\n\nSo here, even though the model element would make it easy to create an inline preview, I prefer to keep the surprise.\n\nWhen adding the model element in my HTML code, I simply set display to none. Doing this, hides the inline layer from the page, but doesn't prevent me from requesting the model as immersive.\n\nAnd there's a practical benefit to hiding the inline preview this way. Indeed, the asset won't be downloaded or decoded until the immersive request actually happens. For heavy environment models, that can save significant bandwidth and memory if the visitor doesn't actually enter the environment.\n\nThe next thing to do, is simply to request the escape room model as immersive on the button's click event.\n\nSince the model isn't pre-loaded inline, the immersive request may take a moment. Especially for heavier and more complex assets.\n\nI'll show you later how you can reduce this loading time by optimizing your asset. But for now, I'll at least give visitors feedback that something is happening, with an intriguing loading animation.\n\nIn the code, I'm showing it before the immersive request, and hiding it once it completed.\n\nAnd that's about it for getting into the environment! Pretty straightforward! Alright, now, I'll talk about the features that make this escape room come alive on visionOS.\n\nAll the little things, that make one simple experience go a long way.\n\nI'll start with videos.\n\nInstead of having your video playing inline in your website. The video docking feature elevates your video, and places it directly inside the environment, on a TV screen, a projector, or a billboard, whatever surface fits your story best.\n\nAdditionally, you can add materials that diffuse, or reflect the light coming from the video. Which makes it feel part of the scene.\n\nTo create this experience, you'll need to add some custom RealityKit annotations to your USDZ file. These are not yet standards, but I'm a big fan of Blender, so I made a little plugin to add those components directly while creating my environment.\n\nHere, I am using it to tag the TV screen, to be the video docking region of my scene. And I'm also using this same Blender extension to facilitate the baking of the video light spill onto my materials.\n\nNow, once I exported my assets with these new properties, the next thing to do, is to request a fullscreen transition on the video. Here, I'm requesting this on the click of the demoButton.\n\nThis automatically transports the video to the right location in my environment, and hides Safari's window! The video is fully integrated into the environment. The light from the TV spills onto the floor and walls, dramatically increasing the realism of the space.\n\nNow, for the twist, let me show you how I can make this mysterious door slide open.\n\nI've created this door opening animation in Blender, right before exporting the model. So really the only thing left to do is play it at the right time.\n\nWith these few lines, I listen for the video's ended event, then exit the fullscreen video, which will undock the video and bring back the website. And finally, I play the model animation.\n\nHere you go, the room transforms, the door slides open, and the mystery keeps on growing.\n\nModel animations can be quite powerful. You could create an entire timeline of animations. And you'd be able use the model's currentTime property to navigate through the timeline, and transform your environment through multiple stages. If you want to know more about that, I'd encourage you to check out the session \"What's new for the spatial web\", which dives a bit deeper into these possibilities.\n\nOk, let's have some fun with just one more thing.\n\nI want to show you how Safari's window is casting its shadow on the environment. I personally find this detail so important, because this shadow helps people understand the positioning of the window inside the space, and makes it feel like part of the environment.\n\nEnabling this also requires a RealityKit annotation. Here, with my same Blender extension, I'm tagging the meshes that should receive these shadows with the Scene Understanding component. I made sure to create a dedicated low poly mesh, optimized just for this, as computing shadows on a complex mesh can consume a lot of resources.\n\nAlright, now I'll end this session with a quick note on performance.\n\nEnvironment models tend to be heavier and more complex to render than simpler object models. Let me show you what you can do to optimize your asset, making it smoother to render and faster to download.\n\nFirst off, reduce your asset vertex count.\n\nIn my escape room, I made sure that I'm not exporting any mesh that would be invisible to the viewer standing at the origin.\n\nDoing this, I've drastically reduced the number of vertices, without anyone noticing.\n\nThen reduce the entity count. In my case, I've merged the desk with all its decorations to avoid having too many separate entities.\n\nUse low poly meshes when appropriate. Like the one I used for the scene understanding component to get shadow casting at a low cost.\n\nKeep your shaders as simple as possible. For the escape room, I've baked all the lighting in the materials. Which means that I painted the light and shadows onto the textures, allowing me to make them unlit materials and skip heavy shading computations at runtime.\n\nFinally, use the usdcrush tool to compress your USDZ's textures. It's available as a command line tool on any Mac, and can help you reduce the size of your model quite a lot, which directly translates to faster loading time for people on a slower connection. I'd recommend to check out the WWDC session, \"Optimize your custom environments for visionOS\" that goes way deeper into 3D asset optimization.\n\nAlright, here we are. You're now ready to create your own experiences. To transport your customers into your environments. With just a model element and a handful of API calls, you can redefine the way your visitors interact with your website. And I've only scratched the surface here. There are so many other APIs you can combine to bring an immersive dimension to your website.\n\nOne of them is the image controls API. By simply adding the controls attribute on my image element here, the browser will offer native controls. Providing a relevant User Interface for platform specific features. Like on visionOS, where this allows people to make this panorama fullscreen, which will wrap it around them in their space. And this also works for spatial photos. Which can be captured directly from your Apple Vision Pro, or your iPhone. Just like with the model element and the immersive API, with image controls, one little thing in your code goes a long way. Creativity is the only limit.\n\nHere's what I encourage you to do next.\n\nTry the online demos on webkit.org with your Apple Vision Pro, there's no better way to understand the impact of the feature than experiencing it yourself.\n\nCreate your first website environment. I have attached resources to this session to further help you, like the API specifications, check them out! And finally, while you'll be building your own experiences, file feature requests or bug reports at bugs.webkit.org. Oh and also, check out this session called \"Design immersive environments for visionOS apps and the spatial web\". It explores the high level principles of creating great photorealistic environments.\n\nI'll personally be on the lookout for what immersive experiences you'll create. Thank you so much for joining this session, hope you enjoyed it! Have a great WWDC!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Bonjour, I'm Jean, I'm an Engineer on the visionOS Safari team."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "In this session, I'm going to show you how you can elevate your websites with immersive environments. A whole new way to tell stories to your audience and engage your customers like never before."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "Take this ticket sales website."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "As the visitors choose their seats, they get an inline preview of their selection. But more than that, they can enter the theater as an immersive environment, and literally stand at their chosen spot. And all of this from a webpage, in Safari! Well, this is one experience that I'll show you how to build today! But not the only one… Check this out. This is a marketing website for a visionOS escape game app. Transporting visitors into one of the game's escape rooms - a dimly lit chamber, with a TV screen showing a mysterious video. As it plays, it will invite the visitors to discover what's behind this door, encouraging them to download the app and find out for themselves."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "In the next few minutes, you'll learn everything you need to know to start building your first website environment. I'll start by giving you a high-level overview of the immersive API for the web. Then, I'll cover how to preview environments inline in the page. After which, I'll show you how to go immersive and enter the theater from the inline preview, as well as the escape room."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "And finally, I will guide you through how you can optimize your experience with video, animations, and shadow casting, while maintaining excellent runtime performance."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "Alright, let me introduce you to this immersive API."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "It all starts with the HTML model element, which allows you to display 3D models on your website. To use it, you need to specify your 3D asset resource. Here, a USDZ file representing a teapot. And maybe an environment map. Which is a 360-degree image that captures the lighting around your scene. With an environment map, you can add dramatic reflections and lighting on shiny objects like this teapot."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "The 3D model and the environment map assets can be created through a large variety of tools. I'll be using Blender later in the session, but you can use any tool that exports a USDZ file."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "If you later want to know more about this HTML element, you can check out the session \"Get started with the HTML Model Element\" which dives deeper in the element itself and its behaviors on all platforms. Now, let's get to the immersive part! If you're familiar with the JavaScript Fullscreen API, you'll feel right at home. And if you're not, well, you will be soon, because the immersive API follows the already widely used Fullscreen API pattern."
+      },
+      {
+        "timestamp": "2:59",
+        "text": "The same way you'd request a video to go fullscreen through the requestFullscreen JavaScript API, you request a model element to go immersive through the requestImmersive JavaScript API. And very similarly, you can exit the immersive presentation, detect if the feature is available, check if there currently is an immersive element, listen to changes, and error events, and even customize your layout directly in your stylesheet with a CSS pseudo-class."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "But unlike the Fullscreen API, which replaces the web page content with the provided element, the immersive API transports the model element beyond the browser bounds while keeping the page visible. And both APIs can be active simultaneously, so you can have a fullscreen video player while being immersed in a virtual environment. What I find beautiful with this API, is that I can either use it very simply with just one request call on a model element, or use its full depth and combine it with other APIs to create incredible experiences. Like those immersive websites that I've showed you earlier, and in which I'll dive in right now. Starting with the venue ticket sales website, which provides an inline preview of the environment, inline previews are a great way to introduce an environment to visitors as a first step."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "So I'll show you how to create a compelling one now."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "Here is my website, running locally on the simulator. When the visitor selects a seat, this model appears, but I left it empty so far. And I'd like to add my Inline preview in there! So, in this empty HTML div, I'll add the model element. I provide the theater model USDZ file, and its lighting map."
+      },
+      {
+        "timestamp": "4:48",
+        "text": "The inline preview now shows the whole theater model from the outside. This is because, by default, the model is scaled to fit the element's bounds. In this case, this not a very interesting view to show, we'd rather show the theater from the inside! So, to get rid of this default fitting behavior, I'll need to customize the entity transform - which controls the model's position, rotation, and scale."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "In my code, after retrieving the model element, and waiting for it to be loaded and ready, I create an identity matrix. And set it to my model's entity transform."
+      },
+      {
+        "timestamp": "5:25",
+        "text": "This effectively removes all transformations from the model."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "Now the floor of the model currently sits at the center of the layer. That's because the origin of the theater model is on its floor. But the goal here is to show the environment at a human eye level. So, I'll translate the model down by 1 meter, which is the measured eye level height of my roommate seating on a regular chair."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "This looks better! But right now, this is showing the view from the stage."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "Which, honestly, looks quite nice, but I'd like the preview's point of view to match the actual seat selection. To help with that, I've created a JSON file that maps each seat to its location in the theater."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "Each entry contains the translation from the model's origin to the bottom of the seat, as well as an angle representing the seat's orientation towards the stage."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "The values are expressed in the right handed Y-up coordinate system, which is the convention used on the web."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "So back to my website's code, I've created a new function just to build the correct transform."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "It currently contains the translation for previewing the model at eye level. And I can now add the current selected seat as a parameter. And apply the corresponding seat rotation, and translation to match the seat's point of view."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "And here we go — as a seat is selected, the model shows the point of view from that exact seat's location. And this inline preview also works on other platforms like macOS and iOS! I think it is a really nice experience already. But the real magic truly begins now, when the ticket buyer can step inside the theater! This is where we unlock the full potential of spatial platforms like visionOS, so let's go immersive! First, I'm checking whether the immersive API is available. This property tells me whether the current browser supports immersive presentations. With this checked, I can confidently show my Immersive Preview button, and it will only appear where the feature is actually supported. Then, I'll want to request an immersive transition on the model. This must happen in response to a user interaction. In my case, the tap of the immersive button."
+      },
+      {
+        "timestamp": "7:45",
+        "text": "Now, one important thing to note is that an inline model and an immersive model have different reference frames. They have different origins and different scales. When inline, as I just showed you, the origin of the model element is at the center of the inline layer, and the scale is following CSS conventions."
+      },
+      {
+        "timestamp": "8:05",
+        "text": "But when immersive, the origin is at the person's feet, on the floor, and the scale is true to the real world. Additionally, keep in mind that the immersive environment will open from behind Safari's window. So try to keep the main focus of your model visible, without needing to reposition the window."
+      },
+      {
+        "timestamp": "8:24",
+        "text": "So, for my use case, back in the build transform function, I add a second parameter, letting me know whether the model is displayed immersively as opposed to inline in the page."
+      },
+      {
+        "timestamp": "8:35",
+        "text": "When immersive, I add a slight rotation, so that the stage, which is my main focus here, is not hidden behind Safari's window."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "Additionally, I make sure that the eye level translation is only performed when presenting the model inline in the page."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "Now because the entity transform depends on the immersive state of the model, it needs to be updated every time the model goes in and out of immersive."
+      },
+      {
+        "timestamp": "9:02",
+        "text": "Listening to the immersive change event on the model element is the right way to do this. Here, I check the current document immersive state and re-compute the entity transform with the right flag. And, while I'm here, I'll also update the page layout to reflect the current state. In my case, when going immersive, I'm adjusting the model interface, and displaying an exit button."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "It's always good to present a clear exit affordance for your immersive experiences."
+      },
+      {
+        "timestamp": "9:30",
+        "text": "But also keep in mind that a visitor using an Apple Vision Pro can use the Digital Crown at any time to dismiss the immersive environment."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "That's why, if your UI depends on the immersive state, it's critical to listen to immersive state changes and update your layout accordingly."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "And just like that, I've built an experience that transports the ticket buyer inside the theater, sitting right in the seat they picked. They can look around, check the view of the stage, lean over the balcony… Oh wow! This is quite high, you don't want to fall down there. Make sure to hold the safety railing……. What?! What happened with the safety railing here? Ugh.. sorry, I'm getting off topic. This experience is way too immersive."
+      },
+      {
+        "timestamp": "10:17",
+        "text": "Alright, let's switch gears and dive into something a little more mysterious."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "Say you've built a visionOS escape game app. You've poured hours into crafting incredible environments for this game. Well, with the immersive API, you can use those same environment models to create an unforgettable marketing experience, right from your website, in Safari. Let me show you how I built this. I was surprised how little code it takes."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "So here, even though the model element would make it easy to create an inline preview, I prefer to keep the surprise."
+      },
+      {
+        "timestamp": "10:53",
+        "text": "When adding the model element in my HTML code, I simply set display to none. Doing this, hides the inline layer from the page, but doesn't prevent me from requesting the model as immersive."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "And there's a practical benefit to hiding the inline preview this way. Indeed, the asset won't be downloaded or decoded until the immersive request actually happens. For heavy environment models, that can save significant bandwidth and memory if the visitor doesn't actually enter the environment."
+      },
+      {
+        "timestamp": "11:24",
+        "text": "The next thing to do, is simply to request the escape room model as immersive on the button's click event."
+      },
+      {
+        "timestamp": "11:31",
+        "text": "Since the model isn't pre-loaded inline, the immersive request may take a moment. Especially for heavier and more complex assets."
+      },
+      {
+        "timestamp": "11:40",
+        "text": "I'll show you later how you can reduce this loading time by optimizing your asset. But for now, I'll at least give visitors feedback that something is happening, with an intriguing loading animation."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "In the code, I'm showing it before the immersive request, and hiding it once it completed."
+      },
+      {
+        "timestamp": "11:59",
+        "text": "And that's about it for getting into the environment! Pretty straightforward! Alright, now, I'll talk about the features that make this escape room come alive on visionOS."
+      },
+      {
+        "timestamp": "12:10",
+        "text": "All the little things, that make one simple experience go a long way."
+      },
+      {
+        "timestamp": "12:16",
+        "text": "I'll start with videos."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Instead of having your video playing inline in your website. The video docking feature elevates your video, and places it directly inside the environment, on a TV screen, a projector, or a billboard, whatever surface fits your story best."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "Additionally, you can add materials that diffuse, or reflect the light coming from the video. Which makes it feel part of the scene."
+      },
+      {
+        "timestamp": "12:42",
+        "text": "To create this experience, you'll need to add some custom RealityKit annotations to your USDZ file. These are not yet standards, but I'm a big fan of Blender, so I made a little plugin to add those components directly while creating my environment."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "Here, I am using it to tag the TV screen, to be the video docking region of my scene. And I'm also using this same Blender extension to facilitate the baking of the video light spill onto my materials."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "Now, once I exported my assets with these new properties, the next thing to do, is to request a fullscreen transition on the video. Here, I'm requesting this on the click of the demoButton."
+      },
+      {
+        "timestamp": "13:26",
+        "text": "This automatically transports the video to the right location in my environment, and hides Safari's window! The video is fully integrated into the environment. The light from the TV spills onto the floor and walls, dramatically increasing the realism of the space."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "Now, for the twist, let me show you how I can make this mysterious door slide open."
+      },
+      {
+        "timestamp": "13:51",
+        "text": "I've created this door opening animation in Blender, right before exporting the model. So really the only thing left to do is play it at the right time."
+      },
+      {
+        "timestamp": "14:01",
+        "text": "With these few lines, I listen for the video's ended event, then exit the fullscreen video, which will undock the video and bring back the website. And finally, I play the model animation."
+      },
+      {
+        "timestamp": "14:14",
+        "text": "Here you go, the room transforms, the door slides open, and the mystery keeps on growing."
+      },
+      {
+        "timestamp": "14:22",
+        "text": "Model animations can be quite powerful. You could create an entire timeline of animations. And you'd be able use the model's currentTime property to navigate through the timeline, and transform your environment through multiple stages. If you want to know more about that, I'd encourage you to check out the session \"What's new for the spatial web\", which dives a bit deeper into these possibilities."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "Ok, let's have some fun with just one more thing."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "I want to show you how Safari's window is casting its shadow on the environment. I personally find this detail so important, because this shadow helps people understand the positioning of the window inside the space, and makes it feel like part of the environment."
+      },
+      {
+        "timestamp": "15:05",
+        "text": "Enabling this also requires a RealityKit annotation. Here, with my same Blender extension, I'm tagging the meshes that should receive these shadows with the Scene Understanding component. I made sure to create a dedicated low poly mesh, optimized just for this, as computing shadows on a complex mesh can consume a lot of resources."
+      },
+      {
+        "timestamp": "15:27",
+        "text": "Alright, now I'll end this session with a quick note on performance."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Environment models tend to be heavier and more complex to render than simpler object models. Let me show you what you can do to optimize your asset, making it smoother to render and faster to download."
+      },
+      {
+        "timestamp": "15:44",
+        "text": "First off, reduce your asset vertex count."
+      },
+      {
+        "timestamp": "15:48",
+        "text": "In my escape room, I made sure that I'm not exporting any mesh that would be invisible to the viewer standing at the origin."
+      },
+      {
+        "timestamp": "15:54",
+        "text": "Doing this, I've drastically reduced the number of vertices, without anyone noticing."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "Then reduce the entity count. In my case, I've merged the desk with all its decorations to avoid having too many separate entities."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "Use low poly meshes when appropriate. Like the one I used for the scene understanding component to get shadow casting at a low cost."
+      },
+      {
+        "timestamp": "16:18",
+        "text": "Keep your shaders as simple as possible. For the escape room, I've baked all the lighting in the materials. Which means that I painted the light and shadows onto the textures, allowing me to make them unlit materials and skip heavy shading computations at runtime."
+      },
+      {
+        "timestamp": "16:36",
+        "text": "Finally, use the usdcrush tool to compress your USDZ's textures. It's available as a command line tool on any Mac, and can help you reduce the size of your model quite a lot, which directly translates to faster loading time for people on a slower connection. I'd recommend to check out the WWDC session, \"Optimize your custom environments for visionOS\" that goes way deeper into 3D asset optimization."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "Alright, here we are. You're now ready to create your own experiences. To transport your customers into your environments. With just a model element and a handful of API calls, you can redefine the way your visitors interact with your website. And I've only scratched the surface here. There are so many other APIs you can combine to bring an immersive dimension to your website."
+      },
+      {
+        "timestamp": "17:25",
+        "text": "One of them is the image controls API. By simply adding the controls attribute on my image element here, the browser will offer native controls. Providing a relevant User Interface for platform specific features. Like on visionOS, where this allows people to make this panorama fullscreen, which will wrap it around them in their space. And this also works for spatial photos. Which can be captured directly from your Apple Vision Pro, or your iPhone. Just like with the model element and the immersive API, with image controls, one little thing in your code goes a long way. Creativity is the only limit."
+      },
+      {
+        "timestamp": "18:06",
+        "text": "Here's what I encourage you to do next."
+      },
+      {
+        "timestamp": "18:09",
+        "text": "Try the online demos on webkit.org with your Apple Vision Pro, there's no better way to understand the impact of the feature than experiencing it yourself."
+      },
+      {
+        "timestamp": "18:19",
+        "text": "Create your first website environment. I have attached resources to this session to further help you, like the API specifications, check them out! And finally, while you'll be building your own experiences, file feature requests or bug reports at bugs.webkit.org. Oh and also, check out this session called \"Design immersive environments for visionOS apps and the spatial web\". It explores the high level principles of creating great photorealistic environments."
+      },
+      {
+        "timestamp": "18:51",
+        "text": "I'll personally be on the lookout for what immersive experiences you'll create. Thank you so much for joining this session, hope you enjoyed it! Have a great WWDC!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -113,6 +420,43 @@
       "code": "usdcrush model.usdz -o optimized.usdz"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:46"
+    },
+    {
+      "timestamp": "1:46",
+      "title": "Meet the immersive API",
+      "duration": "2:30"
+    },
+    {
+      "timestamp": "4:16",
+      "title": "Preview environments inline",
+      "duration": "2:45"
+    },
+    {
+      "timestamp": "7:01",
+      "title": "Go immersive",
+      "duration": "5:03"
+    },
+    {
+      "timestamp": "12:04",
+      "title": "Optimize the experience",
+      "duration": "5:13"
+    },
+    {
+      "timestamp": "17:17",
+      "title": "Image controls",
+      "duration": "0:52"
+    },
+    {
+      "timestamp": "18:09",
+      "title": "Next steps",
+      "duration": "1:00"
+    }
+  ],
   "resources": {
     "resourceLinks": [],
     "sampleProject": "https://developer.apple.com/download/files/web-env-blender-plugin.zip",
@@ -151,5 +495,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2025/237"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:20.285Z"
+  "extractedAt": "2026-10-17T18:42:13.804Z"
 }

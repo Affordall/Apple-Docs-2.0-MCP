@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110352/",
   "title": "Embrace Swift generics",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials",
@@ -12,8 +11,828 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop music ♪ ♪ Hi everyone, I'm Holly from the Swift Compiler team.\n\nWelcome to \"Embrace Swift generics.\" Generics are a fundamental tool for writing abstract code in Swift, which is crucial for managing complexity as your code evolves.\n\nAbstraction separates ideas from specific details.\n\nIn code, there are a lot of different ways abstraction is useful.\n\nOne form of abstraction that you likely use all the time is factoring code out into a function or a local variable.\n\nThis can be really useful if you need to use the same functionality or value multiple times.\n\nWhen you extract the functionality into a function, the details are abstracted away, and the code that uses the abstraction can express the idea of what's happening without repeating the details.\n\nIn Swift, you can also abstract away concrete types.\n\nIf you have a set of types that are all the same idea with different details, you can write abstract code to work with all of those concrete types.\n\nToday, we'll walk through the workflow of modeling code with concrete types, identifying common capabilities of a set of concrete types, building an interface to represent those capabilities, and finally, we'll dive into writing generic code using that interface.\n\nWe'll dig into Swift's abstraction tools while building up some code to simulate a farm.\n\nSo, let's start by writing some concrete types.\n\nWe'll start with one struct called \"Cow.\" Cow has a method called \"eat,\" which accepts a parameter of type Hay.\n\nHay is another struct.\n\nIt has a static method called \"grow\" to grow the crop that produces Hay, which is Alfalfa.\n\nThe Alfalfa struct has a method to harvest Hay from an instance of Alfalfa.\n\nFinally, we'll add a struct called \"Farm\" that has a method for feeding a cow.\n\nThe feed method can be implemented by first growing some alfalfa to produce hay, then harvesting the hay, and finally, feeding the hay to the cow.\n\nAnd now, I can feed cows on my farm.\n\nBut I want to add more kinds of animals.\n\nI can add more structs to represent other animals, like Horse and Chicken.\n\nAnd I want to be able to feed cows, horses, and chickens on the farm.\n\nI could overload the feed method to accept each type of parameter separately, but each overload will have a really similar implementation.\n\nThis will become extra boilerplate as I add more types of animals, and it's mostly repeated code anyway.\n\nIf you find yourself writing overloads with repetitive implementations, it might be a sign to generalize.\n\nFundamentally, these implementations are so similar because different types of animals are similar in functionality.\n\nThe next step is to identify the common capabilities between the animal types.\n\nWe've built a set of animal types that all have the ability to eat some type of food.\n\nEach type of animal will have a different way of eating, so each implementation of the eat method will have differences in behavior.\n\nWhat we want to do is allow abstract code to call the eat method and have that abstract code behave differently depending on the concrete type it's operating on.\n\nThe ability of abstract code to behave differently for different concrete types is called \"polymorphism.\" Polymorphism allows one piece of code to have many behaviors depending on how the code is used.\n\nAppropriately, polymorphism itself comes in different forms.\n\nThe first is function overloading, where the same function call can mean different things depending on the argument type.\n\nOverloading is called \"ad-hoc polymorphism\" because it isn't really a general solution.\n\nWe just saw how overloading can lead to repetitive code.\n\nNext is subtype polymorphism, where code operating on a supertype can have different behavior based on the specific subtype the code is using at runtime.\n\nFinally, we have parametric polymorphism, which is achieved using generics.\n\nGeneric code uses type parameters to allow writing one piece of code that works with different types, and concrete types themselves are used as arguments.\n\nWe've already ruled out overloading, so let's try to use subtype polymorphism.\n\nOne way to represent subtype relationships is with a class hierarchy.\n\nWe could introduce a class called \"Animal.\" Next, we'd change each animal type from a struct to a class.\n\nEach specific animal class will inherit from the Animal superclass, and override the eat method.\n\nNow, we have an abstract base-class Animal that can represent all of our specific animal types.\n\nCode that calls eat on the Animal class will use subtype polymorphism to call the subclass implementation.\n\nBut we're not done.\n\nWe still haven't filled in a parameter type for the eat method on Animal, and there are a few other red flags in this code.\n\nFirst, using classes forced us into reference semantics, even though we don't need or want any state to be shared between different animal instances.\n\nThis strategy also requires subclasses to override methods in the base class, but forgetting to do this wouldn't be caught until runtime.\n\nBut the bigger problem with this model of abstraction is that each animal subtype eats a different type of food, and this dependency is really difficult to express with a class hierarchy.\n\nOne approach we could take is to have the method accept a less specific type, such as Any.\n\nBut this strategy relies on subclass implementations to make sure the correct type was passed at runtime.\n\nSo, we've imposed extra boilerplate in each overridden method, but more importantly, it allows you to accidentally pass the wrong type of food, leaving you with another bug that could only be caught at runtime.\n\nSo, let's try something else.\n\nWe could instead express the animal's feed type in a type-safe way by introducing a type parameter on the Animal superclass.\n\nThis type parameter serves as a placeholder for the specific feed type for each subclass.\n\nWith this approach, the Food type parameter must be elevated to the declaration of the Animal class.\n\nThis seems a little unnatural because though animals need food to operate, eating food isn't the core purpose of an animal, and a lot of code that works with animals probably won't care about food at all.\n\nDespite that, all references to the Animal class need to specify the food type.\n\nFor example, each Animal subclass needs to explicitly specify its food type in angle brackets in the inheritance clause.\n\nThis boilerplate at each use site of the Animal class could become onerous if we added more types that are specific to each animal.\n\nSo, none of our approaches here have good ergonomics or the right semantics.\n\nThe fundamental problem is that a class is a data type, and we're trying to convolute a superclass to make it represent abstract ideas about concrete types.\n\nInstead, we want a language construct that was designed to represent capabilities of types without the details of how the capability works.\n\nAnimals have two common capabilities.\n\nEach animal has a specific type of food, along with an operation for consuming some of that food.\n\nWe can build an interface that represents those capabilities.\n\nIn Swift, this is done using a protocol.\n\nA protocol is an abstraction tool that describes the functionality of conforming types.\n\nUsing a protocol, you can separate the ideas about what a type does from the implementation details.\n\nThe ideas about what a type does are expressed through an interface.\n\nLet's translate the capabilities of an animal to a protocol interface.\n\nThe name of the protocol represents the category of types we're describing, so I called this protocol \"Animal.\" Each capability will map to a protocol requirement.\n\nThe specific type of food will map to an associated type of the Animal protocol.\n\nJust like a type parameter, an associated type serves as a placeholder for a concrete type.\n\nWhat makes associated types special is that they depend on the specific type that conforms to the protocol.\n\nThis relationship is guaranteed, so each instance of a specific type of animal always has the same type of food.\n\nNext, the operation to consume food will map to a method.\n\nThis method is called \"eat,\" and it accepts a parameter of the animal's feed type.\n\nThe protocol does not have an implementation of this method, and concrete animal types are required to implement it.\n\nNow that we have the Animal protocol, we can make each concrete animal type conform to it.\n\nYou can annotate a concrete type with a protocol conformance at the declaration or in an extension.\n\nProtocols are not limited to classes, so we can use protocols with structs, enums, and actors, too.\n\nOnce you write this conformance annotation, the compiler will check that the concrete type implements each of the protocol requirements.\n\nEach animal type must implement the eat method, and the compiler can infer what the feed type is, because it's used in the parameter list.\n\nThe feed type can also be written explicitly using a type alias.\n\nWe've successfully identified the common capabilities of an animal and expressed those capabilities, using a protocol interface.\n\nNow, we can start to write generic code.\n\nWe can use the Animal protocol to implement the feed method on Farm.\n\nWe want to write one implementation that works for all concrete animal types.\n\nWe'll use parametric polymorphism and introduce a type parameter that will be replaced with a concrete type when the method is called.\n\nA type parameter is written after the function name in angle brackets.\n\nJust like regular variables and function parameters, you can name a type parameter whatever you like.\n\nAnd just like any other type, you can reference the type parameter throughout the function signature, using its name.\n\nHere, I declared a type parameter called “A”, and I used A as the type of the animal function parameter.\n\nWe always want the concrete animal type to conform to the Animal protocol, so we annotate the type parameter with a protocol conformance.\n\nProtocol conformances can be written in angle brackets, or they can be written in a trailing \"where\" clause, where you can also specify relationships between different type parameters.\n\nNamed type parameters and trailing \"where\" clauses are really powerful, because they allow you to write sophisticated requirements and type relationships.\n\nBut most generic functions don't need this generality.\n\nLet's focus on the feed method.\n\nThe type parameter A appears once in the parameter list, and the \"where\" clause lists a conformance requirement on the type parameter.\n\nIn this case, naming the type parameter and using the \"where\" clause make the method look more complicated than it really is.\n\nThis generic pattern is really common, so there's a simpler way to express it.\n\nInstead of writing a type parameter explicitly, we can express this abstract type in terms of the protocol conformance by writing \"some Animal”.\n\nThis declaration is identical to the previous one, but the unnecessary type parameter list and \"where\" clause are gone, because we didn't need the expressiveness they provide.\n\nWriting \"some Animal\" is more straightforward, because it reduces syntactic noise, and it includes the semantic information about the animal parameter right in the parameter declaration.\n\nLet's break down the some Animal syntax.\n\nThe \"some\" in \"some Animal\" indicates that there is a specific type that you're working with.\n\nThe \"some\" keyword is always followed by a conformance requirement.\n\nIn this case, the specific type must conform to the Animal protocol, which will allow us to use requirements from the Animal protocol on the parameter value.\n\nThe \"some\" keyword can be used in parameter and result types.\n\nIf you've written SwiftUI code before, you've already used \"some\" in result position using \"some View.\" A result type of \"some View\" is exactly the same concept.\n\nIn a SwiftUI view, the body property returns some specific type of view, but code that uses the body property doesn't need to know what the specific type is.\n\nLet's take a step back to better understand the concept of a specific abstract type.\n\nAn abstract type that represents a placeholder for a specific concrete type is called an opaque type.\n\nThe specific concrete type that is substituted in is called the underlying type.\n\nFor values with opaque type, the underlying type is fixed for the scope of the value.\n\nThis way, generic code using the value is guaranteed to get the same underlying type each time the value is accessed.\n\nA type using the \"some\" keyword and a named type parameter in angle brackets both declare an opaque type.\n\nOpaque types can be used for both inputs and outputs, so they can be declared in parameter position or in result position.\n\nThe function arrow is the dividing line between these positions.\n\nThe position of an opaque type determines which part of the program sees the abstract type and which part of the program determines the concrete type.\n\nNamed type parameters are always declared on the input side, so the caller decides the underlying type, and the implementation uses the abstract type.\n\nIn general, the part of the program supplying the value for an opaque parameter or result type decides the underlying type, and the part of the program using the value sees the abstract type.\n\nLet's dig into how this works, following our intuition about parameter and result values.\n\nBecause the underlying type is inferred from a value, the underlying type always comes from the same place as the value.\n\nFor a local variable, the underlying type is inferred from the value on the right-hand side of assignment.\n\nThis means local variables with opaque type must always have an initial value; and if you don't provide one, the compiler will report an error.\n\nThe underlying type must be fixed for the scope of the variable, so attempting to change the underlying type will also result in an error.\n\nFor parameters with opaque type, the underlying type is inferred from the argument value at the call site.\n\nUsing \"some\" in parameter position is new in Swift 5.7.\n\nThe underlying type only needs to be fixed for the scope of the parameter, so each call can provide a different argument type.\n\nFor an opaque result type, the underlying type is inferred from the return value in the implementation.\n\nA method or computed property with an opaque result type can be called from anywhere in the program, so the scope of this named value is global.\n\nThis means the underlying return type has to be the same across all return statements; and if it isn't, the compiler will report an error that the underlying return values have mismatched types.\n\nFor an opaque SwiftUI view, the ViewBuilder DSL can transform control-flow statements to have the same underlying return type for each branch.\n\nSo in this case, we can fix the issue by using the ViewBuilder DSL.\n\nWriting an @ViewBuilder annotation on the method and removing return statements will enable the result to be built for us by the ViewBuilder type.\n\nLet's go back to the feedAnimal method.\n\nI can use \"some\" in the parameter list because I don't need to reference the opaque type anywhere else.\n\nWhen you need to refer to the opaque type multiple times in the function signature, that's when a name type parameter comes in handy.\n\nFor example, if we add another associated type to the animal protocol called \"Habitat,\" we might want to be able to build a habitat on the farm for a given animal.\n\nIn this case, the result type depends on the specific animal type, so we need to use the type parameter A in the parameter type and the return type.\n\nAnother common place where you need to refer to an opaque type multiple times is in generic types.\n\nCode often declares a type parameter on a generic type, uses the type parameter for a stored property, and again in a memberwise initializer.\n\nReferencing a generic type in a different context also requires you to explicitly specify the type parameter in angle brackets.\n\nThe angle brackets at the declaration can help clarify how to use a generic type, so opaque types must always be named for generic types.\n\nNow, let's build out the implementation of the feed method.\n\nWe can use the type of the animal parameter to access the crop type to grow through the Feed-associated type.\n\nWe'll call Feed.grow() to get an instance of the crop that produces this type of feed.\n\nNext, we need to harvest the produce from the crop, which we can do by calling a method provided by the crop type called \"harvest.\" And finally, we can feed this produce to the animal.\n\nBecause the underlying animal type is fixed, the compiler knows the relationship between the plant type, the produce type, and the animal type across the various method calls.\n\nThese static relationships prevent us from making the mistake of feeding the animal the wrong type of food.\n\nIf we attempt to use a type that is not guaranteed to be the correct food type for this animal, the compiler will tell us.\n\nTo learn how the other farm protocols were crafted to express the relationship between the animal-feed type and its plant, check out \"Design protocol interfaces in Swift.\" Lastly, let's add a method for feeding all the animals.\n\nI'll add a method called feedAll that accepts an array.\n\nI know the element type needs to conform to the Animal protocol, but I want the array to be able to store different types of animals.\n\nLet's see if some Animal can help us here.\n\nWith \"some\" there is a specific underlying type that cannot vary.\n\nBecause the underlying type is fixed, all of the elements in the array need to have the same type.\n\nSo, an array of some Animal doesn't express the right thing, because I want an array that can hold different animal types.\n\nHere, we really need a supertype that can represent any type of animal.\n\nWe can express an arbitrary type of animal by writing \"any Animal.\" The \"any\" keyword indicates that this type can store any arbitrary type of animal, and the underlying type of animal can vary at runtime.\n\nJust like with the \"some\" keyword, the \"any\" keyword is always followed by a conformance requirement.\n\nany Animal is a single static type that has the capability to store any concrete animal type dynamically, which allows us to use subtype polymorphism with value types.\n\nTo allow for this flexible storage, the any Animal type has a special representation in memory.\n\nYou can think of this representation like a box.\n\nSometimes, a value is small enough to fit inside the box directly.\n\nAnd other values are too large for the box, so the value has to be allocated elsewhere, and the box stores a pointer to that value.\n\nThe static type any Animal that can dynamically store any concrete animal type is formally called an existential type.\n\nAnd the strategy of using the same representation for different concrete types is called \"type erasure.\" The concrete type is said to be erased at compile time, and the concrete type is only known at runtime.\n\nThese two instances of the existential type any Animal have the same static type, but different dynamic types.\n\nType erasure eliminates the type-level distinction between different animal values, which allows us to use values with different dynamic types interchangeably as the same static type.\n\nWe can use type erasure to write a heterogeneous array of value types, which is exactly what we want for the feedAll method.\n\nSo we'll use an array of any Animal as the parameter type.\n\nUsing the \"any\" keyword for protocols with associated types is new in Swift 5.7.\n\nTo implement the feedAll method, we'll first iterate over the animal's array.\n\nFor each animal, we want to call the eat method from the Animal protocol.\n\nTo call this method, we need to get the specific feed type for the underlying animal at this iteration.\n\nBut as soon as we try to call eat on any Animal, we'll get a compiler error.\n\nBecause we've eliminated the type-level distinction between specific animal types, we've also eliminated all type relationships that depend on the specific animal type, including associated types.\n\nSo, we can't know what type of feed this animal expects.\n\nTo rely on type relationships, we need to get back into a context where the specific type of animal is fixed.\n\nInstead of calling eat directly on any Animal, we need to call the feed method that accepts some Animal.\n\nNow, any Animal is a different type from some Animal, but the compiler can convert an instance of any Animal to some Animal by unboxing the underlying value and passing it directly to the some Animal parameter.\n\nThis capability of unboxing arguments is new in Swift 5.7.\n\nYou can think of unboxing as the compiler opening the box and taking out the value stored inside.\n\nFor the scope of the some Animal parameter, the value has a fixed underlying type, so we have access to all of the operations on the underlying type, including access to associated types.\n\nThis is really cool because it allows us to opt for flexible storage when we need it, while still allowing us to get back to a context where we have the full expressivity of the static type system by fixing the underlying type for the scope of a function.\n\nAnd most of the time, you don't have to think about the unboxing because it just works in the way you'd expect, similar to how calling a protocol method on any Animal really calls the method on the underlying type.\n\nSo, we can pass each animal to the feed method, where we can grow and harvest the appropriate crop to feed to the specific animal at each iteration.\n\nThroughout this process, we've seen that \"some\" and \"any\" have different capabilities.\n\nWith \"some,\" the underlying type is fixed.\n\nThis allows you to rely on type relationships to the underlying type in your generic code, so you'll have full access to the API and associated types on the protocol you're working with.\n\nUse \"any\" when you need to store arbitrary concrete types.\n\n\"any\" provides type erasure, which allows you represent heterogeneous collections, represent the absence of an underlying type, using optionals, and make the abstraction an implementation detail.\n\nIn general, write \"some\" by default, and change \"some\" to \"any\" when you know you need to store arbitrary values.\n\nWith this approach, you'll only pay the cost of type erasure and its semantic limitations when you need the storage flexibility it provides.\n\nThis workflow is similar to writing let-constants by default, until you know you need mutation.\n\nIn this session, we walked through the workflow of generalizing code as it evolves and gains more functionality.\n\nWe started by writing concrete types.\n\nAs the code gained more functionality, we noticed repetition between different concrete types.\n\nFrom there, we identified common capabilities and generalized them using a protocol.\n\nFinally, we wrote abstract code using \"some\" and \"any”, and we discussed preferring \"some\" for more expressive code.\n\nTo dig deeper into crafting protocols and understanding type erasure, check out \"Design protocol interfaces in Swift.\" Thank you joining me and have a great WWDC.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop music ♪ ♪ Hi everyone, I'm Holly from the Swift Compiler team."
+      },
+      {
+        "timestamp": "0:13",
+        "text": "Welcome to \"Embrace Swift generics.\" Generics are a fundamental tool for writing abstract code in Swift, which is crucial for managing complexity as your code evolves."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "Abstraction separates ideas from specific details."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "In code, there are a lot of different ways abstraction is useful."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "One form of abstraction that you likely use all the time is factoring code out into a function or a local variable."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "This can be really useful if you need to use the same functionality or value multiple times."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "When you extract the functionality into a function, the details are abstracted away, and the code that uses the abstraction can express the idea of what's happening without repeating the details."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "In Swift, you can also abstract away concrete types."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "If you have a set of types that are all the same idea with different details, you can write abstract code to work with all of those concrete types."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "Today, we'll walk through the workflow of modeling code with concrete types, identifying common capabilities of a set of concrete types, building an interface to represent those capabilities, and finally, we'll dive into writing generic code using that interface."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "We'll dig into Swift's abstraction tools while building up some code to simulate a farm."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "So, let's start by writing some concrete types."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "We'll start with one struct called \"Cow.\" Cow has a method called \"eat,\" which accepts a parameter of type Hay."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "Hay is another struct."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "It has a static method called \"grow\" to grow the crop that produces Hay, which is Alfalfa."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "The Alfalfa struct has a method to harvest Hay from an instance of Alfalfa."
+      },
+      {
+        "timestamp": "2:10",
+        "text": "Finally, we'll add a struct called \"Farm\" that has a method for feeding a cow."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "The feed method can be implemented by first growing some alfalfa to produce hay, then harvesting the hay, and finally, feeding the hay to the cow."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "And now, I can feed cows on my farm."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "But I want to add more kinds of animals."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "I can add more structs to represent other animals, like Horse and Chicken."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "And I want to be able to feed cows, horses, and chickens on the farm."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "I could overload the feed method to accept each type of parameter separately, but each overload will have a really similar implementation."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "This will become extra boilerplate as I add more types of animals, and it's mostly repeated code anyway."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "If you find yourself writing overloads with repetitive implementations, it might be a sign to generalize."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "Fundamentally, these implementations are so similar because different types of animals are similar in functionality."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "The next step is to identify the common capabilities between the animal types."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "We've built a set of animal types that all have the ability to eat some type of food."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "Each type of animal will have a different way of eating, so each implementation of the eat method will have differences in behavior."
+      },
+      {
+        "timestamp": "3:40",
+        "text": "What we want to do is allow abstract code to call the eat method and have that abstract code behave differently depending on the concrete type it's operating on."
+      },
+      {
+        "timestamp": "3:51",
+        "text": "The ability of abstract code to behave differently for different concrete types is called \"polymorphism.\" Polymorphism allows one piece of code to have many behaviors depending on how the code is used."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "Appropriately, polymorphism itself comes in different forms."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "The first is function overloading, where the same function call can mean different things depending on the argument type."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "Overloading is called \"ad-hoc polymorphism\" because it isn't really a general solution."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "We just saw how overloading can lead to repetitive code."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "Next is subtype polymorphism, where code operating on a supertype can have different behavior based on the specific subtype the code is using at runtime."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "Finally, we have parametric polymorphism, which is achieved using generics."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "Generic code uses type parameters to allow writing one piece of code that works with different types, and concrete types themselves are used as arguments."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "We've already ruled out overloading, so let's try to use subtype polymorphism."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "One way to represent subtype relationships is with a class hierarchy."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "We could introduce a class called \"Animal.\" Next, we'd change each animal type from a struct to a class."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "Each specific animal class will inherit from the Animal superclass, and override the eat method."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "Now, we have an abstract base-class Animal that can represent all of our specific animal types."
+      },
+      {
+        "timestamp": "5:35",
+        "text": "Code that calls eat on the Animal class will use subtype polymorphism to call the subclass implementation."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "But we're not done."
+      },
+      {
+        "timestamp": "5:44",
+        "text": "We still haven't filled in a parameter type for the eat method on Animal, and there are a few other red flags in this code."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "First, using classes forced us into reference semantics, even though we don't need or want any state to be shared between different animal instances."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "This strategy also requires subclasses to override methods in the base class, but forgetting to do this wouldn't be caught until runtime."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "But the bigger problem with this model of abstraction is that each animal subtype eats a different type of food, and this dependency is really difficult to express with a class hierarchy."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "One approach we could take is to have the method accept a less specific type, such as Any."
+      },
+      {
+        "timestamp": "6:33",
+        "text": "But this strategy relies on subclass implementations to make sure the correct type was passed at runtime."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "So, we've imposed extra boilerplate in each overridden method, but more importantly, it allows you to accidentally pass the wrong type of food, leaving you with another bug that could only be caught at runtime."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "So, let's try something else."
+      },
+      {
+        "timestamp": "6:56",
+        "text": "We could instead express the animal's feed type in a type-safe way by introducing a type parameter on the Animal superclass."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "This type parameter serves as a placeholder for the specific feed type for each subclass."
+      },
+      {
+        "timestamp": "7:13",
+        "text": "With this approach, the Food type parameter must be elevated to the declaration of the Animal class."
+      },
+      {
+        "timestamp": "7:20",
+        "text": "This seems a little unnatural because though animals need food to operate, eating food isn't the core purpose of an animal, and a lot of code that works with animals probably won't care about food at all."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "Despite that, all references to the Animal class need to specify the food type."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "For example, each Animal subclass needs to explicitly specify its food type in angle brackets in the inheritance clause."
+      },
+      {
+        "timestamp": "7:48",
+        "text": "This boilerplate at each use site of the Animal class could become onerous if we added more types that are specific to each animal."
+      },
+      {
+        "timestamp": "7:58",
+        "text": "So, none of our approaches here have good ergonomics or the right semantics."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "The fundamental problem is that a class is a data type, and we're trying to convolute a superclass to make it represent abstract ideas about concrete types."
+      },
+      {
+        "timestamp": "8:15",
+        "text": "Instead, we want a language construct that was designed to represent capabilities of types without the details of how the capability works."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "Animals have two common capabilities."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "Each animal has a specific type of food, along with an operation for consuming some of that food."
+      },
+      {
+        "timestamp": "8:36",
+        "text": "We can build an interface that represents those capabilities."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "In Swift, this is done using a protocol."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "A protocol is an abstraction tool that describes the functionality of conforming types."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "Using a protocol, you can separate the ideas about what a type does from the implementation details."
+      },
+      {
+        "timestamp": "8:59",
+        "text": "The ideas about what a type does are expressed through an interface."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "Let's translate the capabilities of an animal to a protocol interface."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "The name of the protocol represents the category of types we're describing, so I called this protocol \"Animal.\" Each capability will map to a protocol requirement."
+      },
+      {
+        "timestamp": "9:21",
+        "text": "The specific type of food will map to an associated type of the Animal protocol."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "Just like a type parameter, an associated type serves as a placeholder for a concrete type."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "What makes associated types special is that they depend on the specific type that conforms to the protocol."
+      },
+      {
+        "timestamp": "9:40",
+        "text": "This relationship is guaranteed, so each instance of a specific type of animal always has the same type of food."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "Next, the operation to consume food will map to a method."
+      },
+      {
+        "timestamp": "9:55",
+        "text": "This method is called \"eat,\" and it accepts a parameter of the animal's feed type."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "The protocol does not have an implementation of this method, and concrete animal types are required to implement it."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "Now that we have the Animal protocol, we can make each concrete animal type conform to it."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "You can annotate a concrete type with a protocol conformance at the declaration or in an extension."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "Protocols are not limited to classes, so we can use protocols with structs, enums, and actors, too."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "Once you write this conformance annotation, the compiler will check that the concrete type implements each of the protocol requirements."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "Each animal type must implement the eat method, and the compiler can infer what the feed type is, because it's used in the parameter list."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "The feed type can also be written explicitly using a type alias."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "We've successfully identified the common capabilities of an animal and expressed those capabilities, using a protocol interface."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "Now, we can start to write generic code."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "We can use the Animal protocol to implement the feed method on Farm."
+      },
+      {
+        "timestamp": "11:10",
+        "text": "We want to write one implementation that works for all concrete animal types."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "We'll use parametric polymorphism and introduce a type parameter that will be replaced with a concrete type when the method is called."
+      },
+      {
+        "timestamp": "11:25",
+        "text": "A type parameter is written after the function name in angle brackets."
+      },
+      {
+        "timestamp": "11:30",
+        "text": "Just like regular variables and function parameters, you can name a type parameter whatever you like."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "And just like any other type, you can reference the type parameter throughout the function signature, using its name."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "Here, I declared a type parameter called “A”, and I used A as the type of the animal function parameter."
+      },
+      {
+        "timestamp": "11:51",
+        "text": "We always want the concrete animal type to conform to the Animal protocol, so we annotate the type parameter with a protocol conformance."
+      },
+      {
+        "timestamp": "12:00",
+        "text": "Protocol conformances can be written in angle brackets, or they can be written in a trailing \"where\" clause, where you can also specify relationships between different type parameters."
+      },
+      {
+        "timestamp": "12:13",
+        "text": "Named type parameters and trailing \"where\" clauses are really powerful, because they allow you to write sophisticated requirements and type relationships."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "But most generic functions don't need this generality."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "Let's focus on the feed method."
+      },
+      {
+        "timestamp": "12:29",
+        "text": "The type parameter A appears once in the parameter list, and the \"where\" clause lists a conformance requirement on the type parameter."
+      },
+      {
+        "timestamp": "12:39",
+        "text": "In this case, naming the type parameter and using the \"where\" clause make the method look more complicated than it really is."
+      },
+      {
+        "timestamp": "12:46",
+        "text": "This generic pattern is really common, so there's a simpler way to express it."
+      },
+      {
+        "timestamp": "12:52",
+        "text": "Instead of writing a type parameter explicitly, we can express this abstract type in terms of the protocol conformance by writing \"some Animal”."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "This declaration is identical to the previous one, but the unnecessary type parameter list and \"where\" clause are gone, because we didn't need the expressiveness they provide."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "Writing \"some Animal\" is more straightforward, because it reduces syntactic noise, and it includes the semantic information about the animal parameter right in the parameter declaration."
+      },
+      {
+        "timestamp": "13:27",
+        "text": "Let's break down the some Animal syntax."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "The \"some\" in \"some Animal\" indicates that there is a specific type that you're working with."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "The \"some\" keyword is always followed by a conformance requirement."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "In this case, the specific type must conform to the Animal protocol, which will allow us to use requirements from the Animal protocol on the parameter value."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "The \"some\" keyword can be used in parameter and result types."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "If you've written SwiftUI code before, you've already used \"some\" in result position using \"some View.\" A result type of \"some View\" is exactly the same concept."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "In a SwiftUI view, the body property returns some specific type of view, but code that uses the body property doesn't need to know what the specific type is."
+      },
+      {
+        "timestamp": "14:21",
+        "text": "Let's take a step back to better understand the concept of a specific abstract type."
+      },
+      {
+        "timestamp": "14:28",
+        "text": "An abstract type that represents a placeholder for a specific concrete type is called an opaque type."
+      },
+      {
+        "timestamp": "14:36",
+        "text": "The specific concrete type that is substituted in is called the underlying type."
+      },
+      {
+        "timestamp": "14:42",
+        "text": "For values with opaque type, the underlying type is fixed for the scope of the value."
+      },
+      {
+        "timestamp": "14:48",
+        "text": "This way, generic code using the value is guaranteed to get the same underlying type each time the value is accessed."
+      },
+      {
+        "timestamp": "14:57",
+        "text": "A type using the \"some\" keyword and a named type parameter in angle brackets both declare an opaque type."
+      },
+      {
+        "timestamp": "15:05",
+        "text": "Opaque types can be used for both inputs and outputs, so they can be declared in parameter position or in result position."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "The function arrow is the dividing line between these positions."
+      },
+      {
+        "timestamp": "15:19",
+        "text": "The position of an opaque type determines which part of the program sees the abstract type and which part of the program determines the concrete type."
+      },
+      {
+        "timestamp": "15:30",
+        "text": "Named type parameters are always declared on the input side, so the caller decides the underlying type, and the implementation uses the abstract type."
+      },
+      {
+        "timestamp": "15:41",
+        "text": "In general, the part of the program supplying the value for an opaque parameter or result type decides the underlying type, and the part of the program using the value sees the abstract type."
+      },
+      {
+        "timestamp": "15:53",
+        "text": "Let's dig into how this works, following our intuition about parameter and result values."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "Because the underlying type is inferred from a value, the underlying type always comes from the same place as the value."
+      },
+      {
+        "timestamp": "16:09",
+        "text": "For a local variable, the underlying type is inferred from the value on the right-hand side of assignment."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "This means local variables with opaque type must always have an initial value; and if you don't provide one, the compiler will report an error."
+      },
+      {
+        "timestamp": "16:27",
+        "text": "The underlying type must be fixed for the scope of the variable, so attempting to change the underlying type will also result in an error."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "For parameters with opaque type, the underlying type is inferred from the argument value at the call site."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "Using \"some\" in parameter position is new in Swift 5.7."
+      },
+      {
+        "timestamp": "16:50",
+        "text": "The underlying type only needs to be fixed for the scope of the parameter, so each call can provide a different argument type."
+      },
+      {
+        "timestamp": "16:58",
+        "text": "For an opaque result type, the underlying type is inferred from the return value in the implementation."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "A method or computed property with an opaque result type can be called from anywhere in the program, so the scope of this named value is global."
+      },
+      {
+        "timestamp": "17:15",
+        "text": "This means the underlying return type has to be the same across all return statements; and if it isn't, the compiler will report an error that the underlying return values have mismatched types."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "For an opaque SwiftUI view, the ViewBuilder DSL can transform control-flow statements to have the same underlying return type for each branch."
+      },
+      {
+        "timestamp": "17:38",
+        "text": "So in this case, we can fix the issue by using the ViewBuilder DSL."
+      },
+      {
+        "timestamp": "17:43",
+        "text": "Writing an @ViewBuilder annotation on the method and removing return statements will enable the result to be built for us by the ViewBuilder type."
+      },
+      {
+        "timestamp": "17:53",
+        "text": "Let's go back to the feedAnimal method."
+      },
+      {
+        "timestamp": "17:56",
+        "text": "I can use \"some\" in the parameter list because I don't need to reference the opaque type anywhere else."
+      },
+      {
+        "timestamp": "18:02",
+        "text": "When you need to refer to the opaque type multiple times in the function signature, that's when a name type parameter comes in handy."
+      },
+      {
+        "timestamp": "18:11",
+        "text": "For example, if we add another associated type to the animal protocol called \"Habitat,\" we might want to be able to build a habitat on the farm for a given animal."
+      },
+      {
+        "timestamp": "18:23",
+        "text": "In this case, the result type depends on the specific animal type, so we need to use the type parameter A in the parameter type and the return type."
+      },
+      {
+        "timestamp": "18:34",
+        "text": "Another common place where you need to refer to an opaque type multiple times is in generic types."
+      },
+      {
+        "timestamp": "18:41",
+        "text": "Code often declares a type parameter on a generic type, uses the type parameter for a stored property, and again in a memberwise initializer."
+      },
+      {
+        "timestamp": "18:52",
+        "text": "Referencing a generic type in a different context also requires you to explicitly specify the type parameter in angle brackets."
+      },
+      {
+        "timestamp": "19:01",
+        "text": "The angle brackets at the declaration can help clarify how to use a generic type, so opaque types must always be named for generic types."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "Now, let's build out the implementation of the feed method."
+      },
+      {
+        "timestamp": "19:15",
+        "text": "We can use the type of the animal parameter to access the crop type to grow through the Feed-associated type."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "We'll call Feed.grow() to get an instance of the crop that produces this type of feed."
+      },
+      {
+        "timestamp": "19:28",
+        "text": "Next, we need to harvest the produce from the crop, which we can do by calling a method provided by the crop type called \"harvest.\" And finally, we can feed this produce to the animal."
+      },
+      {
+        "timestamp": "19:39",
+        "text": "Because the underlying animal type is fixed, the compiler knows the relationship between the plant type, the produce type, and the animal type across the various method calls."
+      },
+      {
+        "timestamp": "19:50",
+        "text": "These static relationships prevent us from making the mistake of feeding the animal the wrong type of food."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "If we attempt to use a type that is not guaranteed to be the correct food type for this animal, the compiler will tell us."
+      },
+      {
+        "timestamp": "20:07",
+        "text": "To learn how the other farm protocols were crafted to express the relationship between the animal-feed type and its plant, check out \"Design protocol interfaces in Swift.\" Lastly, let's add a method for feeding all the animals."
+      },
+      {
+        "timestamp": "20:23",
+        "text": "I'll add a method called feedAll that accepts an array."
+      },
+      {
+        "timestamp": "20:26",
+        "text": "I know the element type needs to conform to the Animal protocol, but I want the array to be able to store different types of animals."
+      },
+      {
+        "timestamp": "20:35",
+        "text": "Let's see if some Animal can help us here."
+      },
+      {
+        "timestamp": "20:39",
+        "text": "With \"some\" there is a specific underlying type that cannot vary."
+      },
+      {
+        "timestamp": "20:44",
+        "text": "Because the underlying type is fixed, all of the elements in the array need to have the same type."
+      },
+      {
+        "timestamp": "20:51",
+        "text": "So, an array of some Animal doesn't express the right thing, because I want an array that can hold different animal types."
+      },
+      {
+        "timestamp": "20:59",
+        "text": "Here, we really need a supertype that can represent any type of animal."
+      },
+      {
+        "timestamp": "21:04",
+        "text": "We can express an arbitrary type of animal by writing \"any Animal.\" The \"any\" keyword indicates that this type can store any arbitrary type of animal, and the underlying type of animal can vary at runtime."
+      },
+      {
+        "timestamp": "21:21",
+        "text": "Just like with the \"some\" keyword, the \"any\" keyword is always followed by a conformance requirement."
+      },
+      {
+        "timestamp": "21:28",
+        "text": "any Animal is a single static type that has the capability to store any concrete animal type dynamically, which allows us to use subtype polymorphism with value types."
+      },
+      {
+        "timestamp": "21:40",
+        "text": "To allow for this flexible storage, the any Animal type has a special representation in memory."
+      },
+      {
+        "timestamp": "21:48",
+        "text": "You can think of this representation like a box."
+      },
+      {
+        "timestamp": "21:52",
+        "text": "Sometimes, a value is small enough to fit inside the box directly."
+      },
+      {
+        "timestamp": "21:57",
+        "text": "And other values are too large for the box, so the value has to be allocated elsewhere, and the box stores a pointer to that value."
+      },
+      {
+        "timestamp": "22:06",
+        "text": "The static type any Animal that can dynamically store any concrete animal type is formally called an existential type."
+      },
+      {
+        "timestamp": "22:16",
+        "text": "And the strategy of using the same representation for different concrete types is called \"type erasure.\" The concrete type is said to be erased at compile time, and the concrete type is only known at runtime."
+      },
+      {
+        "timestamp": "22:30",
+        "text": "These two instances of the existential type any Animal have the same static type, but different dynamic types."
+      },
+      {
+        "timestamp": "22:38",
+        "text": "Type erasure eliminates the type-level distinction between different animal values, which allows us to use values with different dynamic types interchangeably as the same static type."
+      },
+      {
+        "timestamp": "22:51",
+        "text": "We can use type erasure to write a heterogeneous array of value types, which is exactly what we want for the feedAll method."
+      },
+      {
+        "timestamp": "23:00",
+        "text": "So we'll use an array of any Animal as the parameter type."
+      },
+      {
+        "timestamp": "23:04",
+        "text": "Using the \"any\" keyword for protocols with associated types is new in Swift 5.7."
+      },
+      {
+        "timestamp": "23:11",
+        "text": "To implement the feedAll method, we'll first iterate over the animal's array."
+      },
+      {
+        "timestamp": "23:17",
+        "text": "For each animal, we want to call the eat method from the Animal protocol."
+      },
+      {
+        "timestamp": "23:22",
+        "text": "To call this method, we need to get the specific feed type for the underlying animal at this iteration."
+      },
+      {
+        "timestamp": "23:29",
+        "text": "But as soon as we try to call eat on any Animal, we'll get a compiler error."
+      },
+      {
+        "timestamp": "23:35",
+        "text": "Because we've eliminated the type-level distinction between specific animal types, we've also eliminated all type relationships that depend on the specific animal type, including associated types."
+      },
+      {
+        "timestamp": "23:48",
+        "text": "So, we can't know what type of feed this animal expects."
+      },
+      {
+        "timestamp": "23:53",
+        "text": "To rely on type relationships, we need to get back into a context where the specific type of animal is fixed."
+      },
+      {
+        "timestamp": "24:00",
+        "text": "Instead of calling eat directly on any Animal, we need to call the feed method that accepts some Animal."
+      },
+      {
+        "timestamp": "24:08",
+        "text": "Now, any Animal is a different type from some Animal, but the compiler can convert an instance of any Animal to some Animal by unboxing the underlying value and passing it directly to the some Animal parameter."
+      },
+      {
+        "timestamp": "24:24",
+        "text": "This capability of unboxing arguments is new in Swift 5.7."
+      },
+      {
+        "timestamp": "24:30",
+        "text": "You can think of unboxing as the compiler opening the box and taking out the value stored inside."
+      },
+      {
+        "timestamp": "24:37",
+        "text": "For the scope of the some Animal parameter, the value has a fixed underlying type, so we have access to all of the operations on the underlying type, including access to associated types."
+      },
+      {
+        "timestamp": "24:51",
+        "text": "This is really cool because it allows us to opt for flexible storage when we need it, while still allowing us to get back to a context where we have the full expressivity of the static type system by fixing the underlying type for the scope of a function."
+      },
+      {
+        "timestamp": "25:07",
+        "text": "And most of the time, you don't have to think about the unboxing because it just works in the way you'd expect, similar to how calling a protocol method on any Animal really calls the method on the underlying type."
+      },
+      {
+        "timestamp": "25:20",
+        "text": "So, we can pass each animal to the feed method, where we can grow and harvest the appropriate crop to feed to the specific animal at each iteration."
+      },
+      {
+        "timestamp": "25:31",
+        "text": "Throughout this process, we've seen that \"some\" and \"any\" have different capabilities."
+      },
+      {
+        "timestamp": "25:38",
+        "text": "With \"some,\" the underlying type is fixed."
+      },
+      {
+        "timestamp": "25:42",
+        "text": "This allows you to rely on type relationships to the underlying type in your generic code, so you'll have full access to the API and associated types on the protocol you're working with."
+      },
+      {
+        "timestamp": "25:54",
+        "text": "Use \"any\" when you need to store arbitrary concrete types."
+      },
+      {
+        "timestamp": "25:59",
+        "text": "\"any\" provides type erasure, which allows you represent heterogeneous collections, represent the absence of an underlying type, using optionals, and make the abstraction an implementation detail."
+      },
+      {
+        "timestamp": "26:12",
+        "text": "In general, write \"some\" by default, and change \"some\" to \"any\" when you know you need to store arbitrary values."
+      },
+      {
+        "timestamp": "26:20",
+        "text": "With this approach, you'll only pay the cost of type erasure and its semantic limitations when you need the storage flexibility it provides."
+      },
+      {
+        "timestamp": "26:30",
+        "text": "This workflow is similar to writing let-constants by default, until you know you need mutation."
+      },
+      {
+        "timestamp": "26:36",
+        "text": "In this session, we walked through the workflow of generalizing code as it evolves and gains more functionality."
+      },
+      {
+        "timestamp": "26:44",
+        "text": "We started by writing concrete types."
+      },
+      {
+        "timestamp": "26:47",
+        "text": "As the code gained more functionality, we noticed repetition between different concrete types."
+      },
+      {
+        "timestamp": "26:54",
+        "text": "From there, we identified common capabilities and generalized them using a protocol."
+      },
+      {
+        "timestamp": "27:00",
+        "text": "Finally, we wrote abstract code using \"some\" and \"any”, and we discussed preferring \"some\" for more expressive code."
+      },
+      {
+        "timestamp": "27:09",
+        "text": "To dig deeper into crafting protocols and understanding type erasure, check out \"Design protocol interfaces in Swift.\" Thank you joining me and have a great WWDC."
+      },
+      {
+        "timestamp": "27:21",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -48,5 +867,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110354"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:17.033Z"
+  "extractedAt": "2026-10-17T18:50:15.443Z"
 }

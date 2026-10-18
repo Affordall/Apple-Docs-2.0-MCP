@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/221/",
   "title": "Prepare your tvOS apps for Dynamic Type",
-  "speakers": [],
-  "duration": "",
+  "duration": "10:08",
   "topics": [
     "Accessibility & Inclusion",
     "Audio & Video"
@@ -12,8 +11,180 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Isis, and I'm an engineering manager on the accessibility team. This year, there is great news for accessibility on tvOS 27. Large Text support is now available, bringing system-wide text scaling to every app on the platform. Many people need or prefer different text sizes, and making your app dynamic helps everyone get a great experience. Your tvOS app customers have been waiting for this accessibility feature. And I'll show you how to make the most out of it in your apps. In addition, you'll be able to indicate support for Larger Text in your Accessibility Nutrition Labels for tvOS in the App Store. This is a great way to reach users who specifically look for accessible apps that support larger text.\n\nIn this session, I'll start by covering how Large Text works on tvOS and where people can find it. Then, I'll go into identifying small parts of your app that you may need to adjust for larger text sizes.\n\nAnd finally, I'll touch on a few examples of how to adapt layout in response to text size.\n\nLet's start with an overview. If you're familiar with Dynamic Type on iOS, you have a head start! Dynamic Type works the same way on tvOS.\n\nUIKit and SwiftUI can adapt text sizes automatically based on what someone prefers. This gives people control over the text size to match their needs and comfort.\n\nPeople can turn on larger text sizes in the Settings app. By navigating to Accessibility, Display, then Text Size.\n\nThey'll have the option of choosing text sizes starting at Large all the way up to Accessibility XXXL. I'm working on a media app that lets people discover and watch their favorite movies. Here's how this app adapts to these larger text sizes. This media app has a tab bar at top for navigation. There's a large title, with a few action buttons, and a gallery of movie posters to explore in a collection view below that.\n\nWith larger text sizes turned on, the navigation title at the top has become much larger.\n\nIn the tab bar, each label is now bigger, and all of the text throughout the interface has scaled up significantly. Standard UIKit and SwiftUI components like Labels, Buttons and Navigation tabBars handle this automatically. For your apps, your job is just to identify and update any custom elements that may need attention. When examining your app with Large Text, there are a few types of issues to identify. When your app runs with larger text sizes, you'll want to ensure that you avoid fixed font sizes that don't allow your text to scale.\n\nInterfaces that don't adapt to dynamic type, like hard-coded sizes or constraints, may cause issues like truncation of text or clipping of UI elements.\n\nYou may also need to adjust layouts for the padding and spacing needed when some elements grow to larger sizes.\n\nHere's an example from my media app where the description of a movie is displayed.\n\nThere is a title shown at the top, with text labels and controls towards the bottom.\n\nWith text set to the largest size, most of the text has grown larger… But, there's one text element on the left that isn't scaling. That is the caption that reads \"Signup information\" above the controls that let someone sign up, buy, or rent a movie. Now, a caption like this may have hard-coded text sizes for a specific layout reason. For example, it might have originally been in a container with static dimensions or rigid constraints. While this can seem appealing for creating predictable layouts, it's not recommended. This approach lacks flexibility and can't adapt to larger text. Instead, adapt the layout to be flexible and remove the hard-coded values. Here is the code representing the Description View of my media app.\n\nIt has a VStack, containing the \"Signup information\" caption, and an HStack containing the buttons and other text information about the movie. This code contains a few different challenges for larger text. It specifies a fixed font size, which will not adapt when someone changes their size preference.\n\nAnd on the Text view, there is a fixed width constraint to 300 points.\n\nAs text grows, 300 points may not be wide enough for the text, which could lead to text truncation.\n\nTo make this caption adjust to larger text sizes, I'll replace the hard-coded font style with a semantic text style. In this case, I'll use \"caption\".\n\nWith those changes, the text size is now dynamically growing, but the content is now truncated.\n\nTo fix this, replace fixed widths with flexible constraints that let the view grow as needed.\n\nOn the text view, I'll replace the fixed width with the parameter maxWidth and set it to infinity. This tells SwiftUI to use as much width as needed for the content.\n\nWith those changes, my text view scales beautifully with larger text, and has enough space to display its content. Perfect! To find these types of common issues in your app, search for hard-coded text sizes and migrate to standard styles instead.\n\nSearch your app for hard-coded height and width constraints and use flexible constraints to allow your content to grow.\n\nIf you're using UIKit, the approach is similar with one additional step. Replace hard-coded fonts with text styles, and set adjustsFontForContentSizeCategory to true. This tells UIKit to automatically update when preferences change.\n\nSometimes fixing hard-coded values isn't enough. You may want to adapt the layout in response to larger text, while preserving the original layout for default sizes.\n\nConsider this collection view. It contains six movie posters with a title underneath each. With a standard text size, the full title fits comfortably in the space below the image.\n\nWith Large Text enabled, there isn't enough room to fit six titles horizontally. This layout will need to be adapted when the text is larger. Here is the SwiftUI code for the view. It presents a horizontal scroll view, with a LazyHStack. Inside a container, I have a button for each cell.\n\nTo adapt this layout, I will first read the dynamicTypeSize environment key path. Then, I'll change the columnCount parameter on the cell in the containerRelativeFrame modifier.\n\nWhen larger text sizes are enabled, I'll set the layout to show 4 columns at a time, instead of 6.\n\nThis provides wider cell dimensions and gives each title more room to grow. To accommodate even longer text, consider a custom marquee strategy.\n\nHere's another example where I'll adjust layout in this app. This part of my app contains cards for different types of content, like a video of a beach, or a video of camping.\n\nEach of these content cards contains an image, the title, and a subtitle. With larger text, there isn't enough visual padding between elements, and text is easily truncated with the space that it has.\n\nOne solution is to provide a conditional layout for when larger sizes are turned on. Here's how a conditional layout can be achieved in SwiftUI.\n\nFirst, read the dynamicTypeSize environment value to detect when accessibility sizes are turned on.\n\nThen, create a VStackLayout or an HStackLayout depending on whether larger text is being used. AnyLayout lets you abstract over these two types. Use the new layout like any other stack. It will dynamically switch between horizontal and vertical depending on the text size.\n\nIn UIKit, use UIStackView and update the axis property based on preferredContentSizeCategory. isAccessibilityCategory.\n\nCall registerForTraitChanges and pass UITraitPreferredContentSizeCategory to update your layout in response to size changes while your app is running.\n\nHere it is in action in my app's content cards. When larger text sizes are enabled, the layout switches to a vertical stack. This lets the title and subtitle grow to the entire width of the cell, rather than sharing the width with the image. This layout also allows the cells to become taller to provide more room for the content.\n\nNow you're ready to test your app with larger text sizes on tvOS. Discover where you can make refinements by using system text styles and tailoring your layouts to prioritize text legibility.\n\nHere's your action plan. Use standard text styles instead of hard-coded fonts.\n\nTest systematically with Large Text enabled.\n\nAdapt layouts when needed for best experience. And indicate support for Larger Text in your app's Accessibility Nutrition Labels for tvOS.\n\nNow it's your turn to make your tvOS app accessible for everyone! Thanks for watching!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm Isis, and I'm an engineering manager on the accessibility team. This year, there is great news for accessibility on tvOS 27. Large Text support is now available, bringing system-wide text scaling to every app on the platform. Many people need or prefer different text sizes, and making your app dynamic helps everyone get a great experience. Your tvOS app customers have been waiting for this accessibility feature. And I'll show you how to make the most out of it in your apps. In addition, you'll be able to indicate support for Larger Text in your Accessibility Nutrition Labels for tvOS in the App Store. This is a great way to reach users who specifically look for accessible apps that support larger text."
+      },
+      {
+        "timestamp": "0:55",
+        "text": "In this session, I'll start by covering how Large Text works on tvOS and where people can find it. Then, I'll go into identifying small parts of your app that you may need to adjust for larger text sizes."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "And finally, I'll touch on a few examples of how to adapt layout in response to text size."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "Let's start with an overview. If you're familiar with Dynamic Type on iOS, you have a head start! Dynamic Type works the same way on tvOS."
+      },
+      {
+        "timestamp": "1:25",
+        "text": "UIKit and SwiftUI can adapt text sizes automatically based on what someone prefers. This gives people control over the text size to match their needs and comfort."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "People can turn on larger text sizes in the Settings app. By navigating to Accessibility, Display, then Text Size."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "They'll have the option of choosing text sizes starting at Large all the way up to Accessibility XXXL. I'm working on a media app that lets people discover and watch their favorite movies. Here's how this app adapts to these larger text sizes. This media app has a tab bar at top for navigation. There's a large title, with a few action buttons, and a gallery of movie posters to explore in a collection view below that."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "With larger text sizes turned on, the navigation title at the top has become much larger."
+      },
+      {
+        "timestamp": "2:23",
+        "text": "In the tab bar, each label is now bigger, and all of the text throughout the interface has scaled up significantly. Standard UIKit and SwiftUI components like Labels, Buttons and Navigation tabBars handle this automatically. For your apps, your job is just to identify and update any custom elements that may need attention. When examining your app with Large Text, there are a few types of issues to identify. When your app runs with larger text sizes, you'll want to ensure that you avoid fixed font sizes that don't allow your text to scale."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "Interfaces that don't adapt to dynamic type, like hard-coded sizes or constraints, may cause issues like truncation of text or clipping of UI elements."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "You may also need to adjust layouts for the padding and spacing needed when some elements grow to larger sizes."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "Here's an example from my media app where the description of a movie is displayed."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "There is a title shown at the top, with text labels and controls towards the bottom."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "With text set to the largest size, most of the text has grown larger… But, there's one text element on the left that isn't scaling. That is the caption that reads \"Signup information\" above the controls that let someone sign up, buy, or rent a movie. Now, a caption like this may have hard-coded text sizes for a specific layout reason. For example, it might have originally been in a container with static dimensions or rigid constraints. While this can seem appealing for creating predictable layouts, it's not recommended. This approach lacks flexibility and can't adapt to larger text. Instead, adapt the layout to be flexible and remove the hard-coded values. Here is the code representing the Description View of my media app."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "It has a VStack, containing the \"Signup information\" caption, and an HStack containing the buttons and other text information about the movie. This code contains a few different challenges for larger text. It specifies a fixed font size, which will not adapt when someone changes their size preference."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "And on the Text view, there is a fixed width constraint to 300 points."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "As text grows, 300 points may not be wide enough for the text, which could lead to text truncation."
+      },
+      {
+        "timestamp": "4:53",
+        "text": "To make this caption adjust to larger text sizes, I'll replace the hard-coded font style with a semantic text style. In this case, I'll use \"caption\"."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "With those changes, the text size is now dynamically growing, but the content is now truncated."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "To fix this, replace fixed widths with flexible constraints that let the view grow as needed."
+      },
+      {
+        "timestamp": "5:17",
+        "text": "On the text view, I'll replace the fixed width with the parameter maxWidth and set it to infinity. This tells SwiftUI to use as much width as needed for the content."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "With those changes, my text view scales beautifully with larger text, and has enough space to display its content. Perfect! To find these types of common issues in your app, search for hard-coded text sizes and migrate to standard styles instead."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "Search your app for hard-coded height and width constraints and use flexible constraints to allow your content to grow."
+      },
+      {
+        "timestamp": "5:55",
+        "text": "If you're using UIKit, the approach is similar with one additional step. Replace hard-coded fonts with text styles, and set adjustsFontForContentSizeCategory to true. This tells UIKit to automatically update when preferences change."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "Sometimes fixing hard-coded values isn't enough. You may want to adapt the layout in response to larger text, while preserving the original layout for default sizes."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "Consider this collection view. It contains six movie posters with a title underneath each. With a standard text size, the full title fits comfortably in the space below the image."
+      },
+      {
+        "timestamp": "6:37",
+        "text": "With Large Text enabled, there isn't enough room to fit six titles horizontally. This layout will need to be adapted when the text is larger. Here is the SwiftUI code for the view. It presents a horizontal scroll view, with a LazyHStack. Inside a container, I have a button for each cell."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "To adapt this layout, I will first read the dynamicTypeSize environment key path. Then, I'll change the columnCount parameter on the cell in the containerRelativeFrame modifier."
+      },
+      {
+        "timestamp": "7:13",
+        "text": "When larger text sizes are enabled, I'll set the layout to show 4 columns at a time, instead of 6."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "This provides wider cell dimensions and gives each title more room to grow. To accommodate even longer text, consider a custom marquee strategy."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "Here's another example where I'll adjust layout in this app. This part of my app contains cards for different types of content, like a video of a beach, or a video of camping."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "Each of these content cards contains an image, the title, and a subtitle. With larger text, there isn't enough visual padding between elements, and text is easily truncated with the space that it has."
+      },
+      {
+        "timestamp": "7:58",
+        "text": "One solution is to provide a conditional layout for when larger sizes are turned on. Here's how a conditional layout can be achieved in SwiftUI."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "First, read the dynamicTypeSize environment value to detect when accessibility sizes are turned on."
+      },
+      {
+        "timestamp": "8:14",
+        "text": "Then, create a VStackLayout or an HStackLayout depending on whether larger text is being used. AnyLayout lets you abstract over these two types. Use the new layout like any other stack. It will dynamically switch between horizontal and vertical depending on the text size."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "In UIKit, use UIStackView and update the axis property based on preferredContentSizeCategory. isAccessibilityCategory."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "Call registerForTraitChanges and pass UITraitPreferredContentSizeCategory to update your layout in response to size changes while your app is running."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "Here it is in action in my app's content cards. When larger text sizes are enabled, the layout switches to a vertical stack. This lets the title and subtitle grow to the entire width of the cell, rather than sharing the width with the image. This layout also allows the cells to become taller to provide more room for the content."
+      },
+      {
+        "timestamp": "9:18",
+        "text": "Now you're ready to test your app with larger text sizes on tvOS. Discover where you can make refinements by using system text styles and tailoring your layouts to prioritize text legibility."
+      },
+      {
+        "timestamp": "9:31",
+        "text": "Here's your action plan. Use standard text styles instead of hard-coded fonts."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "Test systematically with Large Text enabled."
+      },
+      {
+        "timestamp": "9:42",
+        "text": "Adapt layouts when needed for best experience. And indicate support for Larger Text in your app's Accessibility Nutrition Labels for tvOS."
+      },
+      {
+        "timestamp": "9:54",
+        "text": "Now it's your turn to make your tvOS app accessible for everyone! Thanks for watching!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -53,6 +224,23 @@
       "code": "// UIKit adaptive layout that responds to content size changes\n\nclass AdaptiveLayoutViewController: UIViewController {\n  let stackView = UIStackView()\n  \n  override func viewDidLoad() {\n    super.viewDidLoad()\n    updateLayout()\n\n    let sizeTraits: [UITrait] = [UITraitPreferredContentSizeCategory.self]\n    registerForTraitChanges(sizeTraits, action: #selector(updateLayout))\n  }\n\n  private func updateLayout() {\n    if traitCollection.preferredContentSizeCategory.isAccessibilityCategory {\n      stackView.axis = .vertical\n    } else {\n      stackView.axis = .horizontal\n    }\n  }\n\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:01",
+      "title": "Introduction",
+      "duration": "2:45"
+    },
+    {
+      "timestamp": "2:46",
+      "title": "Identify common issues",
+      "duration": "3:27"
+    },
+    {
+      "timestamp": "6:13",
+      "title": "Adapt your layout",
+      "duration": "3:55"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -75,5 +263,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10074"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:52.159Z"
+  "extractedAt": "2026-10-17T18:42:46.131Z"
 }

@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110489/",
   "title": "Q&A: Swift Package Manager",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools"
@@ -33,5 +32,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110354"
     }
   ],
-  "extractedAt": "2026-10-11T16:42:13.259Z"
+  "extractedAt": "2026-10-17T18:52:09.624Z"
 }

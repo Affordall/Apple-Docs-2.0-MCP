@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/256/",
   "title": "Discover generated subtitles and subtitle styles",
-  "speakers": [],
-  "duration": "",
+  "duration": "11:00",
   "topics": [
     "Accessibility & Inclusion",
     "Audio & Video"
@@ -12,8 +11,236 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm James and I'm an engineer on the AVFoundation team. I love to travel, so today, I'll take you on a trip to explore a couple of features related to subtitles. People use subtitles for many reasons. Subtitles are vital for people who are deaf or hard of hearing, or who have other accessibility needs. They need subtitles to understand the content. Some people read subtitles to assist in understanding the spoken dialogue. I use subtitles when I physically can't hear the audio, like when I'm in a busy airport.\n\nApple AI-generated subtitles can be created live, locally on the device as the media plays. In this video, first, I'll show you how the Apple AI-generated subtitles appear in your app.\n\nAfterwards, I'll show the subtitle style preview feature that lets people customize subtitles while playing video.\n\nNext, I'll show how media assets are authored.\n\nThe media creation journey usually begins with filming and editing the Video and Audio content.\n\nThen, subtitles, text that represents spoken words in the audio, are created manually. Later in this video, I'll refer to such subtitles as Authored subtitles. The content author can create multiple subtitles, each for one particular language. Also, they can create multiple audio languages. The final media contains the Video, Audio and Authored subtitles all together.\n\nEven content with multiple audio and subtitle languages might not have a language the viewer understands.\n\nPeople can have their device create generated subtitles to help fill the gap when the original content doesn't have the subtitle language they need.\n\nThis enables more people to access and experience the content.\n\nNext, this is how generated subtitles are created.\n\nThere are two use cases for generated subtitles. In the first use case, subtitles are generated from audio.\n\nThe source audio goes into the on-device Speech-To-Text model and subtitles are created.\n\nThis is called Speech transcription.\n\nSecond, for language translation, subtitles are generated from other subtitles. The source subtitles, English in this case, go into the on-device translation model. New subtitles in a different language are created, Italian, for example. This is called Language translation. Generated subtitles provide additional languages. The authored subtitles are preferred and remain unchanged.\n\nThe good news is that you don't need to implement anything to turn on generated subtitles.\n\nThey're available automatically during video playback.\n\nGenerated subtitles are provided for many playback scenarios. Subtitles can be generated for HTTP live streaming content, including Live streams, like TV channels. It also includes Video on demand movies and shows, including travel videos and live events, like sports.\n\nFile-based content is also supported, like app-bundled videos or downloaded media.\n\nSeveral content types are supported. Professional content, like movies and series, is supported.\n\nSo is customer-created content, like camera capture from the iPhone and social media videos.\n\nNow, I'll show you the supported devices and languages. Generated subtitles are available on multiple devices. This table shows the supported devices and languages.\n\nStarting in iOS and macOS 27, English subtitles can be generated from English audio. This is also supported on tvOS and visionOS 27. Also, multiple subtitle languages can be generated from English subtitles on iOS and macOS. Now that you know about generated subtitles, I'll talk about how to present them in your app.\n\nIt's important to provide subtitle selection UI during video playback.\n\nHere are the options for your app.\n\nThis is the AVPlayerViewController UI on iOS. It fully implements subtitle selection and player controls. You don't need to do anything extra. AVPlayerView on macOS provides similar functionality.\n\nThis is AVLegibleMediaOptionsMenuController. It presents subtitle selection controls and implements the behavior. It's a good choice when you want to add subtitle selection UI to your existing player UI, since it does not provide player controls.\n\nOr, you can implement custom controls for media selection to match the style of other controls in your app. Like the ones I created here in my app.\n\nGenerated subtitles make the content in your app more accessible. More people can understand and enjoy the content.\n\nNow I'll show you another subtitle feature that makes your app even more accessible.\n\nSubtitles help make content accessible, but the presentation of the subtitles is also important. The Settings app has let people select and change subtitle and caption styling for many years.\n\nThere are a few built-in styles, and people can create custom styles to fit their needs. I've created a custom style called Bold Yellow. It has yellow text with a little extra border to make it easier for me to read. I can select the style in the Settings app, but it would be easier, and more accessible, to change the style while watching a video. That's exactly what the subtitle style preview does.\n\nI'm watching a video and I have the Style menu open. I have the same styles available that were in the Settings app.\n\nThe subtitle style can now be changed right from the menu where you select subtitles during video playback. Not only that, but a preview of the style is shown to make selection easier.\n\nThis is what my Bold Yellow style looks like in a video.\n\nThere are several ways to implement the subtitle style preview feature in your app.\n\nFirst, this is AVPlayerViewController on iOS. It fully implements the subtitle style preview and player controls. AVPlayerView on macOS provides similar functionality.\n\nThis is AVLegibleMediaOptionsMenuController. It presents subtitle style preview controls and implements the behavior. It's a good choice when you want to add the subtitle preview to your existing player UI.\n\nNext, AVPlayerLayer has an API to show the style preview. I'll show you how to implement it in a moment. Also, AVCaptionRenderer can provide the style preview, but you are responsible for rendering it. Now, here's the AVPlayerLayer implementation. Each subtitle style in the system is assigned a profile ID.\n\nFirst, fetch all of the styles by their profile IDs. Populate your UI with the names for the styles.\n\nWhen a style is selected, show the stylized preview. New subtitles are shown using the specified style. Any existing subtitles are automatically hidden so they don't interfere with the preview.\n\nPass nil for the text parameter. In that case, localized system text is shown.\n\nUse the position parameter to avoid any UI controls. This is an offset from the default location of the preview text.\n\nCall this function again to show a different style. You can call it as many times as needed.\n\nStop the preview when selection is done. This removes the preview text and restores any existing subtitles that are active.\n\nSet the chosen style. It will be used for all subtitles on the system.\n\nYou can build this feature in your app to let people quickly choose subtitles that are easier to read while watching a video. Now, I will show you both of these subtitle features together. I'm planning a camping trip to Italy. I'm going to watch this camping video for some inspiration.\n\nIt's has English subtitles, but I want Italian subtitles, so I can brush up on my Italian.\n\nTo change the language, I'll open the Subtitles menu, then click Language.\n\nSeveral subtitles are available. Some are authored and some generated. The generated options are marked with a sparkle symbol and the word Translated. I'll pick the Italian generated subtitles.\n\nNow I have Italian subtitles in my video.\n\nI'll change the style to make them easier to read. First, I'll open the Subtitles menu, then select Style. I'll try Large Text. The existing subtitles have been replaced with a placeholder message, in Italian, using the Large Text styling.\n\nThe text is larger, but let me try my custom style.\n\nOh, I like that.\n\nI'll dismiss the menu.\n\nThe subtitles are now using my custom style. This trip is going to be amazing. Before I go, here are your next steps.\n\nNow that you know about the generated subtitles feature, I encourage you to go explore it. For example, watch some travel videos and turn on generated subtitles.\n\nAlso, make sure your app has UI to select subtitles. Implement the subtitle style preview too. People appreciate this accessibility feature when they need to change the style of their subtitles. Thank you for watching. I have to go catch a plane to Italy. Ciao ciao.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm James and I'm an engineer on the AVFoundation team. I love to travel, so today, I'll take you on a trip to explore a couple of features related to subtitles. People use subtitles for many reasons. Subtitles are vital for people who are deaf or hard of hearing, or who have other accessibility needs. They need subtitles to understand the content. Some people read subtitles to assist in understanding the spoken dialogue. I use subtitles when I physically can't hear the audio, like when I'm in a busy airport."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "Apple AI-generated subtitles can be created live, locally on the device as the media plays. In this video, first, I'll show you how the Apple AI-generated subtitles appear in your app."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "Afterwards, I'll show the subtitle style preview feature that lets people customize subtitles while playing video."
+      },
+      {
+        "timestamp": "1:06",
+        "text": "Next, I'll show how media assets are authored."
+      },
+      {
+        "timestamp": "1:10",
+        "text": "The media creation journey usually begins with filming and editing the Video and Audio content."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "Then, subtitles, text that represents spoken words in the audio, are created manually. Later in this video, I'll refer to such subtitles as Authored subtitles. The content author can create multiple subtitles, each for one particular language. Also, they can create multiple audio languages. The final media contains the Video, Audio and Authored subtitles all together."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "Even content with multiple audio and subtitle languages might not have a language the viewer understands."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "People can have their device create generated subtitles to help fill the gap when the original content doesn't have the subtitle language they need."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "This enables more people to access and experience the content."
+      },
+      {
+        "timestamp": "2:10",
+        "text": "Next, this is how generated subtitles are created."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "There are two use cases for generated subtitles. In the first use case, subtitles are generated from audio."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "The source audio goes into the on-device Speech-To-Text model and subtitles are created."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "This is called Speech transcription."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "Second, for language translation, subtitles are generated from other subtitles. The source subtitles, English in this case, go into the on-device translation model. New subtitles in a different language are created, Italian, for example. This is called Language translation. Generated subtitles provide additional languages. The authored subtitles are preferred and remain unchanged."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "The good news is that you don't need to implement anything to turn on generated subtitles."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "They're available automatically during video playback."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "Generated subtitles are provided for many playback scenarios. Subtitles can be generated for HTTP live streaming content, including Live streams, like TV channels. It also includes Video on demand movies and shows, including travel videos and live events, like sports."
+      },
+      {
+        "timestamp": "3:35",
+        "text": "File-based content is also supported, like app-bundled videos or downloaded media."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "Several content types are supported. Professional content, like movies and series, is supported."
+      },
+      {
+        "timestamp": "3:51",
+        "text": "So is customer-created content, like camera capture from the iPhone and social media videos."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "Now, I'll show you the supported devices and languages. Generated subtitles are available on multiple devices. This table shows the supported devices and languages."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "Starting in iOS and macOS 27, English subtitles can be generated from English audio. This is also supported on tvOS and visionOS 27. Also, multiple subtitle languages can be generated from English subtitles on iOS and macOS. Now that you know about generated subtitles, I'll talk about how to present them in your app."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "It's important to provide subtitle selection UI during video playback."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "Here are the options for your app."
+      },
+      {
+        "timestamp": "4:45",
+        "text": "This is the AVPlayerViewController UI on iOS. It fully implements subtitle selection and player controls. You don't need to do anything extra. AVPlayerView on macOS provides similar functionality."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "This is AVLegibleMediaOptionsMenuController. It presents subtitle selection controls and implements the behavior. It's a good choice when you want to add subtitle selection UI to your existing player UI, since it does not provide player controls."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "Or, you can implement custom controls for media selection to match the style of other controls in your app. Like the ones I created here in my app."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "Generated subtitles make the content in your app more accessible. More people can understand and enjoy the content."
+      },
+      {
+        "timestamp": "5:39",
+        "text": "Now I'll show you another subtitle feature that makes your app even more accessible."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "Subtitles help make content accessible, but the presentation of the subtitles is also important. The Settings app has let people select and change subtitle and caption styling for many years."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "There are a few built-in styles, and people can create custom styles to fit their needs. I've created a custom style called Bold Yellow. It has yellow text with a little extra border to make it easier for me to read. I can select the style in the Settings app, but it would be easier, and more accessible, to change the style while watching a video. That's exactly what the subtitle style preview does."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "I'm watching a video and I have the Style menu open. I have the same styles available that were in the Settings app."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "The subtitle style can now be changed right from the menu where you select subtitles during video playback. Not only that, but a preview of the style is shown to make selection easier."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "This is what my Bold Yellow style looks like in a video."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "There are several ways to implement the subtitle style preview feature in your app."
+      },
+      {
+        "timestamp": "6:56",
+        "text": "First, this is AVPlayerViewController on iOS. It fully implements the subtitle style preview and player controls. AVPlayerView on macOS provides similar functionality."
+      },
+      {
+        "timestamp": "7:10",
+        "text": "This is AVLegibleMediaOptionsMenuController. It presents subtitle style preview controls and implements the behavior. It's a good choice when you want to add the subtitle preview to your existing player UI."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "Next, AVPlayerLayer has an API to show the style preview. I'll show you how to implement it in a moment. Also, AVCaptionRenderer can provide the style preview, but you are responsible for rendering it. Now, here's the AVPlayerLayer implementation. Each subtitle style in the system is assigned a profile ID."
+      },
+      {
+        "timestamp": "7:48",
+        "text": "First, fetch all of the styles by their profile IDs. Populate your UI with the names for the styles."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "When a style is selected, show the stylized preview. New subtitles are shown using the specified style. Any existing subtitles are automatically hidden so they don't interfere with the preview."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "Pass nil for the text parameter. In that case, localized system text is shown."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "Use the position parameter to avoid any UI controls. This is an offset from the default location of the preview text."
+      },
+      {
+        "timestamp": "8:25",
+        "text": "Call this function again to show a different style. You can call it as many times as needed."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "Stop the preview when selection is done. This removes the preview text and restores any existing subtitles that are active."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "Set the chosen style. It will be used for all subtitles on the system."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "You can build this feature in your app to let people quickly choose subtitles that are easier to read while watching a video. Now, I will show you both of these subtitle features together. I'm planning a camping trip to Italy. I'm going to watch this camping video for some inspiration."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "It's has English subtitles, but I want Italian subtitles, so I can brush up on my Italian."
+      },
+      {
+        "timestamp": "9:13",
+        "text": "To change the language, I'll open the Subtitles menu, then click Language."
+      },
+      {
+        "timestamp": "9:19",
+        "text": "Several subtitles are available. Some are authored and some generated. The generated options are marked with a sparkle symbol and the word Translated. I'll pick the Italian generated subtitles."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "Now I have Italian subtitles in my video."
+      },
+      {
+        "timestamp": "9:43",
+        "text": "I'll change the style to make them easier to read. First, I'll open the Subtitles menu, then select Style. I'll try Large Text. The existing subtitles have been replaced with a placeholder message, in Italian, using the Large Text styling."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "The text is larger, but let me try my custom style."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "Oh, I like that."
+      },
+      {
+        "timestamp": "10:11",
+        "text": "I'll dismiss the menu."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "The subtitles are now using my custom style. This trip is going to be amazing. Before I go, here are your next steps."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "Now that you know about the generated subtitles feature, I encourage you to go explore it. For example, watch some travel videos and turn on generated subtitles."
+      },
+      {
+        "timestamp": "10:34",
+        "text": "Also, make sure your app has UI to select subtitles. Implement the subtitle style preview too. People appreciate this accessibility feature when they need to change the style of their subtitles. Thank you for watching. I have to go catch a plane to Italy. Ciao ciao."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -23,10 +250,52 @@
       "code": "// Implement subtitle style preview\n\nimport AVFoundation\nimport MediaAccessibility\n\nfunc updateProfileList() {\n    subtitleStyleProfileIDs = MACaptionAppearanceCopyProfileIDs() as? [String] ?? []\n}\n\nfunc showPreviewStyle(subtitleStyleProfileID: String) {\n    playerLayer.setCaptionPreviewProfileID(subtitleStyleProfileID, position: .zero, text: nil)\n}\n\nfunc stopPreviewStyle() {\n    playerLayer.stopShowingCaptionPreview()\n}\n\nfunc setSubtitleStyle(subtitleStyleProfileID: CFString) {\n    MACaptionAppearanceSetActiveProfileID(subtitleStyleProfileID)\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:10"
+    },
+    {
+      "timestamp": "1:10",
+      "title": "Media authoring",
+      "duration": "1:04"
+    },
+    {
+      "timestamp": "2:14",
+      "title": "Subtitle generation methods",
+      "duration": "0:49"
+    },
+    {
+      "timestamp": "3:03",
+      "title": "Availability and support",
+      "duration": "1:28"
+    },
+    {
+      "timestamp": "4:31",
+      "title": "Presenting subtitles in your app",
+      "duration": "1:08"
+    },
+    {
+      "timestamp": "5:39",
+      "title": "Subtitle style preview",
+      "duration": "3:16"
+    },
+    {
+      "timestamp": "8:55",
+      "title": "Demo",
+      "duration": "1:25"
+    },
+    {
+      "timestamp": "10:20",
+      "title": "Next steps",
+      "duration": "0:40"
+    }
+  ],
   "resources": {
     "resourceLinks": [],
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/256/4/d28efb5e-5550-468d-b1d1-caec51ce55e6/downloads/wwdc2026-256_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/256/4/d28efb5e-5550-468d-b1d1-caec51ce55e6/downloads/wwdc2026-256_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:32:15.258Z"
+  "extractedAt": "2026-10-17T18:42:09.180Z"
 }

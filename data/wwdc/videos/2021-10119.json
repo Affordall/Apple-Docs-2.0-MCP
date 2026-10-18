@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10119/",
   "title": "SwiftUI Accessibility: Beyond the basics",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Accessibility & Inclusion",
@@ -12,8 +11,1052 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Nathan Tannar: Hello, and welcome to WWDC! My name is Nathan, and I'm an engineer on the Accessibility team.\n\nToday we'll be going beyond the basics to learn how to deliver exceptional and accessible SwiftUI apps.\n\nThis year marks a huge leap forward for accessibility in SwiftUI.\n\nAt Apple, accessibility is one of our core values.\n\nOur assistive technologies across all our platforms make sure that anyone can use your app regardless of any physical, visual, audible, or motor impairment.\n\nMy team and I work to make sure most of your app is accessible by default, but there is always more you can do to enrich the experience.\n\nToday I'll show you the new tools and APIs for SwiftUI that make enriching this experience easy.\n\nLet's begin with the tooling improvements in Xcode.\n\nSwiftUI Previews have changed how many of us develop apps.\n\nIt dramatically improves your ability to iterate upon your views across multiple environments, all without the need of running your app.\n\nTo make the most important accessibility modifiers just a click away, we've added a curated list of accessibility editors.\n\nI hope this encourages everyone to always make their views accessible.\n\nBut there's more.\n\nSince accessibility modifiers don't have visual changes in the previews, a new tool was developed that allows you to inspect the accessibility of your view without leaving Xcode.\n\nLet's switch from the editor's panel to the new accessibility panel.\n\nShipping in Xcode 13, SwiftUI Previews will now also feature an Accessibility Preview.\n\nWith it, you can inspect the accessibility elements for a preview in real time.\n\nAnd this is a game changer.\n\nAccessibility Preview will help you make accessible apps even if you don't have a deep understanding of each assistive technology.\n\nLet's take a closer look to see how changes are reflected in the Accessibility Preview.\n\nThis is a simplified version of the view we just saw.\n\nAfter running the preview, I can select the VStack and the Accessibility Preview will update to display the elements in their sorted order.\n\nNotice that each element will always display its basic properties -- such as a label and traits.\n\nFor example, the Text view will create an accessibility element with the string as its label.\n\nIt also gains the .isStaticText trait.\n\nThe preview will update for any accessibility changes we make, such as adding the .isHeader trait.\n\nYou will also be able to see some of the automatic accessibility that takes place behind the scenes, such as automatic SF Symbol labels.\n\nFor example, the checkmark.seal.fill symbol is labeled \"Verified\" by default.\n\nIf you're relying on a symbol's default label, it's important to check that it accurately describes your interface.\n\nWe'll continue to use the Accessibility Preview as we step through five importance areas that'll help you deliver an exceptional experience to all of your app's users.\n\nWe'll start by examining the best way to make custom controls accessible.\n\nNext, we'll discuss how to make a view accessible with children.\n\nI'll highlight how to audit your app for common navigation problems and how the Accessibility Preview can assist with this.\n\nThen I'll show you how to supercharge your app's navigation with VoiceOver rotors.\n\nAnd finally, we'll look at focus and how it relates to assistive technologies.\n\nI've been working to prototype a new finance app I call Wallet Pal.\n\nIt's still in the early stages, but so far, I'm pretty happy with the initial design.\n\nI was pleased to hear that early beta testers are also loving it.\n\nNow that I've polished the UI, I should spend some time to polish the accessibility interface.\n\nThe accessibility interface compliments the visual experience to make sure that it’s usable by everyone.\n\nI've asked some VoiceOver users to help test Wallet Pal and I've heard that the app is hard to navigate and not fully accessible.\n\nIf parts are not accessible to VoiceOver, then they are also not accessible to other assistive technologies.\n\nIt's important that anyone be able to use Wallet Pal, so let's investigate to see where we can improve the experience.\n\nWe'll begin with reports of users not being able to edit their budgets, a critical feature in Wallet Pal.\n\nThis is the Budget Planner view which allows users to edit their food, entertainment, and savings budgets.\n\nTo fit the design of Wallet Pal, I ended up needing to create custom sliders.\n\nI accomplished this by creating a budget slider out of shapes and used a drag gesture for interaction.\n\nShapes in SwiftUI make it easy to create stunning and unique views, but they are not accessible by default, and so neither is my budget slider.\n\nThis must be why some users are not able to edit their budgets.\n\nWe can confirm it's not accessible by running a SwiftUI preview and selecting the SliderShape.\n\nThe Accessibility Preview shows that there are no elements, so this control is not accessible.\n\nIdeally, we should have a single labeled accessibility element with a value that can be changed.\n\nIn contrast, standard controls are accessible by default, meaning little to no extra effort is required to provide a great experience.\n\nSwiftUI uses the view type and its initialization parameters to automatically derive the accessibility element's label, value, traits, and actions.\n\nSo what's the best way to make our custom budget slider accessible? Since the standard slider is accessible by default, my team and I thought it would be great to have an API that allows the accessibility of one view to be represented by another.\n\nThis is what led us to us to create accessibilityRepresentation(representation:).\n\nIt's an API that allows the accessibility of one view to be defined by another.\n\nSince I want this to be perceived by assistive technologies as a slider, that's what I'll use for the accessibility representation.\n\nWith accessibilityRepresentation(representation:), we're now well on the way to making this budget slider accessible.\n\nThe only change needed to improve the experience of the slider is to describe the value in dollars.\n\nAnd great, just like that, now our budget slider is perfectly accessible.\n\nOn macOS, the type of control will also be spoken to VoiceOver users.\n\nSo by using the slider view in our budget slider's representation, it will be announced as a slider.\n\nIt's recommended to use accessibilityRepresentation(representation:) when possible, to make custom controls accessible.\n\nThis is just one way to use accessibilityRepresentation(representation:).\n\nIts flexibility allows for many more creative uses.\n\nLet's see if we can use it to fix other accessibility bugs in our app.\n\nWhile we have now fixed the functional ability to edit budgets, some users reported that they couldn't discover how to navigate to the Budget Planner view.\n\nWhen designing Wallet Pal, we decided to use SF Symbols for all of our buttons.\n\nWhile SF Symbols may have great default accessibility labels, they may not always fit the intended use case.\n\nLet's investigate if the problem is a poorly labeled button.\n\nThe NavigationBarView contains the Edit Budgets button.\n\nSince we rely on SF Symbols for so many of our buttons, I created a custom buttonStyle called SymbolButtonStyle.\n\nBut it appears that despite initializing the button with the label \"Edit Budgets\", the label for the button is slider.vertical.3.\n\nSo the accessibility label is being derived from the SF Symbol.\n\nLet's take a closer look at the SymbolButtonStyle.\n\nThe SymbolButtonStyle's makeBody(configuration:) method returns an Image view.\n\nThe Edit Budgets string we initialize the button with would create a Text view as the configuration's label.\n\nBut this style completely ignores the configuration's label.\n\nThis is why the button is not labeled \"Edit Budgets\".\n\nWhile we want an SF Symbol to appear visually, we want the accessibility of the button to be represented by the configuration's label.\n\nAnd so this seems like a great use case for accessibilityRepresentation(representation:).\n\nUsing accessibilityRepresentation(representation:), I can substitute the accessibility of the Image view with another view, in this case, the configuration's label.\n\nThis way, we can preserve the label we used to create the button.\n\naccessibilityRepresentation(representation:) is not just the ideal and recommended way to make custom controls accessible, it also opens up new creative possibilities to make views accessible.\n\nNext, let's discuss the relationship between children and accessibility containers.\n\nAs you may recall, accessibility elements can be wrapped together in a group as children of an accessibility container.\n\nThis is done with the accessibilityElement(children:) modifier and the contain child behavior.\n\nIn case you're unfamiliar, the contain child behavior can be used to create an accessibility container, which wraps existing accessibility elements as children.\n\nBut what if instead you have an accessibility element and you want to set its children? I'm running into this case when trying to make the Budget History graph accessible.\n\nUsers reported the graph is completely inaccessible.\n\nAnd so this means when assistive technologies are focused on the Budget History header and try to navigate to the next element, they end up at the Alerts header.\n\nVoiceOver users would not even know that this graph exists.\n\nI built the graph using the new Canvas view.\n\nCanvas makes it easier to draw a collection of shapes.\n\nFor more on Canvas, please check out Jacob's presentation on how it can be used to add rich graphics to your app.\n\nThe most important takeaway for accessibility is that Canvas draws a collection of shapes.\n\nAnd just like we saw with BudgetSlider, shapes are not accessible by default.\n\nAll users need to be able to view their budget history, so let's make this accessible for everyone.\n\nStarting with the basics, let's give our Canvas a label.\n\nThis will automatically create a new accessibility element for the Canvas and assign its label.\n\nNow, I'd like each bar in the graph to be represented by their own accessibility element.\n\nThis is a use case where we have an accessibility element and want to provide its children.\n\nTo do this, I'll use the new accessibilityChildren(children:) modifier.\n\nThis will transform the accessibility element into an accessibility container, preserving other accessibility properties, such as the label.\n\nThe modifier takes a ViewBuilder, which allows us to set new views as children of the accessibility container.\n\nRecall that our Budget History graph is drawing a horizontal bar graph, so we'll use an HStack and return a view for each budget.\n\nI'll use a Rectangle for each accessibility element so that the frame will fill all available vertical space.\n\nThis will make each accessibility element's frame bigger than what's displayed visually, and that's OK.\n\nHaving a large but consistent frame will make it easier to navigate on iOS when VoiceOver users drag their finger across the screen to scan for accessibility elements.\n\nIf I select the HStack from within the accessibilityChildren(children:) modifier, the Accessibility Preview confirms that an element has been created for each bar in the graph.\n\nThese will all be accessible as children of the Canvas accessibility container.\n\nWith these changes, the Budget History graph is now completely accessible, and assistive technologies can navigate through each bar in the graph.\n\nNotice that the frame for each element is the same, which is ideal.\n\nFor more complex charts, we have other ways of making them accessible.\n\nFor that, please check out Preston's presentation on bringing accessibility to charts.\n\nBut with accessibility children, the accessibility elements of a view can differ from what's presented visually, allowing you to tailor a great experience.\n\nBut accessibility children can also be used to compose the accessibility with the help of the combine behavior.\n\nAs a quick refresh, the combine child behavior will merge properties from multiple accessibility elements into a new or existing accessibility element.\n\nBut with the addition of the accessibility children API, it can now also be used to compose accessibility in a generic way.\n\nWith accessibility representation, the original accessibility is completely replaced.\n\nThis means no composition can take place; whereas accessibility children is additive.\n\nThis means you could later combine the children to merge their properties into the original element.\n\nThis is a more advanced use case of the accessibilityChildren(children:) modifier, but it's a functionality I wanted to highlight.\n\nExamples are featured in this presentation's Accessibility Catalog Sample Project.\n\nI hope to see many of you explore what's possible with this kind of composition.\n\naccessibilityChildren(children:) gives you control over the children of a container.\n\nAnd with that, complex graphs drawn with Canvas can be made accessible with modifiers and views you're already familiar with.\n\nAnd with the combine child behavior, the accessibility of a single view can be composed of many.\n\nNow that we've learned how to make individual components of our app accessible, we can start putting things together to refine the navigation experience.\n\nI've heard that navigating Wallet Pal with VoiceOver is confusing and difficult.\n\nSo we have some more work to do if we want to deliver a great accessible app.\n\nLet's take a closer look at the Friends carousel at the top.\n\nWhile I don't have this feature built yet, I plan to add some kind of gamification to Wallet Pal.\n\nSo I've added a challenge button at the top left of each friend view.\n\nWe already fixed the SymbolButtonStyle, so the challenge button will be properly labeled now.\n\nBut since users are reporting that navigation is confusing, are there other issues? To answer that, we must first understand how assistive technologies will navigate Wallet Pal.\n\nBy default, accessibility elements are sorted based off their geometric position in relation to other elements, from top left to bottom right.\n\nThis means that without accessibility containers to differentiate the content, VoiceOver would navigate through each of the challenge buttons, then the Image and Add Friend button, and finally, the text with the user's name.\n\nA great feature of the Accessibility Preview is that it shows accessibility elements in their sorted order.\n\nThis makes it easy to visualize how assistive technologies will navigate right from within Xcode.\n\nAs expected, the sorted order matches what we previously saw.\n\nAnd this order would certainly be confusing to navigate.\n\nNow there are multiple ways we could fix the sort order of the accessibility elements.\n\nOne thing we could do is to introduce accessibility containers.\n\nI'll add the accessibilityElement(children:) modifier with the contain behavior.\n\nThis will wrap the accessibility elements of each FriendCellView in an accessibility container.\n\nThis fixes the navigation order, because children of an accessibility container are navigated before moving to the next accessibility element.\n\nWith this change, VoiceOver will navigate through the children of the accessibility container before moving to the next accessibility element.\n\nAnd so we achieve a much more desirable navigation order.\n\nBut could we do better to improve this experience? One problem is that the challenge button is navigated to before knowing who the user is.\n\nA VoiceOver user would want to know the name of the user before sending a challenge, so this button should really be sorted last.\n\nWe can use the accessibilitySortPriority(_:) modifier to fix this.\n\naccessibilitySortPriority(_:) can be used to change the order of elements within an accessibility container.\n\nAn element with a higher priority will be sorted first, whereas a lower priority will be sorted last.\n\nElements with equal priorities are then sorted based off their geometric positioning.\n\nI'll add the accessibilitySortPriority(_:) modifier to the challenge button to improve the navigation order.\n\nI'll use a priority of -1 since the default is 0, to force the sort order of the challenge button to be last.\n\nNow the challenge button will be navigated to last.\n\nThis is a good improvement, since there is less chance a VoiceOver user would be confused as to who they are sending a challenge to, but it's still not great.\n\nRather than wrapping each FriendCellView in an accessibility container, we could combine the children into a single element.\n\nRecall that combine merges properties from children into an existing or new accessibility element.\n\nThe combine behavior also curates which properties are merged for the best default result.\n\nFor example, the challenge button has become an action named \"Send Challenge\".\n\nThis too fixes the navigation order and reduces the number of accessibility elements.\n\nNow there's a single element for each user, and each element has a Send Challenge action.\n\nIt is often ideal to combine the accessibility elements of views that are represented in a ForEach.\n\nAs you may have picked up on by now, combine is a super useful child behavior.\n\nInstead of children being individually navigable, it merges their properties into a single, navigable element.\n\nFor when you need a single element but do not want it to inherit properties from the children, use the ignore behavior.\n\nAnd lastly, the contain child behavior wraps the children in an accessibility container and should be used to express a groups of views that are related.\n\nThis not only improves the default sort order but has other advantages to assistive technologies.\n\nWith the new Accessibility Preview, discovering these navigation problems is easy.\n\nAnd with a few small changes, you can dramatically improve the experience.\n\nBut to deliver a truly exceptional navigation experience to VoiceOver users, you'll will want to consider rotors.\n\nNow if you are new to accessibility, you might be thinking, \"What are rotors?\" In short, rotors are a powerful navigation tool.\n\nThey can be thought of as bookmarks that allow users to quickly navigate between them.\n\nSystem rotors, such as the headings and containers rotor, provide the foundation for this supercharged form of navigation.\n\nFor example, users can quickly navigate through sections using the headings rotor.\n\nThis is because the Section view automatically adds the isHeader trait to the header view If you are not using the Section view, you can add the isHeader trait to your view with accessibilityAddTraits(_:).\n\nSimilarly, accessibility containers are added to the container's rotor, which as we saw earlier, are created with the accessibilityElement(children:) modifier.\n\nAs you can see, supporting the headings rotor is incredibly easy, and the container's rotor further adds to the benefit of grouping your accessibility elements with the contain child behavior.\n\nNow that the basic navigation experience of Wallet Pal has been refined, let's take it a step further with rotors.\n\nIn Wallet Pal, alerts help keep users' spending habits in check by providing motivation messages and warnings when budgets near or exceed their limit.\n\nWe've incorporated SF Symbols for the different types of alerts.\n\nThese allow visual users to quickly scan through the list.\n\nBut this iconography will not help VoiceOver users.\n\nThey would instead have to navigate through every alert just to know if they have any warnings.\n\nTo replicate a similar experience that sighted users have, VoiceOver users need to be able to exclusively navigate warnings, that way, in an instant, they can navigate to the next warning alert.\n\nTo do this, we can use rotors.\n\nFor more examples of custom rotors and why they're so important to efficiency, please check out our \"VoiceOver Efficiency for Custom Rotors\" presentation from 2020.\n\nTo add a warnings rotor to my AlertsView, the first thing I'll do is to make sure I'm adding my rotor to an accessibility container.\n\nSome views in SwiftUI are accessibility containers by default -- such as List or LazyVStack -- but VStacks and HStacks are not, so I'll add the accessibilityElement(children:) modifier with the contain child behavior.\n\nNext, I'll create my rotor with the accessibilityRotor(_:entries:) modifier, giving it the name \"Warnings\".\n\nAnd lastly, I'll declare which of my alerts I want included in the warnings rotor, in this case all of the warning alerts.\n\nAnd that's it! It's this easy to supercharge your app's navigation.\n\nPart of what makes rotors so easy for these simple use cases is that SwiftUI can automatically match the rotor entry to the accessibility element based off the ID.\n\nThis is because the ID of our rotor entry will match the ID given to the AlertCellView by a ForEach.\n\nThe identity of a view is important to understand for accessibility rotors.\n\nSo if view identity is unclear or you'd like a refresher, I strongly encourage you to check out the \"Demystifying SwiftUI\" presentation to learn more.\n\nNow you might be thinking, \"Hold on, my view isn't this simple.\n\nWhat about views that are not within a ForEach?\" Don't worry, the accessibility rotor API can scale from simple to complex views.\n\nThis simple case works elegantly because there is a single accessibility element -- due to the combine -- for the AlertCellView.\n\nAnd the AlertCellView is identified by the ID of the alert.\n\nWhat if for every alert there was also an Actions view? In this case, the VStack is now the root view of our ForEach, and it's the VStack which will be given the identity of the alert.\n\nSo to include the AlertCellView in our warnings rotor, we will need to explicitly mark it as a rotor entry.\n\nWe can do that with the accessibilityRotorEntry modifier.\n\nThis modifier requires a namespace and an ID, which could be anything as long as they match the ID and namespace used to create the AccessibilityRotorEntry.\n\nAnd lastly, we'll need to include this namespace for each rotor entry.\n\nThe ability to refer to an explicit namespace is what enables the accessibility rotor API to scale from simple to complex use cases, allowing accessibility elements that span across multiple views to be included in the same rotor.\n\nAccessibility rotors can also be added to enrich text navigation.\n\nTo do that, use a different variant of the accessibilityRotor modifier, which allows you provide an array of text ranges.\n\nThis modifier is great for giving VoiceOver users quick and easy access to specific strings within a TextEditor, such as emails, links, or phone numbers.\n\nAccessibility rotors makes complex navigation easy for VoiceOver users.\n\nAnd with the new SwiftUI rotors API, it's never been easier to deliver this exceptional navigation experience.\n\nThe last topic for today is focus.\n\nThe concept of element of focus is something you may already be familiar with, but what you may not know is that many of our assistive technologies have their own focus state.\n\nThis is what we call \"accessibility focus\".\n\nIt's the focused view you have been seeing change when I refer to assistive technologies navigating.\n\nThe position of an assistive technology's cursor is critical to the user experience.\n\nWhen focus is changed in VoiceOver, the cursor moves to match the focused element's path in addition to speaking a description of the element.\n\nSo when does focus change? Focus can but may not always change when one of three events occur.\n\nThe first and most common use case is when a user drives a focus change when navigating to a different accessibility element.\n\nThe second case is when the UI changes, and the previously focused view is no longer on screen or is covered by a modal view.\n\nWhen this happens, focus is often reset to the first sorted accessibility element.\n\nThis covers many use cases automatically, such as moving to the first accessibility element of a newly presented view.\n\nBut that may not be the best behavior in your app, which is why focus can also be changed upon programmatic request.\n\nHowever, this should be handled with caution, because moving a VoiceOver user's focus can be very disruptive.\n\nOn that note, let's focus -- no pun intended -- on the last case.\n\nThis year we have a new API that will allow you to both request an assistive technology to move its focus, in addition to reading where an assistive technology is currently focused.\n\nHere we have a simple view which tracks a notification, and if it exists, overlays a custom NotificationBanner.\n\nWe want to use this view in Wallet Pal to show alerts for push notifications received while the app is in the foreground.\n\nWhen the NotificationBanner is added, assistive technologies will not automatically focus on it.\n\nBut we can request they do so with the new AccessibilityFocusState.\n\nAccessibilityFocusState is a property wrapper that provides both a way of reading where an assistive technology is focused and requesting a programmatic focus change.\n\nI'll add one to my view and bind it to the NotificationBanner with the accessibilityFocused(_:) modifier.\n\nNext, I'll use the onChange(of:perform:) modifier to track when a new notification is received.\n\nOnly when a high-priority notification is received do we request accessibility focus to change.\n\nIt's especially important to note that moving focus programmatically can be very disruptive if no user interaction occurred.\n\nIt takes the user out of whatever context they are currently focused on, so it must be handled with care.\n\nSo for lower priority notifications, I'll post an accessibility notification for VoiceOver to announce.\n\nThis way, VoiceOver users still know a new notification has appeared and can navigate to it if desired.\n\nNow let's step inside the NotificationBanner view.\n\nWhen the notification appears, a timer is started.\n\nUpon it completing, the notification is set to nil.\n\nRecall from before that when the notification is nil, the NotificationBanner will be hidden.\n\nThis means if a VoiceOver user was focused on the notification banner and the timer expired, their focus would be reset, since the view is removed; and this isn't a great user experience.\n\nTo fix this, let's read if our NotificationBanner is focused by an assistive technology, and if it is, delay the notification dismissal.\n\nThis is the ideal solution.\n\nA VoiceOver user's focus will no longer be reset, since the view is no longer removed while focused.\n\nAdditionally, we have given assistive technology users an unlimited number of time to digest the content and interact if desired; two things that may take assistive technology users much longer to do so.\n\nAccessibilityFocusState is the last piece you need to deliver exceptional and accessible SwiftUI apps this year and beyond.\n\nWith it, you can read and direct the focus of assistive technologies to create smooth transitions between views.\n\nWow, we've covered a lot today for SwiftUI accessibility.\n\nWe were introduced to the new Accessibility Preview, which enhances the way you can develop and debug SwiftUI accessibility; we covered how to make custom controls and complex graphs accessible; and we took the time to learn how the navigation experience can be improved with grouping, rotors, and focus.\n\nPut everything together, and it truly has been a huge leap for accessibility this year.\n\nFor some great simple and complex examples of our Accessibility APIs, please checkout the Accessibility Catalog Sample Project.\n\nIt features more examples that we couldn't cover today and some of our recommended best practices.\n\nThank you so much for joining me.\n\nWe look forward to seeing how you make your app accessible to everyone.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Nathan Tannar: Hello, and welcome to WWDC! My name is Nathan, and I'm an engineer on the Accessibility team."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "Today we'll be going beyond the basics to learn how to deliver exceptional and accessible SwiftUI apps."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "This year marks a huge leap forward for accessibility in SwiftUI."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "At Apple, accessibility is one of our core values."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Our assistive technologies across all our platforms make sure that anyone can use your app regardless of any physical, visual, audible, or motor impairment."
+      },
+      {
+        "timestamp": "0:40",
+        "text": "My team and I work to make sure most of your app is accessible by default, but there is always more you can do to enrich the experience."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "Today I'll show you the new tools and APIs for SwiftUI that make enriching this experience easy."
+      },
+      {
+        "timestamp": "0:53",
+        "text": "Let's begin with the tooling improvements in Xcode."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "SwiftUI Previews have changed how many of us develop apps."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "It dramatically improves your ability to iterate upon your views across multiple environments, all without the need of running your app."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "To make the most important accessibility modifiers just a click away, we've added a curated list of accessibility editors."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "I hope this encourages everyone to always make their views accessible."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "But there's more."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "Since accessibility modifiers don't have visual changes in the previews, a new tool was developed that allows you to inspect the accessibility of your view without leaving Xcode."
+      },
+      {
+        "timestamp": "1:31",
+        "text": "Let's switch from the editor's panel to the new accessibility panel."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "Shipping in Xcode 13, SwiftUI Previews will now also feature an Accessibility Preview."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "With it, you can inspect the accessibility elements for a preview in real time."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "And this is a game changer."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "Accessibility Preview will help you make accessible apps even if you don't have a deep understanding of each assistive technology."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "Let's take a closer look to see how changes are reflected in the Accessibility Preview."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "This is a simplified version of the view we just saw."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "After running the preview, I can select the VStack and the Accessibility Preview will update to display the elements in their sorted order."
+      },
+      {
+        "timestamp": "2:12",
+        "text": "Notice that each element will always display its basic properties -- such as a label and traits."
+      },
+      {
+        "timestamp": "2:20",
+        "text": "For example, the Text view will create an accessibility element with the string as its label."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "It also gains the .isStaticText trait."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "The preview will update for any accessibility changes we make, such as adding the .isHeader trait."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "You will also be able to see some of the automatic accessibility that takes place behind the scenes, such as automatic SF Symbol labels."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "For example, the checkmark.seal.fill symbol is labeled \"Verified\" by default."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "If you're relying on a symbol's default label, it's important to check that it accurately describes your interface."
+      },
+      {
+        "timestamp": "2:55",
+        "text": "We'll continue to use the Accessibility Preview as we step through five importance areas that'll help you deliver an exceptional experience to all of your app's users."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "We'll start by examining the best way to make custom controls accessible."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "Next, we'll discuss how to make a view accessible with children."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "I'll highlight how to audit your app for common navigation problems and how the Accessibility Preview can assist with this."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "Then I'll show you how to supercharge your app's navigation with VoiceOver rotors."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "And finally, we'll look at focus and how it relates to assistive technologies."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "I've been working to prototype a new finance app I call Wallet Pal."
+      },
+      {
+        "timestamp": "3:35",
+        "text": "It's still in the early stages, but so far, I'm pretty happy with the initial design."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "I was pleased to hear that early beta testers are also loving it."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "Now that I've polished the UI, I should spend some time to polish the accessibility interface."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "The accessibility interface compliments the visual experience to make sure that it’s usable by everyone."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "I've asked some VoiceOver users to help test Wallet Pal and I've heard that the app is hard to navigate and not fully accessible."
+      },
+      {
+        "timestamp": "4:02",
+        "text": "If parts are not accessible to VoiceOver, then they are also not accessible to other assistive technologies."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "It's important that anyone be able to use Wallet Pal, so let's investigate to see where we can improve the experience."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "We'll begin with reports of users not being able to edit their budgets, a critical feature in Wallet Pal."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "This is the Budget Planner view which allows users to edit their food, entertainment, and savings budgets."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "To fit the design of Wallet Pal, I ended up needing to create custom sliders."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "I accomplished this by creating a budget slider out of shapes and used a drag gesture for interaction."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "Shapes in SwiftUI make it easy to create stunning and unique views, but they are not accessible by default, and so neither is my budget slider."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "This must be why some users are not able to edit their budgets."
+      },
+      {
+        "timestamp": "4:54",
+        "text": "We can confirm it's not accessible by running a SwiftUI preview and selecting the SliderShape."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "The Accessibility Preview shows that there are no elements, so this control is not accessible."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "Ideally, we should have a single labeled accessibility element with a value that can be changed."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "In contrast, standard controls are accessible by default, meaning little to no extra effort is required to provide a great experience."
+      },
+      {
+        "timestamp": "5:23",
+        "text": "SwiftUI uses the view type and its initialization parameters to automatically derive the accessibility element's label, value, traits, and actions."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "So what's the best way to make our custom budget slider accessible? Since the standard slider is accessible by default, my team and I thought it would be great to have an API that allows the accessibility of one view to be represented by another."
+      },
+      {
+        "timestamp": "5:48",
+        "text": "This is what led us to us to create accessibilityRepresentation(representation:)."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "It's an API that allows the accessibility of one view to be defined by another."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "Since I want this to be perceived by assistive technologies as a slider, that's what I'll use for the accessibility representation."
+      },
+      {
+        "timestamp": "6:05",
+        "text": "With accessibilityRepresentation(representation:), we're now well on the way to making this budget slider accessible."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "The only change needed to improve the experience of the slider is to describe the value in dollars."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "And great, just like that, now our budget slider is perfectly accessible."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "On macOS, the type of control will also be spoken to VoiceOver users."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "So by using the slider view in our budget slider's representation, it will be announced as a slider."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "It's recommended to use accessibilityRepresentation(representation:) when possible, to make custom controls accessible."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "This is just one way to use accessibilityRepresentation(representation:)."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "Its flexibility allows for many more creative uses."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "Let's see if we can use it to fix other accessibility bugs in our app."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "While we have now fixed the functional ability to edit budgets, some users reported that they couldn't discover how to navigate to the Budget Planner view."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "When designing Wallet Pal, we decided to use SF Symbols for all of our buttons."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "While SF Symbols may have great default accessibility labels, they may not always fit the intended use case."
+      },
+      {
+        "timestamp": "7:10",
+        "text": "Let's investigate if the problem is a poorly labeled button."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "The NavigationBarView contains the Edit Budgets button."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "Since we rely on SF Symbols for so many of our buttons, I created a custom buttonStyle called SymbolButtonStyle."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "But it appears that despite initializing the button with the label \"Edit Budgets\", the label for the button is slider.vertical.3."
+      },
+      {
+        "timestamp": "7:36",
+        "text": "So the accessibility label is being derived from the SF Symbol."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "Let's take a closer look at the SymbolButtonStyle."
+      },
+      {
+        "timestamp": "7:45",
+        "text": "The SymbolButtonStyle's makeBody(configuration:) method returns an Image view."
+      },
+      {
+        "timestamp": "7:49",
+        "text": "The Edit Budgets string we initialize the button with would create a Text view as the configuration's label."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "But this style completely ignores the configuration's label."
+      },
+      {
+        "timestamp": "7:59",
+        "text": "This is why the button is not labeled \"Edit Budgets\"."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "While we want an SF Symbol to appear visually, we want the accessibility of the button to be represented by the configuration's label."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "And so this seems like a great use case for accessibilityRepresentation(representation:)."
+      },
+      {
+        "timestamp": "8:17",
+        "text": "Using accessibilityRepresentation(representation:), I can substitute the accessibility of the Image view with another view, in this case, the configuration's label."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "This way, we can preserve the label we used to create the button."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "accessibilityRepresentation(representation:) is not just the ideal and recommended way to make custom controls accessible, it also opens up new creative possibilities to make views accessible."
+      },
+      {
+        "timestamp": "8:40",
+        "text": "Next, let's discuss the relationship between children and accessibility containers."
+      },
+      {
+        "timestamp": "8:46",
+        "text": "As you may recall, accessibility elements can be wrapped together in a group as children of an accessibility container."
+      },
+      {
+        "timestamp": "8:53",
+        "text": "This is done with the accessibilityElement(children:) modifier and the contain child behavior."
+      },
+      {
+        "timestamp": "9:00",
+        "text": "In case you're unfamiliar, the contain child behavior can be used to create an accessibility container, which wraps existing accessibility elements as children."
+      },
+      {
+        "timestamp": "9:11",
+        "text": "But what if instead you have an accessibility element and you want to set its children? I'm running into this case when trying to make the Budget History graph accessible."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "Users reported the graph is completely inaccessible."
+      },
+      {
+        "timestamp": "9:26",
+        "text": "And so this means when assistive technologies are focused on the Budget History header and try to navigate to the next element, they end up at the Alerts header."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "VoiceOver users would not even know that this graph exists."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "I built the graph using the new Canvas view."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "Canvas makes it easier to draw a collection of shapes."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "For more on Canvas, please check out Jacob's presentation on how it can be used to add rich graphics to your app."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "The most important takeaway for accessibility is that Canvas draws a collection of shapes."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "And just like we saw with BudgetSlider, shapes are not accessible by default."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "All users need to be able to view their budget history, so let's make this accessible for everyone."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "Starting with the basics, let's give our Canvas a label."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "This will automatically create a new accessibility element for the Canvas and assign its label."
+      },
+      {
+        "timestamp": "10:17",
+        "text": "Now, I'd like each bar in the graph to be represented by their own accessibility element."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "This is a use case where we have an accessibility element and want to provide its children."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "To do this, I'll use the new accessibilityChildren(children:) modifier."
+      },
+      {
+        "timestamp": "10:34",
+        "text": "This will transform the accessibility element into an accessibility container, preserving other accessibility properties, such as the label."
+      },
+      {
+        "timestamp": "10:42",
+        "text": "The modifier takes a ViewBuilder, which allows us to set new views as children of the accessibility container."
+      },
+      {
+        "timestamp": "10:50",
+        "text": "Recall that our Budget History graph is drawing a horizontal bar graph, so we'll use an HStack and return a view for each budget."
+      },
+      {
+        "timestamp": "10:59",
+        "text": "I'll use a Rectangle for each accessibility element so that the frame will fill all available vertical space."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "This will make each accessibility element's frame bigger than what's displayed visually, and that's OK."
+      },
+      {
+        "timestamp": "11:11",
+        "text": "Having a large but consistent frame will make it easier to navigate on iOS when VoiceOver users drag their finger across the screen to scan for accessibility elements."
+      },
+      {
+        "timestamp": "11:23",
+        "text": "If I select the HStack from within the accessibilityChildren(children:) modifier, the Accessibility Preview confirms that an element has been created for each bar in the graph."
+      },
+      {
+        "timestamp": "11:32",
+        "text": "These will all be accessible as children of the Canvas accessibility container."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "With these changes, the Budget History graph is now completely accessible, and assistive technologies can navigate through each bar in the graph."
+      },
+      {
+        "timestamp": "11:47",
+        "text": "Notice that the frame for each element is the same, which is ideal."
+      },
+      {
+        "timestamp": "11:52",
+        "text": "For more complex charts, we have other ways of making them accessible."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "For that, please check out Preston's presentation on bringing accessibility to charts."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "But with accessibility children, the accessibility elements of a view can differ from what's presented visually, allowing you to tailor a great experience."
+      },
+      {
+        "timestamp": "12:09",
+        "text": "But accessibility children can also be used to compose the accessibility with the help of the combine behavior."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "As a quick refresh, the combine child behavior will merge properties from multiple accessibility elements into a new or existing accessibility element."
+      },
+      {
+        "timestamp": "12:25",
+        "text": "But with the addition of the accessibility children API, it can now also be used to compose accessibility in a generic way."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "With accessibility representation, the original accessibility is completely replaced."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "This means no composition can take place; whereas accessibility children is additive."
+      },
+      {
+        "timestamp": "12:51",
+        "text": "This means you could later combine the children to merge their properties into the original element."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "This is a more advanced use case of the accessibilityChildren(children:) modifier, but it's a functionality I wanted to highlight."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "Examples are featured in this presentation's Accessibility Catalog Sample Project."
+      },
+      {
+        "timestamp": "13:08",
+        "text": "I hope to see many of you explore what's possible with this kind of composition."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "accessibilityChildren(children:) gives you control over the children of a container."
+      },
+      {
+        "timestamp": "13:17",
+        "text": "And with that, complex graphs drawn with Canvas can be made accessible with modifiers and views you're already familiar with."
+      },
+      {
+        "timestamp": "13:25",
+        "text": "And with the combine child behavior, the accessibility of a single view can be composed of many."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "Now that we've learned how to make individual components of our app accessible, we can start putting things together to refine the navigation experience."
+      },
+      {
+        "timestamp": "13:38",
+        "text": "I've heard that navigating Wallet Pal with VoiceOver is confusing and difficult."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "So we have some more work to do if we want to deliver a great accessible app."
+      },
+      {
+        "timestamp": "13:49",
+        "text": "Let's take a closer look at the Friends carousel at the top."
+      },
+      {
+        "timestamp": "13:53",
+        "text": "While I don't have this feature built yet, I plan to add some kind of gamification to Wallet Pal."
+      },
+      {
+        "timestamp": "13:58",
+        "text": "So I've added a challenge button at the top left of each friend view."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "We already fixed the SymbolButtonStyle, so the challenge button will be properly labeled now."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "But since users are reporting that navigation is confusing, are there other issues? To answer that, we must first understand how assistive technologies will navigate Wallet Pal."
+      },
+      {
+        "timestamp": "14:19",
+        "text": "By default, accessibility elements are sorted based off their geometric position in relation to other elements, from top left to bottom right."
+      },
+      {
+        "timestamp": "14:28",
+        "text": "This means that without accessibility containers to differentiate the content, VoiceOver would navigate through each of the challenge buttons, then the Image and Add Friend button, and finally, the text with the user's name."
+      },
+      {
+        "timestamp": "14:42",
+        "text": "A great feature of the Accessibility Preview is that it shows accessibility elements in their sorted order."
+      },
+      {
+        "timestamp": "14:48",
+        "text": "This makes it easy to visualize how assistive technologies will navigate right from within Xcode."
+      },
+      {
+        "timestamp": "14:54",
+        "text": "As expected, the sorted order matches what we previously saw."
+      },
+      {
+        "timestamp": "14:58",
+        "text": "And this order would certainly be confusing to navigate."
+      },
+      {
+        "timestamp": "15:02",
+        "text": "Now there are multiple ways we could fix the sort order of the accessibility elements."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "One thing we could do is to introduce accessibility containers."
+      },
+      {
+        "timestamp": "15:11",
+        "text": "I'll add the accessibilityElement(children:) modifier with the contain behavior."
+      },
+      {
+        "timestamp": "15:16",
+        "text": "This will wrap the accessibility elements of each FriendCellView in an accessibility container."
+      },
+      {
+        "timestamp": "15:22",
+        "text": "This fixes the navigation order, because children of an accessibility container are navigated before moving to the next accessibility element."
+      },
+      {
+        "timestamp": "15:30",
+        "text": "With this change, VoiceOver will navigate through the children of the accessibility container before moving to the next accessibility element."
+      },
+      {
+        "timestamp": "15:39",
+        "text": "And so we achieve a much more desirable navigation order."
+      },
+      {
+        "timestamp": "15:42",
+        "text": "But could we do better to improve this experience? One problem is that the challenge button is navigated to before knowing who the user is."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "A VoiceOver user would want to know the name of the user before sending a challenge, so this button should really be sorted last."
+      },
+      {
+        "timestamp": "15:59",
+        "text": "We can use the accessibilitySortPriority(_:) modifier to fix this."
+      },
+      {
+        "timestamp": "16:04",
+        "text": "accessibilitySortPriority(_:) can be used to change the order of elements within an accessibility container."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "An element with a higher priority will be sorted first, whereas a lower priority will be sorted last."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "Elements with equal priorities are then sorted based off their geometric positioning."
+      },
+      {
+        "timestamp": "16:22",
+        "text": "I'll add the accessibilitySortPriority(_:) modifier to the challenge button to improve the navigation order."
+      },
+      {
+        "timestamp": "16:29",
+        "text": "I'll use a priority of -1 since the default is 0, to force the sort order of the challenge button to be last."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "Now the challenge button will be navigated to last."
+      },
+      {
+        "timestamp": "16:39",
+        "text": "This is a good improvement, since there is less chance a VoiceOver user would be confused as to who they are sending a challenge to, but it's still not great."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "Rather than wrapping each FriendCellView in an accessibility container, we could combine the children into a single element."
+      },
+      {
+        "timestamp": "16:55",
+        "text": "Recall that combine merges properties from children into an existing or new accessibility element."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "The combine behavior also curates which properties are merged for the best default result."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "For example, the challenge button has become an action named \"Send Challenge\"."
+      },
+      {
+        "timestamp": "17:11",
+        "text": "This too fixes the navigation order and reduces the number of accessibility elements."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "Now there's a single element for each user, and each element has a Send Challenge action."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "It is often ideal to combine the accessibility elements of views that are represented in a ForEach."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "As you may have picked up on by now, combine is a super useful child behavior."
+      },
+      {
+        "timestamp": "17:33",
+        "text": "Instead of children being individually navigable, it merges their properties into a single, navigable element."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "For when you need a single element but do not want it to inherit properties from the children, use the ignore behavior."
+      },
+      {
+        "timestamp": "17:46",
+        "text": "And lastly, the contain child behavior wraps the children in an accessibility container and should be used to express a groups of views that are related."
+      },
+      {
+        "timestamp": "17:54",
+        "text": "This not only improves the default sort order but has other advantages to assistive technologies."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "With the new Accessibility Preview, discovering these navigation problems is easy."
+      },
+      {
+        "timestamp": "18:03",
+        "text": "And with a few small changes, you can dramatically improve the experience."
+      },
+      {
+        "timestamp": "18:07",
+        "text": "But to deliver a truly exceptional navigation experience to VoiceOver users, you'll will want to consider rotors."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "Now if you are new to accessibility, you might be thinking, \"What are rotors?\" In short, rotors are a powerful navigation tool."
+      },
+      {
+        "timestamp": "18:22",
+        "text": "They can be thought of as bookmarks that allow users to quickly navigate between them."
+      },
+      {
+        "timestamp": "18:27",
+        "text": "System rotors, such as the headings and containers rotor, provide the foundation for this supercharged form of navigation."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "For example, users can quickly navigate through sections using the headings rotor."
+      },
+      {
+        "timestamp": "18:40",
+        "text": "This is because the Section view automatically adds the isHeader trait to the header view If you are not using the Section view, you can add the isHeader trait to your view with accessibilityAddTraits(_:)."
+      },
+      {
+        "timestamp": "18:52",
+        "text": "Similarly, accessibility containers are added to the container's rotor, which as we saw earlier, are created with the accessibilityElement(children:) modifier."
+      },
+      {
+        "timestamp": "19:01",
+        "text": "As you can see, supporting the headings rotor is incredibly easy, and the container's rotor further adds to the benefit of grouping your accessibility elements with the contain child behavior."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "Now that the basic navigation experience of Wallet Pal has been refined, let's take it a step further with rotors."
+      },
+      {
+        "timestamp": "19:19",
+        "text": "In Wallet Pal, alerts help keep users' spending habits in check by providing motivation messages and warnings when budgets near or exceed their limit."
+      },
+      {
+        "timestamp": "19:29",
+        "text": "We've incorporated SF Symbols for the different types of alerts."
+      },
+      {
+        "timestamp": "19:32",
+        "text": "These allow visual users to quickly scan through the list."
+      },
+      {
+        "timestamp": "19:36",
+        "text": "But this iconography will not help VoiceOver users."
+      },
+      {
+        "timestamp": "19:42",
+        "text": "They would instead have to navigate through every alert just to know if they have any warnings."
+      },
+      {
+        "timestamp": "19:47",
+        "text": "To replicate a similar experience that sighted users have, VoiceOver users need to be able to exclusively navigate warnings, that way, in an instant, they can navigate to the next warning alert."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "To do this, we can use rotors."
+      },
+      {
+        "timestamp": "20:01",
+        "text": "For more examples of custom rotors and why they're so important to efficiency, please check out our \"VoiceOver Efficiency for Custom Rotors\" presentation from 2020."
+      },
+      {
+        "timestamp": "20:10",
+        "text": "To add a warnings rotor to my AlertsView, the first thing I'll do is to make sure I'm adding my rotor to an accessibility container."
+      },
+      {
+        "timestamp": "20:17",
+        "text": "Some views in SwiftUI are accessibility containers by default -- such as List or LazyVStack -- but VStacks and HStacks are not, so I'll add the accessibilityElement(children:) modifier with the contain child behavior."
+      },
+      {
+        "timestamp": "20:32",
+        "text": "Next, I'll create my rotor with the accessibilityRotor(_:entries:) modifier, giving it the name \"Warnings\"."
+      },
+      {
+        "timestamp": "20:39",
+        "text": "And lastly, I'll declare which of my alerts I want included in the warnings rotor, in this case all of the warning alerts."
+      },
+      {
+        "timestamp": "20:46",
+        "text": "And that's it! It's this easy to supercharge your app's navigation."
+      },
+      {
+        "timestamp": "20:52",
+        "text": "Part of what makes rotors so easy for these simple use cases is that SwiftUI can automatically match the rotor entry to the accessibility element based off the ID."
+      },
+      {
+        "timestamp": "21:02",
+        "text": "This is because the ID of our rotor entry will match the ID given to the AlertCellView by a ForEach."
+      },
+      {
+        "timestamp": "21:08",
+        "text": "The identity of a view is important to understand for accessibility rotors."
+      },
+      {
+        "timestamp": "21:12",
+        "text": "So if view identity is unclear or you'd like a refresher, I strongly encourage you to check out the \"Demystifying SwiftUI\" presentation to learn more."
+      },
+      {
+        "timestamp": "21:20",
+        "text": "Now you might be thinking, \"Hold on, my view isn't this simple."
+      },
+      {
+        "timestamp": "21:25",
+        "text": "What about views that are not within a ForEach?\" Don't worry, the accessibility rotor API can scale from simple to complex views."
+      },
+      {
+        "timestamp": "21:33",
+        "text": "This simple case works elegantly because there is a single accessibility element -- due to the combine -- for the AlertCellView."
+      },
+      {
+        "timestamp": "21:40",
+        "text": "And the AlertCellView is identified by the ID of the alert."
+      },
+      {
+        "timestamp": "21:45",
+        "text": "What if for every alert there was also an Actions view? In this case, the VStack is now the root view of our ForEach, and it's the VStack which will be given the identity of the alert."
+      },
+      {
+        "timestamp": "21:58",
+        "text": "So to include the AlertCellView in our warnings rotor, we will need to explicitly mark it as a rotor entry."
+      },
+      {
+        "timestamp": "22:06",
+        "text": "We can do that with the accessibilityRotorEntry modifier."
+      },
+      {
+        "timestamp": "22:09",
+        "text": "This modifier requires a namespace and an ID, which could be anything as long as they match the ID and namespace used to create the AccessibilityRotorEntry."
+      },
+      {
+        "timestamp": "22:20",
+        "text": "And lastly, we'll need to include this namespace for each rotor entry."
+      },
+      {
+        "timestamp": "22:25",
+        "text": "The ability to refer to an explicit namespace is what enables the accessibility rotor API to scale from simple to complex use cases, allowing accessibility elements that span across multiple views to be included in the same rotor."
+      },
+      {
+        "timestamp": "22:39",
+        "text": "Accessibility rotors can also be added to enrich text navigation."
+      },
+      {
+        "timestamp": "22:43",
+        "text": "To do that, use a different variant of the accessibilityRotor modifier, which allows you provide an array of text ranges."
+      },
+      {
+        "timestamp": "22:51",
+        "text": "This modifier is great for giving VoiceOver users quick and easy access to specific strings within a TextEditor, such as emails, links, or phone numbers."
+      },
+      {
+        "timestamp": "23:01",
+        "text": "Accessibility rotors makes complex navigation easy for VoiceOver users."
+      },
+      {
+        "timestamp": "23:05",
+        "text": "And with the new SwiftUI rotors API, it's never been easier to deliver this exceptional navigation experience."
+      },
+      {
+        "timestamp": "23:12",
+        "text": "The last topic for today is focus."
+      },
+      {
+        "timestamp": "23:15",
+        "text": "The concept of element of focus is something you may already be familiar with, but what you may not know is that many of our assistive technologies have their own focus state."
+      },
+      {
+        "timestamp": "23:24",
+        "text": "This is what we call \"accessibility focus\"."
+      },
+      {
+        "timestamp": "23:27",
+        "text": "It's the focused view you have been seeing change when I refer to assistive technologies navigating."
+      },
+      {
+        "timestamp": "23:33",
+        "text": "The position of an assistive technology's cursor is critical to the user experience."
+      },
+      {
+        "timestamp": "23:37",
+        "text": "When focus is changed in VoiceOver, the cursor moves to match the focused element's path in addition to speaking a description of the element."
+      },
+      {
+        "timestamp": "23:46",
+        "text": "So when does focus change? Focus can but may not always change when one of three events occur."
+      },
+      {
+        "timestamp": "23:53",
+        "text": "The first and most common use case is when a user drives a focus change when navigating to a different accessibility element."
+      },
+      {
+        "timestamp": "24:00",
+        "text": "The second case is when the UI changes, and the previously focused view is no longer on screen or is covered by a modal view."
+      },
+      {
+        "timestamp": "24:08",
+        "text": "When this happens, focus is often reset to the first sorted accessibility element."
+      },
+      {
+        "timestamp": "24:13",
+        "text": "This covers many use cases automatically, such as moving to the first accessibility element of a newly presented view."
+      },
+      {
+        "timestamp": "24:19",
+        "text": "But that may not be the best behavior in your app, which is why focus can also be changed upon programmatic request."
+      },
+      {
+        "timestamp": "24:26",
+        "text": "However, this should be handled with caution, because moving a VoiceOver user's focus can be very disruptive."
+      },
+      {
+        "timestamp": "24:33",
+        "text": "On that note, let's focus -- no pun intended -- on the last case."
+      },
+      {
+        "timestamp": "24:38",
+        "text": "This year we have a new API that will allow you to both request an assistive technology to move its focus, in addition to reading where an assistive technology is currently focused."
+      },
+      {
+        "timestamp": "24:48",
+        "text": "Here we have a simple view which tracks a notification, and if it exists, overlays a custom NotificationBanner."
+      },
+      {
+        "timestamp": "24:56",
+        "text": "We want to use this view in Wallet Pal to show alerts for push notifications received while the app is in the foreground."
+      },
+      {
+        "timestamp": "25:02",
+        "text": "When the NotificationBanner is added, assistive technologies will not automatically focus on it."
+      },
+      {
+        "timestamp": "25:08",
+        "text": "But we can request they do so with the new AccessibilityFocusState."
+      },
+      {
+        "timestamp": "25:13",
+        "text": "AccessibilityFocusState is a property wrapper that provides both a way of reading where an assistive technology is focused and requesting a programmatic focus change."
+      },
+      {
+        "timestamp": "25:23",
+        "text": "I'll add one to my view and bind it to the NotificationBanner with the accessibilityFocused(_:) modifier."
+      },
+      {
+        "timestamp": "25:30",
+        "text": "Next, I'll use the onChange(of:perform:) modifier to track when a new notification is received."
+      },
+      {
+        "timestamp": "25:35",
+        "text": "Only when a high-priority notification is received do we request accessibility focus to change."
+      },
+      {
+        "timestamp": "25:42",
+        "text": "It's especially important to note that moving focus programmatically can be very disruptive if no user interaction occurred."
+      },
+      {
+        "timestamp": "25:50",
+        "text": "It takes the user out of whatever context they are currently focused on, so it must be handled with care."
+      },
+      {
+        "timestamp": "25:55",
+        "text": "So for lower priority notifications, I'll post an accessibility notification for VoiceOver to announce."
+      },
+      {
+        "timestamp": "26:01",
+        "text": "This way, VoiceOver users still know a new notification has appeared and can navigate to it if desired."
+      },
+      {
+        "timestamp": "26:08",
+        "text": "Now let's step inside the NotificationBanner view."
+      },
+      {
+        "timestamp": "26:11",
+        "text": "When the notification appears, a timer is started."
+      },
+      {
+        "timestamp": "26:15",
+        "text": "Upon it completing, the notification is set to nil."
+      },
+      {
+        "timestamp": "26:19",
+        "text": "Recall from before that when the notification is nil, the NotificationBanner will be hidden."
+      },
+      {
+        "timestamp": "26:24",
+        "text": "This means if a VoiceOver user was focused on the notification banner and the timer expired, their focus would be reset, since the view is removed; and this isn't a great user experience."
+      },
+      {
+        "timestamp": "26:37",
+        "text": "To fix this, let's read if our NotificationBanner is focused by an assistive technology, and if it is, delay the notification dismissal."
+      },
+      {
+        "timestamp": "26:45",
+        "text": "This is the ideal solution."
+      },
+      {
+        "timestamp": "26:47",
+        "text": "A VoiceOver user's focus will no longer be reset, since the view is no longer removed while focused."
+      },
+      {
+        "timestamp": "26:53",
+        "text": "Additionally, we have given assistive technology users an unlimited number of time to digest the content and interact if desired; two things that may take assistive technology users much longer to do so."
+      },
+      {
+        "timestamp": "27:08",
+        "text": "AccessibilityFocusState is the last piece you need to deliver exceptional and accessible SwiftUI apps this year and beyond."
+      },
+      {
+        "timestamp": "27:15",
+        "text": "With it, you can read and direct the focus of assistive technologies to create smooth transitions between views."
+      },
+      {
+        "timestamp": "27:21",
+        "text": "Wow, we've covered a lot today for SwiftUI accessibility."
+      },
+      {
+        "timestamp": "27:25",
+        "text": "We were introduced to the new Accessibility Preview, which enhances the way you can develop and debug SwiftUI accessibility; we covered how to make custom controls and complex graphs accessible; and we took the time to learn how the navigation experience can be improved with grouping, rotors, and focus."
+      },
+      {
+        "timestamp": "27:43",
+        "text": "Put everything together, and it truly has been a huge leap for accessibility this year."
+      },
+      {
+        "timestamp": "27:48",
+        "text": "For some great simple and complex examples of our Accessibility APIs, please checkout the Accessibility Catalog Sample Project."
+      },
+      {
+        "timestamp": "27:55",
+        "text": "It features more examples that we couldn't cover today and some of our recommended best practices."
+      },
+      {
+        "timestamp": "28:00",
+        "text": "Thank you so much for joining me."
+      },
+      {
+        "timestamp": "28:01",
+        "text": "We look forward to seeing how you make your app accessible to everyone."
+      },
+      {
+        "timestamp": "28:05",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -171,5 +1214,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10116"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:35.085Z"
+  "extractedAt": "2026-10-17T18:53:30.948Z"
 }

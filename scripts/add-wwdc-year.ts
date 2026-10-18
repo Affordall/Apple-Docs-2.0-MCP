@@ -12,8 +12,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { extractVideoContent } from '../src/tools/wwdc/content-extractor.js';
-import { extractTopicVideos } from '../src/tools/wwdc/topics-extractor.js';
-import { extractVideoList } from '../src/tools/wwdc/video-list-extractor.js';
+import { extractSessionLinks, extractVideoList } from '../src/tools/wwdc/video-list-extractor.js';
 import type { GlobalMetadata, TopicIndex, WWDCVideo, YearIndex } from '../src/types/wwdc.js';
 
 type Entry = YearIndex['videos'][number];
@@ -50,11 +49,11 @@ function newestFirst(a: Entry, b: Entry): number {
 async function topicsOfYear(year: string, topics: GlobalMetadata['topics']): Promise<Map<string, string[]>> {
   const listed: Array<[string, string]> = [];
   for (const topic of topics) {
-    const ids = new Set((await extractTopicVideos(topic.url)).filter((video) => video.year === year).map((video) => video.id));
+    const ids = new Set((await extractSessionLinks(topic.url)).filter((video) => video.year === year).map((video) => video.id));
     listed.push(...[...ids].map((id): [string, string] => [id, topic.name]));
   }
   if (listed.length === 0) {
-    throw new UntopicedYearError(`no topic page lists a WWDC${year} session: check extractTopicVideos against the pages`);
+    throw new UntopicedYearError(`no topic page lists a WWDC${year} session: check extractSessionLinks against the pages`);
   }
   return listed.reduce((map, [id, name]) => map.set(id, [...(map.get(id) ?? []), name]), new Map<string, string[]>());
 }

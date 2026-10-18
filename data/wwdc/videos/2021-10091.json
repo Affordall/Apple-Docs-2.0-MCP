@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10091/",
   "title": "Send communication and Time Sensitive notifications",
-  "speakers": [],
   "duration": "",
   "topics": [
     "App Services",
@@ -12,8 +11,664 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Kritarth Jain: Hi there and welcome to \"Send communication and Time Sensitive notifications.\" I am Kritarth, an engineer on the Notifications team, and later I will be joined by my colleague, Kevin.\n\nNotifications are a key component of the application experience and we will cover new ways to enhance them, along with elevating certain categories of notifications.\n\nWe will start out by covering some visual updates to notifications and how to augment them with new API.\n\nThen we will do an overview of new management controls and how these are relevant to communication and Time Sensitive notifications.\n\nThen we will focus on notification interruptions and cover new APIs to control them.\n\nAfter which, we will hone in on the two types of notifications -- Time Sensitive and communication -- and cover ways in which these can be configured.\n\nLet's begin by going over some visual updates to notifications.\n\nNow, notifications have a new look with greater focus on the content and the associated media along with the application icon.\n\nThe rich notification presentation and accompanying actions have been updated to match the system style.\n\nYou can now associate notification actions with icons.\n\nIconography conveys what the action will do and provides visual context next to the action.\n\nHere there are two notification actions -- like and comment -- and these are set on the custom notification category.\n\nTo add icons to these actions, create objects of type UNNotificationActionIcon with the image name, either for a system image or a template image.\n\nThen provide these icons to the respective constructors for UNNotificationAction.\n\nWhen a notification associated with this category is expanded, the actions are presented along with the icons that were provided for them.\n\nBecause notifications display the app icon at a larger size, provide a high-resolution icon with the application bundle.\n\nEnsure content extensions continue to work with the new presentation and layout of the rich notifications, and adopt icons for notification actions to add more context.\n\nNext, let's go over new notification management options.\n\nThere are new system controls which affect the delivery and interruption of notifications from applications.\n\nThese are notification summary and Focus.\n\nLet's discuss notification summary first.\n\nNotifications can now be delivered at scheduled times in the day as a summary.\n\nThis reduces the number of active interruptions from incoming notifications and presents them collectively at preset times.\n\nAll notifications delivered to the summary on a schedule are present in the notification list on the Lock screen.\n\nInclude media attachments with the notification content so there is a better chance for that notification to be featured at the top of the notification summary.\n\nAdopt the new API to provide a relevance score for the notification content so the right notifications from the application get featured in the notification summary as well.\n\nThe other management tool relevant to notifications is Focus.\n\nThe device can be set in a particular Focus based on the activity or time of day such as Reading, Sleep, or Work.\n\nWhen in such a configuration, the device will filter the presentation and interruption of notifications.\n\nFocus configuration allows selecting people and applications that can send interruptive notifications.\n\nFor example, during the Work Focus, Mail and Messages are allowed to send notifications, along with direct communication from coworkers.\n\nSo notification summary and Focus control which applications can send interruptive notifications and when.\n\nThis allows better management of interruptions throughout the day.\n\nThere is opportunity for notifications to break through these management controls, but only if allowed to do so.\n\nIt is also possible for communication and Time Sensitive notifications to break through.\n\nNext let's discuss how applications can control interruptions tied to notifications.\n\nThere is a new API for interruption levels as part of the UserNotifications framework.\n\nThere are four distinct interruption levels that are supported.\n\nThese are Passive, Active, Time Sensitive, and Critical.\n\nNotifications with Passive interruption level do not alert or light up the screen, and do not break through system controls.\n\nThese notifications are delivered to the notification list silently and are available the next time the list is viewed.\n\nPassive interruption should be used for notifications that do not require immediate attention to interrupt but should be seen eventually.\n\nSome examples are dining recommendations and new episode availability.\n\nActive interruption resembles the behavior that exists today, where notifications will play sound and vibrations and light up the screen.\n\nThese notifications will not break through system management of notifications.\n\nThis is the default interruption level.\n\nActive interruption should be used for notifications that do not warrant interrupting if the system is configured not to be interrupted currently.\n\nSome examples are sports updates and live stream video notifications.\n\nTime Sensitive notifications alert just like active notifications.\n\nThese are special because they can break through system controls such as notification summary and Focus, if it has been allowed.\n\nThese notifications should only be used when it is relevant to actively interrupt, requiring immediate attention.\n\nSome instances are account security and package delivery alerts.\n\nLastly, Critical interruption level is equivalent to the Critical notification support that exists in iOS 14.\n\nNotifications with this interruption level actively alert, break through system controls, and also bypass the ringer switch on the device.\n\nBecause of this disruptive behavior, critical interruption will continue to require an approved entitlement.\n\nSome use cases for critical notifications are severe weather and local safety alerts.\n\nTo support the new API in the UserNotifications framework, there is a new enum for UNNotificationInterruptionLevel with the different levels defined.\n\nSet this interruption level while configuring the content object for the notification request.\n\nPassive is set in this example.\n\nIf no interruption level is provided, then the default level is used.\n\nFor a push notification payload, provide a new key-value pair, with the key interruption level.\n\nHere again, set the interruption level as passive.\n\nWhen this notification is delivered to the device, it will be visible on the Lock screen without any interruptions, since it was configured as passive.\n\nAnother form of interruption tied to notifications is Announce.\n\nSiri can announce notifications if there are compatible devices -- such as AirPods Pro and AirPods Max -- connected.\n\nTo get this announce behavior in iOS 14, notifications had to be tied to a category that requests the AllowAnnouncement option.\n\nIn iOS 15, the requirement for this category option is deprecated.\n\nNow announce is supported for any notification while connected to a supported audio device.\n\nCommunication and Time Sensitive notifications will be announced by default.\n\nWhile connected to CarPlay, communication notifications can be configured to announce automatically, making the experience more seamless.\n\nNext let's focus on Time Sensitive notifications and how to configure them.\n\nTime Sensitive notifications are those that require immediate attention.\n\nBecause of their importance, these can breakthrough system controls such as notification summary and Focus if allowed to do so.\n\nAn example of a Time Sensitive notification is one from Reminders about taking medication.\n\nThis notification is posted immediately and prominently, breaking through the Work Focus.\n\nIt is important to maintain trust when sending Time Sensitive notifications.\n\nDo not overuse their interruptive nature and only use them when it is relevant to do so.\n\nKnow that there is an option to turn off Time Sensitive alerts or even all notifications from an application.\n\nTo configure Time Sensitive notifications, enable the associated capability via Xcode for your application.\n\nSet the Time Sensitive interruption level on the notification request being posted.\n\nFor a local notification, the Time Sensitive interruption level is set on the content object.\n\nFor a push payload, set the interruption-level key with value as time-sensitive.\n\nWhen delivered, this notification is posted prominently, highlighting the urgency.\n\nLet's discuss communication notifications.\n\nAnd to tell you all about them, let me hand over to Kevin.\n\nKevin? Kevin Harrington: Thanks, Kritarth.\n\nI'm Kevin, an engineer on the Notifications team.\n\nThere's an importance for urgent notifications breaking through Focus and notification summaries.\n\nCommunications from people also warrant elevated notification delivery.\n\nThese communications can come in many forms, including calls and messages.\n\nI will highlight a new API that allows your applications to signal what notifications are communications, and the people associated with those communications.\n\nThe importance of communication notifications is determined by user decisions.\n\nSiri Suggestions helps inform these decisions, suggesting important people that should be allowed to interrupt.\n\nAs your user interacts with the device -- taking calls, joining FaceTimes, sending messages -- Siri learns who is a candidate to break through Focus and Notification Summaries.\n\nIn iOS 15, communication notifications get a richer user experience.\n\nMost visible are the prominent avatars.\n\nThe title and subtitle are standardized.\n\nIt always includes the sender in the title, and in the case of group communications, recipients in the subtitle.\n\nThe title and subtitle text are localized and formatted for all devices, across platforms.\n\nFor example, watch prefers to show just first names for recipients of a group communication.\n\nSiri will now announce the contents of communication notifications on supported devices including HomePod, AirPods, and CarPlay.\n\nAnd Siri will provide suggestions to help prioritize these communication notifications.\n\nPeople in your apps will get associated with people in Contacts.\n\nThese associations are shown as suggestions on notifications.\n\nOnce a user confirms a suggestion, Siri Shortcuts are available for tasks with those people in your app.\n\nSiri will suggest relevant people to break through in the Focus configuration -- including those people associated with communications in your app.\n\nTo make these decisions on what is and isn't a communication, this new API lets you add SiriKit call and message intents to Notifications.\n\nIntents are driven by common tasks.\n\nYour app donates these intents when events happen, like placing a call or receiving a message.\n\nFrom there, Siri provides shortcuts and suggestions based on these intents, like people in your apps to message from share sheet or to start a call from your app via Siri.\n\nThis new API associates these same intents with notifications to further integrate your apps into the Siri ecosystem.\n\nUsing SiriKit intents for communication notifications will increase engagement in your apps while maintaining consistency throughout your app, Siri, and system UI.\n\nThe intents that represent relevant communications are the StartCall and SendMessage intents.\n\nThe NotificationContentProviding protocol is the mechanism to associate intents with notifications.\n\nOn a NotificationContent object, call updating with a ContentProviding intent for communication treatment.\n\nStartCall and SendMessage intents conforms to providing.\n\nCommunication notifications are delivered through Apple Push Notification service.\n\nYou need to update a NotificationContent object with a SiriKit intent in your app's NotificationServiceExtension.\n\nSiriKit intents are local to the device, and thus must be serviced locally.\n\nThe service extension is for exactly these cases.\n\nIt is the place to customize the content of a remote notification before it is delivered.\n\nYou can also do this in your main app process for local notifications.\n\nIn your didReceive function, update the content of a push payload with an intent.\n\nFor messaging notifications, create a SendMessageIntent.\n\nAnd for call-related notifications, use a StartCallIntent.\n\nCreate an interaction to tell Siri intelligence what is happening.\n\nIn a notification extension, the interaction direction is always incoming.\n\nThis is an event that is happening to the user; they are receiving the incoming call.\n\nNext, you need to donate the interaction.\n\nDonations also help the system make better suggestions in the future.\n\nUpdate the content of your notification with the intent.\n\nAnd finally, call the contentHandler with the returned intent.\n\nDonations are required so Siri can learn from events that happen in your apps.\n\nThe interaction direction is always incoming for notifications.\n\nFor other SiriKit uses, the direction can be outgoing for actions initiated on the device, like sending an outgoing message or placing a call.\n\nOnly system objects that conform to content providing are supported.\n\nDo not conform your objects to content providing.\n\nTo send communication notifications, enable the communication capability via Xcode for your application.\n\nSupport communication intents by adding intent types to your user activity types array in Info.plist or by implementing an intents extension.\n\nDonate communication intents when the user takes actions in your app foreground, like when the users hits send after composing a message.\n\nSiri then uses outgoing intents to better aide in who should be suggested to break through Focus and Summaries.\n\nSame for Contacts suggestions.\n\nFor this feature, Siri only learns from outgoing intent donations, so Contacts are not cluttered by people not engaged with -- like spam callers.\n\nThe proper usage of communication intents is fundamental to an intelligent notification experience, and there are a few gotchas to cover.\n\nIntent persons are the building blocks of SendMessage and StartCall intents.\n\nEach and every parameter you populate provides a richer and more intelligent user experience.\n\nSame goes with creating intents with intent persons; each and every parameter you populate provides a richer and more intelligent user experience.\n\nStart using intents if you don't already.\n\nIntents will provide more visibility to your app in notifications, share sheet, Contacts, and Spotlight.\n\nAnd you can use SiriKit to offer Siri Shortcuts like sending a message or starting a call.\n\nGet in the habit of donating intents for both incoming and outgoing interactions.\n\nYou might already be donating outgoing intents.\n\nStart donating incoming StartCall and SendMessage intents in your service extension.\n\nThis is fundamental to the communication notification experience.\n\nIf your app doesn't already use a notification service extension, you'll want to add one.\n\nFinally, put the pieces together by using the content providing protocol to decorate each notification you want delivered as a communication.\n\nWe've covered a lot in this session, from visual updates to communication notifications.\n\nHere are a few takeaways.\n\nAccount for the new visual updates and management options and ensure that notifications work seamlessly with them.\n\nAdopt interruption levels to have better control over how a notification interrupts in synergy with system controls.\n\nUse Time Sensitive notifications when relevant to prominently interrupt and get automatic behaviors such as breakthrough and announce.\n\nImplement and donate call and messaging intents to get the upgraded communication experience tied to notifications, along with breakthrough and announce behavior.\n\nWe can't wait to see all the new and amazing experiences you build around notifications.\n\nWe hope you all have a great WWDC! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Kritarth Jain: Hi there and welcome to \"Send communication and Time Sensitive notifications.\" I am Kritarth, an engineer on the Notifications team, and later I will be joined by my colleague, Kevin."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "Notifications are a key component of the application experience and we will cover new ways to enhance them, along with elevating certain categories of notifications."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "We will start out by covering some visual updates to notifications and how to augment them with new API."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "Then we will do an overview of new management controls and how these are relevant to communication and Time Sensitive notifications."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "Then we will focus on notification interruptions and cover new APIs to control them."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "After which, we will hone in on the two types of notifications -- Time Sensitive and communication -- and cover ways in which these can be configured."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "Let's begin by going over some visual updates to notifications."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "Now, notifications have a new look with greater focus on the content and the associated media along with the application icon."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "The rich notification presentation and accompanying actions have been updated to match the system style."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "You can now associate notification actions with icons."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "Iconography conveys what the action will do and provides visual context next to the action."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "Here there are two notification actions -- like and comment -- and these are set on the custom notification category."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "To add icons to these actions, create objects of type UNNotificationActionIcon with the image name, either for a system image or a template image."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "Then provide these icons to the respective constructors for UNNotificationAction."
+      },
+      {
+        "timestamp": "2:31",
+        "text": "When a notification associated with this category is expanded, the actions are presented along with the icons that were provided for them."
+      },
+      {
+        "timestamp": "2:42",
+        "text": "Because notifications display the app icon at a larger size, provide a high-resolution icon with the application bundle."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "Ensure content extensions continue to work with the new presentation and layout of the rich notifications, and adopt icons for notification actions to add more context."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "Next, let's go over new notification management options."
+      },
+      {
+        "timestamp": "3:13",
+        "text": "There are new system controls which affect the delivery and interruption of notifications from applications."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "These are notification summary and Focus."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "Let's discuss notification summary first."
+      },
+      {
+        "timestamp": "3:32",
+        "text": "Notifications can now be delivered at scheduled times in the day as a summary."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "This reduces the number of active interruptions from incoming notifications and presents them collectively at preset times."
+      },
+      {
+        "timestamp": "3:48",
+        "text": "All notifications delivered to the summary on a schedule are present in the notification list on the Lock screen."
+      },
+      {
+        "timestamp": "3:57",
+        "text": "Include media attachments with the notification content so there is a better chance for that notification to be featured at the top of the notification summary."
+      },
+      {
+        "timestamp": "4:09",
+        "text": "Adopt the new API to provide a relevance score for the notification content so the right notifications from the application get featured in the notification summary as well."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "The other management tool relevant to notifications is Focus."
+      },
+      {
+        "timestamp": "4:28",
+        "text": "The device can be set in a particular Focus based on the activity or time of day such as Reading, Sleep, or Work."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "When in such a configuration, the device will filter the presentation and interruption of notifications."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "Focus configuration allows selecting people and applications that can send interruptive notifications."
+      },
+      {
+        "timestamp": "4:54",
+        "text": "For example, during the Work Focus, Mail and Messages are allowed to send notifications, along with direct communication from coworkers."
+      },
+      {
+        "timestamp": "5:05",
+        "text": "So notification summary and Focus control which applications can send interruptive notifications and when."
+      },
+      {
+        "timestamp": "5:15",
+        "text": "This allows better management of interruptions throughout the day."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "There is opportunity for notifications to break through these management controls, but only if allowed to do so."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "It is also possible for communication and Time Sensitive notifications to break through."
+      },
+      {
+        "timestamp": "5:38",
+        "text": "Next let's discuss how applications can control interruptions tied to notifications."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "There is a new API for interruption levels as part of the UserNotifications framework."
+      },
+      {
+        "timestamp": "5:52",
+        "text": "There are four distinct interruption levels that are supported."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "These are Passive, Active, Time Sensitive, and Critical."
+      },
+      {
+        "timestamp": "6:01",
+        "text": "Notifications with Passive interruption level do not alert or light up the screen, and do not break through system controls."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "These notifications are delivered to the notification list silently and are available the next time the list is viewed."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "Passive interruption should be used for notifications that do not require immediate attention to interrupt but should be seen eventually."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "Some examples are dining recommendations and new episode availability."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "Active interruption resembles the behavior that exists today, where notifications will play sound and vibrations and light up the screen."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "These notifications will not break through system management of notifications."
+      },
+      {
+        "timestamp": "6:52",
+        "text": "This is the default interruption level."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "Active interruption should be used for notifications that do not warrant interrupting if the system is configured not to be interrupted currently."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "Some examples are sports updates and live stream video notifications."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "Time Sensitive notifications alert just like active notifications."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "These are special because they can break through system controls such as notification summary and Focus, if it has been allowed."
+      },
+      {
+        "timestamp": "7:29",
+        "text": "These notifications should only be used when it is relevant to actively interrupt, requiring immediate attention."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "Some instances are account security and package delivery alerts."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "Lastly, Critical interruption level is equivalent to the Critical notification support that exists in iOS 14."
+      },
+      {
+        "timestamp": "7:53",
+        "text": "Notifications with this interruption level actively alert, break through system controls, and also bypass the ringer switch on the device."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "Because of this disruptive behavior, critical interruption will continue to require an approved entitlement."
+      },
+      {
+        "timestamp": "8:13",
+        "text": "Some use cases for critical notifications are severe weather and local safety alerts."
+      },
+      {
+        "timestamp": "8:19",
+        "text": "To support the new API in the UserNotifications framework, there is a new enum for UNNotificationInterruptionLevel with the different levels defined."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Set this interruption level while configuring the content object for the notification request."
+      },
+      {
+        "timestamp": "8:38",
+        "text": "Passive is set in this example."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "If no interruption level is provided, then the default level is used."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "For a push notification payload, provide a new key-value pair, with the key interruption level."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "Here again, set the interruption level as passive."
+      },
+      {
+        "timestamp": "8:59",
+        "text": "When this notification is delivered to the device, it will be visible on the Lock screen without any interruptions, since it was configured as passive."
+      },
+      {
+        "timestamp": "9:09",
+        "text": "Another form of interruption tied to notifications is Announce."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "Siri can announce notifications if there are compatible devices -- such as AirPods Pro and AirPods Max -- connected."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "To get this announce behavior in iOS 14, notifications had to be tied to a category that requests the AllowAnnouncement option."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "In iOS 15, the requirement for this category option is deprecated."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "Now announce is supported for any notification while connected to a supported audio device."
+      },
+      {
+        "timestamp": "9:46",
+        "text": "Communication and Time Sensitive notifications will be announced by default."
+      },
+      {
+        "timestamp": "9:52",
+        "text": "While connected to CarPlay, communication notifications can be configured to announce automatically, making the experience more seamless."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "Next let's focus on Time Sensitive notifications and how to configure them."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "Time Sensitive notifications are those that require immediate attention."
+      },
+      {
+        "timestamp": "10:13",
+        "text": "Because of their importance, these can breakthrough system controls such as notification summary and Focus if allowed to do so."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "An example of a Time Sensitive notification is one from Reminders about taking medication."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "This notification is posted immediately and prominently, breaking through the Work Focus."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "It is important to maintain trust when sending Time Sensitive notifications."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "Do not overuse their interruptive nature and only use them when it is relevant to do so."
+      },
+      {
+        "timestamp": "10:49",
+        "text": "Know that there is an option to turn off Time Sensitive alerts or even all notifications from an application."
+      },
+      {
+        "timestamp": "10:58",
+        "text": "To configure Time Sensitive notifications, enable the associated capability via Xcode for your application."
+      },
+      {
+        "timestamp": "11:07",
+        "text": "Set the Time Sensitive interruption level on the notification request being posted."
+      },
+      {
+        "timestamp": "11:13",
+        "text": "For a local notification, the Time Sensitive interruption level is set on the content object."
+      },
+      {
+        "timestamp": "11:19",
+        "text": "For a push payload, set the interruption-level key with value as time-sensitive."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "When delivered, this notification is posted prominently, highlighting the urgency."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "Let's discuss communication notifications."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "And to tell you all about them, let me hand over to Kevin."
+      },
+      {
+        "timestamp": "11:40",
+        "text": "Kevin? Kevin Harrington: Thanks, Kritarth."
+      },
+      {
+        "timestamp": "11:42",
+        "text": "I'm Kevin, an engineer on the Notifications team."
+      },
+      {
+        "timestamp": "11:47",
+        "text": "There's an importance for urgent notifications breaking through Focus and notification summaries."
+      },
+      {
+        "timestamp": "11:53",
+        "text": "Communications from people also warrant elevated notification delivery."
+      },
+      {
+        "timestamp": "11:59",
+        "text": "These communications can come in many forms, including calls and messages."
+      },
+      {
+        "timestamp": "12:05",
+        "text": "I will highlight a new API that allows your applications to signal what notifications are communications, and the people associated with those communications."
+      },
+      {
+        "timestamp": "12:16",
+        "text": "The importance of communication notifications is determined by user decisions."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "Siri Suggestions helps inform these decisions, suggesting important people that should be allowed to interrupt."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "As your user interacts with the device -- taking calls, joining FaceTimes, sending messages -- Siri learns who is a candidate to break through Focus and Notification Summaries."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "In iOS 15, communication notifications get a richer user experience."
+      },
+      {
+        "timestamp": "12:51",
+        "text": "Most visible are the prominent avatars."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "The title and subtitle are standardized."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "It always includes the sender in the title, and in the case of group communications, recipients in the subtitle."
+      },
+      {
+        "timestamp": "13:06",
+        "text": "The title and subtitle text are localized and formatted for all devices, across platforms."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "For example, watch prefers to show just first names for recipients of a group communication."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Siri will now announce the contents of communication notifications on supported devices including HomePod, AirPods, and CarPlay."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "And Siri will provide suggestions to help prioritize these communication notifications."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "People in your apps will get associated with people in Contacts."
+      },
+      {
+        "timestamp": "13:41",
+        "text": "These associations are shown as suggestions on notifications."
+      },
+      {
+        "timestamp": "13:47",
+        "text": "Once a user confirms a suggestion, Siri Shortcuts are available for tasks with those people in your app."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "Siri will suggest relevant people to break through in the Focus configuration -- including those people associated with communications in your app."
+      },
+      {
+        "timestamp": "14:07",
+        "text": "To make these decisions on what is and isn't a communication, this new API lets you add SiriKit call and message intents to Notifications."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "Intents are driven by common tasks."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "Your app donates these intents when events happen, like placing a call or receiving a message."
+      },
+      {
+        "timestamp": "14:28",
+        "text": "From there, Siri provides shortcuts and suggestions based on these intents, like people in your apps to message from share sheet or to start a call from your app via Siri."
+      },
+      {
+        "timestamp": "14:41",
+        "text": "This new API associates these same intents with notifications to further integrate your apps into the Siri ecosystem."
+      },
+      {
+        "timestamp": "14:50",
+        "text": "Using SiriKit intents for communication notifications will increase engagement in your apps while maintaining consistency throughout your app, Siri, and system UI."
+      },
+      {
+        "timestamp": "15:04",
+        "text": "The intents that represent relevant communications are the StartCall and SendMessage intents."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "The NotificationContentProviding protocol is the mechanism to associate intents with notifications."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "On a NotificationContent object, call updating with a ContentProviding intent for communication treatment."
+      },
+      {
+        "timestamp": "15:28",
+        "text": "StartCall and SendMessage intents conforms to providing."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Communication notifications are delivered through Apple Push Notification service."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "You need to update a NotificationContent object with a SiriKit intent in your app's NotificationServiceExtension."
+      },
+      {
+        "timestamp": "15:46",
+        "text": "SiriKit intents are local to the device, and thus must be serviced locally."
+      },
+      {
+        "timestamp": "15:52",
+        "text": "The service extension is for exactly these cases."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "It is the place to customize the content of a remote notification before it is delivered."
+      },
+      {
+        "timestamp": "16:02",
+        "text": "You can also do this in your main app process for local notifications."
+      },
+      {
+        "timestamp": "16:08",
+        "text": "In your didReceive function, update the content of a push payload with an intent."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "For messaging notifications, create a SendMessageIntent."
+      },
+      {
+        "timestamp": "16:19",
+        "text": "And for call-related notifications, use a StartCallIntent."
+      },
+      {
+        "timestamp": "16:23",
+        "text": "Create an interaction to tell Siri intelligence what is happening."
+      },
+      {
+        "timestamp": "16:29",
+        "text": "In a notification extension, the interaction direction is always incoming."
+      },
+      {
+        "timestamp": "16:34",
+        "text": "This is an event that is happening to the user; they are receiving the incoming call."
+      },
+      {
+        "timestamp": "16:40",
+        "text": "Next, you need to donate the interaction."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "Donations also help the system make better suggestions in the future."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "Update the content of your notification with the intent."
+      },
+      {
+        "timestamp": "16:52",
+        "text": "And finally, call the contentHandler with the returned intent."
+      },
+      {
+        "timestamp": "16:57",
+        "text": "Donations are required so Siri can learn from events that happen in your apps."
+      },
+      {
+        "timestamp": "17:03",
+        "text": "The interaction direction is always incoming for notifications."
+      },
+      {
+        "timestamp": "17:07",
+        "text": "For other SiriKit uses, the direction can be outgoing for actions initiated on the device, like sending an outgoing message or placing a call."
+      },
+      {
+        "timestamp": "17:19",
+        "text": "Only system objects that conform to content providing are supported."
+      },
+      {
+        "timestamp": "17:24",
+        "text": "Do not conform your objects to content providing."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "To send communication notifications, enable the communication capability via Xcode for your application."
+      },
+      {
+        "timestamp": "17:36",
+        "text": "Support communication intents by adding intent types to your user activity types array in Info.plist or by implementing an intents extension."
+      },
+      {
+        "timestamp": "17:48",
+        "text": "Donate communication intents when the user takes actions in your app foreground, like when the users hits send after composing a message."
+      },
+      {
+        "timestamp": "17:57",
+        "text": "Siri then uses outgoing intents to better aide in who should be suggested to break through Focus and Summaries."
+      },
+      {
+        "timestamp": "18:05",
+        "text": "Same for Contacts suggestions."
+      },
+      {
+        "timestamp": "18:07",
+        "text": "For this feature, Siri only learns from outgoing intent donations, so Contacts are not cluttered by people not engaged with -- like spam callers."
+      },
+      {
+        "timestamp": "18:18",
+        "text": "The proper usage of communication intents is fundamental to an intelligent notification experience, and there are a few gotchas to cover."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "Intent persons are the building blocks of SendMessage and StartCall intents."
+      },
+      {
+        "timestamp": "18:34",
+        "text": "Each and every parameter you populate provides a richer and more intelligent user experience."
+      },
+      {
+        "timestamp": "18:42",
+        "text": "Same goes with creating intents with intent persons; each and every parameter you populate provides a richer and more intelligent user experience."
+      },
+      {
+        "timestamp": "18:54",
+        "text": "Start using intents if you don't already."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "Intents will provide more visibility to your app in notifications, share sheet, Contacts, and Spotlight."
+      },
+      {
+        "timestamp": "19:05",
+        "text": "And you can use SiriKit to offer Siri Shortcuts like sending a message or starting a call."
+      },
+      {
+        "timestamp": "19:13",
+        "text": "Get in the habit of donating intents for both incoming and outgoing interactions."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "You might already be donating outgoing intents."
+      },
+      {
+        "timestamp": "19:24",
+        "text": "Start donating incoming StartCall and SendMessage intents in your service extension."
+      },
+      {
+        "timestamp": "19:30",
+        "text": "This is fundamental to the communication notification experience."
+      },
+      {
+        "timestamp": "19:36",
+        "text": "If your app doesn't already use a notification service extension, you'll want to add one."
+      },
+      {
+        "timestamp": "19:43",
+        "text": "Finally, put the pieces together by using the content providing protocol to decorate each notification you want delivered as a communication."
+      },
+      {
+        "timestamp": "19:55",
+        "text": "We've covered a lot in this session, from visual updates to communication notifications."
+      },
+      {
+        "timestamp": "20:01",
+        "text": "Here are a few takeaways."
+      },
+      {
+        "timestamp": "20:03",
+        "text": "Account for the new visual updates and management options and ensure that notifications work seamlessly with them."
+      },
+      {
+        "timestamp": "20:11",
+        "text": "Adopt interruption levels to have better control over how a notification interrupts in synergy with system controls."
+      },
+      {
+        "timestamp": "20:19",
+        "text": "Use Time Sensitive notifications when relevant to prominently interrupt and get automatic behaviors such as breakthrough and announce."
+      },
+      {
+        "timestamp": "20:30",
+        "text": "Implement and donate call and messaging intents to get the upgraded communication experience tied to notifications, along with breakthrough and announce behavior."
+      },
+      {
+        "timestamp": "20:42",
+        "text": "We can't wait to see all the new and amazing experiences you build around notifications."
+      },
+      {
+        "timestamp": "20:49",
+        "text": "We hope you all have a great WWDC! ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -119,5 +774,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10231"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:33.189Z"
+  "extractedAt": "2026-10-17T18:53:29.015Z"
 }

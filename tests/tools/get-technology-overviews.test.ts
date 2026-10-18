@@ -5,16 +5,8 @@ import type { Mock } from 'vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleGetTechnologyOverviews } from '../../src/tools/get-technology-overviews.js';
 import { httpClient } from '../../src/utils/http-client.js';
-import { technologyOverviewsCache } from '../../src/utils/cache.js';
 
 vi.mock('../../src/utils/http-client.js');
-vi.mock('../../src/utils/cache.js', () => ({
-  technologyOverviewsCache: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
-  generateUrlCacheKey: vi.fn((key, params) => `${key}-${JSON.stringify(params)}`),
-}));
 
 const PATH = '/documentation/technologyoverviews';
 const reference = (slug: string, title: string, abstract: string) => ({
@@ -77,7 +69,6 @@ const links = (result: string): string[] => [...result.matchAll(/\[([^\]]+)\]\(h
 describe('get-technology-overviews', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (technologyOverviewsCache.get as Mock).mockReturnValue(null);
     (httpClient.getJson as Mock).mockImplementation((url: unknown) => {
       const urlStr = url as string;
       if (urlStr.includes('TechnologyOverviews.json')) {
@@ -128,26 +119,13 @@ describe('get-technology-overviews', () => {
     const result = await handleGetTechnologyOverviews(undefined, 'liquid', true, 50);
 
     expect(links(result)).toEqual(['Liquid Glass', 'Adopting Liquid Glass']);
-    expect(result).toContain('[Adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass) *(Article)* — in Liquid Glass');
+    expect(result).toContain('[Adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass) *(article)* — in Liquid Glass');
   });
 
   it('names the categories when the one asked for does not exist', async () => {
     const result = await handleGetTechnologyOverviews('nope', undefined, true, 50);
 
     expect(result).toBe('No technology overview matches category "nope". Categories: app-design-and-ui, liquid-glass, games, data-management.');
-  });
-
-  it('uses the cached answer when there is one', async () => {
-    (technologyOverviewsCache.get as Mock).mockReturnValue('cached');
-
-    await expect(handleGetTechnologyOverviews(undefined, undefined, true, 50)).resolves.toBe('cached');
-    expect(httpClient.getJson).not.toHaveBeenCalled();
-  });
-
-  it('caches its answer', async () => {
-    const result = await handleGetTechnologyOverviews(undefined, undefined, true, 50);
-
-    expect(technologyOverviewsCache.set).toHaveBeenCalledWith(expect.stringContaining('technology-overviews'), result);
   });
 
   it('says so when Apple lists nothing', async () => {
@@ -159,12 +137,9 @@ describe('get-technology-overviews', () => {
       .resolves.toBe('No technology overviews found matching the specified criteria.');
   });
 
-  it('reports a failed request', async () => {
+  it('throws a failed request', async () => {
     (httpClient.getJson as Mock).mockRejectedValue(new Error('Network error'));
 
-    const result = await handleGetTechnologyOverviews(undefined, undefined, true, 50);
-
-    expect(result).toContain('Error: Failed to fetch technology overviews');
-    expect(result).toContain('Network error');
+    await expect(handleGetTechnologyOverviews(undefined, undefined, true, 50)).rejects.toThrow('Network error');
   });
 });

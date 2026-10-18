@@ -6,25 +6,13 @@ This directory contains comprehensive tests for the Apple Docs MCP server.
 
 ```
 tests/
-├── helpers/                # Test utilities and helpers
-│   └── test-helpers.ts    # Common test data and utility functions
-├── mocks/                 # Mock modules
-│   └── http-client.mock.ts # HTTP client mocks
-├── tools/                 # Unit tests for tools
-│   ├── search-framework-symbols.test.ts
-│   ├── search-parser.test.ts
-│   └── doc-fetcher.test.ts
-├── integration/           # Integration tests
-│   ├── mcp-server.test.ts # MCP server integration tests
-│   └── search.test.ts    # Search functionality tests
-├── e2e/                   # End-to-end tests
-│   └── full-workflow.test.ts
-├── utils/                 # Utility tests
-│   ├── error-handler.test.ts
-│   ├── http-client.test.ts
-│   └── url-converter.test.ts
-├── basic.test.ts          # Basic test suite
-└── setup.ts              # Jest setup file
+├── helpers/test-helpers.ts      # Shared test data, and a client connected to the server
+├── regression/                  # Pages passed through without double wrapping
+├── tools/                       # One file per tool, wwdc/ for the WWDC tools and extractors
+├── utils/                       # HTTP client, URL conversion, name folding, the WWDC data and its loader
+├── index.test.ts                # The server: tool list, arguments passed through
+├── response-format.test.ts      # Every tool's answer is one text item
+└── setup.ts                     # Vitest setup
 ```
 
 ## Running Tests

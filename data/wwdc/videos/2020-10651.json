@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10651/",
   "title": "What's new in App Store Connect",
-  "speakers": [],
   "duration": "",
   "topics": [
     "App Store, Distribution & Marketing"
@@ -11,8 +10,756 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Voiceover: Hello, and welcome to WWDC.\n\nDaniel Miao: Hi, everyone.\n\nWelcome to our session on What's New in App Store Connect.\n\nMy name is Daniel Miao, and I'm an engineering manager on the App Store Connect team.\n\nSo as with every WWDC, we have a ton of exciting new features for you.\n\nToday, I'll talk to you about how to use App Store Connect to configure and test App Clips as well as how to take advantage of new Game Center features like Challenges and Recurring Leaderboards.\n\nI'm also going to give you some exciting updates about both in-app purchases and the App Store Connect API.\n\nSo, as you heard in the keynote, an App Clip is essentially a small part of your App that's discoverable at the moment you need it, and is focused on performing a specific task.\n\nFrom a technical standpoint, an App Clip is simply a binary that you package alongside your app and runs on device just like an app.\n\nThe App Clip binary is delivered to the device when it's invoked, and we limit the size of the binary to make sure the Invocation of the App Clip feels very fast.\n\nNow in order to deliver a great App Clip experience, there are a few major areas to think about.\n\nFirst you'll want to beta test your App Clip to make sure you're providing a solid user experience.\n\nThen, when you're ready to release your App Clip to the rest of your users, you'll set up App Clip Card Metadata to provide meaningful information to your customers about what your App Clip does.\n\nAnd finally, you'll need to properly define domain associations to enable your App Clips to launch.\n\nBut before we get into these, I want to spend a few minutes talking about a concept that's foundational to all of these areas.\n\nAnd that's what an App Clip Invocation is and why it's important.\n\nI'll start off with an example of invoking an App Clip from Safari.\n\nHere, we're on the forestexplorer.org website.\n\nThe first thing you'll notice is this banner at the top of the page.\n\nWe call this the Safari App Clip Banner.\n\nIt appears when a website is associated with an App Clip.\n\nIn Safari we invoke the App Clip by tapping the OPEN button in this banner.\n\nAnd this brings up what we call the App Clip Card.\n\nThis Card contains more information about the App Clip before it's launched on the user's device.\n\nTapping the open button on the app the Card launches the App Clip itself.\n\nAnd once your App Clip is running, a link to your full app on the App Store will briefly appear at the top of the screen.\n\nThere are many ways to invoke an App Clip.\n\nAs you just saw an App Clip can be invoked from Safari.\n\nBut App Clips can also be invoked from Messages, Maps, via NFC tags and QR Codes, and based on a user's location.\n\nBut no matter how it's invoked, almost every App Clip Invocation will be associated with an Invocation URL.\n\nA simple example of an Invocation URL is a URL of the web page that we just saw in our last example, forestexplorer.org.\n\nA second example is a piece of functionality that we're introducing to Forest Explorer.\n\nUsers will be able to use our App Clip to reserve campsites from Apple Maps.\n\nHere you see the Invocation URL, camp.forestexplorer.org/reserve and then the ID of the campground for the reservation.\n\nNow users will also be able to check into the campsites that they reserve by scanning and NFC tag at the campsite.\n\nThis URL contains the ID of the campground along with the specific campsite number.\n\nSo the Invocation URL serves two main purposes.\n\nThe first is when an App Clip is displayed, the Invocation URL is used to determine what metadata is shown on the App Clip Card.\n\nThen, when the App Clip is launched on the user's device the Invocation URL is passed into the App Clip to deep link the user into a specific piece of App Clip functionality, similar to how you can deep link into Apps today.\n\nSo, now that you're a bit more familiar with how an App Clip is invoked, let's talk about how to deliver and beta test your App Clip.\n\nSo after you finished developing your App Clip in Xcode, you'll generate a build.\n\nThis build contains both your app and your App Clip together.\n\nAn App Clip can not be packaged separately from your full app.\n\nThe build is then delivered into App Store Connect.\n\nYou can find the build in the TestFlight view of App Store Connect.\n\nAnd you'll know that it's a build that contains an App Clip because it has an extra row containing the same information you're used to seeing with apps, but specific to the App Clip.\n\nWhen you click into the build details for this build you'll see a new App Clip Invocation section on the page.\n\nFrom here you can configure up to three Invocation URLs for your testers to test.\n\nTo do this you provide a title, which appears in the TestFight App along with the Invocation URL itself.\n\nNow once the App Clip Invocations have been configured, clicking save will make them available to testers immediately.\n\nNow let's look at what testers will see.\n\nIn the App detail view, you'll see a new App Clip section.\n\nHere we see a list of App Clip Invocations that we just set up in App Store Connect.\n\nTapping the TEST button will launch the App Clip associated with the current build and pass the configured Invocation URL into the App Clip to support deep linking.\n\nNow one thing to note is that TestFlight is the only App Clip Invocation case that does not show an App Clip Card before launching the App Clip itself.\n\nIf testers encounter any issues with this App Clip, TestFlight Feedback will be available to collect information from testers just like it is for apps.\n\nSo once beta testing is complete, it's time to think about the metadata that will display to your users on the App Clip Card.\n\nThe App Clip Card contains a header image, a title, a subtitle, and a call to action.\n\nToward the bottom of the Card, you'll also see more information about the full app and a link to the app on the App Store.\n\nThe App Clip Card is part of the overall App Clip experience.\n\nIt's easy to get started with App Clips by setting up a default set of App Clip Card metadata in App Store Connect.\n\nIn fact, the default metadata is required for all App Clips.\n\nAnd of all the Invocation methods that I spoke about earlier, this metadata will only appear when an App Clip is invoked from Safari or from Messages.\n\nAnd for many of you, this is all you'll need to set up before releasing your App Clip to the world.\n\nTo configure your default experience in App Store Connect, you'll start on the iOS version page.\n\nHere, you'll enter the default experience metadata, including the header image, subtitle, and you'll choose a call to action verb.\n\nWhen you're App Clip is invoked from Safari or from Messages, you'll see this metadata appear on the App Clip Card.\n\nNow you might be wondering how Safari knows that a web page is associated with your App Clip in order to invoke your default App Clip experience.\n\nWell to make this association, you simply include a metatag on the web page itself with the name \"apple-itunes-app\".\n\nThis is the same tag that's used for Safari Smart App banners today.\n\nBut with an extra attribute for the App Clip, the App Clip bundle ID attribute identifies which App Clip to associate with this web page.\n\nAnd for your customers who are on iOS 13 and earlier who can't run App Clips, you can add an app ID attribute that'll link them to your full app on the App Store.\n\nAnd that's how you set up a default App Clip experience.\n\nSome of you may want more control over your App Clip experiences.\n\nFor example, you may want to set up customized App Clip Card metadata for specific Invocation URLs.\n\nYou can do this by creating advanced App Clip experiences.\n\nNot only can you customize App Clip Card metadata with advanced experiences, but you can also associate these experiences with places on Apple Maps.\n\nFinally, advanced App Clip experiences support all of the Invocation methods I told you about earlier.\n\nSo, now let's look at a few examples of advanced Clip experiences for Forest Explorer.\n\nFirst, is the ability to invoke a campsite reservation experience from Apple Maps.\n\nWhen a user taps the button on the Apple Maps place Card for this campground, the App Clip Card for this experience will appear.\n\nWe want this App Clip Card to display a photo of the campground as well as a meaningful title and subtitle.\n\nIn this case we set the title to \"Reserve\" and subtitle to the name of the campground.\n\nNext let's take a look at the campsite check-in experience.\n\nNow campers will be able to check into our high tech campgrounds by scanning on-site NFC tags encoded with our campsite check-in URL.\n\nJust like the reservation case, we want this experience to display the campground photo and name, but this time we want the title to say \"Check-in.\" Now looking at the Invocation URL, you'll notice that this URL is specific to each campsite.\n\nBut we want a single set of metadata to appear for all campsites.\n\nIf we register metadata for the URL as you see it, we will need to register the same metadata for every single site.\n\nAnd this would get repetitive very quickly.\n\nSo instead, we'll only associate the campground metadata to the first part of the Invocation URL.\n\nAny URL beginning with this prefix will display the same metadata.\n\nAnd now we've configured metadata for all of the campsites with a single registration.\n\nThese are just a few ways to configure advanced App Clip experiences.\n\nNow I'd like to show you how to set up advance experiences in App Store Connect.\n\nFirst, we'll head back to the iOS version page.\n\nNext, we'll click on the Get Started link in the Advanced App Clip experiences section.\n\nAnd then we land on this page.\n\nWe'll get some background on what you'll be asked to provide for the experience you're registering.\n\nFirst, you need to specify the App Clip Invocation URL for your App Clip experience.\n\nIn this case I'm going to register the full URL for the campground reservation experience.\n\nBelow the URL Is the bundle ID of the App Clip itself.\n\nAfter setting up your URL, it is time to enter the metadata for the App Clip Card.\n\nFirst, we upload metadata that includes the header, image title, and subtitle for this App Clip Card.\n\nAnd after entering the metadata we answer the question of whether to associate this experience with a place in Apple Maps.\n\nThe campground is represented as a place on Apple Maps, so we select \"Yes\" for the place selection.\n\nThen, we select a Maps Action that best fits the experience by selecting Open Reserve Room.\n\nTo complete setting up the place association, we select the campground that we're creating the experience for.\n\nIn this case, Lakeside Campground.\n\nAnd once we've chosen a place we're asked a few questions about the relationship between the App developer and the place.\n\nSince Forest Explorer does not own the campground but does have a relationship with the campground, we select \"Authorized by Owner\" for the relationship.\n\nAnd then in response to what is promoted in this experience, we choose a different business or service since we're promoting the campground and not Forest Explorer.\n\nAnd generally the answer to what is promoted will fall into one of two main categories: Your business and Other businesses.\n\nMost of you will set up experiences promoting your own business because your App Clip represents surface offerings that your business provides.\n\nBut some of you will set up experiences for other businesses.\n\nThis makes sense when you represent other businesses, for example, the way Yelp does.\n\nNotice that the icon that displays when the experience represents another business is a category icon and not the App icon.\n\nThis icon is displayed in history, the Safari App Clip banner and other parts of the App Clip Experience.\n\nOnce you've completed the process of setting up your experience, you'll see all the experiences you've configured along with their statuses on the App Clip Experiences page.\n\nAnd that's how you set up advanced App Clip Experiences in App Store Connect.\n\nNow once this is done, it's time to think about domain associations.\n\nEvery Invocation URL contains a domain.\n\nNow we need to make sure you're authorized to use these domains to invoke your App Clips.\n\nTo do this, first you specify which domains you want to associate with your App Clips by using the Associated Domains Entitlement.\n\nNext, you set up Apple App Site Association files to be served from those domains.\n\nThese need to contain a reference to the App Clip App ID.\n\nIf everything checks out, then your App Clip can be invoked on device.\n\nIf you want to check the validation status of your App Clip, go to the build details page in App Store Connect.\n\nFrom here, click the View Status link in the App Clip section, and this will bring up a modal showing domain validation status.\n\nThe cache status column is what drives App Clip Invocations on your customers devices.\n\nAnd if, for example, you're working on your Apple App Site Association file, and you want to find out whether your changes are valid, you can click the Load Debug Status link.\n\nBy doing this we'll reach out to your servers in real time and validate the App Clip portions of your file.\n\nIf there are any issues, you can get more detail here.\n\nNow, there's a lot more to learn about associating domains.\n\nSo for a full walkthrough of the process, be sure to check out the What's New in Universal Links session.\n\nThere are also a number of other informative sessions focusing on various aspects of App Clips that are linked in the resources associated with this session.\n\nAnd that's how you set up App Clips in App Store Connect.\n\nNext, I'd like to show you how to use App Store Connect to take advantage of the new features in Game Center on iOS 14.\n\nFirst, we have challenges.\n\nNow, Challenges enable players to challenge other players to complete an achievement or to beat a leaderboard score.\n\nTo enable this feature for your game, go to the Game Center landing page under Features.\n\nFrom there, you click the \"Allow challenges in this game\" checkbox.\n\nOnce you save this change, your players will be able to challenge each other.\n\nNext, we have Recurring Leaderboards.\n\nRecurring Leaderboards are a new kind of leaderboard that allow you to collect scores for a predetermined period of time.\n\nThen that period is then scheduled to repeat at specific intervals.\n\nAs an example, let's say you create a Recurring Leaderboard that begins for the first time on October 13 at 6:00 pm.\n\nIt lasts for four hours and repeats every week.\n\nThis means that scores are posted to this leaderboard beginning on Tuesday the 13th at 6:00 pm, and the leaderboard continues to collect scores for four hours until 10:00 pm.\n\nAnd every week after the 13th from 6:00 to 10:00 pm, a fresh leaderboard opens up again to take new scores.\n\nThis is the page where you set up Recurring Leaderboards in App Store Connect.\n\nIf you set up leaderboards in the past, most of these fields will look familiar to you.\n\nFor Recurring Leaderboards, we've just added a start time, a duration, and a field where you can specify the recurrence rules.\n\nWe have two additional sessions that cover the full breadth of new Game Center features, so be sure to check those out.\n\nNext, I want to give you an exciting update about our subscriptions program.\n\nNow Subscriptions are one of the fastest growing business models on the App Store.\n\nAnd we know that customers love our Family Sharing capabilities, which let them share Apple services like Music, Apple Arcade, and Apple TV+, which is why we're so excited to announce that starting this Fall, Family Sharing for subscriptions will be available to all App developers.\n\nFor the first time, everyone in the family can have access to great subscriptions from the App Store with a single purchase.\n\nFamily Sharing will be available for both autorenewal subscriptions as well as nonconsumable in-app purchases.\n\nFamily sharing is flexible enough to adapt to your different business needs.\n\nFor example, if you would like to make a Family Shared subscription and upgrade from an individual one, you can do just that.\n\nWhen you enable Family Sharing for your subscription or nonconsumable in-app purchase, all new customers will automatically share the purchase with their family.\n\nBe sure to update your in-app purchase metadata to appropriately communicate that it is a shared purchase.\n\nOn the other hand, if you have existing subscribers, those subscribers will need to take an action to opt-in to sharing the subscription with their families.\n\nTo configure Family Sharing in App Store Connect, navigate to the In-App Purchase detail page.\n\nOnce you arrive here, you'll want to think about your metadata to make sure you're communicating that this is a Family Shared in-app purchase.\n\nWhen you're ready to enable Family Sharing, click the Turn On link toward the middle of the page.\n\nWhen you do this we will ask you to confirm your decision.\n\nPlease consider your decision carefully because once you enable Family Sharing for a live in-app purchase, you cannot turn it off again.\n\nOnce you confirm, Family Sharing will go into effect immediately.\n\nFor more information about how to support Family Sharing with StoreKit along with other updates to StoreKit APIs, watch the What's New in In-App Purchase session.\n\nWe've also added an exciting set of testing features that includes local testing of in-app purchases directly from within Xcode, and we've made enhancements to the sandbox testing experience.\n\nWe'll take a deep dive into these features in Testing in-App Purchases.\n\nAnd finally, if you want to make the most of subscription features for your business, you'll want to watch Architecting for Subscriptions.\n\nAnd finally, we'd like to tell you about our expanded App Store Connect API.\n\nTwo years ago we launched the App Store Connect API with support for TestFlight, User management, Provisioning, and Reporting.\n\nLater this year, we're excited to be adding two powerful new sets of APIs.\n\nWe'll be introducing a suite of App Metadata APIs that will let you manage your presence on the App Store as well as a new Power and Performance API that'll let you download the same aggregate data that drives the new power and performance analysis tools in Xcode.\n\nIn fact, just between these two new categories of API functionality, we're adding over 200 new endpoints.\n\nFor app metadata, you will be able to do things like create new App Store versions, set pricing and availability, edit app and version-level metadata, associate builds to your App Store versions, and submit those versions for review.\n\nNow we can't even begin to scratch the surface of the new APIs in this session.\n\nSo be sure to check out the new App Store Connect API session for deep dive into the new APIs and walkthroughs of some common use cases that you may encounter.\n\nSo we've covered a lot of ground today.\n\nWe talked about using App Store Connect to configure App Clips and new Game Center features like Challenges and Recurring Leaderboards.\n\nYou'll soon be able to make your subscriptions Family Shareable, and we're adding a ton of new functionality to the App Store Connect API.\n\nWe're very excited about all of these new features, and we can't wait to see what you'll do with them.\n\nThank you for watching this session and please enjoy the rest of your conference.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Voiceover: Hello, and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Daniel Miao: Hi, everyone."
+      },
+      {
+        "timestamp": "0:09",
+        "text": "Welcome to our session on What's New in App Store Connect."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "My name is Daniel Miao, and I'm an engineering manager on the App Store Connect team."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "So as with every WWDC, we have a ton of exciting new features for you."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "Today, I'll talk to you about how to use App Store Connect to configure and test App Clips as well as how to take advantage of new Game Center features like Challenges and Recurring Leaderboards."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "I'm also going to give you some exciting updates about both in-app purchases and the App Store Connect API."
+      },
+      {
+        "timestamp": "0:40",
+        "text": "So, as you heard in the keynote, an App Clip is essentially a small part of your App that's discoverable at the moment you need it, and is focused on performing a specific task."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "From a technical standpoint, an App Clip is simply a binary that you package alongside your app and runs on device just like an app."
+      },
+      {
+        "timestamp": "1:00",
+        "text": "The App Clip binary is delivered to the device when it's invoked, and we limit the size of the binary to make sure the Invocation of the App Clip feels very fast."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Now in order to deliver a great App Clip experience, there are a few major areas to think about."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "First you'll want to beta test your App Clip to make sure you're providing a solid user experience."
+      },
+      {
+        "timestamp": "1:24",
+        "text": "Then, when you're ready to release your App Clip to the rest of your users, you'll set up App Clip Card Metadata to provide meaningful information to your customers about what your App Clip does."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "And finally, you'll need to properly define domain associations to enable your App Clips to launch."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "But before we get into these, I want to spend a few minutes talking about a concept that's foundational to all of these areas."
+      },
+      {
+        "timestamp": "1:51",
+        "text": "And that's what an App Clip Invocation is and why it's important."
+      },
+      {
+        "timestamp": "1:57",
+        "text": "I'll start off with an example of invoking an App Clip from Safari."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "Here, we're on the forestexplorer.org website."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "The first thing you'll notice is this banner at the top of the page."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "We call this the Safari App Clip Banner."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "It appears when a website is associated with an App Clip."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "In Safari we invoke the App Clip by tapping the OPEN button in this banner."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "And this brings up what we call the App Clip Card."
+      },
+      {
+        "timestamp": "2:24",
+        "text": "This Card contains more information about the App Clip before it's launched on the user's device."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "Tapping the open button on the app the Card launches the App Clip itself."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "And once your App Clip is running, a link to your full app on the App Store will briefly appear at the top of the screen."
+      },
+      {
+        "timestamp": "2:45",
+        "text": "There are many ways to invoke an App Clip."
+      },
+      {
+        "timestamp": "2:48",
+        "text": "As you just saw an App Clip can be invoked from Safari."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "But App Clips can also be invoked from Messages, Maps, via NFC tags and QR Codes, and based on a user's location."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "But no matter how it's invoked, almost every App Clip Invocation will be associated with an Invocation URL."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "A simple example of an Invocation URL is a URL of the web page that we just saw in our last example, forestexplorer.org."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "A second example is a piece of functionality that we're introducing to Forest Explorer."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "Users will be able to use our App Clip to reserve campsites from Apple Maps."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "Here you see the Invocation URL, camp.forestexplorer.org/reserve and then the ID of the campground for the reservation."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "Now users will also be able to check into the campsites that they reserve by scanning and NFC tag at the campsite."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "This URL contains the ID of the campground along with the specific campsite number."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "So the Invocation URL serves two main purposes."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "The first is when an App Clip is displayed, the Invocation URL is used to determine what metadata is shown on the App Clip Card."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "Then, when the App Clip is launched on the user's device the Invocation URL is passed into the App Clip to deep link the user into a specific piece of App Clip functionality, similar to how you can deep link into Apps today."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "So, now that you're a bit more familiar with how an App Clip is invoked, let's talk about how to deliver and beta test your App Clip."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "So after you finished developing your App Clip in Xcode, you'll generate a build."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "This build contains both your app and your App Clip together."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "An App Clip can not be packaged separately from your full app."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "The build is then delivered into App Store Connect."
+      },
+      {
+        "timestamp": "4:51",
+        "text": "You can find the build in the TestFlight view of App Store Connect."
+      },
+      {
+        "timestamp": "4:56",
+        "text": "And you'll know that it's a build that contains an App Clip because it has an extra row containing the same information you're used to seeing with apps, but specific to the App Clip."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "When you click into the build details for this build you'll see a new App Clip Invocation section on the page."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "From here you can configure up to three Invocation URLs for your testers to test."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "To do this you provide a title, which appears in the TestFight App along with the Invocation URL itself."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "Now once the App Clip Invocations have been configured, clicking save will make them available to testers immediately."
+      },
+      {
+        "timestamp": "5:36",
+        "text": "Now let's look at what testers will see."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "In the App detail view, you'll see a new App Clip section."
+      },
+      {
+        "timestamp": "5:44",
+        "text": "Here we see a list of App Clip Invocations that we just set up in App Store Connect."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "Tapping the TEST button will launch the App Clip associated with the current build and pass the configured Invocation URL into the App Clip to support deep linking."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "Now one thing to note is that TestFlight is the only App Clip Invocation case that does not show an App Clip Card before launching the App Clip itself."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "If testers encounter any issues with this App Clip, TestFlight Feedback will be available to collect information from testers just like it is for apps."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "So once beta testing is complete, it's time to think about the metadata that will display to your users on the App Clip Card."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "The App Clip Card contains a header image, a title, a subtitle, and a call to action."
+      },
+      {
+        "timestamp": "6:38",
+        "text": "Toward the bottom of the Card, you'll also see more information about the full app and a link to the app on the App Store."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "The App Clip Card is part of the overall App Clip experience."
+      },
+      {
+        "timestamp": "6:52",
+        "text": "It's easy to get started with App Clips by setting up a default set of App Clip Card metadata in App Store Connect."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "In fact, the default metadata is required for all App Clips."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "And of all the Invocation methods that I spoke about earlier, this metadata will only appear when an App Clip is invoked from Safari or from Messages."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "And for many of you, this is all you'll need to set up before releasing your App Clip to the world."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "To configure your default experience in App Store Connect, you'll start on the iOS version page."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "Here, you'll enter the default experience metadata, including the header image, subtitle, and you'll choose a call to action verb."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "When you're App Clip is invoked from Safari or from Messages, you'll see this metadata appear on the App Clip Card."
+      },
+      {
+        "timestamp": "7:45",
+        "text": "Now you might be wondering how Safari knows that a web page is associated with your App Clip in order to invoke your default App Clip experience."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "Well to make this association, you simply include a metatag on the web page itself with the name \"apple-itunes-app\"."
+      },
+      {
+        "timestamp": "8:03",
+        "text": "This is the same tag that's used for Safari Smart App banners today."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "But with an extra attribute for the App Clip, the App Clip bundle ID attribute identifies which App Clip to associate with this web page."
+      },
+      {
+        "timestamp": "8:17",
+        "text": "And for your customers who are on iOS 13 and earlier who can't run App Clips, you can add an app ID attribute that'll link them to your full app on the App Store."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "And that's how you set up a default App Clip experience."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "Some of you may want more control over your App Clip experiences."
+      },
+      {
+        "timestamp": "8:38",
+        "text": "For example, you may want to set up customized App Clip Card metadata for specific Invocation URLs."
+      },
+      {
+        "timestamp": "8:46",
+        "text": "You can do this by creating advanced App Clip experiences."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "Not only can you customize App Clip Card metadata with advanced experiences, but you can also associate these experiences with places on Apple Maps."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "Finally, advanced App Clip experiences support all of the Invocation methods I told you about earlier."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "So, now let's look at a few examples of advanced Clip experiences for Forest Explorer."
+      },
+      {
+        "timestamp": "9:16",
+        "text": "First, is the ability to invoke a campsite reservation experience from Apple Maps."
+      },
+      {
+        "timestamp": "9:22",
+        "text": "When a user taps the button on the Apple Maps place Card for this campground, the App Clip Card for this experience will appear."
+      },
+      {
+        "timestamp": "9:31",
+        "text": "We want this App Clip Card to display a photo of the campground as well as a meaningful title and subtitle."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "In this case we set the title to \"Reserve\" and subtitle to the name of the campground."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "Next let's take a look at the campsite check-in experience."
+      },
+      {
+        "timestamp": "9:48",
+        "text": "Now campers will be able to check into our high tech campgrounds by scanning on-site NFC tags encoded with our campsite check-in URL."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "Just like the reservation case, we want this experience to display the campground photo and name, but this time we want the title to say \"Check-in.\" Now looking at the Invocation URL, you'll notice that this URL is specific to each campsite."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "But we want a single set of metadata to appear for all campsites."
+      },
+      {
+        "timestamp": "10:20",
+        "text": "If we register metadata for the URL as you see it, we will need to register the same metadata for every single site."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "And this would get repetitive very quickly."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "So instead, we'll only associate the campground metadata to the first part of the Invocation URL."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "Any URL beginning with this prefix will display the same metadata."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "And now we've configured metadata for all of the campsites with a single registration."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "These are just a few ways to configure advanced App Clip experiences."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "Now I'd like to show you how to set up advance experiences in App Store Connect."
+      },
+      {
+        "timestamp": "10:58",
+        "text": "First, we'll head back to the iOS version page."
+      },
+      {
+        "timestamp": "11:03",
+        "text": "Next, we'll click on the Get Started link in the Advanced App Clip experiences section."
+      },
+      {
+        "timestamp": "11:08",
+        "text": "And then we land on this page."
+      },
+      {
+        "timestamp": "11:10",
+        "text": "We'll get some background on what you'll be asked to provide for the experience you're registering."
+      },
+      {
+        "timestamp": "11:17",
+        "text": "First, you need to specify the App Clip Invocation URL for your App Clip experience."
+      },
+      {
+        "timestamp": "11:22",
+        "text": "In this case I'm going to register the full URL for the campground reservation experience."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "Below the URL Is the bundle ID of the App Clip itself."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "After setting up your URL, it is time to enter the metadata for the App Clip Card."
+      },
+      {
+        "timestamp": "11:39",
+        "text": "First, we upload metadata that includes the header, image title, and subtitle for this App Clip Card."
+      },
+      {
+        "timestamp": "11:47",
+        "text": "And after entering the metadata we answer the question of whether to associate this experience with a place in Apple Maps."
+      },
+      {
+        "timestamp": "11:54",
+        "text": "The campground is represented as a place on Apple Maps, so we select \"Yes\" for the place selection."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "Then, we select a Maps Action that best fits the experience by selecting Open Reserve Room."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "To complete setting up the place association, we select the campground that we're creating the experience for."
+      },
+      {
+        "timestamp": "12:14",
+        "text": "In this case, Lakeside Campground."
+      },
+      {
+        "timestamp": "12:17",
+        "text": "And once we've chosen a place we're asked a few questions about the relationship between the App developer and the place."
+      },
+      {
+        "timestamp": "12:25",
+        "text": "Since Forest Explorer does not own the campground but does have a relationship with the campground, we select \"Authorized by Owner\" for the relationship."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "And then in response to what is promoted in this experience, we choose a different business or service since we're promoting the campground and not Forest Explorer."
+      },
+      {
+        "timestamp": "12:45",
+        "text": "And generally the answer to what is promoted will fall into one of two main categories: Your business and Other businesses."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "Most of you will set up experiences promoting your own business because your App Clip represents surface offerings that your business provides."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "But some of you will set up experiences for other businesses."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "This makes sense when you represent other businesses, for example, the way Yelp does."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "Notice that the icon that displays when the experience represents another business is a category icon and not the App icon."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "This icon is displayed in history, the Safari App Clip banner and other parts of the App Clip Experience."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "Once you've completed the process of setting up your experience, you'll see all the experiences you've configured along with their statuses on the App Clip Experiences page."
+      },
+      {
+        "timestamp": "13:38",
+        "text": "And that's how you set up advanced App Clip Experiences in App Store Connect."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "Now once this is done, it's time to think about domain associations."
+      },
+      {
+        "timestamp": "13:50",
+        "text": "Every Invocation URL contains a domain."
+      },
+      {
+        "timestamp": "13:53",
+        "text": "Now we need to make sure you're authorized to use these domains to invoke your App Clips."
+      },
+      {
+        "timestamp": "13:58",
+        "text": "To do this, first you specify which domains you want to associate with your App Clips by using the Associated Domains Entitlement."
+      },
+      {
+        "timestamp": "14:07",
+        "text": "Next, you set up Apple App Site Association files to be served from those domains."
+      },
+      {
+        "timestamp": "14:13",
+        "text": "These need to contain a reference to the App Clip App ID."
+      },
+      {
+        "timestamp": "14:18",
+        "text": "If everything checks out, then your App Clip can be invoked on device."
+      },
+      {
+        "timestamp": "14:25",
+        "text": "If you want to check the validation status of your App Clip, go to the build details page in App Store Connect."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "From here, click the View Status link in the App Clip section, and this will bring up a modal showing domain validation status."
+      },
+      {
+        "timestamp": "14:41",
+        "text": "The cache status column is what drives App Clip Invocations on your customers devices."
+      },
+      {
+        "timestamp": "14:48",
+        "text": "And if, for example, you're working on your Apple App Site Association file, and you want to find out whether your changes are valid, you can click the Load Debug Status link."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "By doing this we'll reach out to your servers in real time and validate the App Clip portions of your file."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "If there are any issues, you can get more detail here."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "Now, there's a lot more to learn about associating domains."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "So for a full walkthrough of the process, be sure to check out the What's New in Universal Links session."
+      },
+      {
+        "timestamp": "15:22",
+        "text": "There are also a number of other informative sessions focusing on various aspects of App Clips that are linked in the resources associated with this session."
+      },
+      {
+        "timestamp": "15:31",
+        "text": "And that's how you set up App Clips in App Store Connect."
+      },
+      {
+        "timestamp": "15:36",
+        "text": "Next, I'd like to show you how to use App Store Connect to take advantage of the new features in Game Center on iOS 14."
+      },
+      {
+        "timestamp": "15:45",
+        "text": "First, we have challenges."
+      },
+      {
+        "timestamp": "15:47",
+        "text": "Now, Challenges enable players to challenge other players to complete an achievement or to beat a leaderboard score."
+      },
+      {
+        "timestamp": "15:55",
+        "text": "To enable this feature for your game, go to the Game Center landing page under Features."
+      },
+      {
+        "timestamp": "16:01",
+        "text": "From there, you click the \"Allow challenges in this game\" checkbox."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "Once you save this change, your players will be able to challenge each other."
+      },
+      {
+        "timestamp": "16:12",
+        "text": "Next, we have Recurring Leaderboards."
+      },
+      {
+        "timestamp": "16:15",
+        "text": "Recurring Leaderboards are a new kind of leaderboard that allow you to collect scores for a predetermined period of time."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "Then that period is then scheduled to repeat at specific intervals."
+      },
+      {
+        "timestamp": "16:28",
+        "text": "As an example, let's say you create a Recurring Leaderboard that begins for the first time on October 13 at 6:00 pm."
+      },
+      {
+        "timestamp": "16:36",
+        "text": "It lasts for four hours and repeats every week."
+      },
+      {
+        "timestamp": "16:42",
+        "text": "This means that scores are posted to this leaderboard beginning on Tuesday the 13th at 6:00 pm, and the leaderboard continues to collect scores for four hours until 10:00 pm."
+      },
+      {
+        "timestamp": "16:54",
+        "text": "And every week after the 13th from 6:00 to 10:00 pm, a fresh leaderboard opens up again to take new scores."
+      },
+      {
+        "timestamp": "17:02",
+        "text": "This is the page where you set up Recurring Leaderboards in App Store Connect."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "If you set up leaderboards in the past, most of these fields will look familiar to you."
+      },
+      {
+        "timestamp": "17:11",
+        "text": "For Recurring Leaderboards, we've just added a start time, a duration, and a field where you can specify the recurrence rules."
+      },
+      {
+        "timestamp": "17:20",
+        "text": "We have two additional sessions that cover the full breadth of new Game Center features, so be sure to check those out."
+      },
+      {
+        "timestamp": "17:31",
+        "text": "Next, I want to give you an exciting update about our subscriptions program."
+      },
+      {
+        "timestamp": "17:35",
+        "text": "Now Subscriptions are one of the fastest growing business models on the App Store."
+      },
+      {
+        "timestamp": "17:41",
+        "text": "And we know that customers love our Family Sharing capabilities, which let them share Apple services like Music, Apple Arcade, and Apple TV+, which is why we're so excited to announce that starting this Fall, Family Sharing for subscriptions will be available to all App developers."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "For the first time, everyone in the family can have access to great subscriptions from the App Store with a single purchase."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "Family Sharing will be available for both autorenewal subscriptions as well as nonconsumable in-app purchases."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "Family sharing is flexible enough to adapt to your different business needs."
+      },
+      {
+        "timestamp": "18:21",
+        "text": "For example, if you would like to make a Family Shared subscription and upgrade from an individual one, you can do just that."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "When you enable Family Sharing for your subscription or nonconsumable in-app purchase, all new customers will automatically share the purchase with their family."
+      },
+      {
+        "timestamp": "18:39",
+        "text": "Be sure to update your in-app purchase metadata to appropriately communicate that it is a shared purchase."
+      },
+      {
+        "timestamp": "18:46",
+        "text": "On the other hand, if you have existing subscribers, those subscribers will need to take an action to opt-in to sharing the subscription with their families."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "To configure Family Sharing in App Store Connect, navigate to the In-App Purchase detail page."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "Once you arrive here, you'll want to think about your metadata to make sure you're communicating that this is a Family Shared in-app purchase."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "When you're ready to enable Family Sharing, click the Turn On link toward the middle of the page."
+      },
+      {
+        "timestamp": "19:18",
+        "text": "When you do this we will ask you to confirm your decision."
+      },
+      {
+        "timestamp": "19:22",
+        "text": "Please consider your decision carefully because once you enable Family Sharing for a live in-app purchase, you cannot turn it off again."
+      },
+      {
+        "timestamp": "19:30",
+        "text": "Once you confirm, Family Sharing will go into effect immediately."
+      },
+      {
+        "timestamp": "19:36",
+        "text": "For more information about how to support Family Sharing with StoreKit along with other updates to StoreKit APIs, watch the What's New in In-App Purchase session."
+      },
+      {
+        "timestamp": "19:47",
+        "text": "We've also added an exciting set of testing features that includes local testing of in-app purchases directly from within Xcode, and we've made enhancements to the sandbox testing experience."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "We'll take a deep dive into these features in Testing in-App Purchases."
+      },
+      {
+        "timestamp": "20:04",
+        "text": "And finally, if you want to make the most of subscription features for your business, you'll want to watch Architecting for Subscriptions."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "And finally, we'd like to tell you about our expanded App Store Connect API."
+      },
+      {
+        "timestamp": "20:20",
+        "text": "Two years ago we launched the App Store Connect API with support for TestFlight, User management, Provisioning, and Reporting."
+      },
+      {
+        "timestamp": "20:27",
+        "text": "Later this year, we're excited to be adding two powerful new sets of APIs."
+      },
+      {
+        "timestamp": "20:33",
+        "text": "We'll be introducing a suite of App Metadata APIs that will let you manage your presence on the App Store as well as a new Power and Performance API that'll let you download the same aggregate data that drives the new power and performance analysis tools in Xcode."
+      },
+      {
+        "timestamp": "20:52",
+        "text": "In fact, just between these two new categories of API functionality, we're adding over 200 new endpoints."
+      },
+      {
+        "timestamp": "21:00",
+        "text": "For app metadata, you will be able to do things like create new App Store versions, set pricing and availability, edit app and version-level metadata, associate builds to your App Store versions, and submit those versions for review."
+      },
+      {
+        "timestamp": "21:18",
+        "text": "Now we can't even begin to scratch the surface of the new APIs in this session."
+      },
+      {
+        "timestamp": "21:22",
+        "text": "So be sure to check out the new App Store Connect API session for deep dive into the new APIs and walkthroughs of some common use cases that you may encounter."
+      },
+      {
+        "timestamp": "21:33",
+        "text": "So we've covered a lot of ground today."
+      },
+      {
+        "timestamp": "21:35",
+        "text": "We talked about using App Store Connect to configure App Clips and new Game Center features like Challenges and Recurring Leaderboards."
+      },
+      {
+        "timestamp": "21:44",
+        "text": "You'll soon be able to make your subscriptions Family Shareable, and we're adding a ton of new functionality to the App Store Connect API."
+      },
+      {
+        "timestamp": "21:52",
+        "text": "We're very excited about all of these new features, and we can't wait to see what you'll do with them."
+      },
+      {
+        "timestamp": "21:58",
+        "text": "Thank you for watching this session and please enjoy the rest of your conference."
+      },
+      {
+        "timestamp": "22:03",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [
@@ -92,5 +839,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10098"
     }
   ],
-  "extractedAt": "2026-10-11T16:44:55.492Z"
+  "extractedAt": "2026-10-17T18:54:50.111Z"
 }

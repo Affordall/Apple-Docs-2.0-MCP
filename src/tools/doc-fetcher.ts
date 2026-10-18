@@ -1,50 +1,43 @@
-import { apiCache, generateEnhancedCacheKey } from '../utils/cache.js';
-import { convertToJsonApiUrl } from '../utils/url-converter.js';
-import { httpClient } from '../utils/http-client.js';
+import { APPLE_PATHS } from '../utils/constants.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import jsonpatch from 'fast-json-patch';
+import type { Operation } from 'fast-json-patch';
+
+import { cachedJson, pageCache } from '../utils/cache.js';
+import { isValidAppleDeveloperUrl, jsonApiUrlOf } from '../utils/url-converter.js';
 import type {
-  Attribute, CodeExample, DeclarationToken, DetailsSection, DocumentationPrimaryRenderSection, PlatformAvailability,
+  Attribute, CodeExample, Declaration, DeclarationToken, DetailsSection, RelationshipsGroupSection, DocumentationPrimaryRenderSection,
   RenderBlockContent, RenderNode, RenderSection, TasksGroupSection, TypedProperty,
 } from '../types/docc.js';
-import { isDeprecated, isTopicReference } from '../types/docc.js';
-import { logger } from '../utils/logger.js';
-import { PROCESSING_LIMITS } from '../utils/constants.js';
 import {
+  docUrl,
   formatDocumentHeader,
   formatDocumentAbstract,
   formatIdentifierLine,
   formatIdentifierLink,
   formatImage,
   formatInlineContent,
-  formatIntroducedVersion,
   formatPlatformAvailability,
   formatSeeAlsoSection,
   referenceUrl,
   isSpecificAPIDocument,
 } from './doc-formatter.js';
 import { fetchHelpPage } from './help-pages.js';
-import { HELP_PATH } from './search-result-parser.js';
 
 
 
 /**
- * Format JSON documentation content with enhanced analysis
+ * The page as Markdown, its sections in the order Apple's page shows them
  */
-function formatJsonDocumentation(
-  jsonData: RenderNode,
-  originalUrl: string,
-  options: EnhancedAnalysisOptions = {},
-): { content: Array<{ type: string; text: string }> } {
+function formatJsonDocumentation(jsonData: RenderNode, originalUrl: string): CallToolResult {
   let content = '';
 
-  // Add header with title and status
   content += formatDocumentHeader(jsonData);
 
-  // Add abstract
   content += formatDocumentAbstract(jsonData);
   content += formatDeprecationSummary(jsonData);
   content += formatSampleDownload(jsonData);
 
-  // Check if this is a specific API/symbol or an API collection
   if (isSpecificAPIDocument(jsonData)) {
     content += formatSpecificAPIContent(jsonData);
   } else {
@@ -54,15 +47,10 @@ function formatJsonDocumentation(
   content += formatDefaultImplementations(jsonData);
   content += formatRelationshipsSection(jsonData);
 
-  // Add platform availability
   content += formatPlatformAvailability(jsonData);
 
-  // Add See Also section
   content += formatSeeAlsoSection(jsonData);
 
-  content += formatAnalysisSections(jsonData, options);
-
-  // Add link to original documentation
   content += `---\n\n[View full documentation on Apple Developer](${originalUrl})`;
 
   return {
@@ -73,43 +61,6 @@ function formatJsonDocumentation(
       },
     ],
   };
-}
-
-/**
- * The sections the include… flags ask for, read from the page's JSON
- */
-function formatAnalysisSections(jsonData: RenderNode, options: EnhancedAnalysisOptions): string {
-  let content = '';
-
-  if (options.includeRelatedApis) {
-    const relatedApis = extractRelatedApis(jsonData);
-    if (relatedApis.length > 0) {
-      content += formatRelatedApisSection(relatedApis);
-    }
-  }
-
-  if (options.includeReferences) {
-    const references = extractReferences(jsonData);
-    if (references.length > 0) {
-      content += formatReferencesSection(references);
-    }
-  }
-
-  if (options.includeSimilarApis) {
-    const similarApis = extractSimilarApis(jsonData);
-    if (similarApis.length > 0) {
-      content += formatSimilarApisSection(similarApis);
-    }
-  }
-
-  if (options.includePlatformAnalysis) {
-    const platformAnalysis = analyzePlatformCompatibility(jsonData);
-    if (platformAnalysis) {
-      content += formatPlatformAnalysisSection(platformAnalysis);
-    }
-  }
-
-  return content;
 }
 
 /**
@@ -128,14 +79,11 @@ function formatDeprecationSummary(jsonData: RenderNode): string {
   return summary.length > 0 ? formatAside('Deprecated', summary, jsonData.references) : '';
 }
 
-/**
- * Format specific API content (methods, properties, etc.)
- */
 function formatSpecificAPIContent(jsonData: RenderNode): string {
   let content = '';
 
   for (const section of jsonData.primaryContentSections ?? []) {
-    content += formatPrimarySection(section, jsonData.references);
+    content += formatPrimarySection(section, jsonData.references, jsonData.identifier.interfaceLanguage);
   }
 
   return content + formatTopicsSection(jsonData);
@@ -146,11 +94,15 @@ function formatSpecificAPIContent(jsonData: RenderNode): string {
  * articles that mention it, and a property list key's details and attributes; a web-service page's go on to
  * `formatWebServiceSection`
  */
-function formatPrimarySection(section: DocumentationPrimaryRenderSection, references: References): string {
+function formatPrimarySection(section: DocumentationPrimaryRenderSection, references: References,
+  language: string): string {
   switch (section.kind) {
     case 'declarations': {
-      const declaration = section.declarations[0]?.tokens.map((token) => token.text).join('') ?? '';
-      return `## Declaration\n\n\`\`\`swift\n${declaration.trimEnd()}\n\`\`\`\n\n`;
+      // Apple's page captions each declaration with its platforms only when they differ (swift-docc-render, Declaration.vue)
+      const captioned = section.declarations.some((declaration) =>
+        declaration.platforms.join() !== section.declarations[0]?.platforms.join());
+      return `## Declaration\n\n${section.declarations.map((declaration) =>
+        formatDeclaration(declaration, captioned, references, language)).join('')}`;
     }
     case 'parameters':
       return `## Parameters\n\n${section.parameters.map((param) =>
@@ -168,6 +120,21 @@ function formatPrimarySection(section: DocumentationPrimaryRenderSection, refere
     default:
       return formatWebServiceSection(section, references);
   }
+}
+
+/**
+ * One declaration: its platforms when the page's declarations differ in them, its code, and the other declarations of
+ * the name, each with its own page, which Apple's page lists when expanded (swift-docc-render, DeclarationList.vue)
+ */
+function formatDeclaration(declaration: Declaration, captioned: boolean, references: References, language: string): string {
+  const code = (tokens: DeclarationToken[]): string => tokens.map((token) => token.text).join('');
+  const others = declaration.otherDeclarations?.declarations ?? [];
+  // DocC names Objective-C "occ"; Markdown's code fences name it "objc"
+  return `${captioned ? `**${declaration.platforms.join(', ')}**\n\n` : ''}` +
+    `\`\`\`${language === 'occ' ? 'objc' : 'swift'}\n${code(declaration.tokens).trimEnd()}\n\`\`\`\n\n` +
+    (others.length === 0 ? '' : `Other declarations, each on its own page:\n${others.map((other) =>
+      `- \`${code(other.tokens).replace(/\s+/g, ' ').trim()}\`: ` +
+      `${referenceUrl(references?.[other.identifier]) ?? docUrl(other.identifier)}\n`).join('')}\n`);
 }
 
 /**
@@ -229,7 +196,7 @@ function formatKeyTypes(types: DetailsSection['value']): string {
     const base = baseType?.trim() ?? '*';
     return arrayMode ? `array of ${plurals[base] ?? base}` : base;
   });
-  return words.length > 2 ? `${words.slice(0, -1).join(', ')}, or ${words[words.length - 1]}` : words.join(' or ');
+  return new Intl.ListFormat('en', { type: 'disjunction' }).format(words);
 }
 
 /**
@@ -315,10 +282,14 @@ function formatTopicGroups(groups: TasksGroupSection[], references: References):
  * pages list them
  */
 function formatRelationshipsSection(jsonData: RenderNode): string {
+  // What a type inherits and conforms to is a short list, worth each one's summary; the types that conform can run to hundreds
+  const summarized = new Set<RelationshipsGroupSection['type']>(['inheritsFrom', 'conformsTo']);
   const groups = (jsonData.relationshipsSections ?? [])
     .filter((section) => section.identifiers.length > 0)
     .map((section) => `### ${section.title}\n\n${section.identifiers
-      .map((identifier) => `- ${formatIdentifierLink(identifier, jsonData.references)}\n`).join('')}\n`);
+      .map((identifier) => (summarized.has(section.type)
+        ? formatIdentifierLine(identifier, jsonData.references)
+        : `- ${formatIdentifierLink(identifier, jsonData.references)}\n`)).join('')}\n`);
   return groups.length > 0 ? `## Relationships\n\n${groups.join('')}` : '';
 }
 
@@ -548,333 +519,49 @@ function formatAPICollectionContent(jsonData: RenderNode): string {
       const first = section.content[0];
       content += first && 'type' in first && first.type === 'heading' ? '' : '## Overview\n\n';
     }
-    content += formatPrimarySection(section, jsonData.references);
+    content += formatPrimarySection(section, jsonData.references, jsonData.identifier.interfaceLanguage);
   }
 
   return content + formatTopicsSection(jsonData);
 }
 
+/** A page's language: Swift, or Objective-C, which Apple ships as JSON Patch overrides on the Swift page */
+export type PageLanguage = 'swift' | 'occ';
+
+/** A URL that isn't on developer.apple.com */
+class NotAppleDeveloperUrlError extends Error {}
+
+/** A page asked for in Objective-C that Apple documents in Swift alone */
+class NoObjectiveCVersionError extends Error {}
+
 /**
- * Enhanced analysis options
+ * One page as Markdown, in the language asked for; its JSON is cached by URL
  */
-interface EnhancedAnalysisOptions {
-  includeRelatedApis?: boolean;
-  includeReferences?: boolean;
-  includeSimilarApis?: boolean;
-  includePlatformAnalysis?: boolean;
+export async function fetchAppleDocJson(url: string, language: PageLanguage): Promise<CallToolResult> {
+  if (!isValidAppleDeveloperUrl(url)) {
+    throw new NotAppleDeveloperUrlError(`${url} is not on developer.apple.com`);
+  }
+  if (new URL(url).pathname.startsWith(APPLE_PATHS.HELP)) {
+    return { content: [{ type: 'text', text: await fetchHelpPage(url) }] };
+  }
+  const page = await cachedJson<RenderNode>(pageCache, url.includes('.json') ? url : jsonApiUrlOf(url));
+  return formatJsonDocumentation(inLanguage(page, language, url), url);
 }
 
 /**
- * Fetch JSON documentation from Apple Developer Documentation with optional enhanced analysis
- * @param url The URL of the documentation page
- * @param options Enhanced analysis options
- * @returns Formatted documentation content
+ * The page in the language asked for: its Objective-C version is the Swift page with Apple's `occ` overrides applied, to
+ * a copy; a page Apple writes in Objective-C needs none
  */
-export async function fetchAppleDocJson(
-  url: string,
-  options: EnhancedAnalysisOptions = {},
-): Promise<any> {
-  try {
-    // Validate that this is an Apple Developer URL
-    if (!url.includes('developer.apple.com')) {
-      throw new Error('URL must be from developer.apple.com');
-    }
-
-    // Convert web URL to JSON API URL if needed
-    const jsonApiUrl = url.includes('.json') ? url : convertToJsonApiUrl(url);
-
-    if (!jsonApiUrl) {
-      throw new Error('Invalid Apple Developer Documentation URL');
-    }
-
-    // Generate cache key including options
-    const cacheKey = generateEnhancedCacheKey(jsonApiUrl, options);
-
-    // Try to get from cache first
-    const cachedResult = apiCache.get(cacheKey);
-    if (cachedResult) {
-      logger.debug(`Cache hit for: ${jsonApiUrl}`);
-      return cachedResult;
-    }
-
-    if (new URL(url).pathname.startsWith(HELP_PATH)) {
-      const result = { content: [{ type: 'text' as const, text: await fetchHelpPage(url) }] };
-      apiCache.set(cacheKey, result);
-      return result;
-    }
-
-    logger.info(`Fetching Apple doc JSON from: ${jsonApiUrl}`);
-
-    // Fetch the documentation JSON using HTTP client
-    const jsonData = await httpClient.getJson<RenderNode>(jsonApiUrl);
-
-    // Format the JSON documentation with enhanced analysis
-    const result = formatJsonDocumentation(jsonData, url, options);
-
-    // Cache the result
-    apiCache.set(cacheKey, result);
-
-    return result;
-  } catch (error) {
-    let errorMessage: string;
-
-    // Handle AppError objects from http-client
-    if (error && typeof error === 'object' && 'message' in error) {
-      errorMessage = (error as any).message;
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-    } else {
-      errorMessage = String(error);
-    }
-
-    logger.error('Error fetching Apple doc JSON:', errorMessage);
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: `Error: Failed to get Apple doc content: ${errorMessage}\n\nPlease try accessing the documentation directly at: ${url}`,
-        },
-      ],
-      isError: true,
-    };
+function inLanguage(page: RenderNode, language: PageLanguage, url: string): RenderNode {
+  if (language === 'swift' || page.identifier.interfaceLanguage === language) {
+    return page;
   }
-}
-
-/**
- * Extract related APIs from JSON data
- */
-function extractRelatedApis(jsonData: RenderNode): Array<{title: string, url: string, relationship: string}> {
-  const relatedApis: Array<{title: string, url: string, relationship: string}> = [];
-
-  // From relationshipsSections
-  if (jsonData.relationshipsSections) {
-    for (const section of jsonData.relationshipsSections) {
-      if (section.identifiers) {
-        for (const identifier of section.identifiers.slice(0, PROCESSING_LIMITS.MAX_RELATED_APIS_PER_SECTION)) {
-          const ref = jsonData.references?.[identifier];
-          if (isTopicReference(ref)) {
-            relatedApis.push({
-              title: ref.title ?? 'Unknown',
-              url: ref.url ? (ref.url.startsWith('http') ? ref.url : `https://developer.apple.com${ref.url}`) : '#',
-              relationship: section.title ?? 'Related',
-            });
-          }
-        }
-      }
-    }
+  const patch = (page.variantOverrides ?? [])
+    .filter((override) => override.traits.some((trait) => trait.interfaceLanguage === language))
+    .flatMap((override) => override.patch);
+  if (patch.length === 0) {
+    throw new NoObjectiveCVersionError(`${url} has no Objective-C version`);
   }
-
-  // From seeAlsoSections
-  if (jsonData.seeAlsoSections) {
-    for (const section of jsonData.seeAlsoSections) {
-      if (section.identifiers) {
-        for (const identifier of section.identifiers.slice(0, PROCESSING_LIMITS.MAX_RELATED_APIS_PER_SECTION)) {
-          const ref = jsonData.references?.[identifier];
-          if (isTopicReference(ref)) {
-            relatedApis.push({
-              title: ref.title ?? 'Unknown',
-              url: ref.url ? (ref.url.startsWith('http') ? ref.url : `https://developer.apple.com${ref.url}`) : '#',
-              relationship: `See Also: ${section.title ?? 'Related'}`,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return relatedApis.slice(0, PROCESSING_LIMITS.MAX_DOC_FETCHER_RELATED_APIS); // Limit results
-}
-
-/**
- * Extract references from JSON data
- */
-function extractReferences(jsonData: RenderNode): Array<{title: string, url: string, type: string, abstract?: string}> {
-  const references: Array<{title: string, url: string, type: string, abstract?: string}> = [];
-
-  if (jsonData.references) {
-    const refEntries = Object.entries(jsonData.references).slice(0, PROCESSING_LIMITS.MAX_DOC_FETCHER_REFERENCES); // Limit
-
-    for (const [, ref] of refEntries) {
-      if (!isTopicReference(ref)) {
-        continue;
-      }
-      references.push({
-        title: ref.title ?? 'Unknown',
-        url: ref.url ? (ref.url.startsWith('http') ? ref.url : `https://developer.apple.com${ref.url}`) : '#',
-        type: ref.role ?? ref.kind ?? 'unknown',
-        abstract: ref.abstract ? formatInlineContent(ref.abstract, jsonData.references).trim() : undefined,
-      });
-    }
-  }
-
-  return references;
-}
-
-/**
- * Extract similar APIs from JSON data
- */
-function extractSimilarApis(jsonData: RenderNode): Array<{title: string, url: string, category: string}> {
-  const similarApis: Array<{title: string, url: string, category: string}> = [];
-
-  // From topicSections
-  if (jsonData.topicSections) {
-    for (const section of jsonData.topicSections) {
-      if (section.identifiers) {
-        for (const identifier of section.identifiers.slice(0, PROCESSING_LIMITS.MAX_RELATED_APIS_PER_SECTION)) {
-          const ref = jsonData.references?.[identifier];
-          if (isTopicReference(ref)) {
-            similarApis.push({
-              title: ref.title ?? 'Unknown',
-              url: ref.url ? (ref.url.startsWith('http') ? ref.url : `https://developer.apple.com${ref.url}`) : '#',
-              category: section.title ?? 'Related',
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return similarApis.slice(0, PROCESSING_LIMITS.MAX_DOC_FETCHER_SIMILAR_APIS); // Limit results
-}
-
-/**
- * Analyze platform compatibility
- */
-function analyzePlatformCompatibility(
-  jsonData: RenderNode,
-): {
-  supportedPlatforms: string;
-  betaPlatforms: string[];
-  deprecatedPlatforms: string[];
-  crossPlatform: boolean;
-  platforms: PlatformAvailability[];
-} | null {
-  if (!jsonData.metadata?.platforms) {
-    return null;
-  }
-
-  const platforms = jsonData.metadata.platforms;
-  const supportedPlatforms = platforms.map((p) => p.name).join(', ');
-  const betaPlatforms = platforms.filter((p) => p.beta).map((p) => p.name).filter((name): name is string => name !== undefined);
-  const deprecatedPlatforms = platforms.filter(isDeprecated).map((p) => p.name).filter((name): name is string => name !== undefined);
-
-  return {
-    supportedPlatforms,
-    betaPlatforms,
-    deprecatedPlatforms,
-    crossPlatform: platforms.length > 1,
-    platforms,
-  };
-}
-
-/**
- * Format related APIs section
- */
-function formatRelatedApisSection(relatedApis: Array<{title: string, url: string, relationship: string}>): string {
-  let content = '\n## Related APIs\n\n';
-
-  for (const api of relatedApis) {
-    content += `- [**${api.title}**](${api.url}) - *${api.relationship}*\n`;
-  }
-
-  return content + '\n';
-}
-
-/**
- * Format references section
- */
-function formatReferencesSection(references: Array<{title: string, url: string, type: string, abstract?: string}>): string {
-  let content = '\n## Key References\n\n';
-
-  // Group by type
-  const groupedRefs: Record<string, typeof references> = {};
-  for (const ref of references) {
-    if (!groupedRefs[ref.type]) {
-      groupedRefs[ref.type] = [];
-    }
-    groupedRefs[ref.type].push(ref);
-  }
-
-  for (const [type, refs] of Object.entries(groupedRefs)) {
-    content += `### ${type.charAt(0).toUpperCase() + type.slice(1)}s\n\n`;
-    for (const ref of refs.slice(0, PROCESSING_LIMITS.MAX_DOC_FETCHER_REFS_PER_TYPE)) {
-      content += `- [**${ref.title}**](${ref.url})`;
-      if (ref.abstract) {
-        content += ` - ${ref.abstract}`;
-      }
-      content += '\n';
-    }
-    content += '\n';
-  }
-
-  return content;
-}
-
-/**
- * Format similar APIs section
- */
-function formatSimilarApisSection(
-  similarApis: Array<{title: string, url: string, category: string}>,
-): string {
-  let content = '\n## Similar APIs\n\n';
-
-  // Group by category
-  const groupedApis: Record<string, typeof similarApis> = {};
-  for (const api of similarApis) {
-    if (!groupedApis[api.category]) {
-      groupedApis[api.category] = [];
-    }
-    groupedApis[api.category].push(api);
-  }
-
-  for (const [category, apis] of Object.entries(groupedApis)) {
-    content += `### ${category}\n\n`;
-    for (const api of apis) {
-      content += `- [**${api.title}**](${api.url})\n`;
-    }
-    content += '\n';
-  }
-
-  return content;
-}
-
-/**
- * Format platform analysis section
- */
-function formatPlatformAnalysisSection(
-  analysis: {
-    supportedPlatforms: string;
-    betaPlatforms: string[];
-    deprecatedPlatforms: string[];
-    crossPlatform?: boolean;
-    platforms?: PlatformAvailability[];
-  },
-): string {
-  let content = '\n## Platform Compatibility Analysis\n\n';
-
-  content += `**Supported Platforms:** ${analysis.supportedPlatforms}\n`;
-  content += `**Cross-Platform Support:** ${analysis.crossPlatform ? 'Yes' : 'No'}\n`;
-
-  if (analysis.betaPlatforms.length > 0) {
-    content += `**Beta Platforms:** ${analysis.betaPlatforms.join(', ')}\n`;
-  }
-
-  if (analysis.deprecatedPlatforms.length > 0) {
-    content += `**Deprecated Platforms:** ${analysis.deprecatedPlatforms.join(', ')}\n`;
-  }
-
-  content += '\n**Detailed Platform Information:**\n\n';
-  for (const platform of analysis.platforms ?? []) {
-    content += `- **${platform.name}**${formatIntroducedVersion(platform)}`;
-    if (platform.beta) {
-      content += ' (Beta)';
-    }
-    if (isDeprecated(platform)) {
-      content += ' (Deprecated)';
-    }
-    content += '\n';
-  }
-
-  return content + '\n';
+  // The spec's JSONPatch operations are RFC 6902 operations, the type fast-json-patch names Operation
+  return jsonpatch.applyPatch(page, patch as Operation[], false, false).newDocument;
 }

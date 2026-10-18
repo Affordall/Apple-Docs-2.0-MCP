@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10146/",
   "title": "What’s new in AVFoundation",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video"
@@ -11,8 +10,548 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Adam Sonnanstine: Hello! my name is Adam, and I'm here today to show you what's new in AVFoundation.\n\nWe have three new features to discuss today.\n\nWe're going to spend most of our time talking about what's new in the world of AVAsset inspection, and then we'll give a quick introduction to two other features: video compositing with metadata and caption file authoring.\n\nSo without further ado, let's jump into our first topic, which is AVAsset async Inspection.\n\nBut first, a little bit of background, starting with a refresher on AVAsset.\n\nAVAsset is AVFoundation's core model object for representing things like movie files stored on the user's device; movie files stored elsewhere, such as a remote server; and other forms of audiovisual content, such as HTTP Live Streams and compositions.\n\nAnd when you have an asset, you most often want to play it, but just as often, you're going to want to inspect it.\n\nYou want to ask it questions like, what's its duration or what are the formats of audio and video it contains? And that's what we're really going to be talking about in this topic: asset inspection.\n\nAnd whenever you're inspecting an asset, there are two important things to keep in mind.\n\nThe first is that asset inspection happens on demand.\n\nThis is mainly because movie files can be quite large.\n\nA feature-length film could be several gigabytes in size.\n\nYou wouldn't want the asset to eagerly download the entire file, just in case you ask for its duration later.\n\nInstead, the asset waits until you ask it to load a property value, then it downloads just the information it needs to give you that value.\n\nThe second thing to keep in mind is that asset inspection is an asynchronous process.\n\nThis is really important because network I/O can take some time.\n\nIf the asset is stored across the network, you wouldn't want your app's main thread to be blocked while AVAsset issues a synchronous network request.\n\nInstead, AVAsset will asynchronously deliver the result when it's ready.\n\nWith these two things in mind, we have a new API for inspecting asset properties, and it looks a little bit like this.\n\nThe main thing to notice is this new load method, which takes in a property identifier -- in this case .duration -- in order for you to tell it which property value to load.\n\nEach property identifier is associated with a result type at compile time, which determines the return type of the load method.\n\nIn this case, the duration is a CMTime, so the result is a CMTime.\n\nOne thing you may not have seen before is this await keyword.\n\nThis is a new feature in Swift, and it's used to mark, at the call site, that the load method is asynchronous.\n\nFor all the details on async/await and the broader concurrency effort in Swift, I encourage you to check out the session called \"Meet async/await in Swift.\" For now, as a quick way of understanding how to use our new property loading method, I like to think of the await keyword as dividing the calling function into two parts.\n\nFirst, there's the part that happens before the asynchronous operation begins.\n\nIn this case, we create an asset and ask it to load its duration.\n\nAt this point, the asset goes off and does the I/O and parsing necessary to determine its duration and we await its result.\n\nWhile we're waiting, the calling function is suspended, which means the code written after the await doesn't execute right away.\n\nHowever, the thread we were running on isn't blocked.\n\nInstead, it's free to do more work while we're waiting.\n\nOnce the asynchronous duration loading has finished, then the second half of the function is scheduled to be run.\n\nIn this case, if the duration loading was successful, we store the duration into a local constant and send it off to another function.\n\nOr, if the operation failed, an error will be thrown once the calling function resumes.\n\nSo that's the basics of loading a property value asynchronously.\n\nYou can also load the values of multiple properties at once, and you do this simply by passing in more than one property identifier to the load method.\n\nIn this case, we're loading both the duration and the tracks at the same time.\n\nThis is not only convenient, but it can also be more efficient.\n\nIf the asset knows all the properties you're interested in, it can batch up the work required to load their values.\n\nThe result of loading multiple property values is a tuple, with the loaded values in the same order you used for the property identifiers.\n\nJust like loading a single property value, this is type safe.\n\nIn this case, the first element of the result tuple is a CMTime and the second element is an array of AVAssetTracks.\n\nAnd of course, just like with loading a single value, this is an asynchronous operation.\n\nIn addition to asynchronously loading property values, you can also check the status of a property without waiting for the value to load at any time using the new status(of: ) method.\n\nYou pass in the same property identifier that you use for the load method, and this'll return an enum with four possible cases.\n\nEach property starts off as .notYetLoaded.\n\nRemember that asset inspection happens on demand, so until you ask to load a property value, the asset won't have done any work to load it.\n\nIf you happen to check the status while the loading is in progress, you'll get the .loading case.\n\nOr, if the property is already loaded, you'll get the .loaded case, which comes bundled with the value that was loaded as an associated value.\n\nFinally, if a failure occurred -- perhaps because the network went down -- you'll get the .failed case, which comes bundled with an error to describe what went wrong.\n\nNote that this'll be the same error that was thrown by the invocation of the load method that initiated the failed loading request.\n\nSo that's the new API for loading asynchronous properties and checking their status.\n\nAVAsset has quite a few properties whose values can be loaded asynchronously.\n\nMost of these vend a self-contained value, but the .tracks and .metadata properties vend more complex objects you can use to descend into the hierarchical structure of the asset.\n\nIn the case of the .tracks property, you'll get an array of AVAssetTracks.\n\nAn AVAssetTrack has its own collection of properties whose values can be loaded asynchronously using that same load method.\n\nSimilarly, the .metadata property gives you an array of AVMetadataItems, and several AVMetadataItem properties can also be loaded asynchronously using the load method.\n\nThe last bit of new API in this area is a collection of asynchronous methods that you can use to get at specific subsets of certain property values.\n\nSo instead of loading all the tracks, for example, you can use one of these first three methods to load just some of the tracks -- for example, just the audio tracks.\n\nThere are several new methods like this on both AVAsset and AVAssetTrack.\n\nSo that's all the new API we have for inspecting assets asynchronously.\n\nBut at this point, I have a small confession to make.\n\nNone of this functionality is actually new.\n\nThe APIs are new, but these classes have always had the ability to load their property values asynchronously.\n\nIt's just that, with the old APIs, you would've had to write code more like this.\n\nIt was a three-step process.\n\nYou first have to call the loadValuesAsynchronously method, giving it strings to tell it which properties to load.\n\nThen you need to make sure that each of the properties actually did successfully load and didn't fail.\n\nThen, once you've gotten that far, you can fetch the loaded value either by querying the corresponding synchronous property or by calling one of the synchronous filtering methods.\n\nThis is not only verbose and repetitive, it's also easy to misuse.\n\nFor example, it's very easy to forget to do these essential loading and status-checking steps.\n\nWhat you're left with are these synchronous properties and methods that can be called at any time, but if you call them without first loading the property values, you'll end up doing blocking I/O.\n\nIf you do this on your main thread, this means that your app can end up hanging at unpredictable times.\n\nSo in addition to the fact that the new APIs are simply easier to use, the fact that they also eliminate these common misuses means that we plan to deprecate the old synchronous APIs for Swift clients in a future release.\n\nThis is an excellent time to move to the new asynchronous versions of these interfaces, and to help you do that we've prepared a short migration guide.\n\nSo, if you're doing that trifecta of loading the value, checking its status, and then grabbing a synchronous property, now you can simply call the load method and do that all in one asynchronous step.\n\nSimilarly, if you're doing that three-step process but using a synchronous filtering method instead of a property, you can now call the asynchronous equivalent of that filtering method and do that in one step.\n\nIf you're switching over the status of a property using the old statusOfValue(forKey: ) method and then grabbing the synchronous property value when you see that you're in the .loaded case, now you can take advantage of the fact that the .loaded case of the new status enum comes bundled with that .loaded value.\n\nIf your app is doing something a little bit more interesting, like loading the value of a property in one part of the code and then fetching the loaded value in a different part of the code, there are a couple ways you could do this with the new interface.\n\nI recommend just calling the load method again.\n\nThis is the easiest and safest way to do it, and if the property has already been loaded, this won't duplicate the work that's already been done.\n\nInstead, it'll just return a cached value.\n\nHowever, there's one caveat to this and that is that, because the load method is an async method, it can only be called from an async context.\n\nSo if you really need to get the value of the property from a pure synchronous context, you can do something like get the status of the property and assert that it's loaded in order to grab the value of the property synchronously.\n\nStill, you have to be careful doing this, because it's possible for a property to become failed even after it's already been loaded.\n\nFinally, if you're skipping the loading and status-checking steps and just relying on the current behavior of the properties and methods in that they block until the result is available, well, we're actually not providing a replacement for this.\n\nThis has never been the recommended way to use the API, and so we've always discouraged it.\n\nWe designed the new property-loading APIs to be just about as easy to use as fetching a simple property, so migrating to the new APIs should be straightforward.\n\nAnd with that, that's all for our first topic.\n\nI'm really excited about our new way to inspect assets, using Swift's new async features, and I hope you'll enjoy using them as much as I have.\n\nNow let's move on to the first of our two shorter topics: video compositing with metadata.\n\nHere we're talking about video compositing, which is the process of taking multiple video tracks and composing them into a single stream of video frames.\n\nAnd in particular, we have an enhancement for custom video compositors, which is where you provide the code that does the compositing.\n\nNew this year, you can get per-frame metadata delivered to you in your custom compositor's frame composition callback.\n\nAs an example, let's say you have a sequence of GPS data, and that data is time-stamped and synchronized with your video, and you want to use that GPS data in order to influence how your frames are composed together.\n\nYou can do that now, and the first step is to write the GPS data to a timed metadata track in your source movie.\n\nIn order do to this with AVAssetWriter, check out the existing class, AVAssetWriter InputMetadataAdaptor.\n\nNow let's take a look at the new API.\n\nLet's say you're starting with a source movie that has a certain collection of tracks.\n\nPerhaps it has an audio track, two video tracks, and three timed metadata tracks.\n\nBut let's say that tracks four and five contain metadata that's useful for your video compositing, but track six is unrelated.\n\nYou have two setup steps to perform, and the first is to use the new source SampleDataTrackIDs property to tell your video composition object the IDs of all the timed metadata tracks that are relevant for the entire video composition.\n\nOnce you've done that, the second step is to take each of your video composition instructions and do something similar, but this time you set the requiredSourceSampleData TrackIDs property to tell it the track ID -- or IDs -- that are relevant for that particular instruction.\n\nIt's important that you do both of these setup steps or you simply won't get any metadata in your composition callback.\n\nNow let's move over to the callback itself.\n\nWhen you get your asynchronous video composition request object in your callback, there are two new APIs that you use in order to get the metadata for your video composition.\n\nThe first is the source SampleDataTrackIDs property, which replays the track IDs for the metadata tracks that are relevant to that request.\n\nThen for each of the track IDs, you can use the sourceTimedMetadata(byTrackID :) method in order to get the current timed metadata group for that track.\n\nNow, AVTimedMetadataGroup is a high-level representation of the metadata, with the value parsed into a string, date, or other high-level object.\n\nIf you'd rather work with the raw bytes of the metadata, you can use the sourceSampleBuffer(byTrackID: ) method to get a CMSampleBuffer instead of an AVTimedMetadataGroup.\n\nOnce you have the metadata in hand, you can use the metadata along with your source video frames to generate your output video frame and finish off the request.\n\nSo that's all it takes to get metadata into your custom video compositor callback so you can do more interesting things with your video compositions.\n\nNow onto our final topic, which is caption file authoring.\n\nNew this year for macOS, AVFoundation is adding support for two file formats.\n\nFirst, we have iTunes Timed Text, or .itt files, which contain subtitles.\n\nThe other file format is Scenarist Closed Captions -- or .scc files -- which contain closed captions.\n\nAVFoundation is adding support for authoring these two file formats, ingesting captions from these types of files, and also for previewing captions at runtime to see what they'll look like during playback.\n\nOn the authoring side, we have some new APIs, starting with AVCaption, which is the model object that represents a single caption.\n\nIt has properties for things like the text, position, styling, and other attributes of a single caption.\n\nYou can create AVCaptions yourself and use an AVAssetWriterInputCaptionAdaptor in order to write them to one of these two file formats.\n\nIn addition, we have a new validation service in the AVCaptionConversion Validator class, which helps you make sure the captions you're writing are actually compatible with the file format you've chosen.\n\nAs an example of why this is important, consider .scc files.\n\nThey contain CEA-608 captions, which is a format that has very specific limitations about how many captions you can have in a given amount of time, all the way down to having a fixed bit budget for the data representing the individual characters and their styling.\n\nSo the validator will help you not only ensure that your stream of captions is compatible with the file format, it'll also suggest tweaks you can make to your captions, such as adjusting their time stamps, in order to make them compatible.\n\nThe new API for ingesting captions is AVAssetReader OutputCaptionAdaptor which allows you to take one of these files and read in AVCaption objects from it.\n\nFinally, we have an AVCaptionRenderer class, which allows you to take a single caption or a group of captions and render them to a CGContext in order to get a preview of what they'll look like during playback.\n\nSo that's just the tip of the iceberg for our new caption file authoring APIs.\n\nIf you're interested in adopting them, we encourage you to get in touch with us -- either in the forums or in the conference labs -- and we can help answer any questions that you have.\n\nAnd that was our final topic, so let's wrap up.\n\nOur big topic for the day was inspecting AVAsset properties, the importance of doing so on demand and asynchronously, the new APIs in this area, and some tips for migrating from the old APIs.\n\nWe then talked about using timed metadata to further customize your custom video compositions.\n\nFinally, I gave a brief introduction to caption file authoring and the new APIs in that area.\n\nThat's all for today.\n\nThank you very much for watching and enjoy WWDC21.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Adam Sonnanstine: Hello! my name is Adam, and I'm here today to show you what's new in AVFoundation."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "We have three new features to discuss today."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "We're going to spend most of our time talking about what's new in the world of AVAsset inspection, and then we'll give a quick introduction to two other features: video compositing with metadata and caption file authoring."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "So without further ado, let's jump into our first topic, which is AVAsset async Inspection."
+      },
+      {
+        "timestamp": "0:37",
+        "text": "But first, a little bit of background, starting with a refresher on AVAsset."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "AVAsset is AVFoundation's core model object for representing things like movie files stored on the user's device; movie files stored elsewhere, such as a remote server; and other forms of audiovisual content, such as HTTP Live Streams and compositions."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "And when you have an asset, you most often want to play it, but just as often, you're going to want to inspect it."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "You want to ask it questions like, what's its duration or what are the formats of audio and video it contains? And that's what we're really going to be talking about in this topic: asset inspection."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "And whenever you're inspecting an asset, there are two important things to keep in mind."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "The first is that asset inspection happens on demand."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "This is mainly because movie files can be quite large."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "A feature-length film could be several gigabytes in size."
+      },
+      {
+        "timestamp": "1:32",
+        "text": "You wouldn't want the asset to eagerly download the entire file, just in case you ask for its duration later."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "Instead, the asset waits until you ask it to load a property value, then it downloads just the information it needs to give you that value."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "The second thing to keep in mind is that asset inspection is an asynchronous process."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "This is really important because network I/O can take some time."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "If the asset is stored across the network, you wouldn't want your app's main thread to be blocked while AVAsset issues a synchronous network request."
+      },
+      {
+        "timestamp": "2:03",
+        "text": "Instead, AVAsset will asynchronously deliver the result when it's ready."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "With these two things in mind, we have a new API for inspecting asset properties, and it looks a little bit like this."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "The main thing to notice is this new load method, which takes in a property identifier -- in this case .duration -- in order for you to tell it which property value to load."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "Each property identifier is associated with a result type at compile time, which determines the return type of the load method."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "In this case, the duration is a CMTime, so the result is a CMTime."
+      },
+      {
+        "timestamp": "2:38",
+        "text": "One thing you may not have seen before is this await keyword."
+      },
+      {
+        "timestamp": "2:42",
+        "text": "This is a new feature in Swift, and it's used to mark, at the call site, that the load method is asynchronous."
+      },
+      {
+        "timestamp": "2:48",
+        "text": "For all the details on async/await and the broader concurrency effort in Swift, I encourage you to check out the session called \"Meet async/await in Swift.\" For now, as a quick way of understanding how to use our new property loading method, I like to think of the await keyword as dividing the calling function into two parts."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "First, there's the part that happens before the asynchronous operation begins."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "In this case, we create an asset and ask it to load its duration."
+      },
+      {
+        "timestamp": "3:15",
+        "text": "At this point, the asset goes off and does the I/O and parsing necessary to determine its duration and we await its result."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "While we're waiting, the calling function is suspended, which means the code written after the await doesn't execute right away."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "However, the thread we were running on isn't blocked."
+      },
+      {
+        "timestamp": "3:33",
+        "text": "Instead, it's free to do more work while we're waiting."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "Once the asynchronous duration loading has finished, then the second half of the function is scheduled to be run."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "In this case, if the duration loading was successful, we store the duration into a local constant and send it off to another function."
+      },
+      {
+        "timestamp": "3:50",
+        "text": "Or, if the operation failed, an error will be thrown once the calling function resumes."
+      },
+      {
+        "timestamp": "3:56",
+        "text": "So that's the basics of loading a property value asynchronously."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "You can also load the values of multiple properties at once, and you do this simply by passing in more than one property identifier to the load method."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "In this case, we're loading both the duration and the tracks at the same time."
+      },
+      {
+        "timestamp": "4:13",
+        "text": "This is not only convenient, but it can also be more efficient."
+      },
+      {
+        "timestamp": "4:16",
+        "text": "If the asset knows all the properties you're interested in, it can batch up the work required to load their values."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "The result of loading multiple property values is a tuple, with the loaded values in the same order you used for the property identifiers."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "Just like loading a single property value, this is type safe."
+      },
+      {
+        "timestamp": "4:34",
+        "text": "In this case, the first element of the result tuple is a CMTime and the second element is an array of AVAssetTracks."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "And of course, just like with loading a single value, this is an asynchronous operation."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "In addition to asynchronously loading property values, you can also check the status of a property without waiting for the value to load at any time using the new status(of: ) method."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "You pass in the same property identifier that you use for the load method, and this'll return an enum with four possible cases."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "Each property starts off as .notYetLoaded."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "Remember that asset inspection happens on demand, so until you ask to load a property value, the asset won't have done any work to load it."
+      },
+      {
+        "timestamp": "5:16",
+        "text": "If you happen to check the status while the loading is in progress, you'll get the .loading case."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "Or, if the property is already loaded, you'll get the .loaded case, which comes bundled with the value that was loaded as an associated value."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "Finally, if a failure occurred -- perhaps because the network went down -- you'll get the .failed case, which comes bundled with an error to describe what went wrong."
+      },
+      {
+        "timestamp": "5:38",
+        "text": "Note that this'll be the same error that was thrown by the invocation of the load method that initiated the failed loading request."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "So that's the new API for loading asynchronous properties and checking their status."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "AVAsset has quite a few properties whose values can be loaded asynchronously."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "Most of these vend a self-contained value, but the .tracks and .metadata properties vend more complex objects you can use to descend into the hierarchical structure of the asset."
+      },
+      {
+        "timestamp": "6:06",
+        "text": "In the case of the .tracks property, you'll get an array of AVAssetTracks."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "An AVAssetTrack has its own collection of properties whose values can be loaded asynchronously using that same load method."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "Similarly, the .metadata property gives you an array of AVMetadataItems, and several AVMetadataItem properties can also be loaded asynchronously using the load method."
+      },
+      {
+        "timestamp": "6:29",
+        "text": "The last bit of new API in this area is a collection of asynchronous methods that you can use to get at specific subsets of certain property values."
+      },
+      {
+        "timestamp": "6:37",
+        "text": "So instead of loading all the tracks, for example, you can use one of these first three methods to load just some of the tracks -- for example, just the audio tracks."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "There are several new methods like this on both AVAsset and AVAssetTrack."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "So that's all the new API we have for inspecting assets asynchronously."
+      },
+      {
+        "timestamp": "6:56",
+        "text": "But at this point, I have a small confession to make."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "None of this functionality is actually new."
+      },
+      {
+        "timestamp": "7:02",
+        "text": "The APIs are new, but these classes have always had the ability to load their property values asynchronously."
+      },
+      {
+        "timestamp": "7:09",
+        "text": "It's just that, with the old APIs, you would've had to write code more like this."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "It was a three-step process."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "You first have to call the loadValuesAsynchronously method, giving it strings to tell it which properties to load."
+      },
+      {
+        "timestamp": "7:23",
+        "text": "Then you need to make sure that each of the properties actually did successfully load and didn't fail."
+      },
+      {
+        "timestamp": "7:29",
+        "text": "Then, once you've gotten that far, you can fetch the loaded value either by querying the corresponding synchronous property or by calling one of the synchronous filtering methods."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "This is not only verbose and repetitive, it's also easy to misuse."
+      },
+      {
+        "timestamp": "7:43",
+        "text": "For example, it's very easy to forget to do these essential loading and status-checking steps."
+      },
+      {
+        "timestamp": "7:49",
+        "text": "What you're left with are these synchronous properties and methods that can be called at any time, but if you call them without first loading the property values, you'll end up doing blocking I/O."
+      },
+      {
+        "timestamp": "8:00",
+        "text": "If you do this on your main thread, this means that your app can end up hanging at unpredictable times."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "So in addition to the fact that the new APIs are simply easier to use, the fact that they also eliminate these common misuses means that we plan to deprecate the old synchronous APIs for Swift clients in a future release."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "This is an excellent time to move to the new asynchronous versions of these interfaces, and to help you do that we've prepared a short migration guide."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "So, if you're doing that trifecta of loading the value, checking its status, and then grabbing a synchronous property, now you can simply call the load method and do that all in one asynchronous step."
+      },
+      {
+        "timestamp": "8:43",
+        "text": "Similarly, if you're doing that three-step process but using a synchronous filtering method instead of a property, you can now call the asynchronous equivalent of that filtering method and do that in one step."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "If you're switching over the status of a property using the old statusOfValue(forKey: ) method and then grabbing the synchronous property value when you see that you're in the .loaded case, now you can take advantage of the fact that the .loaded case of the new status enum comes bundled with that .loaded value."
+      },
+      {
+        "timestamp": "9:13",
+        "text": "If your app is doing something a little bit more interesting, like loading the value of a property in one part of the code and then fetching the loaded value in a different part of the code, there are a couple ways you could do this with the new interface."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "I recommend just calling the load method again."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "This is the easiest and safest way to do it, and if the property has already been loaded, this won't duplicate the work that's already been done."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "Instead, it'll just return a cached value."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "However, there's one caveat to this and that is that, because the load method is an async method, it can only be called from an async context."
+      },
+      {
+        "timestamp": "9:46",
+        "text": "So if you really need to get the value of the property from a pure synchronous context, you can do something like get the status of the property and assert that it's loaded in order to grab the value of the property synchronously."
+      },
+      {
+        "timestamp": "9:58",
+        "text": "Still, you have to be careful doing this, because it's possible for a property to become failed even after it's already been loaded."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "Finally, if you're skipping the loading and status-checking steps and just relying on the current behavior of the properties and methods in that they block until the result is available, well, we're actually not providing a replacement for this."
+      },
+      {
+        "timestamp": "10:19",
+        "text": "This has never been the recommended way to use the API, and so we've always discouraged it."
+      },
+      {
+        "timestamp": "10:24",
+        "text": "We designed the new property-loading APIs to be just about as easy to use as fetching a simple property, so migrating to the new APIs should be straightforward."
+      },
+      {
+        "timestamp": "10:35",
+        "text": "And with that, that's all for our first topic."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "I'm really excited about our new way to inspect assets, using Swift's new async features, and I hope you'll enjoy using them as much as I have."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "Now let's move on to the first of our two shorter topics: video compositing with metadata."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "Here we're talking about video compositing, which is the process of taking multiple video tracks and composing them into a single stream of video frames."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "And in particular, we have an enhancement for custom video compositors, which is where you provide the code that does the compositing."
+      },
+      {
+        "timestamp": "11:10",
+        "text": "New this year, you can get per-frame metadata delivered to you in your custom compositor's frame composition callback."
+      },
+      {
+        "timestamp": "11:17",
+        "text": "As an example, let's say you have a sequence of GPS data, and that data is time-stamped and synchronized with your video, and you want to use that GPS data in order to influence how your frames are composed together."
+      },
+      {
+        "timestamp": "11:29",
+        "text": "You can do that now, and the first step is to write the GPS data to a timed metadata track in your source movie."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "In order do to this with AVAssetWriter, check out the existing class, AVAssetWriter InputMetadataAdaptor."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "Now let's take a look at the new API."
+      },
+      {
+        "timestamp": "11:46",
+        "text": "Let's say you're starting with a source movie that has a certain collection of tracks."
+      },
+      {
+        "timestamp": "11:51",
+        "text": "Perhaps it has an audio track, two video tracks, and three timed metadata tracks."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "But let's say that tracks four and five contain metadata that's useful for your video compositing, but track six is unrelated."
+      },
+      {
+        "timestamp": "12:04",
+        "text": "You have two setup steps to perform, and the first is to use the new source SampleDataTrackIDs property to tell your video composition object the IDs of all the timed metadata tracks that are relevant for the entire video composition."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Once you've done that, the second step is to take each of your video composition instructions and do something similar, but this time you set the requiredSourceSampleData TrackIDs property to tell it the track ID -- or IDs -- that are relevant for that particular instruction."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "It's important that you do both of these setup steps or you simply won't get any metadata in your composition callback."
+      },
+      {
+        "timestamp": "12:41",
+        "text": "Now let's move over to the callback itself."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "When you get your asynchronous video composition request object in your callback, there are two new APIs that you use in order to get the metadata for your video composition."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "The first is the source SampleDataTrackIDs property, which replays the track IDs for the metadata tracks that are relevant to that request."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "Then for each of the track IDs, you can use the sourceTimedMetadata(byTrackID :) method in order to get the current timed metadata group for that track."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "Now, AVTimedMetadataGroup is a high-level representation of the metadata, with the value parsed into a string, date, or other high-level object."
+      },
+      {
+        "timestamp": "13:22",
+        "text": "If you'd rather work with the raw bytes of the metadata, you can use the sourceSampleBuffer(byTrackID: ) method to get a CMSampleBuffer instead of an AVTimedMetadataGroup."
+      },
+      {
+        "timestamp": "13:32",
+        "text": "Once you have the metadata in hand, you can use the metadata along with your source video frames to generate your output video frame and finish off the request."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "So that's all it takes to get metadata into your custom video compositor callback so you can do more interesting things with your video compositions."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "Now onto our final topic, which is caption file authoring."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "New this year for macOS, AVFoundation is adding support for two file formats."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "First, we have iTunes Timed Text, or .itt files, which contain subtitles."
+      },
+      {
+        "timestamp": "14:07",
+        "text": "The other file format is Scenarist Closed Captions -- or .scc files -- which contain closed captions."
+      },
+      {
+        "timestamp": "14:14",
+        "text": "AVFoundation is adding support for authoring these two file formats, ingesting captions from these types of files, and also for previewing captions at runtime to see what they'll look like during playback."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "On the authoring side, we have some new APIs, starting with AVCaption, which is the model object that represents a single caption."
+      },
+      {
+        "timestamp": "14:33",
+        "text": "It has properties for things like the text, position, styling, and other attributes of a single caption."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "You can create AVCaptions yourself and use an AVAssetWriterInputCaptionAdaptor in order to write them to one of these two file formats."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "In addition, we have a new validation service in the AVCaptionConversion Validator class, which helps you make sure the captions you're writing are actually compatible with the file format you've chosen."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "As an example of why this is important, consider .scc files."
+      },
+      {
+        "timestamp": "15:04",
+        "text": "They contain CEA-608 captions, which is a format that has very specific limitations about how many captions you can have in a given amount of time, all the way down to having a fixed bit budget for the data representing the individual characters and their styling."
+      },
+      {
+        "timestamp": "15:19",
+        "text": "So the validator will help you not only ensure that your stream of captions is compatible with the file format, it'll also suggest tweaks you can make to your captions, such as adjusting their time stamps, in order to make them compatible."
+      },
+      {
+        "timestamp": "15:33",
+        "text": "The new API for ingesting captions is AVAssetReader OutputCaptionAdaptor which allows you to take one of these files and read in AVCaption objects from it."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "Finally, we have an AVCaptionRenderer class, which allows you to take a single caption or a group of captions and render them to a CGContext in order to get a preview of what they'll look like during playback."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "So that's just the tip of the iceberg for our new caption file authoring APIs."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "If you're interested in adopting them, we encourage you to get in touch with us -- either in the forums or in the conference labs -- and we can help answer any questions that you have."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "And that was our final topic, so let's wrap up."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "Our big topic for the day was inspecting AVAsset properties, the importance of doing so on demand and asynchronously, the new APIs in this area, and some tips for migrating from the old APIs."
+      },
+      {
+        "timestamp": "16:26",
+        "text": "We then talked about using timed metadata to further customize your custom video compositions."
+      },
+      {
+        "timestamp": "16:32",
+        "text": "Finally, I gave a brief introduction to caption file authoring and the new APIs in that area."
+      },
+      {
+        "timestamp": "16:38",
+        "text": "That's all for today."
+      },
+      {
+        "timestamp": "16:40",
+        "text": "Thank you very much for watching and enjoy WWDC21."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -146,5 +685,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10290"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:53.157Z"
+  "extractedAt": "2026-10-17T18:53:49.632Z"
 }

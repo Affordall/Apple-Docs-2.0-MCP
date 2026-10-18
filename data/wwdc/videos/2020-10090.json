@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10090/",
   "title": "Decode ProRes with AVFoundation and VideoToolbox",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video",
@@ -13,8 +12,388 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nHi, and welcome to ProRes Decoding with AV Foundation and Video Toolbox. Our goal today is optimizing the path from a ProRes movie file, or really any other video, into your application.\n\nSo, you have an amazing video-editing app in a really cool Metal rendering engine. You want to ensure that users have the best possible experience working with ProRes content in your app.\n\nOur goal is to make two things happen: leverage available hardware decoders, like Afterburner, and make sure that you have an optimized and efficient path for the flow of compressed data, as well as for the frames coming out of the decoder. So, first we're going to do an overview of some of the concepts around integrating video into an app. Then we're gonna discuss how AV Foundation can do it all for you.\n\nBut doing it all at the AV Foundation level isn't right for everyone, so next we'll talk a little bit about how you can fetch or construct compressed samples if you choose to drive the decoder yourself with the Video Toolbox.\n\nThen we'll talk a little bit about how to use a VTDecompressionSession. And finally, we'll cover some best practices for integrating decoded video frames with Metal.\n\nAll right, let's talk about some basics for working with video on our platforms. First, let's talk briefly about video decoders. Video decoders do a lot of parsing of bitstreams that can come from a wide range of sources not always fully controlled by users. This presents opportunities for malformed media to destabilize an application, or even exploit vulnerabilities and create security issues.\n\nTo mitigate these concerns, the Video Toolbox runs decoders out-of-process in a sandboxed server.\n\nThis both provides security benefits by running the decoder in a process with limited privileges, but it also adds application stability. If there is a crash in the video decoder, the result is a decode error rather than crashing your entire application. All right, let's talk about the media stack on mac OS, and for this talk, we're going to be focused on video.\n\nAt the top, we have AVKit. AVKit provides very high-level options for dropping media functionality into an app. Since we want to integrate with your existing render pipeline, we aren't going to be looking at AVKit.\n\nAV Foundation provides a powerful and flexible interface for working with all aspects of media. We will be looking at a few interfaces in the AV Foundation framework.\n\nWe have already, and will continue to talk about Video Toolbox, which provides a low-level interface for working with video decoders and encoders.\n\nThe Core Media framework provides many basic building blocks for any media operations on the platform.\n\nAnd finally, Core Video provides basic building blocks for working specifically with video. So, we're going to be focusing on interfaces from these three frameworks: AV Foundation, Video Toolbox, and Core Video.\n\nIn AV Foundation, we'll take a closer look at AVAssetReader as well as AVSampleBufferGenerator. In Video Toolbox, we'll be looking more closely at VTDecompressionSession.\n\nAnd finally, in Core Video, we'll be looking at integrating CVPixelBuffers and CVPixelBufferPools with Metal.\n\nLet's talk a little bit about some considerations when working at these different API levels.\n\nFirst, in current versions of the OS, all media interfaces will automatically enable hardware decode when available. This includes enabling Afterburner. We'll talk later about how to selectively enable and disable hardware decode, but by default, it will always be used.\n\nEarlier, we talked about how video decoders run in a separate process. If CMSampleBuffers are created by AV Foundation, they are automatically generated in a form which optimizes them for transfer over the RPC boundary.\n\nWhen working with VTDecompressionSession directly, whether or not you get this optimized RPC depends on how the CMSampleBuffers are generated. We'll talk more about this later on as we talk about generating CMSampleBuffers.\n\nNext, I want to dive into a little glossary.\n\nFirst, let's talk about CVPixelBuffers. CVPixelBuffers are essentially wrappers around blocks of uncompressed raster image data. They have inherent properties like pixel format, height, width, and row bytes or pitch, but they can also carry attachments which describe the image data, things like color tags.\n\nNext we have CMBlockBuffer. This type is defined in the Core Media framework and serves as a basic type for wrapping arbitrary blocks of data, usually compressed sample data.\n\nThen we have CMSampleBuffers. CMSampleBuffers come in three main flavors. First, a CMSampleBuffer can wrap a CMBlockBuffer containing compressed audio or video data.\n\nSecond, a CMSampleBuffer can wrap a CVPixelBuffer containing uncompressed raster image data.\n\nAs you can see, both types of CMSampleBuffers contain CMTime values which describe the sample's presentation and decode timestamps. They also contain a CMFormatDescription which carries information describing the format of the data in the SampleBuffer.\n\nCMSampleBuffers can also carry attachments, and this brings us to the third type of CMSampleBuffer, a marker CMSampleBuffer which has no CMBlockBuffer or CVPixelBuffer and exists entirely to carry timed attachments through a media pipeline signaling specific conditions.\n\nNext we have IOSurface. An IOSurface is a very clever abstraction around a piece of memory, often used for image data. We talked about the raster data in a CVPixelBuffer. That raster data is usually in the form of an IOSurface.\n\nIOSurfaces can also be used as the basis for the memory for a texture in Metal as well.\n\nIOSurface allows the memory to be efficiently moved between frameworks like Core Video and Metal, between processes like the sandboxed decoder and your application, or even between different memory regions, such as transfer between VRAM in different GPUs.\n\nAnd our final stop in our glossary is the CVPixelBufferPool.\n\nCVPixelBufferPools are objects from Core Video which allow video pipelines to efficiently recycle buffers used for image data.\n\nIn most cases, CVPixelBuffers will wrap IOSurfaces. When a CVPixelBuffer allocated from a pool is released and no longer in use, the IOSurface will go back into the CVPixelBufferPool so that the next CVPixelBuffer allocated from the pool can reuse that memory. This means that CVPixelBufferPools have some fixed characteristics, just like CVPixelBuffers: the pixel format, height, width, and row bytes or pitch.\n\nAll right, let's get straight into how AV Foundation can do it all for you. Let's go back to our original problem. You have a ProRes movie file, you have your awesome Metal rendering engine, and you want to get frames from that movie into your renderer.\n\nAVAssetReader can do it all for you. It reads samples from the source file, optimizing them for the RPC that will happen in the Video Toolbox. It decodes the video data in the sandbox process, and it provides the decoded CVPixelBuffers in the requested output format.\n\nCreating an AVAssetReader is pretty easy. First we create an AVAsset with a URL to a local movie.\n\nThen we create an AVAssetReader with that AVAsset, but the AVAssetReader isn't ready to use yet.\n\nRequesting decoded data from the AVAssetReader involves configuring an AVAssetReaderTrackOutput.\n\nFirst we need to get the video track. Here we're getting an array of all of the video tracks in the movie, and then selecting the first track in that array. Your logic for selecting tracks may vary.\n\nNow we create an AVAssetReaderTrackOutput based on the video track we selected. In this case, I'm choosing to configure the output to return 16-bit 4:4:4:4 YCbCr with alpha, or Y416, which is a great native format to use when working with ProRes 4444 content. Next, we're going to instruct the AVAssetReaderTrackOutput to not copy samples when returning them. When setting this, we will get optimal efficiency, but it also indicates that the returned CMSampleBuffers may be retained elsewhere, and we absolutely must not modify them.\n\nAnd finally, we need to add this output to our AVAssetReader.\n\nRunning an AVAssetReader is pretty simple. I'll show you it operating in its simplest possible mode here. First, we just start it reading.\n\nThen we can loop over calls to copyNextSampleBuffer, and since we've configured it to provide decoded output, we check each output CMSampleBuffer for a CVImageBuffer. We will get some marker CMSampleBuffers with no image buffers, but this is okay. Using an AVAssetReader, you can set time ranges or do other more advanced operations rather than this simple iteration through the track. Your video pipeline will be most efficient if your renderer is able to consume buffers in a format that is native to the decoder. AVAssetReader will convert the decoder output from the decoder's native format to your requested output format if you are requesting a format that the decoder does not support. But avoiding these buffer copies will improve your application efficiency immensely. Here are some guidelines on choosing an output pixel format that will not result in a conversion.\n\nIn the previous example, we configured the AVAssetReaderOutput to return buffers in 16-bit 4:4:4:4 YCbCr with alpha, or Y416, which is the optimal format when using ProRes 4444.\n\nFor ProRes 422, 16-bit 4:2:2 YCbCr, or v216, is the most native decoder format to request.\n\nFor ProRes RAW, RGBA half-float, or RGhA, provides the most native output.\n\nSometimes there's reasons why one doesn't want to rely on AVAssetReader to do everything. In these cases, you'll need to generate CMSampleBuffers to feed directly to the Video Toolbox. There are three main options here. First, you can use AVAssetReader, much like we described a moment ago, but you can request that it give you the compressed data without decoding it first. This provides track-level media access, with awareness of edits and frame dependencies.\n\nSecond, there is AVSampleBufferGenerator. This provides media-level access to samples, with no awareness of edits and frame dependencies.\n\nAnd finally, you can construct CMSampleBuffers yourself.\n\nLetting AVAssetReader generate your samples provides compressed data read directly from the AVAsset. AVAssetReader is doing track-level reading, which means it will provide all samples necessary to display frames at the target time, including handling edits and frame dependencies. Also, as noted earlier, AVAssetReader will provide samples which are optimized for RPC, reducing sandbox overhead when the frames are sent to the Video Toolbox.\n\nIn order to get raw compressed output from the AVAssetReader, you simply need to construct the AVAssetReader as described earlier, but when creating the AVAssetReaderTrackOutput, you'll set the outputSettings to nil rather than providing a dictionary specifying a pixel format.\n\nAVSampleBufferGenerator provides samples read directly from the media in an AVAssetTrack. It uses an AVSampleBufferCursor to control the position in the track from which it will read media. It has no inherent awareness of frame dependencies, so this may be straightforward to use with ProRes, but care must be taken when using this interface with content with inter-frame dependencies, like HEVC and H.264. Here's a brief code snippet showing how an AVSampleBufferGenerator is created. First you need to create an AVSampleCursor which will be used for stepping through samples.\n\nYou must also create an AVSampleBufferRequest which describes the actual sample requests you will be making.\n\nNow you can create the AVSampleBufferGenerator with your source AVAsset.\n\nNote that I'm setting the timebase to nil here, which will result in synchronous operation. For optimal performance with AVSampleBufferGenerator, you would provide a timebase and run your requests asynchronously.\n\nFinally, I'm looping over calls to createSampleBufferForRequest and stepping the cursor forward one frame at a time. Again, this shows the simplest possible synchronous operation. For optimal performance, one would use async versions of these requests. Finally, you can create CMSampleBuffers yourself if you're doing your own file reading or getting sample data from some other source, like the network. It's important to note that this sample data will not be optimized for transfer over the sandbox RPC.\n\nEarlier, we talked about the components of a CMSampleBuffer. Once again, there's the data in a CMBlockBuffer, a CMFormatDescription, and some timestamps.\n\nSo, first you need to pack your sample data in a CMBlockBuffer.\n\nThen you need to create a CMVideoFormatDescription describing the data. Here it would be important to include the color tags in your extensionsDictionary to ensure proper color management for your video.\n\nNext you would create some timestamps in a CMSampleTimingInfo struct. And finally, create a CMSampleBuffer using the CMBlockBuffer, the CMVideoFormatDescription and the CMSampleTimingInfo.\n\nOkay, you've decided to do it yourself and you've created a source for CMSampleBuffers. On to the Video Toolbox. Let's take a look at the anatomy of a VTDecompressionSession.\n\nThe VTDecompressionSession, of course, has a video decoder, and as described earlier, this will be running in a separate sandboxed process.\n\nThe session also has a CVPixelBufferPool which is being used to create the output buffers for decoded video frames.\n\nAnd finally, if you have requested output in a format which doesn't match what the decoder can provide, there will be a VTPixelTransferSession to do the required conversion. Before you get started, if your application needs to access the set of specialized decoders distributed for Pro video workflows, your application can make a call to VTRegisterProfessional- VideoWorkflowVideoDecoders. This only needs to happen once in your application. The steps to use a VTDecompressionSession are pretty simple. First, create a VTDecompressionSession.\n\nSecond, do any necessary configuration of the VTDecompressionSession via VTSessionSetProperty calls. This isn't always needed.\n\nFinally, begin sending frames using calls to VTDecompressionSession- DecodeFrameWithOutputHandler, or simply VTDecompressionSessionDecodeFrame.\n\nFor optimal performance, it's recommended that asynchronous decode be enabled in your DecodeFrame calls. Let's look more closely at creating a VTDecompressionSession. There are three major options that need to be specified.\n\nFirst is the videoFormatDescription. This tells the VTDecompressionSession what codec will be used, and provides more details about the format of the data in the CMSampleBuffers. This should match the CMVideoFormatDescription of the CMSampleBuffers that you are about to send to the session.\n\nNext is the destinationImageBufferAttributes. This describes your output pixelBuffer requirements. This can include dimensions if you want the Video Toolbox to scale output to a certain size.\n\nIt can contain a specific pixelFormat if your rendering engine requires it. If you only know how to consume 8-bit RGB samples, this is where you would request that.\n\nThis can also be a high-level directive, like a request to just provide Core Animation-compatible output.\n\nNext is the videoDecoderSpecification, which provides hints about factors for decoder selection. This is where you specify non-default hardware decoder requests.\n\nSpeaking of hardware decoder usage, as mentioned earlier, on current OS versions, hardware decoder usage is enabled by default for all formats where it's supported. This is a slight change from a few years ago when it was an opt-in. In current OSes, all hardware-accelerated codecs are available by default with no opt-ins required. If you want to guarantee that your VTDecompressionSession is created with a hardware decoder, and want session creation to fail if it isn't possible, you can pass in the RequireHardwareAcceleratedVideoDecoder specification option set to true.\n\nSimilarly, if you want to disable hardware decode and use a software decoder, you can include EnableHardwareAcceleratedVideoDecoder specification option set to false. These two keys are awfully similar, so once more, the first key is RequireHardwareAcceleratedVideoDecoder and the second is EnableHardwareAcceleratedVideoDecoder. This sample shows the basics of VTDecompressionSession creation. The first thing that we need is a formatDescription to tell the session what type of data to expect. We pull this straight from a CMSampleBuffer that will be passed to the session later. If we want a specific pixelFormat for our output, we need to create a pixelBufferAttributes dictionary describing what we need. So, just like in the earlier AVAssetReader example, we're requesting 16-bit 4:4:4:4 YCbCr with alpha. Now we can create the VTDecompressionSession. Note that we're passing in NULL for the third parameter, the videoDecoderSpecification. This NULL means that the Video Toolbox will do its default hardware decoder selection.\n\nOnce the VTDecompressionSession is created, the calls to DecodeFrame are fairly straightforward. As mentioned earlier, for optimal performance, the kVTDecodeFrame_Enable- AsynchronousDecompression flag should be set in the decodeFlags.\n\nThe block-based VTDecompressionSession- DecodeFrameWithOutputHandler takes the compressed sampleBuffer, the inFlags, which control decoder behavior, and an output block which will be called with the results of the decode operation.\n\nAs long as the VTDecompressionSession- DecodeFrameWithOutputHandler call doesn't return an error, your output block will be called with the results of the frame decode, either a CVImageBuffer or a decoder error. A quick note about decompression output. Decoder output is serialized. You should only see a single frame being returned from the decoder at a time. If you block inside of the decoder output, it will effectively block subsequent frame output and ultimately cause back pressure through the decoder.\n\nFor best performance, you should make sure that processing and work is done outside of your session's output block or callback.\n\nNow let's talk a little bit about using decoded CVPixelBuffers with Metal. Before diving into this, it's important to review exactly how a CVPixelBufferPool works.\n\nAs described before, when a CVPixelBuffer which was allocated from a CVPixelBufferPool is released, its IOSurface goes back into the CVPixelBufferPool, and the next time a CVPixelBuffer is allocated from the pool, the IOSurface will be recycled and used for the new CVPixelBuffer.\n\nWith this in mind, it's easier to understand the pitfalls that one can encounter working with CVPixelBuffers and Metal. We need to ensure that IOSurfaces are not recycled while still being used by Metal.\n\nThere are two main approaches to using CVPixelBuffers with Metal. One is the obvious bridge through IOSurface. The CVPixelBuffer contains an IOSurface and Metal knows how to use an IOSurface for texturing. But this path requires a bit of extra care.\n\nThe second path is through Core Video's CVMetalTextureCache. This is less obvious, but generally simpler to use in a safe manner, and can provide some performance benefits.\n\nUsing the IOSurface backing from a CVPixelBuffer directly with Metal appears straightforward, but there's a trick to ensuring that the IOSurface is not recycled by the CVPixelBufferPool while it's still in use by Metal.\n\nTo go this route, you first need to get the IOSurface from the CVPixelBuffer, and you can then create a Metal texture with that IOSurface.\n\nBut you need to ensure that the IOSurface is not recycled by the CVPixelBufferPool while it's still in use by Metal. So, we use the IOSurfaceIncrementUseCount call.\n\nTo release the IOSurface back into the pool when Metal has finished with it, we set up a MTLCommandBuffer completion handler to run after our CommandBuffer completes, and we decrement the IOSurfaceUseCount here.\n\nUsing CVMetalTextureCache to manage the interface between CVPixelBuffer and MetalTexture simplifies things, removing the need to manually track IOSurfaces and IOSurfaceUseCounts.\n\nTo use this facility, you need to first create a CVMetalTextureCache. You can specify the Metal device you want to associate with here.\n\nNow you can call CVMetalTextureCacheCreateTextureFromImage to create a CVMetalTexture object associated with your CVPixelBuffer.\n\nAnd getting the actual Metal texture from the CVMetalTextureCache is a simple call to CVMetalTextureGetTexture.\n\nAnd the last thing to keep in mind here is that once again, you must set up a handler on your Metal command buffer completion, or otherwise ensure that Metal is done with the texture before you release the CVMetalTexture.\n\nCVMetalTextureCache also saves you from repeating the IOSurface texture binding when IOSurfaces which come from a CVPixelBufferPool are reused and are seen again, making it a little bit more efficient.\n\nOkay, so we covered a few topics here. We talked about when you will get hardware decode, and how to control it. We talked about how AV Foundation's AVAssetReader can simply and easily allow you to integrate accelerated video decoding with your custom rendering pipeline. We talked about how to construct CMSampleBuffers and use them with the Video Toolbox if using AVAssetReader on its own isn't a good fit for your use case.\n\nAnd finally, we talked about some best practices around using CVPixelBuffers with Metal. I hope that what we've discussed today helps you make your amazing video app a little bit more amazing. Thanks for watching and have a great WWDC.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Hi, and welcome to ProRes Decoding with AV Foundation and Video Toolbox. Our goal today is optimizing the path from a ProRes movie file, or really any other video, into your application."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "So, you have an amazing video-editing app in a really cool Metal rendering engine. You want to ensure that users have the best possible experience working with ProRes content in your app."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Our goal is to make two things happen: leverage available hardware decoders, like Afterburner, and make sure that you have an optimized and efficient path for the flow of compressed data, as well as for the frames coming out of the decoder. So, first we're going to do an overview of some of the concepts around integrating video into an app. Then we're gonna discuss how AV Foundation can do it all for you."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "But doing it all at the AV Foundation level isn't right for everyone, so next we'll talk a little bit about how you can fetch or construct compressed samples if you choose to drive the decoder yourself with the Video Toolbox."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "Then we'll talk a little bit about how to use a VTDecompressionSession. And finally, we'll cover some best practices for integrating decoded video frames with Metal."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "All right, let's talk about some basics for working with video on our platforms. First, let's talk briefly about video decoders. Video decoders do a lot of parsing of bitstreams that can come from a wide range of sources not always fully controlled by users. This presents opportunities for malformed media to destabilize an application, or even exploit vulnerabilities and create security issues."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "To mitigate these concerns, the Video Toolbox runs decoders out-of-process in a sandboxed server."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "This both provides security benefits by running the decoder in a process with limited privileges, but it also adds application stability. If there is a crash in the video decoder, the result is a decode error rather than crashing your entire application. All right, let's talk about the media stack on mac OS, and for this talk, we're going to be focused on video."
+      },
+      {
+        "timestamp": "2:10",
+        "text": "At the top, we have AVKit. AVKit provides very high-level options for dropping media functionality into an app. Since we want to integrate with your existing render pipeline, we aren't going to be looking at AVKit."
+      },
+      {
+        "timestamp": "2:23",
+        "text": "AV Foundation provides a powerful and flexible interface for working with all aspects of media. We will be looking at a few interfaces in the AV Foundation framework."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "We have already, and will continue to talk about Video Toolbox, which provides a low-level interface for working with video decoders and encoders."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "The Core Media framework provides many basic building blocks for any media operations on the platform."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "And finally, Core Video provides basic building blocks for working specifically with video. So, we're going to be focusing on interfaces from these three frameworks: AV Foundation, Video Toolbox, and Core Video."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "In AV Foundation, we'll take a closer look at AVAssetReader as well as AVSampleBufferGenerator. In Video Toolbox, we'll be looking more closely at VTDecompressionSession."
+      },
+      {
+        "timestamp": "3:15",
+        "text": "And finally, in Core Video, we'll be looking at integrating CVPixelBuffers and CVPixelBufferPools with Metal."
+      },
+      {
+        "timestamp": "3:23",
+        "text": "Let's talk a little bit about some considerations when working at these different API levels."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "First, in current versions of the OS, all media interfaces will automatically enable hardware decode when available. This includes enabling Afterburner. We'll talk later about how to selectively enable and disable hardware decode, but by default, it will always be used."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "Earlier, we talked about how video decoders run in a separate process. If CMSampleBuffers are created by AV Foundation, they are automatically generated in a form which optimizes them for transfer over the RPC boundary."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "When working with VTDecompressionSession directly, whether or not you get this optimized RPC depends on how the CMSampleBuffers are generated. We'll talk more about this later on as we talk about generating CMSampleBuffers."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "Next, I want to dive into a little glossary."
+      },
+      {
+        "timestamp": "4:17",
+        "text": "First, let's talk about CVPixelBuffers. CVPixelBuffers are essentially wrappers around blocks of uncompressed raster image data. They have inherent properties like pixel format, height, width, and row bytes or pitch, but they can also carry attachments which describe the image data, things like color tags."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "Next we have CMBlockBuffer. This type is defined in the Core Media framework and serves as a basic type for wrapping arbitrary blocks of data, usually compressed sample data."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "Then we have CMSampleBuffers. CMSampleBuffers come in three main flavors. First, a CMSampleBuffer can wrap a CMBlockBuffer containing compressed audio or video data."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "Second, a CMSampleBuffer can wrap a CVPixelBuffer containing uncompressed raster image data."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "As you can see, both types of CMSampleBuffers contain CMTime values which describe the sample's presentation and decode timestamps. They also contain a CMFormatDescription which carries information describing the format of the data in the SampleBuffer."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "CMSampleBuffers can also carry attachments, and this brings us to the third type of CMSampleBuffer, a marker CMSampleBuffer which has no CMBlockBuffer or CVPixelBuffer and exists entirely to carry timed attachments through a media pipeline signaling specific conditions."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "Next we have IOSurface. An IOSurface is a very clever abstraction around a piece of memory, often used for image data. We talked about the raster data in a CVPixelBuffer. That raster data is usually in the form of an IOSurface."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "IOSurfaces can also be used as the basis for the memory for a texture in Metal as well."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "IOSurface allows the memory to be efficiently moved between frameworks like Core Video and Metal, between processes like the sandboxed decoder and your application, or even between different memory regions, such as transfer between VRAM in different GPUs."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "And our final stop in our glossary is the CVPixelBufferPool."
+      },
+      {
+        "timestamp": "6:30",
+        "text": "CVPixelBufferPools are objects from Core Video which allow video pipelines to efficiently recycle buffers used for image data."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "In most cases, CVPixelBuffers will wrap IOSurfaces. When a CVPixelBuffer allocated from a pool is released and no longer in use, the IOSurface will go back into the CVPixelBufferPool so that the next CVPixelBuffer allocated from the pool can reuse that memory. This means that CVPixelBufferPools have some fixed characteristics, just like CVPixelBuffers: the pixel format, height, width, and row bytes or pitch."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "All right, let's get straight into how AV Foundation can do it all for you. Let's go back to our original problem. You have a ProRes movie file, you have your awesome Metal rendering engine, and you want to get frames from that movie into your renderer."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "AVAssetReader can do it all for you. It reads samples from the source file, optimizing them for the RPC that will happen in the Video Toolbox. It decodes the video data in the sandbox process, and it provides the decoded CVPixelBuffers in the requested output format."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "Creating an AVAssetReader is pretty easy. First we create an AVAsset with a URL to a local movie."
+      },
+      {
+        "timestamp": "7:49",
+        "text": "Then we create an AVAssetReader with that AVAsset, but the AVAssetReader isn't ready to use yet."
+      },
+      {
+        "timestamp": "7:57",
+        "text": "Requesting decoded data from the AVAssetReader involves configuring an AVAssetReaderTrackOutput."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "First we need to get the video track. Here we're getting an array of all of the video tracks in the movie, and then selecting the first track in that array. Your logic for selecting tracks may vary."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "Now we create an AVAssetReaderTrackOutput based on the video track we selected. In this case, I'm choosing to configure the output to return 16-bit 4:4:4:4 YCbCr with alpha, or Y416, which is a great native format to use when working with ProRes 4444 content. Next, we're going to instruct the AVAssetReaderTrackOutput to not copy samples when returning them. When setting this, we will get optimal efficiency, but it also indicates that the returned CMSampleBuffers may be retained elsewhere, and we absolutely must not modify them."
+      },
+      {
+        "timestamp": "8:53",
+        "text": "And finally, we need to add this output to our AVAssetReader."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "Running an AVAssetReader is pretty simple. I'll show you it operating in its simplest possible mode here. First, we just start it reading."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "Then we can loop over calls to copyNextSampleBuffer, and since we've configured it to provide decoded output, we check each output CMSampleBuffer for a CVImageBuffer. We will get some marker CMSampleBuffers with no image buffers, but this is okay. Using an AVAssetReader, you can set time ranges or do other more advanced operations rather than this simple iteration through the track. Your video pipeline will be most efficient if your renderer is able to consume buffers in a format that is native to the decoder. AVAssetReader will convert the decoder output from the decoder's native format to your requested output format if you are requesting a format that the decoder does not support. But avoiding these buffer copies will improve your application efficiency immensely. Here are some guidelines on choosing an output pixel format that will not result in a conversion."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "In the previous example, we configured the AVAssetReaderOutput to return buffers in 16-bit 4:4:4:4 YCbCr with alpha, or Y416, which is the optimal format when using ProRes 4444."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "For ProRes 422, 16-bit 4:2:2 YCbCr, or v216, is the most native decoder format to request."
+      },
+      {
+        "timestamp": "10:24",
+        "text": "For ProRes RAW, RGBA half-float, or RGhA, provides the most native output."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "Sometimes there's reasons why one doesn't want to rely on AVAssetReader to do everything. In these cases, you'll need to generate CMSampleBuffers to feed directly to the Video Toolbox. There are three main options here. First, you can use AVAssetReader, much like we described a moment ago, but you can request that it give you the compressed data without decoding it first. This provides track-level media access, with awareness of edits and frame dependencies."
+      },
+      {
+        "timestamp": "11:00",
+        "text": "Second, there is AVSampleBufferGenerator. This provides media-level access to samples, with no awareness of edits and frame dependencies."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "And finally, you can construct CMSampleBuffers yourself."
+      },
+      {
+        "timestamp": "11:13",
+        "text": "Letting AVAssetReader generate your samples provides compressed data read directly from the AVAsset. AVAssetReader is doing track-level reading, which means it will provide all samples necessary to display frames at the target time, including handling edits and frame dependencies. Also, as noted earlier, AVAssetReader will provide samples which are optimized for RPC, reducing sandbox overhead when the frames are sent to the Video Toolbox."
+      },
+      {
+        "timestamp": "11:40",
+        "text": "In order to get raw compressed output from the AVAssetReader, you simply need to construct the AVAssetReader as described earlier, but when creating the AVAssetReaderTrackOutput, you'll set the outputSettings to nil rather than providing a dictionary specifying a pixel format."
+      },
+      {
+        "timestamp": "11:59",
+        "text": "AVSampleBufferGenerator provides samples read directly from the media in an AVAssetTrack. It uses an AVSampleBufferCursor to control the position in the track from which it will read media. It has no inherent awareness of frame dependencies, so this may be straightforward to use with ProRes, but care must be taken when using this interface with content with inter-frame dependencies, like HEVC and H.264. Here's a brief code snippet showing how an AVSampleBufferGenerator is created. First you need to create an AVSampleCursor which will be used for stepping through samples."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "You must also create an AVSampleBufferRequest which describes the actual sample requests you will be making."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "Now you can create the AVSampleBufferGenerator with your source AVAsset."
+      },
+      {
+        "timestamp": "12:46",
+        "text": "Note that I'm setting the timebase to nil here, which will result in synchronous operation. For optimal performance with AVSampleBufferGenerator, you would provide a timebase and run your requests asynchronously."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "Finally, I'm looping over calls to createSampleBufferForRequest and stepping the cursor forward one frame at a time. Again, this shows the simplest possible synchronous operation. For optimal performance, one would use async versions of these requests. Finally, you can create CMSampleBuffers yourself if you're doing your own file reading or getting sample data from some other source, like the network. It's important to note that this sample data will not be optimized for transfer over the sandbox RPC."
+      },
+      {
+        "timestamp": "13:29",
+        "text": "Earlier, we talked about the components of a CMSampleBuffer. Once again, there's the data in a CMBlockBuffer, a CMFormatDescription, and some timestamps."
+      },
+      {
+        "timestamp": "13:39",
+        "text": "So, first you need to pack your sample data in a CMBlockBuffer."
+      },
+      {
+        "timestamp": "13:45",
+        "text": "Then you need to create a CMVideoFormatDescription describing the data. Here it would be important to include the color tags in your extensionsDictionary to ensure proper color management for your video."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "Next you would create some timestamps in a CMSampleTimingInfo struct. And finally, create a CMSampleBuffer using the CMBlockBuffer, the CMVideoFormatDescription and the CMSampleTimingInfo."
+      },
+      {
+        "timestamp": "14:12",
+        "text": "Okay, you've decided to do it yourself and you've created a source for CMSampleBuffers. On to the Video Toolbox. Let's take a look at the anatomy of a VTDecompressionSession."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "The VTDecompressionSession, of course, has a video decoder, and as described earlier, this will be running in a separate sandboxed process."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "The session also has a CVPixelBufferPool which is being used to create the output buffers for decoded video frames."
+      },
+      {
+        "timestamp": "14:39",
+        "text": "And finally, if you have requested output in a format which doesn't match what the decoder can provide, there will be a VTPixelTransferSession to do the required conversion. Before you get started, if your application needs to access the set of specialized decoders distributed for Pro video workflows, your application can make a call to VTRegisterProfessional- VideoWorkflowVideoDecoders. This only needs to happen once in your application. The steps to use a VTDecompressionSession are pretty simple. First, create a VTDecompressionSession."
+      },
+      {
+        "timestamp": "15:14",
+        "text": "Second, do any necessary configuration of the VTDecompressionSession via VTSessionSetProperty calls. This isn't always needed."
+      },
+      {
+        "timestamp": "15:24",
+        "text": "Finally, begin sending frames using calls to VTDecompressionSession- DecodeFrameWithOutputHandler, or simply VTDecompressionSessionDecodeFrame."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "For optimal performance, it's recommended that asynchronous decode be enabled in your DecodeFrame calls. Let's look more closely at creating a VTDecompressionSession. There are three major options that need to be specified."
+      },
+      {
+        "timestamp": "15:48",
+        "text": "First is the videoFormatDescription. This tells the VTDecompressionSession what codec will be used, and provides more details about the format of the data in the CMSampleBuffers. This should match the CMVideoFormatDescription of the CMSampleBuffers that you are about to send to the session."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "Next is the destinationImageBufferAttributes. This describes your output pixelBuffer requirements. This can include dimensions if you want the Video Toolbox to scale output to a certain size."
+      },
+      {
+        "timestamp": "16:18",
+        "text": "It can contain a specific pixelFormat if your rendering engine requires it. If you only know how to consume 8-bit RGB samples, this is where you would request that."
+      },
+      {
+        "timestamp": "16:29",
+        "text": "This can also be a high-level directive, like a request to just provide Core Animation-compatible output."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "Next is the videoDecoderSpecification, which provides hints about factors for decoder selection. This is where you specify non-default hardware decoder requests."
+      },
+      {
+        "timestamp": "16:49",
+        "text": "Speaking of hardware decoder usage, as mentioned earlier, on current OS versions, hardware decoder usage is enabled by default for all formats where it's supported. This is a slight change from a few years ago when it was an opt-in. In current OSes, all hardware-accelerated codecs are available by default with no opt-ins required. If you want to guarantee that your VTDecompressionSession is created with a hardware decoder, and want session creation to fail if it isn't possible, you can pass in the RequireHardwareAcceleratedVideoDecoder specification option set to true."
+      },
+      {
+        "timestamp": "17:25",
+        "text": "Similarly, if you want to disable hardware decode and use a software decoder, you can include EnableHardwareAcceleratedVideoDecoder specification option set to false. These two keys are awfully similar, so once more, the first key is RequireHardwareAcceleratedVideoDecoder and the second is EnableHardwareAcceleratedVideoDecoder. This sample shows the basics of VTDecompressionSession creation. The first thing that we need is a formatDescription to tell the session what type of data to expect. We pull this straight from a CMSampleBuffer that will be passed to the session later. If we want a specific pixelFormat for our output, we need to create a pixelBufferAttributes dictionary describing what we need. So, just like in the earlier AVAssetReader example, we're requesting 16-bit 4:4:4:4 YCbCr with alpha. Now we can create the VTDecompressionSession. Note that we're passing in NULL for the third parameter, the videoDecoderSpecification. This NULL means that the Video Toolbox will do its default hardware decoder selection."
+      },
+      {
+        "timestamp": "18:30",
+        "text": "Once the VTDecompressionSession is created, the calls to DecodeFrame are fairly straightforward. As mentioned earlier, for optimal performance, the kVTDecodeFrame_Enable- AsynchronousDecompression flag should be set in the decodeFlags."
+      },
+      {
+        "timestamp": "18:47",
+        "text": "The block-based VTDecompressionSession- DecodeFrameWithOutputHandler takes the compressed sampleBuffer, the inFlags, which control decoder behavior, and an output block which will be called with the results of the decode operation."
+      },
+      {
+        "timestamp": "19:02",
+        "text": "As long as the VTDecompressionSession- DecodeFrameWithOutputHandler call doesn't return an error, your output block will be called with the results of the frame decode, either a CVImageBuffer or a decoder error. A quick note about decompression output. Decoder output is serialized. You should only see a single frame being returned from the decoder at a time. If you block inside of the decoder output, it will effectively block subsequent frame output and ultimately cause back pressure through the decoder."
+      },
+      {
+        "timestamp": "19:34",
+        "text": "For best performance, you should make sure that processing and work is done outside of your session's output block or callback."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "Now let's talk a little bit about using decoded CVPixelBuffers with Metal. Before diving into this, it's important to review exactly how a CVPixelBufferPool works."
+      },
+      {
+        "timestamp": "19:52",
+        "text": "As described before, when a CVPixelBuffer which was allocated from a CVPixelBufferPool is released, its IOSurface goes back into the CVPixelBufferPool, and the next time a CVPixelBuffer is allocated from the pool, the IOSurface will be recycled and used for the new CVPixelBuffer."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "With this in mind, it's easier to understand the pitfalls that one can encounter working with CVPixelBuffers and Metal. We need to ensure that IOSurfaces are not recycled while still being used by Metal."
+      },
+      {
+        "timestamp": "20:27",
+        "text": "There are two main approaches to using CVPixelBuffers with Metal. One is the obvious bridge through IOSurface. The CVPixelBuffer contains an IOSurface and Metal knows how to use an IOSurface for texturing. But this path requires a bit of extra care."
+      },
+      {
+        "timestamp": "20:43",
+        "text": "The second path is through Core Video's CVMetalTextureCache. This is less obvious, but generally simpler to use in a safe manner, and can provide some performance benefits."
+      },
+      {
+        "timestamp": "20:54",
+        "text": "Using the IOSurface backing from a CVPixelBuffer directly with Metal appears straightforward, but there's a trick to ensuring that the IOSurface is not recycled by the CVPixelBufferPool while it's still in use by Metal."
+      },
+      {
+        "timestamp": "21:07",
+        "text": "To go this route, you first need to get the IOSurface from the CVPixelBuffer, and you can then create a Metal texture with that IOSurface."
+      },
+      {
+        "timestamp": "21:16",
+        "text": "But you need to ensure that the IOSurface is not recycled by the CVPixelBufferPool while it's still in use by Metal. So, we use the IOSurfaceIncrementUseCount call."
+      },
+      {
+        "timestamp": "21:28",
+        "text": "To release the IOSurface back into the pool when Metal has finished with it, we set up a MTLCommandBuffer completion handler to run after our CommandBuffer completes, and we decrement the IOSurfaceUseCount here."
+      },
+      {
+        "timestamp": "21:42",
+        "text": "Using CVMetalTextureCache to manage the interface between CVPixelBuffer and MetalTexture simplifies things, removing the need to manually track IOSurfaces and IOSurfaceUseCounts."
+      },
+      {
+        "timestamp": "21:54",
+        "text": "To use this facility, you need to first create a CVMetalTextureCache. You can specify the Metal device you want to associate with here."
+      },
+      {
+        "timestamp": "22:04",
+        "text": "Now you can call CVMetalTextureCacheCreateTextureFromImage to create a CVMetalTexture object associated with your CVPixelBuffer."
+      },
+      {
+        "timestamp": "22:14",
+        "text": "And getting the actual Metal texture from the CVMetalTextureCache is a simple call to CVMetalTextureGetTexture."
+      },
+      {
+        "timestamp": "22:24",
+        "text": "And the last thing to keep in mind here is that once again, you must set up a handler on your Metal command buffer completion, or otherwise ensure that Metal is done with the texture before you release the CVMetalTexture."
+      },
+      {
+        "timestamp": "22:37",
+        "text": "CVMetalTextureCache also saves you from repeating the IOSurface texture binding when IOSurfaces which come from a CVPixelBufferPool are reused and are seen again, making it a little bit more efficient."
+      },
+      {
+        "timestamp": "22:51",
+        "text": "Okay, so we covered a few topics here. We talked about when you will get hardware decode, and how to control it. We talked about how AV Foundation's AVAssetReader can simply and easily allow you to integrate accelerated video decoding with your custom rendering pipeline. We talked about how to construct CMSampleBuffers and use them with the Video Toolbox if using AVAssetReader on its own isn't a good fit for your use case."
+      },
+      {
+        "timestamp": "23:16",
+        "text": "And finally, we talked about some best practices around using CVPixelBuffers with Metal. I hope that what we've discussed today helps you make your amazing video app a little bit more amazing. Thanks for watching and have a great WWDC."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -88,5 +467,5 @@
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2020/10090/6/EA16694F-BEEC-44FF-A129-12336E5390B9/wwdc2020_10090_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2020/10090/6/EA16694F-BEEC-44FF-A129-12336E5390B9/wwdc2020_10090_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:45:46.846Z"
+  "extractedAt": "2026-10-17T18:55:41.345Z"
 }

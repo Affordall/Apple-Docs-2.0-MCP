@@ -5,13 +5,9 @@ import Bottleneck from 'bottleneck';
 import { HeaderGenerator } from 'header-generator';
 import pRetry, { AbortError } from 'p-retry';
 
-import type { AppError, ErrorType } from '../types/error.js';
 import { RATE_LIMIT, REQUEST_CONFIG } from './constants.js';
-import { handleFetchError } from './error-handler.js';
-import { logger } from './logger.js';
 
 interface RequestOptions {
-  timeout?: number;
   retries?: number;
   /** Paces this request instead of the shared limit */
   limiter?: Bottleneck;
@@ -44,18 +40,19 @@ export class HttpStatusError extends Error {
   }
 }
 
-/** A request that failed for good: an Error, so every caller reads its message, with an AppError's kind and suggestions */
-export class RequestError extends Error implements AppError {
-  readonly type: ErrorType;
-  readonly originalError?: Error;
-  readonly suggestions?: string[];
+/** An answer that isn't JSON where JSON was asked for, an HTML page most often: the request and how the answer starts */
+class NotJsonError extends Error {
+  constructor(readonly method: string, readonly url: string, readonly answerStart: string, cause: unknown) {
+    super(`${method} ${url}: the answer isn't JSON; it starts ${JSON.stringify(answerStart)}`, { cause });
+    this.name = 'NotJsonError';
+  }
+}
 
-  constructor({ type, message, originalError, suggestions }: AppError) {
-    super(message, { cause: originalError });
-    this.name = 'RequestError';
-    this.type = type;
-    this.originalError = originalError;
-    this.suggestions = suggestions;
+/** A request that got no answer for good (a network error or a timeout, on every attempt): the request and why */
+export class RequestFailedError extends Error {
+  constructor(readonly method: string, readonly url: string, cause: unknown) {
+    super(`${method} ${url}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
+    this.name = 'RequestFailedError';
   }
 }
 
@@ -76,7 +73,7 @@ async function request<T>(
       const response = await (options?.limiter ?? limiter).schedule(() => fetch(url, {
         ...init,
         headers: browserHeaders(init.headers),
-        signal: AbortSignal.timeout(options?.timeout ?? REQUEST_CONFIG.TIMEOUT),
+        signal: AbortSignal.timeout(REQUEST_CONFIG.TIMEOUT),
       }));
       if (!response.ok) {
         const error = new HttpStatusError(method, url, response.status, response.statusText);
@@ -88,12 +85,16 @@ async function request<T>(
       minTimeout: REQUEST_CONFIG.RETRY_DELAY,
       onFailedAttempt: ({ error, attemptNumber, retriesLeft }) => {
         if (retriesLeft > 0) {
-          logger.warn('Request failed, retrying', { method, url, attempt: attemptNumber, retriesLeft, error: error.message });
+          console.error('Request failed, retrying', { method, url, attempt: attemptNumber, retriesLeft, error: error.message });
         }
       },
     });
   } catch (error) {
-    throw new RequestError(handleFetchError(error, url));
+    // p-retry rejects with the error an AbortError carried, so a status Apple answered arrives as it is
+    if (error instanceof HttpStatusError) {
+      throw error;
+    }
+    throw new RequestFailedError(method, url, error);
   }
 }
 
@@ -102,8 +103,15 @@ export const httpClient = {
   get: (url: string, options?: RequestOptions): Promise<Response> =>
     request(url, {}, async response => response, options),
 
-  getJson: <T>(url: string, options?: RequestOptions): Promise<T> =>
-    request(url, {}, async response => await response.json() as T, options),
+  /** The text is read inside the retries, which a network error ends; it's parsed after them, once */
+  getJson: async <T>(url: string, options?: RequestOptions): Promise<T> => {
+    const text = await request(url, {}, response => response.text(), options);
+    try {
+      return JSON.parse(text) as T;
+    } catch (error) {
+      throw new NotJsonError('GET', url, text.slice(0, 80), error);
+    }
+  },
 
   getText: (url: string, options?: RequestOptions): Promise<string> =>
     request(url, {}, response => response.text(), options),

@@ -3,16 +3,515 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/335/",
   "title": "Improve your prompts by hill-climbing with Evaluations",
-  "speakers": [],
-  "duration": "",
+  "duration": "27:17",
   "topics": [
     "Machine Learning & AI"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "HI! My name is Marcus, a manager on the Evaluations framework team.\n\nI'm excited to show you how to use Evaluations to improve your intelligence-powered feature. As you probably know by now, using AI in your app is a powerful way to provide new levels of personalization to your users. This technology can add a level of depth to your app that was not previously possible with traditional software. However, it's also a challenge to know whether or not your intelligence-powered feature behaves as you'd expect in all cases. To help with this, we're releasing the Evaluations framework to provide you with the tools you need to ship with confidence. Shipping with confidence takes more than just a framework. The Evaluations framework also allows you to hill climb, which is a process of iteratively improving the quality of your feature using the scores of your evaluation as a guide. Hill-climbing starts with development, that is making some change you want to measure against your existing feature.\n\nOnce all your changes are made, you then need to run the evaluation. And see if the results have passed your expectations.\n\nFrom there, you analyze the results to understand how your feature could be further improved.\n\nLeveraging the hill-climbing process is a great way to systematically improve your feature, but effective hill-climbing takes a little bit more than just following the loop. It also takes a little bit of… Science! So, in this video, I'll walk you through how to improve prompts by following the hill-climbing loop, while incorporating some scientific thinking along the way.\n\nNext, I'll walk you through how to conduct comparative Evaluations to make the process of hill-climbing easier. And finally, we'll go beyond changing prompts, by improving other aspects of an intelligence-powered feature.\n\nBut, before we go any further, this video is about the process of hill-climbing an existing evaluation. That means you've already written the foundations of an evaluation pipeline, which provides a wholistic understanding of the strengths and weaknesses of your intelligence-powered feature.\n\nIf you're unfamiliar with how to do that, go check out our other video, \"Meet the Evaluations framework\". It covers everything you need to know in order to build a great evaluation pipeline.\n\nWith that covered, let's get started.\n\nIn the \"Meet the Evaluations framework\" video we introduced you to Book Tracker. In case you forgot, Book Tracker allows readers to catalog and review books.\n\nRecently, I've been reading a lot of classics, so I've added the books to my catalog. In fact, I just finished reading \"Treasure Island\"! It's such a thought-provoking read that covers the tension between loyalty and betrayal.\n\nOne of Book Tracker's new features is a tagging service, which uses a model to generate tags based on the readers review. While the tags for this review cover the general themes of the book, I feel like something is missing. I would have expected to see tags like \"tense\" or \"morally grey\", which speak to the themes of the story. The tags generated for \"Little Women\" had a similar problem. Tags like poignant has more to do with how the reader felt than the contents of the book. Emotion in book reviews is great, but it should not make it into the list of tags. Also, a tag like quiet-steadiness, which is pulled directly from the review, isn't going to be a very useful tag when I want to search my library later.\n\nIt seems like Book Tracker's tag generator isn't as good as I think it could be.\n\nFortunately, when my colleagues wrote this feature, they wrote an Evaluation, which measures the tags against a set of criteria.\n\nAnd here is my Evaluation for Book Tracker's book tags. I'm particularly interested in how we are judging the quality of my tags so I'll scroll down and take a look.\n\nThe qualitative aspects of my app are captured by the score dimensions type.\n\nRelevance tracks the how well the tags represent information about the book's plot, theme, or other relevant information. Usefulness, measures how good the tags are as search terms.\n\nThe ModelJudgeEvaluator uses the score dimensions and a prompt to generate a score for each set of tags.\n\nMy plan is to add these two books to my Evaluation, and review the tags I get back.\n\nIt will also be a good opportunity to see how my ratings stack up against the ratings of my model judge.\n\nWanting to improve some part of an intelligence powered feature is how the hill-climbing process starts. So, to start the loop you begin in the development phase. Here, you make any changes you need to feature as well as your Evaluation.\n\nIn this case, I'll add my review of \"Treasure Island\" to my Evaluation dataset. And I've done the same thing for \"Little Women\".\n\nWith those two entries now in my dataset, I now want to run my Evaluation and see what tags the model produces and how the judge scores them.\n\nBut, to get there we need to first ask if the Evaluation we ran met our expectations.\n\nAs a reminder, your expectations can be defined using Swift Testing's expect macro.\n\nThat way, you can tell if your expectations are met by whether or not your tests pass.\n\nIn this case, my Evaluation met all of my expectations; however, because I know the tags aren't as good as I'd like them to be, I need to investigate further.\n\nAnd that brings us to the analyze phase.\n\nXcode's new evaluations report gives me in depth information about my last Evaluation run.\n\nTo see more details I can click on my BookTaggingEvaluation run.\n\nThis brings up the Evaluation detail view.\n\nOn the top are our aggregate metric charts.\n\nAnd below is our table of results.\n\nWhat I'd like to do now is compare the response of the model to the list of expected tags I generated before. I can do that by opening up the Assistant Editor.\n\nAnd now I can see detailed information about the tags generated for each item in my dataset.\n\nI want to focus on the difference between what the model generated and what I expected.\n\nI can review that in detail in this table. The collection of terms isn't bad but it leaves out a number of key details from the story which the user might want to search for.\n\nBecause of that, I would have scored these tags a 4 for relevance and a 2 for usefulness.\n\nMy model judge also gave the tags a relevance score of 4 which is great, but it also gave usefulness a score of 4, which isn't right.\n\nI should see if I feel the same way about the tags for my review of \"Little Women\".\n\nThe tags don't really contain all the useful information that I'd expect.\n\nAnd it turns out I disagree with the judge's scores here as well.\n\nOnce again, I think relevance should be a 4 and usefulness should be a 2.\n\nDoing this analysis has made it clear to me that there is a discrepancy between how my model judge and I rate tags.\n\nThis discrepancy between model and human is known as drift, and it is a problem faced by all developers trying to evaluate intelligent features. Here's why. Say I have an evaluation with 10 samples. I then ask a model judge and a person to rate each sample.\n\nThe model and person then give their ratings on a scale from 1 to 4, and at the end we average those scores to build an aggregate.\n\nIf the model and the human tend to disagree in their ratings, then their average scores will diverge from one another, hence the name drift.\n\nAs your data set continues to grow and grow the drift will get wider and wider. At which point, it'll be hard for you to know whether or not your feature is being properly evaluated.\n\nTo help with this, you can align your judge to a person's expert opinion. Now that we know drift is a problem, we need a way to know how much our model judge has drifted from our expert ratings.\n\nOne way to accomplish this would be to line up the ratings of the expert and mark where the two match. You can then use this to generate a percentage. This percentage is called accuracy, and it is a great way to measure alignment if every value in your scoring scale is equally likely to appear. However, it's more likely that your dataset will contain values that have an uneven distribution of scores. Think about it, datasets often contain examples of high quality output.\n\nTherefore it is often the case that a human rater is likely to rate items in the dataset with higher scores.\n\nIf a model then happens to judge your smaller dataset with high scores, it may seem like the two are aligned. But then when unleashed on a larger dataset with more variations in scores, it's tendency to score high will still result in drift.\n\nSo we need an alternative to accuracy, one that accounts for the weighted nature of our dataset and the chance that the model might guess the right answer. Fortunately there is a solution! Cohen's kappa coefficient is a mathematical formula made popular by statistician and psychologist Jacob Cohen in 1960.\n\nCohen's kappa measures alignment, that is how often do two raters agree.\n\nTo do that, we need to know what percentage of the time the raters agreed, better known as accuracy.\n\nAnd this is exactly what the accuracy metric from before was calculating. But now we need to calculate a new value. Coincidence, which represents the chance that one rater might get lucky and happen to align.\n\nThis luck is then weighted based on the chances certain answers are more likely to appear. So now the question is, how do you calculate it? To calculate alignment, we start with our accuracy score.\n\nFrom the accuracy score we subtract the possibility of two raters randomly agreeing.\n\nFinally, we divide the difference by the inverse of random agreement, namely the chance that the two raters intentionally agreed.\n\nThe result of that gives us alignment.\n\nCohen's kappa is a powerful way to measure the alignment between a model judge and your expert opinion. I can use this to hill climb the alignment scores between me and my model judge.\n\nSo now, we start back at the beginning of hill-climbing loop in the develop phase.\n\nTo do this, I am going to set up an evaluation to compare my ratings against my judge and produce and alignment score. To do that, I need to write an evaluation, which is made up of four components. First is my dataset.\n\nThen the subject of my evaluation. Then, I need to define my evaluators. And finally, I need to aggregate my results. So let's start with the dataset.\n\nFor this evaluation to work properly, both my model judge and I need to evaluate the exact same dataset. In this case the model judge reviews tags, so I need to produce a common set of tags for the judge and I to review. And I have just the perfect dataset.\n\nMy evaluation from before contains a collection of reviews and tags.\n\nBecause I ran this evaluation in a test, Xcode generated an attachment containing all the of evaluation data that was generated. I can retrieve that attachment and extract summary and tag pairs. Now, with the summary and tag pairs extracted, I need to add my ratings. After that, I can pass the contents of this file as the input to my evaluation.\n\nNext, I need to capture the subject of my evaluation. Normally, the subject method is for calling API related to your feature, but since the generated model responses are part of our dataset, we can simply return the already generated tags. Now, I need to define my evaluators. As you might have guessed, my evaluator is the exact same model judge evaluator as in our book tags evaluation. This is where the judge provides its rating.\n\nFinally, I need to aggregate my results.\n\nHere is where we compare my ratings against the judge's. To do that, we need to calculate Cohen's kappa, which I can do that with a custom aggregation method. In addition to just Cohen's kappa, I'll also calculate the mean and standard deviation of each score dimension. This will be helpful to know if the scores of the judge are going up or down. Now, I can setup my test with my evaluation. For this test, I've set an expectation that my ratings and the judges ratings should produce an alignment score of 0.6. We've chosen this number because according to statisticians, an alignment score of 0.6 represents a meaningful level of agreement. Now, it's time to evaluate and get a baseline for our alignment. And then determine if my evaluation has passed my expectations.\n\nIt appears that the tests failed, which means my expectations weren't met. So once again, it's time to analyze the results in detail. I now know that my alignment scores didn't match my expectations. I can now go to the evaluation report to get more information. As I expected, the scores for both usefulness and relevance are quite low, meaning my model judge and I aren't aligned.\n\nNow, I want to get more information about how each sample in my dataset performed. To do that, I need to open the assistant and view the results in detail.\n\nAs I scanned through the results, this review of \"Frankenstein\" caught my eye. I can see a pretty large discrepancy between my rating of the tags and the judge's.\n\nIt seems like our judge thinks tags like self-help and self-improvement are relevant to the story. Also psychological is an okay search term, but probably not a term a user is likely to search for.\n\nI then started looking through other items in my dataset that had a similar problem and came across this review of \"The Ramakien\".\n\nThe judge and I agree that these collection of terms are helpful and relevant to the contents of the book.\n\nWhere we disagree is on usefulness.\n\nTerms like visual-dimension and quaint-dignity are way too specific.\n\nSo what's the problem here? I believe the model doesn't have enough knowledge on it's own to distinguish between a good tag and bad one. That's likely because the prompt of my judge doesn't provide enough context. To do that, I need to develop a new prompt. That way I can compare the alignment scores of my current prompt against my scores of my new prompt. Fortunately, in Xcode 27, we've made so you can compare the results of two evaluations against each other. When doing comparisons, some scientific thinking can go a long way. In a science experiment, you have two groups. The control group, which represents the baseline and the experimental group which represents the change we are trying to compare against. We can think of the two versions of our instructions in the same way, where the control group is represented by our base prompt and our experimental group is represented by our newly changed prompt. I now need to create a second version of our evaluation with an experimental prompt. For our baseline, we will use the same evaluation with the same model judge prompt as before. For our experimental prompt, I've written a more thorough description about how to judge the set of tags.\n\nIt starts by providing the judge context about the app and what it's about to be judging. Then it gives examples of good tags.\n\nAs well as ways to identify bad tags.\n\nWith both prompts written, I can add both evaluations to a test suite, which will run both evaluations. So, I'll run that suite now and compare the results. With the evaluation now finished I can return to the evaluation report.\n\nLooks like my alignment scores for relevance improved. While my alignment score for usefulness dropped considerably.\n\nBalancing tradeoffs like this are tricky so I need to think carefully how to proceed.\n\nBut before in depth analysis comes checking if we passed.\n\nAnd my test confirms the obvious, we haven't.\n\nAfter thinking about it further, I am going to keep this prompt change and focus the next round of iteration on improving my usefulness score. Therefore, the most effective way to review my results is to compare the usefulness scores of both judges against one another. To do that, I can use the new comparison view in the evaluation report.\n\nFrom the evaluation report I can open the comparison button and open my baseline evaluation.\n\nHere, I can review the scores of the two prompts side by side.\n\nOne thing that jumped out to me immediately is the discrepancy between usefulness scores of this review of \"Picture of Dorian Gray\". It seems to me that the model may be judging too harshly on usefulness. The usefulness column of the experimental evaluation seems to corroborate my guess.\n\nI noticed that all the scores are either a 3 or 2, which is way too harsh.\n\nI think what could help here is being more specific about how to grade each scoring dimension.\n\nTo do that, I'll need to make some changes to my experimental evaluation.\n\nBut before I can make changes to the experimental evaluation, I applied the new prompt from my experimental evaluation into my baseline. This ensures there's only one different variable.\n\nNamely, the changes to my scoring dimensions. For relevance, I've provided a slightly longer description which emphasizes the need for a genre tag.\n\nAnd here is the one for usefulness. Which emphasizes being more critical of overly specific tags.\n\nAnd once again I'll wait for my evaluation to run.\n\nAnd the scores both improved greatly over the baseline. It looks like these specific scoring dimensions are going to be a lot more helpful.\n\nBut, we've still not quite hit our alignment goals. So now, I need to do another comparison to see where we might be able to make improvements. To analyze further, I've gone back to the experimental evaluation. I want to review the results in detail so I'll bring up the assistant view. Thumbing through the results brought me to the review of \"Moby Dick\".\n\nMy relevance score is starting to align.\n\nBut my usefulness score could still use some work.\n\nWhile some results are looking promising, others are still way off. This review of \"Frankenstein\" continues to give our judge trouble.\n\nWhat I think our judge needs now is some examples of the way I judge things, which should give it a pattern for how to judge according to my scale.\n\nThat means we need another round of hill-climbing.\n\nI've already added the new score dimensions to my baseline evaluation. Now, I've reworked my main judge prompt to give it more detail about the goal of the tag generation feature to help ground the model in the problem space.\n\nFrom there, I've written out a number of examples for the model to use as a guideline for reviewing. I've made sure to only give the model a few examples. By giving it a longer list I am prone to overfit the alignment score, which would make it hard to tell if my judge is actually aligned with me. Now that it's a fair comparison, I need to run my evaluation and view the results. And now finally my scores are over my expected value! Which means I've finally passed and can exit out of the loop! This now means I can be confident that when my model judge provides ratings, I can confidently say that the tags are good or bad according my standards. That means I can now put my judge to work on evaluating Book Tracker's Book Tagging Service. So far we've seen how to hill climb on prompts, making them incrementally better and better, now I'd like to show you how to improve your feature through something other than your prompts.\n\nTo generate its tags, Book Tracker uses the on-device model. We use it because readers tend to be in all kinds of places when cataloging books, so using the on-device model ensures they can generate tags no matter where they are.\n\nWhat I want to do is give the model some more context about the book it's generating tags for. I think the additional context will help the model generate more relevant and useful tags.\n\nBetter still, Book Tracker already has the data needed for this because we store the author's name and book title when they write their review. So, to help the tag generator, I've created a tool to get additional information on the book, which provides the book title and author if they are available. Adding this tool is a form of hill-climbing because we are attempting to improve the quality of our feature through an incremental change.\n\nFor this evaluation we will use the book tagging Evaluation, now with an improved model judge.\n\nBut I need a way to compare the quality of my feature without the tool to the quality of my feature with it. So to do that, I'll need to make a change to Book Tagging Service BookTaggingService now takes a list of tools as input. I also set the default to an empty array so my existing evaluation won't need any changes. But now I need to write a new evaluation to compare the service with the tool to the service without the tool.\n\nHere is the new evaluation I wrote. It's exactly the same as the other evaluation. The only difference is I now pass my new lookup tool in the tools array.\n\nSo all I have to do is define two instances of my evaluation. One without the tool and one with it.\n\nAnd now, let's evaluate it and determine if I'm ready to ship.\n\nWell, my service which uses tools met all my expectations, so things are looking good. But, my dataset for Book Tracker contains only 13 book and review pairs, that doesn't cover the wide variety of books and reviews a user might submit for tagging.\n\nIn addition, I was looking at the results of the evaluation of my service with the tool. I can see that the service with the tool is performing better, however it does seem like my tool isn't being called in all the places I think it needs to. What I really need is a way to tell whether or not my tool has been called in the right situations. Fortunately, the Evaluations framework can help with both of those problems. To learn more about our APIs for evaluating tool usage and generating comprehensive datasets, take a look at the \"Create robust evaluations for agentic apps\" video. There, you'll learn about tool call Evaluators and how to use the Sample Generator API to test the wide variety of uses cases your app might see. Before we wrap up, I'd like to recap what we covered today.\n\nHill-climbing works best when you focus on making one change at a time. To do this, treat every iteration of the loop like a science experiment.\n\nBeing able to isolate your changes will help you to understand how each part of your feature contributes to the overall quality.\n\nKnowing how each part works individually will also help you to know where you might need to make changes to resolve a bug or unwanted pattern later down the line.\n\nSecond, this process takes time. Not every change you make will result in positive change. However, failed experiments tell you just as much as successful ones.\n\nThird, good experiments require creativity. In an intelligent feature there are so many things you can change.\n\nIn your feature you can change the instructions, the tools, as well as the model or models you use to generate responses.\n\nOn the evaluation side you can change the dataset, aggregation methods, and even the evaluators themselves. Everything is fair game. Make sure to consider all of these when thinking about how to hill climb.\n\nFinally, watch out for drift. It can feel a bit meta to evaluate your evaluators but a well tuned model evaluator will save you time in the long run. Models can generate ratings much faster than humans can. So by keeping them aligned, you get useful signal as your dataset grows to cover more and more use cases.\n\nIf you want to learn more about what we've covered here today, you can review the Book Tracker app I've been using as well as the evaluations for aligning the model judge. You can also get a comprehensive rundown of all our new APIs on the developer documentation website. Thank you for taking the time to learn about how to improve your evaluation scores by hill-climbing. Your dedication will pay off as you deliver high quality experiences to your users. Thanks for watching and happy hill-climbing!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "HI! My name is Marcus, a manager on the Evaluations framework team."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "I'm excited to show you how to use Evaluations to improve your intelligence-powered feature. As you probably know by now, using AI in your app is a powerful way to provide new levels of personalization to your users. This technology can add a level of depth to your app that was not previously possible with traditional software. However, it's also a challenge to know whether or not your intelligence-powered feature behaves as you'd expect in all cases. To help with this, we're releasing the Evaluations framework to provide you with the tools you need to ship with confidence. Shipping with confidence takes more than just a framework. The Evaluations framework also allows you to hill climb, which is a process of iteratively improving the quality of your feature using the scores of your evaluation as a guide. Hill-climbing starts with development, that is making some change you want to measure against your existing feature."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "Once all your changes are made, you then need to run the evaluation. And see if the results have passed your expectations."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "From there, you analyze the results to understand how your feature could be further improved."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "Leveraging the hill-climbing process is a great way to systematically improve your feature, but effective hill-climbing takes a little bit more than just following the loop. It also takes a little bit of… Science! So, in this video, I'll walk you through how to improve prompts by following the hill-climbing loop, while incorporating some scientific thinking along the way."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "Next, I'll walk you through how to conduct comparative Evaluations to make the process of hill-climbing easier. And finally, we'll go beyond changing prompts, by improving other aspects of an intelligence-powered feature."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "But, before we go any further, this video is about the process of hill-climbing an existing evaluation. That means you've already written the foundations of an evaluation pipeline, which provides a wholistic understanding of the strengths and weaknesses of your intelligence-powered feature."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "If you're unfamiliar with how to do that, go check out our other video, \"Meet the Evaluations framework\". It covers everything you need to know in order to build a great evaluation pipeline."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "With that covered, let's get started."
+      },
+      {
+        "timestamp": "2:31",
+        "text": "In the \"Meet the Evaluations framework\" video we introduced you to Book Tracker. In case you forgot, Book Tracker allows readers to catalog and review books."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "Recently, I've been reading a lot of classics, so I've added the books to my catalog. In fact, I just finished reading \"Treasure Island\"! It's such a thought-provoking read that covers the tension between loyalty and betrayal."
+      },
+      {
+        "timestamp": "2:54",
+        "text": "One of Book Tracker's new features is a tagging service, which uses a model to generate tags based on the readers review. While the tags for this review cover the general themes of the book, I feel like something is missing. I would have expected to see tags like \"tense\" or \"morally grey\", which speak to the themes of the story. The tags generated for \"Little Women\" had a similar problem. Tags like poignant has more to do with how the reader felt than the contents of the book. Emotion in book reviews is great, but it should not make it into the list of tags. Also, a tag like quiet-steadiness, which is pulled directly from the review, isn't going to be a very useful tag when I want to search my library later."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "It seems like Book Tracker's tag generator isn't as good as I think it could be."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Fortunately, when my colleagues wrote this feature, they wrote an Evaluation, which measures the tags against a set of criteria."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "And here is my Evaluation for Book Tracker's book tags. I'm particularly interested in how we are judging the quality of my tags so I'll scroll down and take a look."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "The qualitative aspects of my app are captured by the score dimensions type."
+      },
+      {
+        "timestamp": "4:10",
+        "text": "Relevance tracks the how well the tags represent information about the book's plot, theme, or other relevant information. Usefulness, measures how good the tags are as search terms."
+      },
+      {
+        "timestamp": "4:24",
+        "text": "The ModelJudgeEvaluator uses the score dimensions and a prompt to generate a score for each set of tags."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "My plan is to add these two books to my Evaluation, and review the tags I get back."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "It will also be a good opportunity to see how my ratings stack up against the ratings of my model judge."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "Wanting to improve some part of an intelligence powered feature is how the hill-climbing process starts. So, to start the loop you begin in the development phase. Here, you make any changes you need to feature as well as your Evaluation."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "In this case, I'll add my review of \"Treasure Island\" to my Evaluation dataset. And I've done the same thing for \"Little Women\"."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "With those two entries now in my dataset, I now want to run my Evaluation and see what tags the model produces and how the judge scores them."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "But, to get there we need to first ask if the Evaluation we ran met our expectations."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "As a reminder, your expectations can be defined using Swift Testing's expect macro."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "That way, you can tell if your expectations are met by whether or not your tests pass."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "In this case, my Evaluation met all of my expectations; however, because I know the tags aren't as good as I'd like them to be, I need to investigate further."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "And that brings us to the analyze phase."
+      },
+      {
+        "timestamp": "5:55",
+        "text": "Xcode's new evaluations report gives me in depth information about my last Evaluation run."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "To see more details I can click on my BookTaggingEvaluation run."
+      },
+      {
+        "timestamp": "6:07",
+        "text": "This brings up the Evaluation detail view."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "On the top are our aggregate metric charts."
+      },
+      {
+        "timestamp": "6:14",
+        "text": "And below is our table of results."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "What I'd like to do now is compare the response of the model to the list of expected tags I generated before. I can do that by opening up the Assistant Editor."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "And now I can see detailed information about the tags generated for each item in my dataset."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "I want to focus on the difference between what the model generated and what I expected."
+      },
+      {
+        "timestamp": "6:41",
+        "text": "I can review that in detail in this table. The collection of terms isn't bad but it leaves out a number of key details from the story which the user might want to search for."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "Because of that, I would have scored these tags a 4 for relevance and a 2 for usefulness."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "My model judge also gave the tags a relevance score of 4 which is great, but it also gave usefulness a score of 4, which isn't right."
+      },
+      {
+        "timestamp": "7:10",
+        "text": "I should see if I feel the same way about the tags for my review of \"Little Women\"."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "The tags don't really contain all the useful information that I'd expect."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "And it turns out I disagree with the judge's scores here as well."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "Once again, I think relevance should be a 4 and usefulness should be a 2."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "Doing this analysis has made it clear to me that there is a discrepancy between how my model judge and I rate tags."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "This discrepancy between model and human is known as drift, and it is a problem faced by all developers trying to evaluate intelligent features. Here's why. Say I have an evaluation with 10 samples. I then ask a model judge and a person to rate each sample."
+      },
+      {
+        "timestamp": "7:59",
+        "text": "The model and person then give their ratings on a scale from 1 to 4, and at the end we average those scores to build an aggregate."
+      },
+      {
+        "timestamp": "8:08",
+        "text": "If the model and the human tend to disagree in their ratings, then their average scores will diverge from one another, hence the name drift."
+      },
+      {
+        "timestamp": "8:17",
+        "text": "As your data set continues to grow and grow the drift will get wider and wider. At which point, it'll be hard for you to know whether or not your feature is being properly evaluated."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "To help with this, you can align your judge to a person's expert opinion. Now that we know drift is a problem, we need a way to know how much our model judge has drifted from our expert ratings."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "One way to accomplish this would be to line up the ratings of the expert and mark where the two match. You can then use this to generate a percentage. This percentage is called accuracy, and it is a great way to measure alignment if every value in your scoring scale is equally likely to appear. However, it's more likely that your dataset will contain values that have an uneven distribution of scores. Think about it, datasets often contain examples of high quality output."
+      },
+      {
+        "timestamp": "9:11",
+        "text": "Therefore it is often the case that a human rater is likely to rate items in the dataset with higher scores."
+      },
+      {
+        "timestamp": "9:19",
+        "text": "If a model then happens to judge your smaller dataset with high scores, it may seem like the two are aligned. But then when unleashed on a larger dataset with more variations in scores, it's tendency to score high will still result in drift."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "So we need an alternative to accuracy, one that accounts for the weighted nature of our dataset and the chance that the model might guess the right answer. Fortunately there is a solution! Cohen's kappa coefficient is a mathematical formula made popular by statistician and psychologist Jacob Cohen in 1960."
+      },
+      {
+        "timestamp": "9:55",
+        "text": "Cohen's kappa measures alignment, that is how often do two raters agree."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "To do that, we need to know what percentage of the time the raters agreed, better known as accuracy."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "And this is exactly what the accuracy metric from before was calculating. But now we need to calculate a new value. Coincidence, which represents the chance that one rater might get lucky and happen to align."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "This luck is then weighted based on the chances certain answers are more likely to appear. So now the question is, how do you calculate it? To calculate alignment, we start with our accuracy score."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "From the accuracy score we subtract the possibility of two raters randomly agreeing."
+      },
+      {
+        "timestamp": "10:42",
+        "text": "Finally, we divide the difference by the inverse of random agreement, namely the chance that the two raters intentionally agreed."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "The result of that gives us alignment."
+      },
+      {
+        "timestamp": "10:55",
+        "text": "Cohen's kappa is a powerful way to measure the alignment between a model judge and your expert opinion. I can use this to hill climb the alignment scores between me and my model judge."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "So now, we start back at the beginning of hill-climbing loop in the develop phase."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "To do this, I am going to set up an evaluation to compare my ratings against my judge and produce and alignment score. To do that, I need to write an evaluation, which is made up of four components. First is my dataset."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "Then the subject of my evaluation. Then, I need to define my evaluators. And finally, I need to aggregate my results. So let's start with the dataset."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "For this evaluation to work properly, both my model judge and I need to evaluate the exact same dataset. In this case the model judge reviews tags, so I need to produce a common set of tags for the judge and I to review. And I have just the perfect dataset."
+      },
+      {
+        "timestamp": "11:55",
+        "text": "My evaluation from before contains a collection of reviews and tags."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "Because I ran this evaluation in a test, Xcode generated an attachment containing all the of evaluation data that was generated. I can retrieve that attachment and extract summary and tag pairs. Now, with the summary and tag pairs extracted, I need to add my ratings. After that, I can pass the contents of this file as the input to my evaluation."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "Next, I need to capture the subject of my evaluation. Normally, the subject method is for calling API related to your feature, but since the generated model responses are part of our dataset, we can simply return the already generated tags. Now, I need to define my evaluators. As you might have guessed, my evaluator is the exact same model judge evaluator as in our book tags evaluation. This is where the judge provides its rating."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "Finally, I need to aggregate my results."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "Here is where we compare my ratings against the judge's. To do that, we need to calculate Cohen's kappa, which I can do that with a custom aggregation method. In addition to just Cohen's kappa, I'll also calculate the mean and standard deviation of each score dimension. This will be helpful to know if the scores of the judge are going up or down. Now, I can setup my test with my evaluation. For this test, I've set an expectation that my ratings and the judges ratings should produce an alignment score of 0.6. We've chosen this number because according to statisticians, an alignment score of 0.6 represents a meaningful level of agreement. Now, it's time to evaluate and get a baseline for our alignment. And then determine if my evaluation has passed my expectations."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "It appears that the tests failed, which means my expectations weren't met. So once again, it's time to analyze the results in detail. I now know that my alignment scores didn't match my expectations. I can now go to the evaluation report to get more information. As I expected, the scores for both usefulness and relevance are quite low, meaning my model judge and I aren't aligned."
+      },
+      {
+        "timestamp": "14:21",
+        "text": "Now, I want to get more information about how each sample in my dataset performed. To do that, I need to open the assistant and view the results in detail."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "As I scanned through the results, this review of \"Frankenstein\" caught my eye. I can see a pretty large discrepancy between my rating of the tags and the judge's."
+      },
+      {
+        "timestamp": "14:43",
+        "text": "It seems like our judge thinks tags like self-help and self-improvement are relevant to the story. Also psychological is an okay search term, but probably not a term a user is likely to search for."
+      },
+      {
+        "timestamp": "14:57",
+        "text": "I then started looking through other items in my dataset that had a similar problem and came across this review of \"The Ramakien\"."
+      },
+      {
+        "timestamp": "15:05",
+        "text": "The judge and I agree that these collection of terms are helpful and relevant to the contents of the book."
+      },
+      {
+        "timestamp": "15:11",
+        "text": "Where we disagree is on usefulness."
+      },
+      {
+        "timestamp": "15:14",
+        "text": "Terms like visual-dimension and quaint-dignity are way too specific."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "So what's the problem here? I believe the model doesn't have enough knowledge on it's own to distinguish between a good tag and bad one. That's likely because the prompt of my judge doesn't provide enough context. To do that, I need to develop a new prompt. That way I can compare the alignment scores of my current prompt against my scores of my new prompt. Fortunately, in Xcode 27, we've made so you can compare the results of two evaluations against each other. When doing comparisons, some scientific thinking can go a long way. In a science experiment, you have two groups. The control group, which represents the baseline and the experimental group which represents the change we are trying to compare against. We can think of the two versions of our instructions in the same way, where the control group is represented by our base prompt and our experimental group is represented by our newly changed prompt. I now need to create a second version of our evaluation with an experimental prompt. For our baseline, we will use the same evaluation with the same model judge prompt as before. For our experimental prompt, I've written a more thorough description about how to judge the set of tags."
+      },
+      {
+        "timestamp": "16:38",
+        "text": "It starts by providing the judge context about the app and what it's about to be judging. Then it gives examples of good tags."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "As well as ways to identify bad tags."
+      },
+      {
+        "timestamp": "16:51",
+        "text": "With both prompts written, I can add both evaluations to a test suite, which will run both evaluations. So, I'll run that suite now and compare the results. With the evaluation now finished I can return to the evaluation report."
+      },
+      {
+        "timestamp": "17:08",
+        "text": "Looks like my alignment scores for relevance improved. While my alignment score for usefulness dropped considerably."
+      },
+      {
+        "timestamp": "17:15",
+        "text": "Balancing tradeoffs like this are tricky so I need to think carefully how to proceed."
+      },
+      {
+        "timestamp": "17:21",
+        "text": "But before in depth analysis comes checking if we passed."
+      },
+      {
+        "timestamp": "17:25",
+        "text": "And my test confirms the obvious, we haven't."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "After thinking about it further, I am going to keep this prompt change and focus the next round of iteration on improving my usefulness score. Therefore, the most effective way to review my results is to compare the usefulness scores of both judges against one another. To do that, I can use the new comparison view in the evaluation report."
+      },
+      {
+        "timestamp": "17:50",
+        "text": "From the evaluation report I can open the comparison button and open my baseline evaluation."
+      },
+      {
+        "timestamp": "17:57",
+        "text": "Here, I can review the scores of the two prompts side by side."
+      },
+      {
+        "timestamp": "18:02",
+        "text": "One thing that jumped out to me immediately is the discrepancy between usefulness scores of this review of \"Picture of Dorian Gray\". It seems to me that the model may be judging too harshly on usefulness. The usefulness column of the experimental evaluation seems to corroborate my guess."
+      },
+      {
+        "timestamp": "18:20",
+        "text": "I noticed that all the scores are either a 3 or 2, which is way too harsh."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "I think what could help here is being more specific about how to grade each scoring dimension."
+      },
+      {
+        "timestamp": "18:33",
+        "text": "To do that, I'll need to make some changes to my experimental evaluation."
+      },
+      {
+        "timestamp": "18:38",
+        "text": "But before I can make changes to the experimental evaluation, I applied the new prompt from my experimental evaluation into my baseline. This ensures there's only one different variable."
+      },
+      {
+        "timestamp": "18:50",
+        "text": "Namely, the changes to my scoring dimensions. For relevance, I've provided a slightly longer description which emphasizes the need for a genre tag."
+      },
+      {
+        "timestamp": "19:00",
+        "text": "And here is the one for usefulness. Which emphasizes being more critical of overly specific tags."
+      },
+      {
+        "timestamp": "19:07",
+        "text": "And once again I'll wait for my evaluation to run."
+      },
+      {
+        "timestamp": "19:11",
+        "text": "And the scores both improved greatly over the baseline. It looks like these specific scoring dimensions are going to be a lot more helpful."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "But, we've still not quite hit our alignment goals. So now, I need to do another comparison to see where we might be able to make improvements. To analyze further, I've gone back to the experimental evaluation. I want to review the results in detail so I'll bring up the assistant view. Thumbing through the results brought me to the review of \"Moby Dick\"."
+      },
+      {
+        "timestamp": "19:42",
+        "text": "My relevance score is starting to align."
+      },
+      {
+        "timestamp": "19:46",
+        "text": "But my usefulness score could still use some work."
+      },
+      {
+        "timestamp": "19:50",
+        "text": "While some results are looking promising, others are still way off. This review of \"Frankenstein\" continues to give our judge trouble."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "What I think our judge needs now is some examples of the way I judge things, which should give it a pattern for how to judge according to my scale."
+      },
+      {
+        "timestamp": "20:08",
+        "text": "That means we need another round of hill-climbing."
+      },
+      {
+        "timestamp": "20:12",
+        "text": "I've already added the new score dimensions to my baseline evaluation. Now, I've reworked my main judge prompt to give it more detail about the goal of the tag generation feature to help ground the model in the problem space."
+      },
+      {
+        "timestamp": "20:26",
+        "text": "From there, I've written out a number of examples for the model to use as a guideline for reviewing. I've made sure to only give the model a few examples. By giving it a longer list I am prone to overfit the alignment score, which would make it hard to tell if my judge is actually aligned with me. Now that it's a fair comparison, I need to run my evaluation and view the results. And now finally my scores are over my expected value! Which means I've finally passed and can exit out of the loop! This now means I can be confident that when my model judge provides ratings, I can confidently say that the tags are good or bad according my standards. That means I can now put my judge to work on evaluating Book Tracker's Book Tagging Service. So far we've seen how to hill climb on prompts, making them incrementally better and better, now I'd like to show you how to improve your feature through something other than your prompts."
+      },
+      {
+        "timestamp": "21:26",
+        "text": "To generate its tags, Book Tracker uses the on-device model. We use it because readers tend to be in all kinds of places when cataloging books, so using the on-device model ensures they can generate tags no matter where they are."
+      },
+      {
+        "timestamp": "21:41",
+        "text": "What I want to do is give the model some more context about the book it's generating tags for. I think the additional context will help the model generate more relevant and useful tags."
+      },
+      {
+        "timestamp": "21:54",
+        "text": "Better still, Book Tracker already has the data needed for this because we store the author's name and book title when they write their review. So, to help the tag generator, I've created a tool to get additional information on the book, which provides the book title and author if they are available. Adding this tool is a form of hill-climbing because we are attempting to improve the quality of our feature through an incremental change."
+      },
+      {
+        "timestamp": "22:21",
+        "text": "For this evaluation we will use the book tagging Evaluation, now with an improved model judge."
+      },
+      {
+        "timestamp": "22:28",
+        "text": "But I need a way to compare the quality of my feature without the tool to the quality of my feature with it. So to do that, I'll need to make a change to Book Tagging Service BookTaggingService now takes a list of tools as input. I also set the default to an empty array so my existing evaluation won't need any changes. But now I need to write a new evaluation to compare the service with the tool to the service without the tool."
+      },
+      {
+        "timestamp": "22:56",
+        "text": "Here is the new evaluation I wrote. It's exactly the same as the other evaluation. The only difference is I now pass my new lookup tool in the tools array."
+      },
+      {
+        "timestamp": "23:07",
+        "text": "So all I have to do is define two instances of my evaluation. One without the tool and one with it."
+      },
+      {
+        "timestamp": "23:16",
+        "text": "And now, let's evaluate it and determine if I'm ready to ship."
+      },
+      {
+        "timestamp": "23:21",
+        "text": "Well, my service which uses tools met all my expectations, so things are looking good. But, my dataset for Book Tracker contains only 13 book and review pairs, that doesn't cover the wide variety of books and reviews a user might submit for tagging."
+      },
+      {
+        "timestamp": "23:40",
+        "text": "In addition, I was looking at the results of the evaluation of my service with the tool. I can see that the service with the tool is performing better, however it does seem like my tool isn't being called in all the places I think it needs to. What I really need is a way to tell whether or not my tool has been called in the right situations. Fortunately, the Evaluations framework can help with both of those problems. To learn more about our APIs for evaluating tool usage and generating comprehensive datasets, take a look at the \"Create robust evaluations for agentic apps\" video. There, you'll learn about tool call Evaluators and how to use the Sample Generator API to test the wide variety of uses cases your app might see. Before we wrap up, I'd like to recap what we covered today."
+      },
+      {
+        "timestamp": "24:29",
+        "text": "Hill-climbing works best when you focus on making one change at a time. To do this, treat every iteration of the loop like a science experiment."
+      },
+      {
+        "timestamp": "24:38",
+        "text": "Being able to isolate your changes will help you to understand how each part of your feature contributes to the overall quality."
+      },
+      {
+        "timestamp": "24:46",
+        "text": "Knowing how each part works individually will also help you to know where you might need to make changes to resolve a bug or unwanted pattern later down the line."
+      },
+      {
+        "timestamp": "24:56",
+        "text": "Second, this process takes time. Not every change you make will result in positive change. However, failed experiments tell you just as much as successful ones."
+      },
+      {
+        "timestamp": "25:08",
+        "text": "Third, good experiments require creativity. In an intelligent feature there are so many things you can change."
+      },
+      {
+        "timestamp": "25:17",
+        "text": "In your feature you can change the instructions, the tools, as well as the model or models you use to generate responses."
+      },
+      {
+        "timestamp": "25:27",
+        "text": "On the evaluation side you can change the dataset, aggregation methods, and even the evaluators themselves. Everything is fair game. Make sure to consider all of these when thinking about how to hill climb."
+      },
+      {
+        "timestamp": "25:41",
+        "text": "Finally, watch out for drift. It can feel a bit meta to evaluate your evaluators but a well tuned model evaluator will save you time in the long run. Models can generate ratings much faster than humans can. So by keeping them aligned, you get useful signal as your dataset grows to cover more and more use cases."
+      },
+      {
+        "timestamp": "26:03",
+        "text": "If you want to learn more about what we've covered here today, you can review the Book Tracker app I've been using as well as the evaluations for aligning the model judge. You can also get a comprehensive rundown of all our new APIs on the developer documentation website. Thank you for taking the time to learn about how to improve your evaluation scores by hill-climbing. Your dedication will pay off as you deliver high quality experiences to your users. Thanks for watching and happy hill-climbing!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -88,6 +587,68 @@
       "code": "@Suite(\"Book Tag Evaluations\")\n  struct BookTagEvaluationTests {\n      static let evaluation = BookTaggingEvaluation()\n      static let lookupEvaluation = BookTaggingWithLookupEvaluation()\n\n      @Test(\"Book Tag Evaluations\", .evaluates(evaluation, info: evaluationInfo))\n      func evaluateBookTagging() async throws {\n          let result = EvaluationContext.current.result\n          let rangeMetric = BookTagEvaluationTests.evaluation.tagCount\n          let dupeMetric = BookTagEvaluationTests.evaluation.noDuplicates\n          #expect(result.aggregateValue(.mean(of: rangeMetric)) >= 0.8)\n          #expect(result.aggregateValue(.mean(of: dupeMetric)) == 1)\n      }\n\n      @Test(\"Book Tag Evaluations (with BookLookupTool)\", .evaluates(lookupEvaluation, info: lookupEvaluationInfo))\n      func evaluateBookTaggingWithLookup() async throws {\n          let result = EvaluationContext.current.result\n          let rangeMetric = BookTagEvaluationTests.lookupEvaluation.tagCount\n          let dupeMetric = BookTagEvaluationTests.lookupEvaluation.noDuplicates\n          #expect(result.aggregateValue(.mean(of: rangeMetric)) >= 0.8)\n          #expect(result.aggregateValue(.mean(of: dupeMetric)) == 1)\n      }\n  }"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:42"
+    },
+    {
+      "timestamp": "2:42",
+      "title": "BookTracker's tagging problem",
+      "duration": "2:45"
+    },
+    {
+      "timestamp": "5:27",
+      "title": "Analyzing the evaluation results",
+      "duration": "2:59"
+    },
+    {
+      "timestamp": "8:26",
+      "title": "Drift between judge and human",
+      "duration": "1:11"
+    },
+    {
+      "timestamp": "9:37",
+      "title": "Measuring drift with Cohen's kappa",
+      "duration": "2:49"
+    },
+    {
+      "timestamp": "12:26",
+      "title": "Building a judge alignment evaluation",
+      "duration": "2:50"
+    },
+    {
+      "timestamp": "15:16",
+      "title": "Analyzing alignment failures",
+      "duration": "2:00"
+    },
+    {
+      "timestamp": "17:16",
+      "title": "Comparative evaluation: control vs experimental",
+      "duration": "1:56"
+    },
+    {
+      "timestamp": "19:12",
+      "title": "Refining the scoring dimensions",
+      "duration": "2:11"
+    },
+    {
+      "timestamp": "21:23",
+      "title": "Adding few-shot examples to the judge",
+      "duration": "2:15"
+    },
+    {
+      "timestamp": "23:38",
+      "title": "Going beyond prompts: adding a tool",
+      "duration": "3:39"
+    },
+    {
+      "timestamp": "27:17",
+      "title": "Next steps",
+      "duration": "-1:-36"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -106,5 +667,5 @@
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/335/4/a464d330-6aa2-456d-9a07-eae997aef08c/downloads/wwdc2026-335_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/335/4/a464d330-6aa2-456d-9a07-eae997aef08c/downloads/wwdc2026-335_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:32:23.340Z"
+  "extractedAt": "2026-10-17T18:42:16.616Z"
 }

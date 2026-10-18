@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110931/",
   "title": "WWDC22 Day 3 recap",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,68 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Bass-heavy electronic music ♪ Now that I have your attention, here's your day three status report.\n\n♪ We started our training with Lynn exploring new ways to design shortcuts for apps.\n\n- You're well on your way to an amazing App Shortcuts experience.\n\n- Then we discovered how to make desktop-class iPad apps with Mohammed.\n\n- This allows apps to express the layout that's most appropriate to their content, while bringing more functionality to the forefront of the UI.\n\n- Then found out how to take advantage of the latest iOS camera capture features.\n\n- This app has one more trick up its sleeve.\n\nI can tap around and point a spotlight at different objects in the scene.\n\n- We also showed off powerful tools to create cool new layouts and views for apps with SwiftUI.\n\n- SwiftUI provides a rich set of building blocks that you use to compose your app's interface.\n\n- Tomorrow's reports look something like this.\n\n♪ - Go get 'em, tiger.\n\n- That's all for now.\n\nAwait further instructions.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass-heavy electronic music ♪ Now that I have your attention, here's your day three status report."
+      },
+      {
+        "timestamp": "0:07",
+        "text": "♪ We started our training with Lynn exploring new ways to design shortcuts for apps."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "- You're well on your way to an amazing App Shortcuts experience."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "- Then we discovered how to make desktop-class iPad apps with Mohammed."
+      },
+      {
+        "timestamp": "0:20",
+        "text": "- This allows apps to express the layout that's most appropriate to their content, while bringing more functionality to the forefront of the UI."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "- Then found out how to take advantage of the latest iOS camera capture features."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "- This app has one more trick up its sleeve."
+      },
+      {
+        "timestamp": "0:33",
+        "text": "I can tap around and point a spotlight at different objects in the scene."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "- We also showed off powerful tools to create cool new layouts and views for apps with SwiftUI."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "- SwiftUI provides a rich set of building blocks that you use to compose your app's interface."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "- Tomorrow's reports look something like this."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "♪ - Go get 'em, tiger."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "- That's all for now."
+      },
+      {
+        "timestamp": "1:13",
+        "text": "Await further instructions."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -111,5 +170,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110933"
     }
   ],
-  "extractedAt": "2026-10-11T16:41:06.832Z"
+  "extractedAt": "2026-10-17T18:51:04.286Z"
 }

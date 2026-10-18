@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10131/",
   "title": "Meet declarative device management",
-  "speakers": [],
   "duration": "",
   "topics": [
     "App Store, Distribution & Marketing",
@@ -12,8 +11,784 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪ ♪ Melissa Nierle: I'm Melissa Nierle, a software engineer on the Enterprise and Education Technologies team.\n\nAt Apple, we're always working to create the best device management features and functionality to equip our enterprise partners and education organizations with the tools they need to connect their team members and students.\n\nThe backbone of all of these management features is the MDM protocol itself.\n\nThe protocol is a well-established, heavily used solution provided directly within iOS, macOS, and tvOS and has become a standard across mobile device management.\n\nAnd while we add features to it each year, we also continually evaluate the protocol against our device management goals and evolve it to meet the dynamic needs of MDM solution developers, admins, and users.\n\nToday, our MDM protocol can be described as an imperative and reactive protocol.\n\nEach management workflow takes time and multiple round trips between the device and server.\n\nThen any performance challenge is compounded when you manage a large number of devices across an organization.\n\nThis is an example of where we want to ensure our protocol is as performant and scalable as possible.\n\nAnd to achieve optimal performance and scalability, we've reenvisioned the MDM protocol itself.\n\nThe future of device management is declarative management; a transformative update to the protocol which brings policy management to the device.\n\nDeclarative management allows the device to be autonomous and proactive, freeing up the server to be lightweight, reactive, and subscribe to updates without constant polling.\n\nAn autonomous device reacts to its own state changes and then applies management logic to itself without prompting from the server.\n\nA proactive device has a status channel asynchronously reporting to the server when important state changes occur, avoiding the need for servers to poll devices.\n\nEnabling devices to be both autonomous and proactive is the foundation of declarative management and allows for increased performance and scalability.\n\nAnd the best part is, while it's a new paradigm, it's not a new protocol.\n\nWe've built this new declarative functionality right into our existing MDM protocol, starting with iOS devices.\n\nWe'll take a deep dive into the data model that powers the new declarative paradigm.\n\nThen later, we'll talk about integration with MDM.\n\nWe'll go through a specific example and learn how to get yourself started.\n\nLet's begin with the declarative data model.\n\nThere are three pillars to the declarative data model.\n\nDeclarations, which are payloads that the server defines and sends to devices; the status channel, which is a new channel of communication where the device proactively updates the server with new information about itself; and extensibility, so that, as Apple introduces new features to declarative management, your devices and servers handle it seamlessly.\n\nUnderstanding these three pillars will prepare you to incorporate declarative management into your MDM solution.\n\nLet's start with declarations.\n\nDeclarations represent the policy an organization wants to enforce on devices -- for example, accounts, settings, and restrictions.\n\nDeclarations can be created for policy that is common to all users, as well as policy that is specific to a single user or device.\n\nLet's examine the makeup of declarations.\n\nThe data representation for declarations is similar to profiles, where a declaration is also a dictionary with a set of keys and standard types for values.\n\nDeclarations, however, are serialized as JSON objects when sent over the network, instead of plists.\n\nAll declarations have three required properties: Type, Identifier and ServerToken.\n\nType defines which policy a configuration represents.\n\nThe Identifier key has a value that uniquely identifies the declaration within the set of all declarations sent to the device.\n\nTypically, this will be a UUID represented as a string.\n\nThe device uses this value when synchronizing declarations with the server.\n\nThe ServerToken key represents a unique revision of the declaration based on the Identifier key.\n\nThis key is also used when synchronizing declarations with the server.\n\nThe value is a string that must be different for each revision.\n\nIt could be a simple counter or a UUID string, as shown in the example.\n\nThe payload is a data-specific piece of the declaration, containing the keys and values pertinent to the declaration type.\n\nJust like with profile payloads, some keys may be required, and others may be optional.\n\nValues can be strings, numbers, booleans, arrays, or dictionaries and may be constrained in range -- like numbers one through ten -- or to a specific set of values like a string enumeration.\n\nThere are four types of declarations: configurations, assets, activations, and management.\n\nThe first type of declaration is a configuration.\n\nConfigurations represent the policies to be applied to the device -- for example, accounts, settings, and restrictions.\n\nConfigurations are similar to MDM's existing profile payloads.\n\nHere is an example of a configuration declaration that applies restrictions to the device passcode.\n\nThe standard keys -- Type, Identifier, and ServerToken -- are present, as required for all declarations.\n\nThe value of the Type identifies this as a passcode configuration type of declaration.\n\nThe Payload key contains the passcode policy data for the configuration.\n\nThe next type of declaration is an asset.\n\nAssets represent references to ancillary data needed by configurations.\n\nThis can be a shared item of large data or a personalized one.\n\nFor large data items, the asset declaration contains a URL that the device uses to fetch the actual asset data from a server.\n\nThis server could be your MDM server, or it could be a separate content delivery network server.\n\nServing assets from a separate content delivery network shifts the burden of supporting large network bandwidth to a service better suited for it.\n\nAssets can also be used to represent data specific to a user, such as their name, email address, passwords for accounts, and certificates.\n\nThis takes the per-user customized data out of configurations and moves it into smaller, dedicated asset-type declarations.\n\nAssets have a one-to-many relationship with configurations.\n\nFor example, one credential asset can be referenced by several account configurations, avoiding the need to replicate the same user information in each account configuration.\n\nThen, if the user credential needs to be updated, only that asset needs to be updated.\n\nAll the configurations referencing that asset remain unchanged, and the device updates the policy accordingly.\n\nThe ability to do incremental updates like this, for many configurations at a time, will improve the overall responsiveness of the device management system.\n\nLet's examine the makeup of an asset declaration.\n\nHere is an example of an asset declaration that defines a user identity -- essentially the contact information for a user.\n\nThe three required standard keys are present, and the value of Type defines this as a user identity asset declaration.\n\nThe Payload key contains the user identity properties of this asset.\n\nThe next type of declaration is an activation.\n\nActivations represent sets of configurations that the device will atomically apply.\n\nThis means all configurations in the set, along with any referenced assets, must be valid in order for all of them to be applied.\n\nIf any are invalid, the activation will fail to apply the associated policy.\n\nHere is an example of a simple activation that contains two configurations.\n\nThe three required declaration keys are present, and the payload contains the set of configurations to be atomically applied by the activation.\n\nConfigurations are referenced by their identifier key.\n\nThere is a many-to-many relationship between activations and configurations.\n\nActivations can refer to multiple configurations, and a configuration can have multiple activations reference it.\n\nThis many-to-many relationship allows for complex business logic to be handled autonomously by the device.\n\nActivations can include a predicate that determines when the activation state is active or inactive on a device.\n\nThe device will only process the configurations referenced by an activation if the predicate evaluates to true.\n\nAs an example, a predicate can declare that the particular activation is only active on a specific device type, such as an iPad.\n\nAnother example is wanting a set of policies to apply only to a particular version of the OS.\n\nThis allows the server to send all the declarations for any device states and lets the device itself determine which ones to apply, making the device even more autonomous.\n\nAs the device state changes, the activation predicates are reevaluated without intervention from the server.\n\nPolicy associated with the new device state will be applied and any outdated policy removed.\n\nThe device here becomes increasingly proactive.\n\nIn the absence of a predicate, the device will always process the configurations referenced by the activation.\n\nHere we have the activation example from before, but now there's a predicate present, indicating that this activation should only have its policy applied when the device is an iPad.\n\nThe last type of declaration is a management declaration.\n\nManagement declarations are used to convey overall management state to the device.\n\nThis includes a declaration describing details about the organization as well as a declaration that describes the capabilities of the server.\n\nThese declarations are helpful for conveying static information to the device.\n\nAnd those are the four types of declarations for applying organization policy to your devices.\n\nThe second pillar of the new declarative management data model is the status channel.\n\nGiven the way that declarations work, the declared state of the device may not match the actual state of the device at any point in time.\n\nFor instance, any declaration that requires user interaction will not apply until that action is taken.\n\nA good example of this is a passcode policy, where the user has to take action to create a new policy-compliant passcode for the device.\n\nTo add visibility into this device state transition, we've created the status channel.\n\nUpdates of the device state are sent in a status report to the server.\n\nThe server can subscribe to specific status items, so it only receives updates for the changes it cares about.\n\nStatus items are identified by key-paths, which consist of period-separated string tokens.\n\nStatus items can be used as expressions in activation predicates, as shown in the earlier activation predicate example.\n\nThe server subscribes to specific status items using status subscription configurations.\n\nUpon receiving this configuration, the device will send an initial status report for the subscribed status items, and then send a report if a subscribed item changes.\n\nThe status reports are incremental, so only the changed items are reported.\n\nThe status of declarations -- whether they are applied or not -- is always reported to the server when changed, without the need for the server to subscribe.\n\nLet's inspect a configuration that subscribes to specific status item updates.\n\nThis configuration subscribes to three status items representing the device's operating system version, type, and model.\n\nWhen this configuration is activated on the device, it will send the initial status report for each of the newly subscribed status items.\n\nStatus items are represented as a JSON object, nested by the hierarchical components of that corresponding key-path.\n\nIn this case, the device reports it is on iOS 14.5.\n\nWhen the user updates the software to the latest iOS version, the device will report the status change for the operating-system version item.\n\nThe server now detects that the device has been upgraded to iOS 15.\n\nThe third pillar of the declarative data model is extensibility.\n\nGiven the long life cycle of Apple products, it is essential to maintain compatibility between different versions of your MDM solution with Apple devices, especially as software updates and new hardware models are released.\n\nWith declarative management, both the device and server now advertise supported capabilities to each other.\n\nEach knows when it can start taking advantage of new features without having to hardcode software version or hardware dependencies.\n\nThe capabilities that the server and client both advertise includes a list of supported features representing both minor and major protocol updates.\n\nThe client also advertises supported payloads, which lists the full set of declarations and status items supported by the client.\n\nThe server's capabilities are sent to the device via a management declaration.\n\nWhen the server is upgraded, it synchronizes all new capabilities to the device just as it would any other type of declaration.\n\nThe device is immediately able to take advantage of the server's new features.\n\nThe client's capabilities are sent to the server as a specific status item any time capabilities change.\n\nThis way, the server can immediately start taking advantage of the device's new features and payloads.\n\nBuilding extensibility into the declarative data model ensures that declarative management is built for the present and the future.\n\nNow that you understand the data model, let's dig into how declarative management is seamlessly integrated within the MDM protocol.\n\nExisting MDM vendors can use declarative management features starting today.\n\nDeclarative management is integrated into the MDM protocol and utilizes it for managing the enrollment and unenrollment process and for handling the HTTP transport and device and user authentication.\n\nExisting and mature MDM products can smoothly transition to declarative management without a disruptive change to adopt a new protocol or server infrastructure.\n\nDeclarations and the status channel coexist with your already in-use MDM commands and profiles in an extensible way.\n\nThis allows you to gradually adopt the different features of declarative management without having to update all of your MDM workflows at once.\n\nFor example, a server could choose to only implement status subscriptions, effectively adding a status channel to the MDM protocol without having to adopt all of declarative management.\n\nWhen the device is unenrolled from MDM, all declarations are removed, and the device state is adjusted accordingly.\n\nImportantly, declarative management does not impact existing MDM behavior at all.\n\nActually, declarative management leverages existing MDM behaviors using an MDM command for activation and an MDM CheckIn request for synchronization and status reports.\n\nLet's zoom in on each of these next.\n\nA DeclarativeManagement command has been added to MDM.\n\nThis command serves two purposes.\n\nFirst, it activates the declarative management features on the device.\n\nPlease note, once turned on, declarative management cannot be turned off.\n\nHowever, the server can remove all declarations to effectively disable declarative management.\n\nSecond, the command can include a payload containing synchronization tokens that will initiate a synchronization flow if needed.\n\nThere is also a new DeclarativeManagement CheckIn request type used by the device when synchronizing declarations and to send status reports to the server.\n\nHere is an example of the new CheckIn request type.\n\nThe MessageType key is set to the new DeclarativeManagement value.\n\nThe endpoint key is set to a value indicating that the client is making a request to retrieve the declaration manifest data from the server.\n\nSome requests -- such as this status report -- can also include Base64-encoded data.\n\nWhen using the CheckIn request to synchronize declarations, there will be a response from the server.\n\nThere are two types of responses: a manifest, which lists the identifier and server token properties of all declarations that the server defines; and single declarations for the device to apply.\n\nNow that you've learned how to activate declarative management and synchronize declarations with a CheckIn request, let's talk about how you can migrate your policies gradually from profiles to declarations.\n\nThere's a declaration type specifically for sending and installing profiles as configurations.\n\nThis enables you to utilize the full suite of MDM profiles to immediately take advantage of declarative management by shifting profile-based policy logic to the device.\n\nHere is an example of a profile configuration.\n\nThe profile is referenced via URL.\n\nWhen this configuration is activated, the profile is fetched from the URL and installed on the device.\n\nWe've taken these steps to make declarative management easy to adopt today with the iOS 15 beta.\n\nNow let's go through an example of how declarative management interacts with the server.\n\nFirst, we activate declarative management.\n\nThis starts with the device already enrolled in MDM.\n\nThe server sends a push notification to the device.\n\nThe device responds to the push in the usual way, by sending a ServerURL endpoint request with its status set to Idle.\n\nThe server then responds with the DeclarativeManagement command.\n\nUpon receipt, the device activates declarative management.\n\nAfter processing the DeclarativeManagement command, the device sends an Acknowledged status back to the server.\n\nThen if the server has no more commands, it will return an empty response.\n\nThe device then starts its declarative management synchronization process; let's go through that next.\n\nThe device first sends a CheckIn request with the endpoint key set to declaration-items.\n\nThe server responds with a manifest containing declaration metadata.\n\nThe device then compares the items in the manifest to the set of declarations it previously received from the server.\n\nThrough this comparison, the device can tell which declarations are new, which have changed, and which have been removed.\n\nFor each new or changed declaration, the device sends a CheckIn request.\n\nThis request's EndPoint key is set to a path uniquely identifying the declaration resource.\n\nThe server then responds with the JSON object representing that declaration.\n\nOnce all declarations have been fetched from the server, the device starts applying the policy changes represented by this updated state of declarations.\n\nOnce the policy changes have been applied, the device will send a status report to the server, with the corresponding updated status items.\n\nTo help get you started, let's go through what we are shipping in iOS 15.\n\nThe declarative management feature is supported on devices with iOS 15 and iPadOS 15.\n\nIt's also only available when the MDM enrollment type is a user enrollment -- either the new onboarding flow introduced with iOS 15, or the flow from iOS 13.\n\nFor configurations, we have account and passcode configurations that cover the equivalent set of MDM account and passcode profile payloads.\n\nWe also support profile configurations enabling you to start installing the full suite of MDM-supported profiles to your devices declaratively.\n\nStatus subscription configurations are also available today and are used for the server to declare the specific status item updates it wants to receive.\n\nThere is one type of activation available today.\n\nThis simple activation defines a list of configurations that must be applied atomically and may include an optional predicate.\n\nFor asset declarations, there are two types available: user identity assets, which represent a user's contact information; and user credential assets, which contain user IDs and passwords for user accounts.\n\nFor management declarations, we are supporting two types: organization details and server capabilities.\n\nNext, here are the status items available today.\n\nEach declaration has its own status item that is automatically sent to the server from the device.\n\nAlso available are a set of status items that cover basic properties of the device, like details about a device's hardware model and its operating system.\n\nFor more detail on these declarations and status items, check out Apple's Device Management developer documentation.\n\nToday we covered the new paradigm of declarative management and its functionality, discovering how declarative management empowers you to make devices more autonomous and proactive.\n\nWe learned how to integrate declarative management into your MDM solution.\n\nWe went through an example showing how declarative management works and reviewed how declarative management is ready for you to start using today.\n\nWe can't wait to find out how you'll reinvent MDM solutions with declarative management.\n\nThanks for joining me and have a great WWDC.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Melissa Nierle: I'm Melissa Nierle, a software engineer on the Enterprise and Education Technologies team."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "At Apple, we're always working to create the best device management features and functionality to equip our enterprise partners and education organizations with the tools they need to connect their team members and students."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "The backbone of all of these management features is the MDM protocol itself."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "The protocol is a well-established, heavily used solution provided directly within iOS, macOS, and tvOS and has become a standard across mobile device management."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "And while we add features to it each year, we also continually evaluate the protocol against our device management goals and evolve it to meet the dynamic needs of MDM solution developers, admins, and users."
+      },
+      {
+        "timestamp": "0:55",
+        "text": "Today, our MDM protocol can be described as an imperative and reactive protocol."
+      },
+      {
+        "timestamp": "1:00",
+        "text": "Each management workflow takes time and multiple round trips between the device and server."
+      },
+      {
+        "timestamp": "1:06",
+        "text": "Then any performance challenge is compounded when you manage a large number of devices across an organization."
+      },
+      {
+        "timestamp": "1:13",
+        "text": "This is an example of where we want to ensure our protocol is as performant and scalable as possible."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "And to achieve optimal performance and scalability, we've reenvisioned the MDM protocol itself."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "The future of device management is declarative management; a transformative update to the protocol which brings policy management to the device."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "Declarative management allows the device to be autonomous and proactive, freeing up the server to be lightweight, reactive, and subscribe to updates without constant polling."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "An autonomous device reacts to its own state changes and then applies management logic to itself without prompting from the server."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "A proactive device has a status channel asynchronously reporting to the server when important state changes occur, avoiding the need for servers to poll devices."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Enabling devices to be both autonomous and proactive is the foundation of declarative management and allows for increased performance and scalability."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "And the best part is, while it's a new paradigm, it's not a new protocol."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "We've built this new declarative functionality right into our existing MDM protocol, starting with iOS devices."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "We'll take a deep dive into the data model that powers the new declarative paradigm."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "Then later, we'll talk about integration with MDM."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "We'll go through a specific example and learn how to get yourself started."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "Let's begin with the declarative data model."
+      },
+      {
+        "timestamp": "2:45",
+        "text": "There are three pillars to the declarative data model."
+      },
+      {
+        "timestamp": "2:48",
+        "text": "Declarations, which are payloads that the server defines and sends to devices; the status channel, which is a new channel of communication where the device proactively updates the server with new information about itself; and extensibility, so that, as Apple introduces new features to declarative management, your devices and servers handle it seamlessly."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "Understanding these three pillars will prepare you to incorporate declarative management into your MDM solution."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "Let's start with declarations."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "Declarations represent the policy an organization wants to enforce on devices -- for example, accounts, settings, and restrictions."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "Declarations can be created for policy that is common to all users, as well as policy that is specific to a single user or device."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "Let's examine the makeup of declarations."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "The data representation for declarations is similar to profiles, where a declaration is also a dictionary with a set of keys and standard types for values."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "Declarations, however, are serialized as JSON objects when sent over the network, instead of plists."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "All declarations have three required properties: Type, Identifier and ServerToken."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "Type defines which policy a configuration represents."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "The Identifier key has a value that uniquely identifies the declaration within the set of all declarations sent to the device."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "Typically, this will be a UUID represented as a string."
+      },
+      {
+        "timestamp": "4:16",
+        "text": "The device uses this value when synchronizing declarations with the server."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "The ServerToken key represents a unique revision of the declaration based on the Identifier key."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "This key is also used when synchronizing declarations with the server."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "The value is a string that must be different for each revision."
+      },
+      {
+        "timestamp": "4:35",
+        "text": "It could be a simple counter or a UUID string, as shown in the example."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "The payload is a data-specific piece of the declaration, containing the keys and values pertinent to the declaration type."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "Just like with profile payloads, some keys may be required, and others may be optional."
+      },
+      {
+        "timestamp": "4:51",
+        "text": "Values can be strings, numbers, booleans, arrays, or dictionaries and may be constrained in range -- like numbers one through ten -- or to a specific set of values like a string enumeration."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "There are four types of declarations: configurations, assets, activations, and management."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "The first type of declaration is a configuration."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "Configurations represent the policies to be applied to the device -- for example, accounts, settings, and restrictions."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "Configurations are similar to MDM's existing profile payloads."
+      },
+      {
+        "timestamp": "5:25",
+        "text": "Here is an example of a configuration declaration that applies restrictions to the device passcode."
+      },
+      {
+        "timestamp": "5:32",
+        "text": "The standard keys -- Type, Identifier, and ServerToken -- are present, as required for all declarations."
+      },
+      {
+        "timestamp": "5:39",
+        "text": "The value of the Type identifies this as a passcode configuration type of declaration."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "The Payload key contains the passcode policy data for the configuration."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "The next type of declaration is an asset."
+      },
+      {
+        "timestamp": "5:54",
+        "text": "Assets represent references to ancillary data needed by configurations."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "This can be a shared item of large data or a personalized one."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "For large data items, the asset declaration contains a URL that the device uses to fetch the actual asset data from a server."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "This server could be your MDM server, or it could be a separate content delivery network server."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "Serving assets from a separate content delivery network shifts the burden of supporting large network bandwidth to a service better suited for it."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "Assets can also be used to represent data specific to a user, such as their name, email address, passwords for accounts, and certificates."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "This takes the per-user customized data out of configurations and moves it into smaller, dedicated asset-type declarations."
+      },
+      {
+        "timestamp": "6:41",
+        "text": "Assets have a one-to-many relationship with configurations."
+      },
+      {
+        "timestamp": "6:45",
+        "text": "For example, one credential asset can be referenced by several account configurations, avoiding the need to replicate the same user information in each account configuration."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "Then, if the user credential needs to be updated, only that asset needs to be updated."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "All the configurations referencing that asset remain unchanged, and the device updates the policy accordingly."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "The ability to do incremental updates like this, for many configurations at a time, will improve the overall responsiveness of the device management system."
+      },
+      {
+        "timestamp": "7:17",
+        "text": "Let's examine the makeup of an asset declaration."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "Here is an example of an asset declaration that defines a user identity -- essentially the contact information for a user."
+      },
+      {
+        "timestamp": "7:26",
+        "text": "The three required standard keys are present, and the value of Type defines this as a user identity asset declaration."
+      },
+      {
+        "timestamp": "7:34",
+        "text": "The Payload key contains the user identity properties of this asset."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "The next type of declaration is an activation."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "Activations represent sets of configurations that the device will atomically apply."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "This means all configurations in the set, along with any referenced assets, must be valid in order for all of them to be applied."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "If any are invalid, the activation will fail to apply the associated policy."
+      },
+      {
+        "timestamp": "7:59",
+        "text": "Here is an example of a simple activation that contains two configurations."
+      },
+      {
+        "timestamp": "8:03",
+        "text": "The three required declaration keys are present, and the payload contains the set of configurations to be atomically applied by the activation."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "Configurations are referenced by their identifier key."
+      },
+      {
+        "timestamp": "8:15",
+        "text": "There is a many-to-many relationship between activations and configurations."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "Activations can refer to multiple configurations, and a configuration can have multiple activations reference it."
+      },
+      {
+        "timestamp": "8:29",
+        "text": "This many-to-many relationship allows for complex business logic to be handled autonomously by the device."
+      },
+      {
+        "timestamp": "8:36",
+        "text": "Activations can include a predicate that determines when the activation state is active or inactive on a device."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "The device will only process the configurations referenced by an activation if the predicate evaluates to true."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "As an example, a predicate can declare that the particular activation is only active on a specific device type, such as an iPad."
+      },
+      {
+        "timestamp": "9:00",
+        "text": "Another example is wanting a set of policies to apply only to a particular version of the OS."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "This allows the server to send all the declarations for any device states and lets the device itself determine which ones to apply, making the device even more autonomous."
+      },
+      {
+        "timestamp": "9:16",
+        "text": "As the device state changes, the activation predicates are reevaluated without intervention from the server."
+      },
+      {
+        "timestamp": "9:23",
+        "text": "Policy associated with the new device state will be applied and any outdated policy removed."
+      },
+      {
+        "timestamp": "9:29",
+        "text": "The device here becomes increasingly proactive."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "In the absence of a predicate, the device will always process the configurations referenced by the activation."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "Here we have the activation example from before, but now there's a predicate present, indicating that this activation should only have its policy applied when the device is an iPad."
+      },
+      {
+        "timestamp": "9:53",
+        "text": "The last type of declaration is a management declaration."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "Management declarations are used to convey overall management state to the device."
+      },
+      {
+        "timestamp": "10:03",
+        "text": "This includes a declaration describing details about the organization as well as a declaration that describes the capabilities of the server."
+      },
+      {
+        "timestamp": "10:10",
+        "text": "These declarations are helpful for conveying static information to the device."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "And those are the four types of declarations for applying organization policy to your devices."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "The second pillar of the new declarative management data model is the status channel."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "Given the way that declarations work, the declared state of the device may not match the actual state of the device at any point in time."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "For instance, any declaration that requires user interaction will not apply until that action is taken."
+      },
+      {
+        "timestamp": "10:44",
+        "text": "A good example of this is a passcode policy, where the user has to take action to create a new policy-compliant passcode for the device."
+      },
+      {
+        "timestamp": "10:53",
+        "text": "To add visibility into this device state transition, we've created the status channel."
+      },
+      {
+        "timestamp": "10:59",
+        "text": "Updates of the device state are sent in a status report to the server."
+      },
+      {
+        "timestamp": "11:04",
+        "text": "The server can subscribe to specific status items, so it only receives updates for the changes it cares about."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "Status items are identified by key-paths, which consist of period-separated string tokens."
+      },
+      {
+        "timestamp": "11:17",
+        "text": "Status items can be used as expressions in activation predicates, as shown in the earlier activation predicate example."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "The server subscribes to specific status items using status subscription configurations."
+      },
+      {
+        "timestamp": "11:33",
+        "text": "Upon receiving this configuration, the device will send an initial status report for the subscribed status items, and then send a report if a subscribed item changes."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "The status reports are incremental, so only the changed items are reported."
+      },
+      {
+        "timestamp": "11:49",
+        "text": "The status of declarations -- whether they are applied or not -- is always reported to the server when changed, without the need for the server to subscribe."
+      },
+      {
+        "timestamp": "11:58",
+        "text": "Let's inspect a configuration that subscribes to specific status item updates."
+      },
+      {
+        "timestamp": "12:04",
+        "text": "This configuration subscribes to three status items representing the device's operating system version, type, and model."
+      },
+      {
+        "timestamp": "12:12",
+        "text": "When this configuration is activated on the device, it will send the initial status report for each of the newly subscribed status items."
+      },
+      {
+        "timestamp": "12:20",
+        "text": "Status items are represented as a JSON object, nested by the hierarchical components of that corresponding key-path."
+      },
+      {
+        "timestamp": "12:29",
+        "text": "In this case, the device reports it is on iOS 14.5."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "When the user updates the software to the latest iOS version, the device will report the status change for the operating-system version item."
+      },
+      {
+        "timestamp": "12:41",
+        "text": "The server now detects that the device has been upgraded to iOS 15."
+      },
+      {
+        "timestamp": "12:48",
+        "text": "The third pillar of the declarative data model is extensibility."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "Given the long life cycle of Apple products, it is essential to maintain compatibility between different versions of your MDM solution with Apple devices, especially as software updates and new hardware models are released."
+      },
+      {
+        "timestamp": "13:06",
+        "text": "With declarative management, both the device and server now advertise supported capabilities to each other."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "Each knows when it can start taking advantage of new features without having to hardcode software version or hardware dependencies."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "The capabilities that the server and client both advertise includes a list of supported features representing both minor and major protocol updates."
+      },
+      {
+        "timestamp": "13:31",
+        "text": "The client also advertises supported payloads, which lists the full set of declarations and status items supported by the client."
+      },
+      {
+        "timestamp": "13:40",
+        "text": "The server's capabilities are sent to the device via a management declaration."
+      },
+      {
+        "timestamp": "13:45",
+        "text": "When the server is upgraded, it synchronizes all new capabilities to the device just as it would any other type of declaration."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "The device is immediately able to take advantage of the server's new features."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "The client's capabilities are sent to the server as a specific status item any time capabilities change."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "This way, the server can immediately start taking advantage of the device's new features and payloads."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "Building extensibility into the declarative data model ensures that declarative management is built for the present and the future."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "Now that you understand the data model, let's dig into how declarative management is seamlessly integrated within the MDM protocol."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "Existing MDM vendors can use declarative management features starting today."
+      },
+      {
+        "timestamp": "14:29",
+        "text": "Declarative management is integrated into the MDM protocol and utilizes it for managing the enrollment and unenrollment process and for handling the HTTP transport and device and user authentication."
+      },
+      {
+        "timestamp": "14:42",
+        "text": "Existing and mature MDM products can smoothly transition to declarative management without a disruptive change to adopt a new protocol or server infrastructure."
+      },
+      {
+        "timestamp": "14:52",
+        "text": "Declarations and the status channel coexist with your already in-use MDM commands and profiles in an extensible way."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "This allows you to gradually adopt the different features of declarative management without having to update all of your MDM workflows at once."
+      },
+      {
+        "timestamp": "15:08",
+        "text": "For example, a server could choose to only implement status subscriptions, effectively adding a status channel to the MDM protocol without having to adopt all of declarative management."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "When the device is unenrolled from MDM, all declarations are removed, and the device state is adjusted accordingly."
+      },
+      {
+        "timestamp": "15:27",
+        "text": "Importantly, declarative management does not impact existing MDM behavior at all."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Actually, declarative management leverages existing MDM behaviors using an MDM command for activation and an MDM CheckIn request for synchronization and status reports."
+      },
+      {
+        "timestamp": "15:44",
+        "text": "Let's zoom in on each of these next."
+      },
+      {
+        "timestamp": "15:47",
+        "text": "A DeclarativeManagement command has been added to MDM."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "This command serves two purposes."
+      },
+      {
+        "timestamp": "15:54",
+        "text": "First, it activates the declarative management features on the device."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "Please note, once turned on, declarative management cannot be turned off."
+      },
+      {
+        "timestamp": "16:02",
+        "text": "However, the server can remove all declarations to effectively disable declarative management."
+      },
+      {
+        "timestamp": "16:08",
+        "text": "Second, the command can include a payload containing synchronization tokens that will initiate a synchronization flow if needed."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "There is also a new DeclarativeManagement CheckIn request type used by the device when synchronizing declarations and to send status reports to the server."
+      },
+      {
+        "timestamp": "16:26",
+        "text": "Here is an example of the new CheckIn request type."
+      },
+      {
+        "timestamp": "16:30",
+        "text": "The MessageType key is set to the new DeclarativeManagement value."
+      },
+      {
+        "timestamp": "16:34",
+        "text": "The endpoint key is set to a value indicating that the client is making a request to retrieve the declaration manifest data from the server."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "Some requests -- such as this status report -- can also include Base64-encoded data."
+      },
+      {
+        "timestamp": "16:51",
+        "text": "When using the CheckIn request to synchronize declarations, there will be a response from the server."
+      },
+      {
+        "timestamp": "16:57",
+        "text": "There are two types of responses: a manifest, which lists the identifier and server token properties of all declarations that the server defines; and single declarations for the device to apply."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Now that you've learned how to activate declarative management and synchronize declarations with a CheckIn request, let's talk about how you can migrate your policies gradually from profiles to declarations."
+      },
+      {
+        "timestamp": "17:22",
+        "text": "There's a declaration type specifically for sending and installing profiles as configurations."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "This enables you to utilize the full suite of MDM profiles to immediately take advantage of declarative management by shifting profile-based policy logic to the device."
+      },
+      {
+        "timestamp": "17:40",
+        "text": "Here is an example of a profile configuration."
+      },
+      {
+        "timestamp": "17:43",
+        "text": "The profile is referenced via URL."
+      },
+      {
+        "timestamp": "17:46",
+        "text": "When this configuration is activated, the profile is fetched from the URL and installed on the device."
+      },
+      {
+        "timestamp": "17:53",
+        "text": "We've taken these steps to make declarative management easy to adopt today with the iOS 15 beta."
+      },
+      {
+        "timestamp": "18:00",
+        "text": "Now let's go through an example of how declarative management interacts with the server."
+      },
+      {
+        "timestamp": "18:05",
+        "text": "First, we activate declarative management."
+      },
+      {
+        "timestamp": "18:09",
+        "text": "This starts with the device already enrolled in MDM."
+      },
+      {
+        "timestamp": "18:13",
+        "text": "The server sends a push notification to the device."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "The device responds to the push in the usual way, by sending a ServerURL endpoint request with its status set to Idle."
+      },
+      {
+        "timestamp": "18:23",
+        "text": "The server then responds with the DeclarativeManagement command."
+      },
+      {
+        "timestamp": "18:27",
+        "text": "Upon receipt, the device activates declarative management."
+      },
+      {
+        "timestamp": "18:32",
+        "text": "After processing the DeclarativeManagement command, the device sends an Acknowledged status back to the server."
+      },
+      {
+        "timestamp": "18:39",
+        "text": "Then if the server has no more commands, it will return an empty response."
+      },
+      {
+        "timestamp": "18:44",
+        "text": "The device then starts its declarative management synchronization process; let's go through that next."
+      },
+      {
+        "timestamp": "18:51",
+        "text": "The device first sends a CheckIn request with the endpoint key set to declaration-items."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "The server responds with a manifest containing declaration metadata."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "The device then compares the items in the manifest to the set of declarations it previously received from the server."
+      },
+      {
+        "timestamp": "19:10",
+        "text": "Through this comparison, the device can tell which declarations are new, which have changed, and which have been removed."
+      },
+      {
+        "timestamp": "19:18",
+        "text": "For each new or changed declaration, the device sends a CheckIn request."
+      },
+      {
+        "timestamp": "19:22",
+        "text": "This request's EndPoint key is set to a path uniquely identifying the declaration resource."
+      },
+      {
+        "timestamp": "19:28",
+        "text": "The server then responds with the JSON object representing that declaration."
+      },
+      {
+        "timestamp": "19:34",
+        "text": "Once all declarations have been fetched from the server, the device starts applying the policy changes represented by this updated state of declarations."
+      },
+      {
+        "timestamp": "19:44",
+        "text": "Once the policy changes have been applied, the device will send a status report to the server, with the corresponding updated status items."
+      },
+      {
+        "timestamp": "19:52",
+        "text": "To help get you started, let's go through what we are shipping in iOS 15."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "The declarative management feature is supported on devices with iOS 15 and iPadOS 15."
+      },
+      {
+        "timestamp": "20:04",
+        "text": "It's also only available when the MDM enrollment type is a user enrollment -- either the new onboarding flow introduced with iOS 15, or the flow from iOS 13."
+      },
+      {
+        "timestamp": "20:14",
+        "text": "For configurations, we have account and passcode configurations that cover the equivalent set of MDM account and passcode profile payloads."
+      },
+      {
+        "timestamp": "20:22",
+        "text": "We also support profile configurations enabling you to start installing the full suite of MDM-supported profiles to your devices declaratively."
+      },
+      {
+        "timestamp": "20:30",
+        "text": "Status subscription configurations are also available today and are used for the server to declare the specific status item updates it wants to receive."
+      },
+      {
+        "timestamp": "20:40",
+        "text": "There is one type of activation available today."
+      },
+      {
+        "timestamp": "20:43",
+        "text": "This simple activation defines a list of configurations that must be applied atomically and may include an optional predicate."
+      },
+      {
+        "timestamp": "20:52",
+        "text": "For asset declarations, there are two types available: user identity assets, which represent a user's contact information; and user credential assets, which contain user IDs and passwords for user accounts."
+      },
+      {
+        "timestamp": "21:05",
+        "text": "For management declarations, we are supporting two types: organization details and server capabilities."
+      },
+      {
+        "timestamp": "21:13",
+        "text": "Next, here are the status items available today."
+      },
+      {
+        "timestamp": "21:16",
+        "text": "Each declaration has its own status item that is automatically sent to the server from the device."
+      },
+      {
+        "timestamp": "21:22",
+        "text": "Also available are a set of status items that cover basic properties of the device, like details about a device's hardware model and its operating system."
+      },
+      {
+        "timestamp": "21:31",
+        "text": "For more detail on these declarations and status items, check out Apple's Device Management developer documentation."
+      },
+      {
+        "timestamp": "21:38",
+        "text": "Today we covered the new paradigm of declarative management and its functionality, discovering how declarative management empowers you to make devices more autonomous and proactive."
+      },
+      {
+        "timestamp": "21:49",
+        "text": "We learned how to integrate declarative management into your MDM solution."
+      },
+      {
+        "timestamp": "21:53",
+        "text": "We went through an example showing how declarative management works and reviewed how declarative management is ready for you to start using today."
+      },
+      {
+        "timestamp": "22:02",
+        "text": "We can't wait to find out how you'll reinvent MDM solutions with declarative management."
+      },
+      {
+        "timestamp": "22:08",
+        "text": "Thanks for joining me and have a great WWDC."
+      },
+      {
+        "timestamp": "22:11",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [
@@ -45,5 +820,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10130"
     }
   ],
-  "extractedAt": "2026-10-11T16:42:34.370Z"
+  "extractedAt": "2026-10-17T18:52:35.069Z"
 }

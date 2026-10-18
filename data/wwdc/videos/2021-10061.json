@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10061/",
   "title": "Meet TextKit 2",
-  "speakers": [],
   "duration": "",
   "topics": [
     "SwiftUI & UI Frameworks"
@@ -11,8 +10,756 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Donna: Hi. I'm Donna Tom, and I'm a TextKit engineer. My colleague Chris Willmore will join me later in this video. We're introducing TextKit 2, Apple's next-generation text engine.\n\nTo understand what TextKit 2 is all about, let's briefly review the original TextKit, which we'll call TextKit 1. TextKit 1 is a text engine that drives text layout and display across all of Apple's platforms. Text controls in UIKit and AppKit use TextKit 1 to manage the storage and control the layout of text content.\n\nTextKit 1 first appeared on the system in OpenStep over 20 years ago. It's grown and evolved with us over the years from macOS 10.0 to iOS 7 to macOS 11 and iOS 14.\n\nIt's pretty amazing that TextKit 1 still powers so much essential functionality across all Apple devices. Technology design and engineering principles have changed a lot over the decades. Since TextKit 1 is tied to its original principles, it's become more challenging over the years to provide APIs that integrate well with our newer technologies while still delivering a high standard of performance.\n\nThat's why we've built TextKit 2. TextKit 2 is Apple's next-generation text engine, built on a set of forward-looking design principles. And guess what? You're already using TextKit 2 on your Mac. In Big Sur, we updated many of the text components across the OS to use TextKit 2 behind the scenes. Big surprise: you've been using TextKit 2 since macOS 11. Now, let's briefly review the architecture that let us do this.\n\nTextKit 2 coexists with TextKit 1.\n\nJust like its predecessor, TextKit 2 is built on top of Foundation, Quartz, and Core Text. Text controls in UIKit and AppKit are built on top of TextKit 2. TextKit 2 also loosely retains the MVC design of its predecessor. The view portion remains in the view objects of the UIKit and AppKit frameworks, while there are new versions of our old friends, NSTextStorage and NSLayoutManager.\n\nIn addition to these new versions, there are many more new classes and protocols joining the model and controller layers. There are a quite a few of them, but don't be alarmed. These new components are simple, focused, and powerful in combination.\n\nThey make it easier for you to express what you want to do with your text and worry less about how the system accomplishes what you want.\n\nNow that we've gotten an architectural view of the system, let's dive into the details.\n\nFirst, we're going to discuss the core design principles of TextKit 2 and how these principles will change the way you think about customizing the storage, layout, and display of text in your apps.\n\nAfter that, Chris will walk you through a TextKit 2 sample app we've created to collaborate on a book of recipes.\n\nThis app uses the new TextKit 2 classes to lay out and display text in CALayers. Here, you'll get to learn how the design principles work in practice.\n\nFinally, we'll cover some important technical details for modernizing your apps for TextKit 2.\n\nSo let's get started with the design principles.\n\nThe core high-level design principles of TextKit 2 are correctness, safety, and performance. We've taken a balanced approach. All three principles are important, so there is no priority to the order in which we discuss them.\n\nEach of these high-level design principles informs a specific design change in the system.\n\nFor correctness, TextKit 2 abstracts away glyph handling.\n\nFor safety, TextKit 2 places a heavier focus on value semantics.\n\nAnd for performance, TextKit 2 uses viewport-based layout and rendering.\n\nWe'll begin with correctness. In this area, we've abstracted away glyph handling to provide a consistent experience for international text. Apple devices are used everywhere around the world, so it's really important to provide correct layout, rendering, and interaction for text in all languages and scripts.\n\nWe want everyone to be able to read and interact with text on their devices. And the design of some of the TextKit 1 APIs makes it difficult to work with international text in a way that's universally correct.\n\nTo understand why, we first need to understand what a glyph is. A glyph is a visual representation of a variable number of characters.\n\nIn many Western languages, one glyph usually represents one character, but this is not always true.\n\nYou can have multiple glyphs representing a single character, or it could be the other way around. A single glyph could represent multiple characters.\n\nThis single glyph used to represent multiple characters is called a ligature.\n\nThere aren't too many ligatures in Western languages, and they don't usually affect the legibility of the text. You can still read it just fine without ligatures.\n\nBut that's not true for all languages. Scripts like Arabic and Devanagari use lots of ligatures, and they do affect the legibility. Check out this word in Arabic script.\n\nIt's an Urdu word that means \"moment.\" Now take a moment to compare these two renderings.\n\nThe full word, drawn with ligatures on the right, appears very different from the individual characters on the left.\n\nNative readers of the language would consider the version on the left to be illegible.\n\nMany of the APIs in TextKit 1 require working with a glyph index or range. For example, to get the bounding rectangle of some text, you need to know the glyph range of the text you want.\n\nIf the text is in a Western language, figuring out the right glyph range isn't too bad.\n\nIn this English example, it's pretty easy to find the glyph range for the first four characters of the text.\n\nNow consider Kannada, a script and language spoken by millions of people in India.\n\nNot only does it use lots of ligatures, the glyphs can be reordered and combined in all sorts of interesting ways.\n\nThis Kannada word meaning \"October\" features a split vowel at character index four, so that gets split up into two glyphs.\n\nThen the one on the left gets reordered between the glyphs representing characters one and two before the ligature for two is applied.\n\nThe glyph representing the character at index three also gets substituted to a conjoining form.\n\nIn the final word, it's drawn below one of the glyphs in the split vowel. Now, if you didn't understand any of what I just said, that is totally OK.\n\nThese are details that the framework should be handling for you so that you can focus on building your app.\n\nThe point is, it's not possible to find the glyph range for the first four characters of text like this.\n\nThere is no single glyph range that will represent those four characters.\n\nAnd since many TextKit 1 APIs require a glyph range, using those APIs can potentially break layout and rendering for complex scripts like this.\n\nAnd that's why TextKit 2 abstracts away glyph handling. TextKit 2 renders all text with Core Text-- so you'll automatically get correct rendering for complex scripts.\n\nYou won't have to manage glyphs at all with TextKit 2. Instead, you use higher-level objects to control text layout and interactions.\n\nMeet NSTextSelection, one of these higher-level objects.\n\nIt contains all the necessary context to represent a text selection, such as its granularity, its affinity, and the possibly disjoint ranges of text that make up the selection.\n\nThese properties on NSTextSelection are read only, so you won't modify instances of the selection object to change them. Instead, you use an instance of NSTextSelectionNavigation to perform actions on text selections, receiving new instances of NSTextSelection that represent the resulting selection.\n\nYou can ask the navigation object to give you selections resulting from tap or mouse-down events at a point on the screen or get a new selection resulting from navigating forward or backward. This makes it easier to do things, like extend the selection forward by one word and get the correct result, accounting for bidirectional text in right-to-left languages.\n\nNow I wanna call your attention to something interesting about these new selection APIs.\n\nThis method takes a NSTextLocation. This is another new object in TextKit 2.\n\nMeet NSTextLocation and NSTextRange.\n\nThese are very similar to the UITextPosition and UITextRange classes from UIKit, except you're not required to subclass them.\n\nMost of the time, you'll use the default location and range objects with TextKit 2.\n\nUsing objects instead of integers allows for more expressive document models because the ranges are defined in terms of locations relative to each other. The HTML document object model is a good example of this. Since it has nested elements, a location needs to represent both the absolute position in the document and also the position in the visible text. This can't be expressed with a single numerical index.\n\nAnd that's it for correctness. Next up is safety.\n\nIn this area, we've designed TextKit 2 with a greater emphasis on value semantics to better align with the goals of technologies like Swift and SwiftUI.\n\nAnd when I say \"value semantics,\" I'm not talking about value types. We did not make NSLayoutManager into a struct.\n\nValue types keep a unique copy of their data, which prevents mutation of that data. This makes your code safer and more stable by removing unintended sharing and associated side effects. But value types are not the only way to get this benefit.\n\nImmutable classes have properties that cannot be changed after initialization, which also prevents mutation of their data.\n\nThese classes behave like value types, so we refer to them as having value semantics. If you want to change the data in one of these objects, you have to make a brand-new instance to replace the original one. And many of the classes in TextKit 2 are designed in this way.\n\nTo illustrate the benefits of this design change, let's refresh our memory on the design of TextKit 1. The flow of text from the storage to the screen used to work like this.\n\nUpdates to the text storage notified the layout manager, which would then generate glyphs, position them, and draw them directly into the view.\n\nWith this approach of drawing glyphs directly into the view, it's difficult to figure out where to separate the text to create spaces for custom drawing.\n\nTo understand what I mean by that, check out this sneak-peek screenshot from the sample app, where I've left some comments on a recipe.\n\nNotice how the comment appears right underneath the recipe it's referring to and it's drawn with this distinct, bubble-shaped, indigo background and white text.\n\nWhat approach should we take to insert comments in the correct place and make them look different from the rest of the text? You might expect to do this by dividing the recipe text into meaningful units, or elements, putting each comment in its own element, and positioning each comment after the recipe it's related to, while providing instructions for how to draw the comments.\n\nWith TextKit 1, the reality is quite different.\n\nYou have to worry about a lot of details, like finding the glyph index, making sure that the glyph is not in the middle of a grapheme cluster, adjusting that glyph index if it is, changing the line spacing, and possibly customizing the line-fragment geometry.\n\nAnd these details are not relevant to what you're trying to do. So with TextKit 2, we're aiming to make the expectation into reality. We've changed the flow of text through the system to make approaches like this possible.\n\nHere's how that flow works in TextKit 2.\n\nUpdates to the text storage go through a new object called the content manager.\n\nThe content manager divides the text up into elements and keeps track of them. When it's time for layout, the text layout manager asks the content manager for the elements.\n\nThen the text layout manager lays out the elements into the text container and generates layout fragments that contain the layout and positioning information.\n\nWhen it's time for display, the layout fragments are handed off to the ViewportLayoutController, which coordinates the positioning and layout of those fragments in your rendering surface of choice, whether it's a view or a layer.\n\nAs you can tell, there are a lot of new objects involved in this process. And this is where the emphasis on value semantics comes in.\n\nYou control the layout and display of your text by hooking into the system at the right point and obtaining the information you need from objects that use value semantics.\n\nTo make changes, you create new instances of the value objects with the changes you want and give them back to the system. The system uses the values from your replacement objects for layout and display.\n\nSo now, let's meet these new objects and identify the different points of the system where you can receive or replace them. We'll start with the storage objects.\n\nMeet NSTextElement. Elements are the building blocks of your document. Each element represents a portion of the content and contains a range that describes where it is in the document. And elements have value semantics. Their properties, including the range, are immutable and cannot be changed after creating the element.\n\nModeling the document as a series of elements rather than a series of characters gives us a lot more power. We gain the ability to easily distinguish what kind of content a given element represents, whether it's a paragraph of text, an attachment, or some other custom type. And we can make decisions on how to lay out elements based on their type.\n\nNow let's meet NSTextContentManager.\n\nThe content manager knows how to generate elements from the text content and keeps track of the ranges of those elements within the overall document. It also knows how to work with the backing store and how to generate new elements with updated ranges when the content in the backing store changes.\n\nThink of the content manager as a wrapper for the backing store.\n\nThe content manager provides an interface for translating the raw data into elements.\n\nNSTextContentManager and NSTextElement are both abstract types, so you could subclass them if you need to use a custom document model or a custom backing store. The headers and documentation provide guidance on how to do this. But most of the time, you can use the default ones that TextKit 2 provides.\n\nMeet NSTextContentStorage and NSTextParagraph. These are the default content manager and element types. NSTextContentStorage is a content manager that uses an NSTextStorage as the backing store.\n\nIt knows how to divide the contents of the text storage into paragraph elements, which are instances of NSTextParagraph. NSTextContentStorage also knows how to generate updated paragraph elements when the text in the text storage changes. This brings me to an important point.\n\nWhen making changes to the underlying text storage, you should wrap your updates in this performEditingTransaction method. This ensures that the other parts of the TextKit 2 system are notified of your changes.\n\nYou can do some cool stuff with the content storage delegates without having to implement a full NSTextContentManager subclass.\n\nLater in this video, Chris will cover how to use content delegates to change the comment font and color without modifying the text storage and how to hide comments altogether. So stay tuned for more details.\n\nOK. Now we understand how TextKit 2 creates elements from your text content. That takes care of the first two steps from our new approach.\n\nThe content storage automatically divides the text into paragraph elements, and it knows how to create new paragraphs for the new comments.\n\nNext, let's figure out how we can accomplish the last two steps: the positioning and display of comments.\n\nReturning to our flow diagram, we need to get layout information for our comment elements. There are new layout objects to help us with these tasks. Let's meet them now.\n\nMeet NSTextLayoutManager. The text layout manager controls the text layout process.\n\nNSTextLayoutManager is similar to the old NSLayoutManager from TextKit 1 with one major difference: NSTextLayoutManager does not deal with glyphs.\n\nInstead, NSTextLayoutManager takes text elements, lays them out into the text container, and generates layout fragments for those elements.\n\nYou work with layout fragments to get layout information for text elements. So now let's learn about layout fragments.\n\nMeet NSTextLayoutFragment. A layout fragment contains layout information for one or more text elements. Just like elements, they use value semantics and their properties are immutable.\n\nSo the text layout manager will create layout fragments for each of our comment elements, and then we can use the information from the layout fragments to position and display them.\n\nLayout fragments communicate layout information through three properties: an array of textLineFragments, the layoutFragmentFrame, and the renderingSurfaceBounds.\n\nIf you want to customize or change the layout, it's essential to understand the information you get with each of these properties. So we'll go over that next.\n\nFor the first property, we'll meet NSTextLineFragment. Line fragments contain measurement information for each line of text in the layout fragment.\n\nThese are useful for obtaining geometric information for specific lines or for counting the number of lines in a layout fragment.\n\nThe second property, the layout fragment frame, describes how the text in the layout fragment is laid out inside the text container area. In TextKit 2, text layout is basically stacking up the layout fragment frames within the container. Think of these frames like tiles. The system is dividing up the text container area into tiles, where each layout fragment is a single tile.\n\nEmpty lines have their own layout fragment frame, as shown in the diagram. In general, layout fragment frames are useful for positioning other views in your UI near the fragment contents or for calculating the total height of the text content.\n\nNow, this frame does not accurately represent the space needed to draw the text itself. That information comes from the third property. The rendering surface bounds describes the area required to draw the text. This is the rectangle you want to use to get the size of the text in the view's coordinate space. And this is different from the layout fragment frame because the text can overshoot the edges of the fragment frame. This happens with diacritics or, as shown here, with long descenders in italic fonts. Notice how the bottom-left edge of the J sticks out just a little bit from the layout fragment frame. It doesn't stick out that much, so here's a more extreme example.\n\nSome fonts, like Zapfino, have glyphs that extend very far outside the typographic bounds.\n\nThe rendering surface bounds will be much larger than the layout fragment frame in this case.\n\nNow that we understand the layout information that layout fragments provide, let's back up a bit and talk about how to use this information to customize the layout of text elements.\n\nSince layout fragments are immutable, you can't directly change the layout information on a fragment.\n\nGoing back to our flow diagram, we need to hook into the layout process and create new instances of NSTextLayoutFragment with the information we want to change.\n\nAnd you hook into the layout process using this delegate method on NSTextLayoutManager. This method gets called during the layout process when the text layout manager is generating the layout fragments from the elements. Here you have an opportunity to create your own layout fragment for an element.\n\nThat takes care of the last two steps in our approach to the comment problem. We'll handle the positioning and custom drawing of our comment layout fragment by using a subclass of NSTextLayoutFragment and providing instances of our custom fragment in the text layout manager delegate.\n\nLater in this video, Chris will demonstrate how this is done in our sample app.\n\nAnd that's safety. Now let's move on to performance.\n\nPerformance is one of the greatest challenges for any text engine. TextKit 2 is extremely fast for an incredibly wide range of scenarios, from quickly rendering labels that are only a few lines each to laying out documents that are hundreds of megabytes being scrolled through at interactive rates. And for these scenarios, when you're scrolling through these really large documents at variable rates, noncontiguous text layout is absolutely essential for great performance.\n\nLet's review the difference between contiguous and noncontiguous layout.\n\nThis diagram shows a document where the yellow rectangle represents the visible content area on the screen.\n\nContiguous layout starts at the very beginning of the document and goes in order from the beginning to the end of the text.\n\nSo if you scroll to some point in the middle of the document, contiguous layout performs layout for all of the text that came before that point.\n\nThis includes all the text that's been scrolled off the screen, all the way back to the beginning. And if there's a lot of text, the performance can be slow and you can get animation hiccups when scrolling. In the worst case, it can hang.\n\nIn contrast, noncontiguous layout means we can lay out a piece of the text anywhere within the document without laying out the pieces that come before it.\n\nNow when you scroll to the middle of the document, layout happens for that visible area right away.\n\nThis improves performance by performing layout only for the portions of text that are visible on the screen, plus an additional over-scroll region, resulting in a smoother scrolling experience.\n\nAnd layout in TextKit 2 is always noncontiguous.\n\nIn contrast, noncontiguous layout is optional in TextKit 1.\n\nIt's enabled using a boolean property on NSLayoutManager. This API is simple, but because it is simple, it can't express information about the state of the layout at the time you request layout information.\n\nNoncontiguous layout relies on estimates that may change later once other portions of the document have been laid out. With TextKit 1, you can only turn noncontiguous layout on or off.\n\nThere is no ability to control which parts of the document get laid out and no way to know when layout finishes and the layout estimates are updated to the real values.\n\nThe TextKit 2 API is richer and more expressive.\n\nTextKit 2 gives you consistent layout information for elements in the visible content area and notifies you when the layout updates for that visible area.\n\nThis area is called the viewport. You manage the viewport by adjusting or relocating it, and you receive callbacks before, during, and after viewport layout.\n\nFor optimum performance, your code should focus on working with layout information inside the viewport area. Avoid requesting layout information for elements outside the viewport when possible.\n\nThe layout information for elements outside the viewport might not be accurate unless you explicitly ask to ensure layout for the text ranges corresponding to those elements. This call can be expensive, especially for large documents.\n\nRevisiting our flow diagram from earlier, there's another new controller class to help us manage the viewport.\n\nMeet NSTextViewportLayoutController. This is the source of truth for viewport layout information. It talks to the text layout manager to get layout fragments for elements within the viewport area. You can access the viewport layout controller through the property on the text layout manager.\n\nNow that we've met the viewport layout controller, let's talk about how to participate in the viewport layout process.\n\nThe viewport layout controller calls three important methods on its delegate during the viewport layout process: TextViewportLayoutController WillLayout, textViewportController configureRenderingSurface FortextLayoutFragment, and textViewportLayoutController DidLayout.\n\nFirst, the viewport layout controller calls the willLayout method before laying out elements in the viewport. Here is where you do any setup work to prepare for layout, such as clearing out the contents of the view or layer.\n\nNext, the viewport layout controller calls configureRenderingSurface for every layout fragment that's visible in the viewport. Here is where you update the geometry of each fragment view or layer.\n\nFinally, the viewport layout controller calls the didLayout method after it's finished laying out all of the layout fragments visible in the viewport.\n\nAnd here's where you perform any needed updates after viewport layout is finished, like if you wanted to adjust the viewport to make the last element fully visible on the screen. And that sums it up for performance. Now I'll hand it off to Chris to show you how to use TextKit 2 in practice. Thank you, Donna. We wrote a sample app that demonstrates some of the different ways you can use TextKit 2 to lay out and interact with text in your app. You can download the sample code used in this video. Let's open it up and try it out. We're using this collaboration app to review a book of recipes so we can figure out what we want to make for lunch. Scrolling through the recipes works as expected, but something special is happening behind the scenes: Only the paragraphs that are visible in the viewport are being drawn.\n\nAnd instead of every paragraph being rendered on the same big surface, each paragraph is being rendered into its own layer.\n\nIf I click the Show Bounds button in the toolbar here, these colored rectangles appear. The orange rectangle shows the bounds of each layer. Drawing text into separate layers lets us implement a fun feature: I can leave comments on the recipes. Now, I think an egg sandwich sounds pretty good, so I'm going to double-click on this paragraph and type, \"hey this sounds pretty good,\" and hit Enter to insert the comment.\n\nI've just inserted a new paragraph into the document. The bubble background is being drawn by a custom subclass of NSTextLayoutFragment called BubbleLayoutFragment. More on that later.\n\nWhat's special is, as I insert comments into the document, all of the paragraphs below the comment move to make room for it. If you didn't catch it the first time, I'm going to click this turtle button in the toolbar to enable Slow Mode.\n\nLet's add another comment.\n\n\"Yeah let's make it for lunch today.\" After I hit Enter, the comment is added to the document below it, and all paragraphs below it animate slowly. If you want to hide all the comments, you can click the Toggle Comments button in the toolbar. This is not actually editing the underlying document. It's instead asking the text content manager to skip comments when enumerating text elements for layout.\n\nTextKit 2 works just as well on iOS as it does on macOS. This means the TextKit 2 parts of the macOS app can be reused on iOS. Let's run it on iPad.\n\nWe've used those parts to write an iOS version of our collaboration app with all the same functionality. I'm long-pressing on a paragraph to leave a comment, then typing, \"hey that sounds good\"... and hitting Enter.\n\nJust like the app on macOS, I can tap the comment Show/Hide button to hide all comments.\n\nI've just gone through an app that uses TextKit 2 to lay out, draw, and interact with text. Now let's go over some of the code in the sample app and how TextKit 2 makes it possible.\n\nThe app demonstrates a lot of the functionality that TextKit 2 provides, but I want to focus on two areas for now: how it lays out the text in the viewport using NSViewportLayoutController and how it implements the custom hiding behavior and rendering of the comments.\n\nWhen the text layout manager is about to lay out the document either because it changed, the container size was changed, or a previously unseen portion of the document has moved into the viewport, it calls textViewportLayout ControllerWillLayout on its viewport layout delegate. We're using it here to clear out all the text sublayers and open an animation transaction.\n\nFor each text element that the text layout manager lays out, it calls textViewportLayoutController, configureRenderingSurfaceFor textLayoutFragment. Here we're getting a layer to display the text layout fragment in, updating its geometry, animating it to its new position, if possible, and adding it as sublayer of the view.\n\nWhen the layout manager is done laying out, it will call textViewportLayout ControllerDidLayout. We commit the animation transaction, update the selection highlights, and update the content size so the scroll thumb is placed correctly.\n\nNow let's talk about the comments. TextKit 2 provides several hooks that you can use to customize layout element and layout fragment generation. I'm gonna show you how we take comments in the document, set custom attributes like font and color for display, and draw the bubble behind them.\n\nFor each paragraph in the document, the text content storage gives its delegate a chance to customize the attributes on that paragraph. In our implementation, we're setting a custom font and color on comments without having to alter the font or color of the underlying text storage.\n\nThe text content manager also gives its delegate the chance to decide which text elements will be shown to the text layout manager during layout.\n\nReturning false for a text element prevents it from being displayed. Here we're hiding comments by choosing not to enumerate them without having to actually delete them from the underlying text storage.\n\nThe text layout manager has a delegate too. By implementing textLayoutManager, textLayoutFragmentFor location in textElement, the delegate can generate a custom text layout fragment instead of the default NSTextLayoutFragment instance for a given NSTextElement. In this case, when it encounters an NSTextElement that represents a comment, it creates a BubbleLayoutFragment, which is a custom subclass of NSTextLayoutFragment.\n\nBubbleLayoutFragment overrides the draw method of NSTextLayoutFragment to draw the background bubble before calling the base class implementation to draw the text on top. Note that the text is being rendered with the custom font and text color that we set earlier.\n\nI've gone over how the sample app uses TextKit 2 to perform viewport-based animated layout of text and how it renders comments in those colorful bubbles, going all the way from custom attributes in the text storage to custom drawing. But there's a lot more in the sample code that takes advantage of new API provided by TextKit 2, including interpreting mouse events to determine the text selection, rendering the text selection highlight, placing the comment popover at a particular paragraph in the document, and estimating the document height. You can find further discussion of all of these topics in the sample code. Let's go back to Donna to talk about preparing your apps for TextKit 2. Thanks, Chris. That's a fantastic example of how TextKit 2 works in practice. Now that we've gone over what TextKit 2 can do, let's discuss some approaches for app modernization.\n\nEverything we've talked about so far applies to creating your own TextKit 2 stack to use with a generic view or layer.\n\nAll of the new classes are available in UIKit with iOS 15 and in AppKit with macOS 12. So if you wanna go this route, you can start writing new code with TextKit 2 today.\n\nOn the other hand, many apps use the built-in text controls, like text view, to take advantage of all the great, free functionality, like accessibility support and selection and editing services. Some of these controls have already been updated to use TextKit 2. If your app uses the built-in controls, there are a few additional details to be aware of. Maintaining compatibility is as important to us as it is to you. Since TextKit 1 is such an integral part of the built-in text controls, we're going to great lengths to maintain compatibility for apps that are using them. This is why only some controls use TextKit 2 automatically in iOS 15 and macOS 12.\n\nAdditionally, some controls require taking extra steps to use TextKit 2 in these OS versions. For AppKit developers, NSTextView does not use TextKit 2 automatically.\n\nIf you want to use TextKit 2 with a NSTextView, you need to opt in programmatically at creation time.\n\nThis is how to do it. First, create a text layout manager. Next, create a text container. Then associate the text container with the text layout manager using the textContainer property on NSTextLayoutManager. Finally, create your NSTextView using the designated initializer with the text container. Now you'll have a text view that uses TextKit 2.\n\nYou can access the text layout manager and text content storage with new properties on NSTextView. There's just one thing to be careful of.\n\nRecall that NSTextView has a layoutManager property that allows getting and setting its NSLayoutManager.\n\nNSLayoutManager is a TextKit 1 object and it's not compatible with the TextKit 2 stack.\n\nA text view can't have both a layout manager and a text layout manager at the same time.\n\nSo here's the deal. We added a special compatibility mode for NSTextView that switches it to TextKit 1 when needed. The text view can automatically detect whether it needs to use this mode and replace its NSTextLayoutManager with NSLayoutManager. For optimum performance, the text view will remain in compatibility mode from that point forward.\n\nEven if you opted in to TextKit 2, your text view will automatically switch to TextKit 1 if you explicitly call the layoutManager property on your text view or text container.\n\nThe text view will also switch if it encounters text content that is not yet supported or detects other conditions that require TextKit 1.\n\nAnd this can happen for field editors as well. Field editors for NSTextField use TextKit 2 by default. But if your text field subclass is requesting layout information from the field editor's layout manager, the field editor will switch to TextKit 1 for all text fields in that window.\n\nThe system will issue notifications before and after a text view switches to TextKit 1. You can observe these notifications to receive this information.\n\nThe notification objects contain a reference to the exact text view that changed modes.\n\nFor complete details on the TextKit 1 compatibility mode for AppKit, please refer to the documentation on the Apple Developer portal.\n\nFor UIKit developers, UITextField uses TextKit 2 automatically in iOS 15.\n\nUITextView with TextKit 2 is not available in iOS 15.\n\nWe're working to ensure maximum compatibility for all applications that use UITextView, and there are quite a lot of them. In the meantime, you can review your existing code for uses of UITextView's layoutManager property and think about how to express your intent with TextKit 2. That way, you'll be ready to transition once it's available.\n\nAnd that's a wrap. Now you've met TextKit 2, Apple's new text engine to take us into the future. We look forward to seeing what you'll build with TextKit 2. Thanks for watching. [upbeat music]",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:02",
+        "text": "Donna: Hi. I'm Donna Tom, and I'm a TextKit engineer. My colleague Chris Willmore will join me later in this video. We're introducing TextKit 2, Apple's next-generation text engine."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "To understand what TextKit 2 is all about, let's briefly review the original TextKit, which we'll call TextKit 1. TextKit 1 is a text engine that drives text layout and display across all of Apple's platforms. Text controls in UIKit and AppKit use TextKit 1 to manage the storage and control the layout of text content."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "TextKit 1 first appeared on the system in OpenStep over 20 years ago. It's grown and evolved with us over the years from macOS 10.0 to iOS 7 to macOS 11 and iOS 14."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "It's pretty amazing that TextKit 1 still powers so much essential functionality across all Apple devices. Technology design and engineering principles have changed a lot over the decades. Since TextKit 1 is tied to its original principles, it's become more challenging over the years to provide APIs that integrate well with our newer technologies while still delivering a high standard of performance."
+      },
+      {
+        "timestamp": "1:31",
+        "text": "That's why we've built TextKit 2. TextKit 2 is Apple's next-generation text engine, built on a set of forward-looking design principles. And guess what? You're already using TextKit 2 on your Mac. In Big Sur, we updated many of the text components across the OS to use TextKit 2 behind the scenes. Big surprise: you've been using TextKit 2 since macOS 11. Now, let's briefly review the architecture that let us do this."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "TextKit 2 coexists with TextKit 1."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "Just like its predecessor, TextKit 2 is built on top of Foundation, Quartz, and Core Text. Text controls in UIKit and AppKit are built on top of TextKit 2. TextKit 2 also loosely retains the MVC design of its predecessor. The view portion remains in the view objects of the UIKit and AppKit frameworks, while there are new versions of our old friends, NSTextStorage and NSLayoutManager."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "In addition to these new versions, there are many more new classes and protocols joining the model and controller layers. There are a quite a few of them, but don't be alarmed. These new components are simple, focused, and powerful in combination."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "They make it easier for you to express what you want to do with your text and worry less about how the system accomplishes what you want."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "Now that we've gotten an architectural view of the system, let's dive into the details."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "First, we're going to discuss the core design principles of TextKit 2 and how these principles will change the way you think about customizing the storage, layout, and display of text in your apps."
+      },
+      {
+        "timestamp": "3:21",
+        "text": "After that, Chris will walk you through a TextKit 2 sample app we've created to collaborate on a book of recipes."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "This app uses the new TextKit 2 classes to lay out and display text in CALayers. Here, you'll get to learn how the design principles work in practice."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "Finally, we'll cover some important technical details for modernizing your apps for TextKit 2."
+      },
+      {
+        "timestamp": "3:45",
+        "text": "So let's get started with the design principles."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "The core high-level design principles of TextKit 2 are correctness, safety, and performance. We've taken a balanced approach. All three principles are important, so there is no priority to the order in which we discuss them."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "Each of these high-level design principles informs a specific design change in the system."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "For correctness, TextKit 2 abstracts away glyph handling."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "For safety, TextKit 2 places a heavier focus on value semantics."
+      },
+      {
+        "timestamp": "4:26",
+        "text": "And for performance, TextKit 2 uses viewport-based layout and rendering."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "We'll begin with correctness. In this area, we've abstracted away glyph handling to provide a consistent experience for international text. Apple devices are used everywhere around the world, so it's really important to provide correct layout, rendering, and interaction for text in all languages and scripts."
+      },
+      {
+        "timestamp": "4:57",
+        "text": "We want everyone to be able to read and interact with text on their devices. And the design of some of the TextKit 1 APIs makes it difficult to work with international text in a way that's universally correct."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "To understand why, we first need to understand what a glyph is. A glyph is a visual representation of a variable number of characters."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "In many Western languages, one glyph usually represents one character, but this is not always true."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "You can have multiple glyphs representing a single character, or it could be the other way around. A single glyph could represent multiple characters."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "This single glyph used to represent multiple characters is called a ligature."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "There aren't too many ligatures in Western languages, and they don't usually affect the legibility of the text. You can still read it just fine without ligatures."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "But that's not true for all languages. Scripts like Arabic and Devanagari use lots of ligatures, and they do affect the legibility. Check out this word in Arabic script."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "It's an Urdu word that means \"moment.\" Now take a moment to compare these two renderings."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "The full word, drawn with ligatures on the right, appears very different from the individual characters on the left."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "Native readers of the language would consider the version on the left to be illegible."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "Many of the APIs in TextKit 1 require working with a glyph index or range. For example, to get the bounding rectangle of some text, you need to know the glyph range of the text you want."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "If the text is in a Western language, figuring out the right glyph range isn't too bad."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "In this English example, it's pretty easy to find the glyph range for the first four characters of the text."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "Now consider Kannada, a script and language spoken by millions of people in India."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "Not only does it use lots of ligatures, the glyphs can be reordered and combined in all sorts of interesting ways."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "This Kannada word meaning \"October\" features a split vowel at character index four, so that gets split up into two glyphs."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "Then the one on the left gets reordered between the glyphs representing characters one and two before the ligature for two is applied."
+      },
+      {
+        "timestamp": "7:34",
+        "text": "The glyph representing the character at index three also gets substituted to a conjoining form."
+      },
+      {
+        "timestamp": "7:42",
+        "text": "In the final word, it's drawn below one of the glyphs in the split vowel. Now, if you didn't understand any of what I just said, that is totally OK."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "These are details that the framework should be handling for you so that you can focus on building your app."
+      },
+      {
+        "timestamp": "7:59",
+        "text": "The point is, it's not possible to find the glyph range for the first four characters of text like this."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "There is no single glyph range that will represent those four characters."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "And since many TextKit 1 APIs require a glyph range, using those APIs can potentially break layout and rendering for complex scripts like this."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "And that's why TextKit 2 abstracts away glyph handling. TextKit 2 renders all text with Core Text-- so you'll automatically get correct rendering for complex scripts."
+      },
+      {
+        "timestamp": "8:35",
+        "text": "You won't have to manage glyphs at all with TextKit 2. Instead, you use higher-level objects to control text layout and interactions."
+      },
+      {
+        "timestamp": "8:45",
+        "text": "Meet NSTextSelection, one of these higher-level objects."
+      },
+      {
+        "timestamp": "8:50",
+        "text": "It contains all the necessary context to represent a text selection, such as its granularity, its affinity, and the possibly disjoint ranges of text that make up the selection."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "These properties on NSTextSelection are read only, so you won't modify instances of the selection object to change them. Instead, you use an instance of NSTextSelectionNavigation to perform actions on text selections, receiving new instances of NSTextSelection that represent the resulting selection."
+      },
+      {
+        "timestamp": "9:27",
+        "text": "You can ask the navigation object to give you selections resulting from tap or mouse-down events at a point on the screen or get a new selection resulting from navigating forward or backward. This makes it easier to do things, like extend the selection forward by one word and get the correct result, accounting for bidirectional text in right-to-left languages."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "Now I wanna call your attention to something interesting about these new selection APIs."
+      },
+      {
+        "timestamp": "9:54",
+        "text": "This method takes a NSTextLocation. This is another new object in TextKit 2."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "Meet NSTextLocation and NSTextRange."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "These are very similar to the UITextPosition and UITextRange classes from UIKit, except you're not required to subclass them."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "Most of the time, you'll use the default location and range objects with TextKit 2."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "Using objects instead of integers allows for more expressive document models because the ranges are defined in terms of locations relative to each other. The HTML document object model is a good example of this. Since it has nested elements, a location needs to represent both the absolute position in the document and also the position in the visible text. This can't be expressed with a single numerical index."
+      },
+      {
+        "timestamp": "10:49",
+        "text": "And that's it for correctness. Next up is safety."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "In this area, we've designed TextKit 2 with a greater emphasis on value semantics to better align with the goals of technologies like Swift and SwiftUI."
+      },
+      {
+        "timestamp": "11:07",
+        "text": "And when I say \"value semantics,\" I'm not talking about value types. We did not make NSLayoutManager into a struct."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "Value types keep a unique copy of their data, which prevents mutation of that data. This makes your code safer and more stable by removing unintended sharing and associated side effects. But value types are not the only way to get this benefit."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "Immutable classes have properties that cannot be changed after initialization, which also prevents mutation of their data."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "These classes behave like value types, so we refer to them as having value semantics. If you want to change the data in one of these objects, you have to make a brand-new instance to replace the original one. And many of the classes in TextKit 2 are designed in this way."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "To illustrate the benefits of this design change, let's refresh our memory on the design of TextKit 1. The flow of text from the storage to the screen used to work like this."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "Updates to the text storage notified the layout manager, which would then generate glyphs, position them, and draw them directly into the view."
+      },
+      {
+        "timestamp": "12:27",
+        "text": "With this approach of drawing glyphs directly into the view, it's difficult to figure out where to separate the text to create spaces for custom drawing."
+      },
+      {
+        "timestamp": "12:37",
+        "text": "To understand what I mean by that, check out this sneak-peek screenshot from the sample app, where I've left some comments on a recipe."
+      },
+      {
+        "timestamp": "12:45",
+        "text": "Notice how the comment appears right underneath the recipe it's referring to and it's drawn with this distinct, bubble-shaped, indigo background and white text."
+      },
+      {
+        "timestamp": "12:56",
+        "text": "What approach should we take to insert comments in the correct place and make them look different from the rest of the text? You might expect to do this by dividing the recipe text into meaningful units, or elements, putting each comment in its own element, and positioning each comment after the recipe it's related to, while providing instructions for how to draw the comments."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "With TextKit 1, the reality is quite different."
+      },
+      {
+        "timestamp": "13:25",
+        "text": "You have to worry about a lot of details, like finding the glyph index, making sure that the glyph is not in the middle of a grapheme cluster, adjusting that glyph index if it is, changing the line spacing, and possibly customizing the line-fragment geometry."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "And these details are not relevant to what you're trying to do. So with TextKit 2, we're aiming to make the expectation into reality. We've changed the flow of text through the system to make approaches like this possible."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "Here's how that flow works in TextKit 2."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "Updates to the text storage go through a new object called the content manager."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "The content manager divides the text up into elements and keeps track of them. When it's time for layout, the text layout manager asks the content manager for the elements."
+      },
+      {
+        "timestamp": "14:16",
+        "text": "Then the text layout manager lays out the elements into the text container and generates layout fragments that contain the layout and positioning information."
+      },
+      {
+        "timestamp": "14:27",
+        "text": "When it's time for display, the layout fragments are handed off to the ViewportLayoutController, which coordinates the positioning and layout of those fragments in your rendering surface of choice, whether it's a view or a layer."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "As you can tell, there are a lot of new objects involved in this process. And this is where the emphasis on value semantics comes in."
+      },
+      {
+        "timestamp": "14:50",
+        "text": "You control the layout and display of your text by hooking into the system at the right point and obtaining the information you need from objects that use value semantics."
+      },
+      {
+        "timestamp": "15:02",
+        "text": "To make changes, you create new instances of the value objects with the changes you want and give them back to the system. The system uses the values from your replacement objects for layout and display."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "So now, let's meet these new objects and identify the different points of the system where you can receive or replace them. We'll start with the storage objects."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "Meet NSTextElement. Elements are the building blocks of your document. Each element represents a portion of the content and contains a range that describes where it is in the document. And elements have value semantics. Their properties, including the range, are immutable and cannot be changed after creating the element."
+      },
+      {
+        "timestamp": "15:48",
+        "text": "Modeling the document as a series of elements rather than a series of characters gives us a lot more power. We gain the ability to easily distinguish what kind of content a given element represents, whether it's a paragraph of text, an attachment, or some other custom type. And we can make decisions on how to lay out elements based on their type."
+      },
+      {
+        "timestamp": "16:13",
+        "text": "Now let's meet NSTextContentManager."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "The content manager knows how to generate elements from the text content and keeps track of the ranges of those elements within the overall document. It also knows how to work with the backing store and how to generate new elements with updated ranges when the content in the backing store changes."
+      },
+      {
+        "timestamp": "16:34",
+        "text": "Think of the content manager as a wrapper for the backing store."
+      },
+      {
+        "timestamp": "16:38",
+        "text": "The content manager provides an interface for translating the raw data into elements."
+      },
+      {
+        "timestamp": "16:46",
+        "text": "NSTextContentManager and NSTextElement are both abstract types, so you could subclass them if you need to use a custom document model or a custom backing store. The headers and documentation provide guidance on how to do this. But most of the time, you can use the default ones that TextKit 2 provides."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "Meet NSTextContentStorage and NSTextParagraph. These are the default content manager and element types. NSTextContentStorage is a content manager that uses an NSTextStorage as the backing store."
+      },
+      {
+        "timestamp": "17:21",
+        "text": "It knows how to divide the contents of the text storage into paragraph elements, which are instances of NSTextParagraph. NSTextContentStorage also knows how to generate updated paragraph elements when the text in the text storage changes. This brings me to an important point."
+      },
+      {
+        "timestamp": "17:40",
+        "text": "When making changes to the underlying text storage, you should wrap your updates in this performEditingTransaction method. This ensures that the other parts of the TextKit 2 system are notified of your changes."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "You can do some cool stuff with the content storage delegates without having to implement a full NSTextContentManager subclass."
+      },
+      {
+        "timestamp": "18:02",
+        "text": "Later in this video, Chris will cover how to use content delegates to change the comment font and color without modifying the text storage and how to hide comments altogether. So stay tuned for more details."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "OK. Now we understand how TextKit 2 creates elements from your text content. That takes care of the first two steps from our new approach."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "The content storage automatically divides the text into paragraph elements, and it knows how to create new paragraphs for the new comments."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "Next, let's figure out how we can accomplish the last two steps: the positioning and display of comments."
+      },
+      {
+        "timestamp": "18:41",
+        "text": "Returning to our flow diagram, we need to get layout information for our comment elements. There are new layout objects to help us with these tasks. Let's meet them now."
+      },
+      {
+        "timestamp": "18:53",
+        "text": "Meet NSTextLayoutManager. The text layout manager controls the text layout process."
+      },
+      {
+        "timestamp": "19:00",
+        "text": "NSTextLayoutManager is similar to the old NSLayoutManager from TextKit 1 with one major difference: NSTextLayoutManager does not deal with glyphs."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "Instead, NSTextLayoutManager takes text elements, lays them out into the text container, and generates layout fragments for those elements."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "You work with layout fragments to get layout information for text elements. So now let's learn about layout fragments."
+      },
+      {
+        "timestamp": "19:31",
+        "text": "Meet NSTextLayoutFragment. A layout fragment contains layout information for one or more text elements. Just like elements, they use value semantics and their properties are immutable."
+      },
+      {
+        "timestamp": "19:45",
+        "text": "So the text layout manager will create layout fragments for each of our comment elements, and then we can use the information from the layout fragments to position and display them."
+      },
+      {
+        "timestamp": "19:56",
+        "text": "Layout fragments communicate layout information through three properties: an array of textLineFragments, the layoutFragmentFrame, and the renderingSurfaceBounds."
+      },
+      {
+        "timestamp": "20:10",
+        "text": "If you want to customize or change the layout, it's essential to understand the information you get with each of these properties. So we'll go over that next."
+      },
+      {
+        "timestamp": "20:20",
+        "text": "For the first property, we'll meet NSTextLineFragment. Line fragments contain measurement information for each line of text in the layout fragment."
+      },
+      {
+        "timestamp": "20:30",
+        "text": "These are useful for obtaining geometric information for specific lines or for counting the number of lines in a layout fragment."
+      },
+      {
+        "timestamp": "20:39",
+        "text": "The second property, the layout fragment frame, describes how the text in the layout fragment is laid out inside the text container area. In TextKit 2, text layout is basically stacking up the layout fragment frames within the container. Think of these frames like tiles. The system is dividing up the text container area into tiles, where each layout fragment is a single tile."
+      },
+      {
+        "timestamp": "21:05",
+        "text": "Empty lines have their own layout fragment frame, as shown in the diagram. In general, layout fragment frames are useful for positioning other views in your UI near the fragment contents or for calculating the total height of the text content."
+      },
+      {
+        "timestamp": "21:22",
+        "text": "Now, this frame does not accurately represent the space needed to draw the text itself. That information comes from the third property. The rendering surface bounds describes the area required to draw the text. This is the rectangle you want to use to get the size of the text in the view's coordinate space. And this is different from the layout fragment frame because the text can overshoot the edges of the fragment frame. This happens with diacritics or, as shown here, with long descenders in italic fonts. Notice how the bottom-left edge of the J sticks out just a little bit from the layout fragment frame. It doesn't stick out that much, so here's a more extreme example."
+      },
+      {
+        "timestamp": "22:09",
+        "text": "Some fonts, like Zapfino, have glyphs that extend very far outside the typographic bounds."
+      },
+      {
+        "timestamp": "22:15",
+        "text": "The rendering surface bounds will be much larger than the layout fragment frame in this case."
+      },
+      {
+        "timestamp": "22:21",
+        "text": "Now that we understand the layout information that layout fragments provide, let's back up a bit and talk about how to use this information to customize the layout of text elements."
+      },
+      {
+        "timestamp": "22:32",
+        "text": "Since layout fragments are immutable, you can't directly change the layout information on a fragment."
+      },
+      {
+        "timestamp": "22:40",
+        "text": "Going back to our flow diagram, we need to hook into the layout process and create new instances of NSTextLayoutFragment with the information we want to change."
+      },
+      {
+        "timestamp": "22:53",
+        "text": "And you hook into the layout process using this delegate method on NSTextLayoutManager. This method gets called during the layout process when the text layout manager is generating the layout fragments from the elements. Here you have an opportunity to create your own layout fragment for an element."
+      },
+      {
+        "timestamp": "23:15",
+        "text": "That takes care of the last two steps in our approach to the comment problem. We'll handle the positioning and custom drawing of our comment layout fragment by using a subclass of NSTextLayoutFragment and providing instances of our custom fragment in the text layout manager delegate."
+      },
+      {
+        "timestamp": "23:31",
+        "text": "Later in this video, Chris will demonstrate how this is done in our sample app."
+      },
+      {
+        "timestamp": "23:37",
+        "text": "And that's safety. Now let's move on to performance."
+      },
+      {
+        "timestamp": "23:42",
+        "text": "Performance is one of the greatest challenges for any text engine. TextKit 2 is extremely fast for an incredibly wide range of scenarios, from quickly rendering labels that are only a few lines each to laying out documents that are hundreds of megabytes being scrolled through at interactive rates. And for these scenarios, when you're scrolling through these really large documents at variable rates, noncontiguous text layout is absolutely essential for great performance."
+      },
+      {
+        "timestamp": "24:14",
+        "text": "Let's review the difference between contiguous and noncontiguous layout."
+      },
+      {
+        "timestamp": "24:19",
+        "text": "This diagram shows a document where the yellow rectangle represents the visible content area on the screen."
+      },
+      {
+        "timestamp": "24:27",
+        "text": "Contiguous layout starts at the very beginning of the document and goes in order from the beginning to the end of the text."
+      },
+      {
+        "timestamp": "24:35",
+        "text": "So if you scroll to some point in the middle of the document, contiguous layout performs layout for all of the text that came before that point."
+      },
+      {
+        "timestamp": "24:44",
+        "text": "This includes all the text that's been scrolled off the screen, all the way back to the beginning. And if there's a lot of text, the performance can be slow and you can get animation hiccups when scrolling. In the worst case, it can hang."
+      },
+      {
+        "timestamp": "25:01",
+        "text": "In contrast, noncontiguous layout means we can lay out a piece of the text anywhere within the document without laying out the pieces that come before it."
+      },
+      {
+        "timestamp": "25:11",
+        "text": "Now when you scroll to the middle of the document, layout happens for that visible area right away."
+      },
+      {
+        "timestamp": "25:18",
+        "text": "This improves performance by performing layout only for the portions of text that are visible on the screen, plus an additional over-scroll region, resulting in a smoother scrolling experience."
+      },
+      {
+        "timestamp": "25:30",
+        "text": "And layout in TextKit 2 is always noncontiguous."
+      },
+      {
+        "timestamp": "25:35",
+        "text": "In contrast, noncontiguous layout is optional in TextKit 1."
+      },
+      {
+        "timestamp": "25:41",
+        "text": "It's enabled using a boolean property on NSLayoutManager. This API is simple, but because it is simple, it can't express information about the state of the layout at the time you request layout information."
+      },
+      {
+        "timestamp": "25:57",
+        "text": "Noncontiguous layout relies on estimates that may change later once other portions of the document have been laid out. With TextKit 1, you can only turn noncontiguous layout on or off."
+      },
+      {
+        "timestamp": "26:10",
+        "text": "There is no ability to control which parts of the document get laid out and no way to know when layout finishes and the layout estimates are updated to the real values."
+      },
+      {
+        "timestamp": "26:20",
+        "text": "The TextKit 2 API is richer and more expressive."
+      },
+      {
+        "timestamp": "26:26",
+        "text": "TextKit 2 gives you consistent layout information for elements in the visible content area and notifies you when the layout updates for that visible area."
+      },
+      {
+        "timestamp": "26:36",
+        "text": "This area is called the viewport. You manage the viewport by adjusting or relocating it, and you receive callbacks before, during, and after viewport layout."
+      },
+      {
+        "timestamp": "26:48",
+        "text": "For optimum performance, your code should focus on working with layout information inside the viewport area. Avoid requesting layout information for elements outside the viewport when possible."
+      },
+      {
+        "timestamp": "27:02",
+        "text": "The layout information for elements outside the viewport might not be accurate unless you explicitly ask to ensure layout for the text ranges corresponding to those elements. This call can be expensive, especially for large documents."
+      },
+      {
+        "timestamp": "27:19",
+        "text": "Revisiting our flow diagram from earlier, there's another new controller class to help us manage the viewport."
+      },
+      {
+        "timestamp": "27:28",
+        "text": "Meet NSTextViewportLayoutController. This is the source of truth for viewport layout information. It talks to the text layout manager to get layout fragments for elements within the viewport area. You can access the viewport layout controller through the property on the text layout manager."
+      },
+      {
+        "timestamp": "27:48",
+        "text": "Now that we've met the viewport layout controller, let's talk about how to participate in the viewport layout process."
+      },
+      {
+        "timestamp": "27:56",
+        "text": "The viewport layout controller calls three important methods on its delegate during the viewport layout process: TextViewportLayoutController WillLayout, textViewportController configureRenderingSurface FortextLayoutFragment, and textViewportLayoutController DidLayout."
+      },
+      {
+        "timestamp": "28:16",
+        "text": "First, the viewport layout controller calls the willLayout method before laying out elements in the viewport. Here is where you do any setup work to prepare for layout, such as clearing out the contents of the view or layer."
+      },
+      {
+        "timestamp": "28:31",
+        "text": "Next, the viewport layout controller calls configureRenderingSurface for every layout fragment that's visible in the viewport. Here is where you update the geometry of each fragment view or layer."
+      },
+      {
+        "timestamp": "28:44",
+        "text": "Finally, the viewport layout controller calls the didLayout method after it's finished laying out all of the layout fragments visible in the viewport."
+      },
+      {
+        "timestamp": "28:54",
+        "text": "And here's where you perform any needed updates after viewport layout is finished, like if you wanted to adjust the viewport to make the last element fully visible on the screen. And that sums it up for performance. Now I'll hand it off to Chris to show you how to use TextKit 2 in practice. Thank you, Donna. We wrote a sample app that demonstrates some of the different ways you can use TextKit 2 to lay out and interact with text in your app. You can download the sample code used in this video. Let's open it up and try it out. We're using this collaboration app to review a book of recipes so we can figure out what we want to make for lunch. Scrolling through the recipes works as expected, but something special is happening behind the scenes: Only the paragraphs that are visible in the viewport are being drawn."
+      },
+      {
+        "timestamp": "29:42",
+        "text": "And instead of every paragraph being rendered on the same big surface, each paragraph is being rendered into its own layer."
+      },
+      {
+        "timestamp": "29:49",
+        "text": "If I click the Show Bounds button in the toolbar here, these colored rectangles appear. The orange rectangle shows the bounds of each layer. Drawing text into separate layers lets us implement a fun feature: I can leave comments on the recipes. Now, I think an egg sandwich sounds pretty good, so I'm going to double-click on this paragraph and type, \"hey this sounds pretty good,\" and hit Enter to insert the comment."
+      },
+      {
+        "timestamp": "30:19",
+        "text": "I've just inserted a new paragraph into the document. The bubble background is being drawn by a custom subclass of NSTextLayoutFragment called BubbleLayoutFragment. More on that later."
+      },
+      {
+        "timestamp": "30:31",
+        "text": "What's special is, as I insert comments into the document, all of the paragraphs below the comment move to make room for it. If you didn't catch it the first time, I'm going to click this turtle button in the toolbar to enable Slow Mode."
+      },
+      {
+        "timestamp": "30:46",
+        "text": "Let's add another comment."
+      },
+      {
+        "timestamp": "30:48",
+        "text": "\"Yeah let's make it for lunch today.\" After I hit Enter, the comment is added to the document below it, and all paragraphs below it animate slowly. If you want to hide all the comments, you can click the Toggle Comments button in the toolbar. This is not actually editing the underlying document. It's instead asking the text content manager to skip comments when enumerating text elements for layout."
+      },
+      {
+        "timestamp": "31:15",
+        "text": "TextKit 2 works just as well on iOS as it does on macOS. This means the TextKit 2 parts of the macOS app can be reused on iOS. Let's run it on iPad."
+      },
+      {
+        "timestamp": "31:28",
+        "text": "We've used those parts to write an iOS version of our collaboration app with all the same functionality. I'm long-pressing on a paragraph to leave a comment, then typing, \"hey that sounds good\"... and hitting Enter."
+      },
+      {
+        "timestamp": "31:46",
+        "text": "Just like the app on macOS, I can tap the comment Show/Hide button to hide all comments."
+      },
+      {
+        "timestamp": "31:53",
+        "text": "I've just gone through an app that uses TextKit 2 to lay out, draw, and interact with text. Now let's go over some of the code in the sample app and how TextKit 2 makes it possible."
+      },
+      {
+        "timestamp": "32:05",
+        "text": "The app demonstrates a lot of the functionality that TextKit 2 provides, but I want to focus on two areas for now: how it lays out the text in the viewport using NSViewportLayoutController and how it implements the custom hiding behavior and rendering of the comments."
+      },
+      {
+        "timestamp": "32:23",
+        "text": "When the text layout manager is about to lay out the document either because it changed, the container size was changed, or a previously unseen portion of the document has moved into the viewport, it calls textViewportLayout ControllerWillLayout on its viewport layout delegate. We're using it here to clear out all the text sublayers and open an animation transaction."
+      },
+      {
+        "timestamp": "32:48",
+        "text": "For each text element that the text layout manager lays out, it calls textViewportLayoutController, configureRenderingSurfaceFor textLayoutFragment. Here we're getting a layer to display the text layout fragment in, updating its geometry, animating it to its new position, if possible, and adding it as sublayer of the view."
+      },
+      {
+        "timestamp": "33:11",
+        "text": "When the layout manager is done laying out, it will call textViewportLayout ControllerDidLayout. We commit the animation transaction, update the selection highlights, and update the content size so the scroll thumb is placed correctly."
+      },
+      {
+        "timestamp": "33:28",
+        "text": "Now let's talk about the comments. TextKit 2 provides several hooks that you can use to customize layout element and layout fragment generation. I'm gonna show you how we take comments in the document, set custom attributes like font and color for display, and draw the bubble behind them."
+      },
+      {
+        "timestamp": "33:48",
+        "text": "For each paragraph in the document, the text content storage gives its delegate a chance to customize the attributes on that paragraph. In our implementation, we're setting a custom font and color on comments without having to alter the font or color of the underlying text storage."
+      },
+      {
+        "timestamp": "34:07",
+        "text": "The text content manager also gives its delegate the chance to decide which text elements will be shown to the text layout manager during layout."
+      },
+      {
+        "timestamp": "34:16",
+        "text": "Returning false for a text element prevents it from being displayed. Here we're hiding comments by choosing not to enumerate them without having to actually delete them from the underlying text storage."
+      },
+      {
+        "timestamp": "34:29",
+        "text": "The text layout manager has a delegate too. By implementing textLayoutManager, textLayoutFragmentFor location in textElement, the delegate can generate a custom text layout fragment instead of the default NSTextLayoutFragment instance for a given NSTextElement. In this case, when it encounters an NSTextElement that represents a comment, it creates a BubbleLayoutFragment, which is a custom subclass of NSTextLayoutFragment."
+      },
+      {
+        "timestamp": "34:59",
+        "text": "BubbleLayoutFragment overrides the draw method of NSTextLayoutFragment to draw the background bubble before calling the base class implementation to draw the text on top. Note that the text is being rendered with the custom font and text color that we set earlier."
+      },
+      {
+        "timestamp": "35:17",
+        "text": "I've gone over how the sample app uses TextKit 2 to perform viewport-based animated layout of text and how it renders comments in those colorful bubbles, going all the way from custom attributes in the text storage to custom drawing. But there's a lot more in the sample code that takes advantage of new API provided by TextKit 2, including interpreting mouse events to determine the text selection, rendering the text selection highlight, placing the comment popover at a particular paragraph in the document, and estimating the document height. You can find further discussion of all of these topics in the sample code. Let's go back to Donna to talk about preparing your apps for TextKit 2. Thanks, Chris. That's a fantastic example of how TextKit 2 works in practice. Now that we've gone over what TextKit 2 can do, let's discuss some approaches for app modernization."
+      },
+      {
+        "timestamp": "36:13",
+        "text": "Everything we've talked about so far applies to creating your own TextKit 2 stack to use with a generic view or layer."
+      },
+      {
+        "timestamp": "36:21",
+        "text": "All of the new classes are available in UIKit with iOS 15 and in AppKit with macOS 12. So if you wanna go this route, you can start writing new code with TextKit 2 today."
+      },
+      {
+        "timestamp": "36:34",
+        "text": "On the other hand, many apps use the built-in text controls, like text view, to take advantage of all the great, free functionality, like accessibility support and selection and editing services. Some of these controls have already been updated to use TextKit 2. If your app uses the built-in controls, there are a few additional details to be aware of. Maintaining compatibility is as important to us as it is to you. Since TextKit 1 is such an integral part of the built-in text controls, we're going to great lengths to maintain compatibility for apps that are using them. This is why only some controls use TextKit 2 automatically in iOS 15 and macOS 12."
+      },
+      {
+        "timestamp": "37:19",
+        "text": "Additionally, some controls require taking extra steps to use TextKit 2 in these OS versions. For AppKit developers, NSTextView does not use TextKit 2 automatically."
+      },
+      {
+        "timestamp": "37:32",
+        "text": "If you want to use TextKit 2 with a NSTextView, you need to opt in programmatically at creation time."
+      },
+      {
+        "timestamp": "37:40",
+        "text": "This is how to do it. First, create a text layout manager. Next, create a text container. Then associate the text container with the text layout manager using the textContainer property on NSTextLayoutManager. Finally, create your NSTextView using the designated initializer with the text container. Now you'll have a text view that uses TextKit 2."
+      },
+      {
+        "timestamp": "38:08",
+        "text": "You can access the text layout manager and text content storage with new properties on NSTextView. There's just one thing to be careful of."
+      },
+      {
+        "timestamp": "38:18",
+        "text": "Recall that NSTextView has a layoutManager property that allows getting and setting its NSLayoutManager."
+      },
+      {
+        "timestamp": "38:25",
+        "text": "NSLayoutManager is a TextKit 1 object and it's not compatible with the TextKit 2 stack."
+      },
+      {
+        "timestamp": "38:32",
+        "text": "A text view can't have both a layout manager and a text layout manager at the same time."
+      },
+      {
+        "timestamp": "38:39",
+        "text": "So here's the deal. We added a special compatibility mode for NSTextView that switches it to TextKit 1 when needed. The text view can automatically detect whether it needs to use this mode and replace its NSTextLayoutManager with NSLayoutManager. For optimum performance, the text view will remain in compatibility mode from that point forward."
+      },
+      {
+        "timestamp": "39:03",
+        "text": "Even if you opted in to TextKit 2, your text view will automatically switch to TextKit 1 if you explicitly call the layoutManager property on your text view or text container."
+      },
+      {
+        "timestamp": "39:15",
+        "text": "The text view will also switch if it encounters text content that is not yet supported or detects other conditions that require TextKit 1."
+      },
+      {
+        "timestamp": "39:24",
+        "text": "And this can happen for field editors as well. Field editors for NSTextField use TextKit 2 by default. But if your text field subclass is requesting layout information from the field editor's layout manager, the field editor will switch to TextKit 1 for all text fields in that window."
+      },
+      {
+        "timestamp": "39:45",
+        "text": "The system will issue notifications before and after a text view switches to TextKit 1. You can observe these notifications to receive this information."
+      },
+      {
+        "timestamp": "39:54",
+        "text": "The notification objects contain a reference to the exact text view that changed modes."
+      },
+      {
+        "timestamp": "40:00",
+        "text": "For complete details on the TextKit 1 compatibility mode for AppKit, please refer to the documentation on the Apple Developer portal."
+      },
+      {
+        "timestamp": "40:09",
+        "text": "For UIKit developers, UITextField uses TextKit 2 automatically in iOS 15."
+      },
+      {
+        "timestamp": "40:16",
+        "text": "UITextView with TextKit 2 is not available in iOS 15."
+      },
+      {
+        "timestamp": "40:23",
+        "text": "We're working to ensure maximum compatibility for all applications that use UITextView, and there are quite a lot of them. In the meantime, you can review your existing code for uses of UITextView's layoutManager property and think about how to express your intent with TextKit 2. That way, you'll be ready to transition once it's available."
+      },
+      {
+        "timestamp": "40:45",
+        "text": "And that's a wrap. Now you've met TextKit 2, Apple's new text engine to take us into the future. We look forward to seeing what you'll build with TextKit 2. Thanks for watching. [upbeat music]"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -98,5 +845,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10059"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:30.408Z"
+  "extractedAt": "2026-10-17T18:53:25.873Z"
 }

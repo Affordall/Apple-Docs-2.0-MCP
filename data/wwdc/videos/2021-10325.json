@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10325/",
   "title": "Friday@WWDC21",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,56 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Phew! What a ride we’ve had at Dub Dub.\n\nHere’s your recap! ♪ \"Better Days (Instrumental)\" by DARKMINDS ♪ We learned how to create apps for research and care...\n\n- We can provide educational text from the clinicians.\n\n- This cutting-edge research is going to help so many people.\n\n-...And discovered how to design for Safari 15’s tab bar and incorporate visual intelligence.\n\n- Well that's what we've done in Safari 15.\n\n- Beautiful! We also explored how to build Mac apps with SwiftUI...\n\n- These APIs and concepts apply to all platforms.\n\n- ...and said hello to CloudKit Console.\n\n- The next time I launch the console, it will bring me straight to the last container I visited.\n\n- Wow! How is it Friday already? There was just so much: async/await, Xcode Cloud, SharePlay, Metal, Mindful Cooldowns for coding, watchOS, Tiera Fletcher’s amazing talk, Xcode, gaming, accessibility... We hope you had a great week and cannot wait to see what you make this fall.\n\nCiao! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "",
+        "text": "Phew! What a ride we’ve had at Dub Dub."
+      },
+      {
+        "timestamp": "",
+        "text": "Here’s your recap! ♪ \"Better Days (Instrumental)\" by DARKMINDS ♪ We learned how to create apps for research and care..."
+      },
+      {
+        "timestamp": "",
+        "text": "- We can provide educational text from the clinicians."
+      },
+      {
+        "timestamp": "",
+        "text": "- This cutting-edge research is going to help so many people."
+      },
+      {
+        "timestamp": "",
+        "text": "-...And discovered how to design for Safari 15’s tab bar and incorporate visual intelligence."
+      },
+      {
+        "timestamp": "",
+        "text": "- Well that's what we've done in Safari 15."
+      },
+      {
+        "timestamp": "",
+        "text": "- Beautiful! We also explored how to build Mac apps with SwiftUI..."
+      },
+      {
+        "timestamp": "",
+        "text": "- These APIs and concepts apply to all platforms."
+      },
+      {
+        "timestamp": "",
+        "text": "- ...and said hello to CloudKit Console."
+      },
+      {
+        "timestamp": "",
+        "text": "- The next time I launch the console, it will bring me straight to the last container I visited."
+      },
+      {
+        "timestamp": "",
+        "text": "- Wow! How is it Friday already? There was just so much: async/await, Xcode Cloud, SharePlay, Metal, Mindful Cooldowns for coding, watchOS, Tiera Fletcher’s amazing talk, Xcode, gaming, accessibility... We hope you had a great week and cannot wait to see what you make this fall."
+      },
+      {
+        "timestamp": "",
+        "text": "Ciao! ♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [

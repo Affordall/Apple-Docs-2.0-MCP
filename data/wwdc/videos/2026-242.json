@@ -3,16 +3,407 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/242/",
   "title": "Build agentic app experiences with the Foundation Models framework",
-  "speakers": [],
-  "duration": "",
+  "duration": "21:43",
   "topics": [
     "Machine Learning & AI"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello everyone! And thank you for joining us! My name is Erik. And I'm Oliver. Today, we're going to dig into a new set of APIs that open up whole new possibilities for your apps; Dynamic profiles! But before we dive into the code, we want to lay the groundwork by identifying the problems these APIs solve, and our philosophy behind their design. The first challenge these APIs solve is context management. In long running sessions, dynamic profiles let you trim or summarize the transcript to keep it within the model's context window. The second problem these APIs solve is establishing boundaries. When using multiple models, you should design around capability and cost considerations. Dynamic profiles give you that option. This field is changing week-to-week. The primitives that we're introducing are designed to be flexible, ensuring it's possible to build today's abstractions, and tomorrow's. Exactly! Dynamic profiles enable context engineering, defining model boundaries, and can be scaffolded into just about any architecture. And it's in that spirit today that we're announcing a new package; Foundation Models framework utilities. Utilities is an open source Swift package that houses components helpful for building agentic experiences. It will be updated in between OS releases and give you access to emerging or experimental patterns, all backed by dynamic profiles. So now that we've set the stage, let's jump into our agenda. In the first half of this video, Oliver is going to teach you about the mechanics of dynamic profiles. In the second half, I'll rejoin to cover some advanced topics related to orchestration patterns. Finally, we'll wrap up with a foray into performance and accuracy considerations. So with that, it's over to you Oliver! Thanks Erik.\n\nWith the introduction of the LanguageModel protocol and PrivateCloudComputeLanguageModel, you now have more models than ever to choose from. DynamicProfile is a new API that gives you the ability to switch models within your LanguageModelSession, providing you with the flexibility to select the best configuration for the task at hand.\n\nDynamicProfile is the foundation on which you can build many useful abstractions, such as agents or skills.\n\nToday, I'll give you a tour of the API starting with leveraging multiple models, before diving into transcript considerations and finishing with session lifecycle events. Let's start by looking at an example.\n\nI'm working on a craft app called Origami which can produce both origami and crochet tutorials.\n\nHere, the user will upload images and our app will help them brainstorm ideas using the image as inspiration.\n\nThe user can provide feedback on the shortlist of ideas before a tutorial is generated for the selected concept. While the user works through the tutorial, they can upload in-progress photos and get advice on their technique.\n\nEach stage in the app requires shared context but individually, they have a unique set of priorities. They may benefit from a diverse set of models, with different instructions and generation options.\n\nThese configurations are agents - they act on your app's behalf, and are configured with a particular goal and set of capabilities in mind. DynamicProfile allows you to declare individual Profiles, which represent a configuration state or agent in your LanguageModelSession.\n\nA Profile is made up of instructions, tools, and modifiers for configuring things like the model, temperature, samplingMode and more. So let's start by declaring a DynamicProfile for our craft experience.\n\nHere, we have an Observable class called CraftOrchestrator that will track the different phases of the app. We'll focus on the brainstorming phase first, which is used for presenting different craft project ideas to the user.\n\nHere, our new profile has some instructions explaining its goal and a tool for generating titles.\n\nBecause origami is a complicated craft, let's also include some additional instructions and tools but only when the user is working on an origami project.\n\nOrigamiExpert makes use of another new type called DynamicInstructions. DynamicInstructions enables grouping of relevant tools and instructions together into a single component that can be reused throughout your codebase.\n\nOrigamiExpert contains knowledge and tools that can be reused every time we're prompting a model about origami. DynamicInstructions are also composable so nesting OrigamiExpert inside another DynamicInstructions body will concatenate the instructions and tools together. Here, we've created BrainstormFacilitator to hold our profile's instructions. Now we can clean up our brainstorming profile using the new declaration. Since brainstorming requires both a broad knowledge of crafts and creative thinking, this profile will use PrivateCloudComputeLanguageModel, which is a new model available in Foundation Models.\n\nBe sure to check out the talk from Louis on PCC in Foundation Models to learn more about what this model has to offer. We'll also set the temperature to 1, to allow the model to produce more creative responses.\n\nWe've just defined our first agent using DynamicProfiles.\n\nLet's move on to the next mode in our profile: planning.\n\nThe \"planning\" profile is responsible for creating directions for an agreed upon craft project.\n\nAgain, we'll use PCCLanguageModel since this requires in-depth knowledge of crafts.\n\nWe'll also configure reasoningLevel, which is a capability available to most server models. This controls the model's capacity to think through the problem before responding. Since generating a tutorial is complex, we'll set it to deep.\n\nLastly, the \"reviewing\" phase provides advice and guidance as the user works through the tutorial.\n\nTo save on unnecessary server calls, this makes use of SystemLanguageModel.\n\nAnd just like that, we've finished defining our crafting DynamicProfile.\n\nTo make use of DynamicProfile in your session, it's as simple as using the new LanguageModelSession initializer.\n\nNote that the body of a DynamicProfile is re-evaluated each time the model is prompted, so as the app moves between each mode, the persona of the LanguageModelSession changes.\n\nYou can think of this as swapping hats, or switching agents. You can move from brainstorming to planning, to reviewing. All by changing the mode.\n\nYou've now seen how you can route between different models using DynamicProfile. But it's important to consider that each model may have different context size limits.\n\nOur craft example switches between PCCLanguageModel and SystemLanguageModel. When moving between models, you may need to trim unnecessary entries to stay within the context size. But that's not the only reason for adjusting the model's context. You can also improve the model's focus by removing irrelevant entries, or redact private information from existing entries when moving to a less private model.\n\nThe transcript is LanguageModelSession's representation of the model's context. DynamicInstructions offers one way to modify the transcript. More specifically, it allows modifying the instructions entry. For updating the remaining entries, we'll use a window into the transcript called \"history\".\n\nDropping tool calls is one easy way to trim history. Let's take a look at how you'd implement this.\n\nhistoryTransform can be applied to a profile to transform the history prior to prompting the model.\n\nThis is the opportune time to filter out entries that may not be necessary for the request.\n\nApplying a transformation on our \"reviewing\" profile helps keep the transcript within the on device model's context size. Transforms don't permanently mutate the session's transcript. Instead, they're local transformations applied prior to prompting the model.\n\nThis means you don't need to worry about losing context that may become relevant at a later point.\n\nOur historyTransform has a lot going on. Let me show you how we can use custom modifiers to hide the complexity of our transform.\n\nFirst, we'll declare a new type that conforms to DynamicProfileModifier and apply our historyTransform.\n\nWe can then make it available for reuse by implementing an extension on DynamicProfile. Any new Profiles that would benefit from reducing context can now utilize the new modifier.\n\nWe've made a number of useful modifiers available in the new Foundation Models framework utilities package. We encourage you to take a look. Custom modifiers are a great way to build reusable configuration for your declarations.\n\nBut transforms aren't the only way that you can influence the transcript. Let's take a look at another more stateful approach.\n\nAt certain points in the session, you may need to summarize earlier entries from the existing transcript to reclaim context.\n\nDoing this after each model's response provides a clear boundary in the session's lifecycle.\n\nLet's take a look at how we can perform our summarize operation after each response using a new set of modifiers.\n\nLifecycle modifiers provide access to your profile's progress by giving you the opportunity to run imperative code directly in your profile declaration. This can be useful for updating state external to your session, like reflecting progress in UI. But it's also useful for internal state updates, like changing the mode in our craft profile or modifying the session's history.\n\nLet's use the onResponse modifier to mutate the history at the response boundary that I mentioned earlier. You'll notice this is also making use of another new concept: session properties. Session properties allow you to define state that's accessible from any Tool or Profile. The history property that we just used is a built-in property provided by the framework. It captures the session's history and can be used as an alternative to historyTransform for updating the transcript. Keep in mind that the history property is lossy and its changes will be reflected across all profiles in the session. For lossless transformations targeted to specific profiles, you should prefer historyTransform. In addition to history, you can also create your own session properties. Let's create a new property to store our conversation summary when onResponse is called.\n\nYou can declare properties using the @SessionPropertyEntry macro within an extension on SessionPropertyValues. All session properties are mutable and must have an initial value. Here, we've declared our summary as an optional string. Each Profile can now read the value of the summary by accessing the session property that we just declared. We'll include the summary in our profile's instructions to ensure they have the context on the transcript entries that were dropped.\n\nAny profile can write to the property and changes will be visible across the session.\n\nNow let me produce a conversation summary for you.\n\nUse lifecycle modifiers to run code at specific points in the session. Use the history property to update the session's history for all profiles. And use custom session properties for storing state that's shared by all session components. And with that, I'll hand it back to Erik to teach you about agent orchestration. Thanks Oliver! Hopefully, you're starting to develop an intuition for how profiles can be used to build things like agents. Let's take a look at two common patterns for orchestrating agentic experiences.\n\nWe like to refer to these patterns as baton-pass and phone-a-friend.\n\nBaton-pass is a collaboration and phone-a-friend is a consultation. Let's look at baton-pass first.\n\nIn this pattern, there are two or more profiles, typically each leveraging different models.\n\nThere also needs to be a variable that controls which profile is active.\n\nFinally, we give each profile a tool that allows the model to set that variable.\n\nTogether, these pieces make up the baton-pass pattern.\n\nIf we're currently brainstorming and ask how to fold a crane, the brainstorm profile will call a tool to pass the baton to the tutorial profile. A tool output signals a successful handoff, and the tutorial profile produces the final answer.\n\nThe most important attributes of the baton-pass pattern are that the full transcript history is visible to both profiles, and that the profile that receives the baton can carry it across the finish line and provide the final response.\n\nBoth of those attributes will be in contrast to the next pattern we look at: phone-a-friend.\n\nIn the phone-a-friend pattern, you also rely on tool calling. The key difference is that instead of toggling a variable, the tool spawns a short-lived session.\n\nIf we ask for a fun project for kids, the model may reason that it needs a title for the project, and call its phone-a-friend tool to consult with the title profile.\n\nThe phone-a-friend tool spawns a new session with an independent transcript prompts it, and then delivers the response back as tool output.\n\nThe child session disappears, and the parent session produces the final response. The most important attributes of the phone-a-friend pattern are that the transcripts for each profile are isolated, and that the parent profile is always responsible for giving the final answer.\n\nBaton-pass and phone-a-friend are good tools to have in your belt, but there are other options as well.\n\nFor example, the Foundation Models framework utilities package houses a Skills type, which you may be familiar with as a popular pattern for procedural context loading.\n\nSo now that you've got a grasp on the many ways tools can be used for orchestration, we're going to look at a new knob you can use to exert control over when tool calls happen - Tool calling mode.\n\nTool calling mode has three options: allowed, disallowed, and required. The default value is \"allowed\", which is the existing behavior. The model may produce a tool call or it may respond directly. This is the option to use when you just don't know if tools will be necessary or not, which is the most common case.\n\n\"disallowed\" prevents the model from calling tools. This can be helpful if the user navigates into a part of your app where the session's tools are known to be irrelevant.\n\nFinally, \"required\" means that the model can only call tools. And this can be particularly useful in agentic systems that represent all actions as tool calls.\n\nIf you're using profiles, you can specify tool calling mode with a modifier.\n\nIf you're not using a profile, tool calling mode can be set via GenerationOptions when calling respond(to:).\n\nHere's the most important thing to remember. When tool calling is required, the model is essentially in a while loop - it is your job to ensure that there is an exit condition of some kind.\n\nOne good option is to conditionalize the tool call mode on a variable.\n\nHere, we're requiring tool calls until the model calls the database tool.\n\nA second, more forceful option is to equip your model with a final answer tool that throws an error. Throwing an error aborts the tool calling loop and immediately returns control flow to you.\n\nBy default, when you throw an error from a tool, or when you cancel a response, your session's transcript will roll back to its previous state.\n\nFor advanced use cases where you want to allow cancelling part way through a response and then resuming again, you need to keep your transcript in state after an error.\n\nWe've added new API to enable this. If you're using profiles, you can now set \"transcriptErrorHandlingPolicy\" using a modifier. If you're not using a profile, you can set it directly on your session.\n\nThe two options are \".revertTranscript\" and \".preserveTranscript\".\n\nWhen using \".preserveTranscript\", the onus is on you to put your transcript back into a good state if you intend to continue using your session.\n\nTo facilitate that, the \"transcript\" property on session is now mutable. Remember though, you can only modify the transcript when the session's \"isResponding\" property is false. Attempting to mutate the transcript during a response is a programmer error.\n\nNow that we've taken a look at our new APIs, we need to talk about the implications of mutating the transcript on performance and accuracy.\n\nKey-value, or KV caches are an important optimization mechanism in large language models and they can be invalidated by transcript mutations.\n\nGenerally, appending to the transcript preserves the KV cache, and minimizes the time-to-firsttoken.\n\nIf you rewrite history by removing entries, changing the attached tools, or updating the instructions, that will typically trigger a cache invalidation, and can increase latency.\n\nNow, we didn't talk about this last year because we intentionally shaped LanguageModelsSession APIs to be append only. By default, they ensured optimal use.\n\nBut this year, we're taking the training wheels off, so to say.\n\nIt's important to understand that different models have different caching behavior and the only way to be certain is by measuring.\n\nThe best way to do that is the upgraded Foundation Models Instrument in Xcode.\n\nFor more about detecting cache invalidations with Instruments, make sure to check out our video on debugging and profiling.\n\nIn addition to performance implications, the other thing you have to be careful about when rewriting history is accuracy, because it's possible to confuse the model.\n\nLet's say I have a session where I asked the model to think of fun origami project names.\n\nAnd then let's say I add a generate title tool to the session, and prompt it for more ideas. What do you expect will happen next? If we're lucky, the model will use the tool like we want.\n\nBut it's also possible that the model will notice it previously generated titles without the tool, and may think it's supposed to do that again. That's not what we want. Our history modification confused the model.\n\nWhen you start to get into nuanced transcript modifications like this, it becomes even more important to use the Evaluations framework to create eval sets and quantify the effect of context engineering strategies. Data driven optimization is the only way to be confident. I highly recommend watching all of our videos about the evaluations framework.\n\nAlright, that brings us to the end of our section on performance and accuracy.\n\nThat was a lot! Are you ready to bring it home Oliver? You know it. We've shown you how dynamic profiles allow you to steer model behavior and manage your session's transcript. We talked through patterns like phone-a-friend and baton-pass, tool calling mode, manual transcript management, and even KV caches. And we hope you're as enthusiastic about Foundation Models framework utilities as we are!\n\nNext, try playing around with the sample app. Or test out PCC together with the revamped Xcode instrument.\n\nUntil next time, thanks for watching. Thank you!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hello everyone! And thank you for joining us! My name is Erik. And I'm Oliver. Today, we're going to dig into a new set of APIs that open up whole new possibilities for your apps; Dynamic profiles! But before we dive into the code, we want to lay the groundwork by identifying the problems these APIs solve, and our philosophy behind their design. The first challenge these APIs solve is context management. In long running sessions, dynamic profiles let you trim or summarize the transcript to keep it within the model's context window. The second problem these APIs solve is establishing boundaries. When using multiple models, you should design around capability and cost considerations. Dynamic profiles give you that option. This field is changing week-to-week. The primitives that we're introducing are designed to be flexible, ensuring it's possible to build today's abstractions, and tomorrow's. Exactly! Dynamic profiles enable context engineering, defining model boundaries, and can be scaffolded into just about any architecture. And it's in that spirit today that we're announcing a new package; Foundation Models framework utilities. Utilities is an open source Swift package that houses components helpful for building agentic experiences. It will be updated in between OS releases and give you access to emerging or experimental patterns, all backed by dynamic profiles. So now that we've set the stage, let's jump into our agenda. In the first half of this video, Oliver is going to teach you about the mechanics of dynamic profiles. In the second half, I'll rejoin to cover some advanced topics related to orchestration patterns. Finally, we'll wrap up with a foray into performance and accuracy considerations. So with that, it's over to you Oliver! Thanks Erik."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "With the introduction of the LanguageModel protocol and PrivateCloudComputeLanguageModel, you now have more models than ever to choose from. DynamicProfile is a new API that gives you the ability to switch models within your LanguageModelSession, providing you with the flexibility to select the best configuration for the task at hand."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "DynamicProfile is the foundation on which you can build many useful abstractions, such as agents or skills."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "Today, I'll give you a tour of the API starting with leveraging multiple models, before diving into transcript considerations and finishing with session lifecycle events. Let's start by looking at an example."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "I'm working on a craft app called Origami which can produce both origami and crochet tutorials."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "Here, the user will upload images and our app will help them brainstorm ideas using the image as inspiration."
+      },
+      {
+        "timestamp": "2:58",
+        "text": "The user can provide feedback on the shortlist of ideas before a tutorial is generated for the selected concept. While the user works through the tutorial, they can upload in-progress photos and get advice on their technique."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "Each stage in the app requires shared context but individually, they have a unique set of priorities. They may benefit from a diverse set of models, with different instructions and generation options."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "These configurations are agents - they act on your app's behalf, and are configured with a particular goal and set of capabilities in mind. DynamicProfile allows you to declare individual Profiles, which represent a configuration state or agent in your LanguageModelSession."
+      },
+      {
+        "timestamp": "3:44",
+        "text": "A Profile is made up of instructions, tools, and modifiers for configuring things like the model, temperature, samplingMode and more. So let's start by declaring a DynamicProfile for our craft experience."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "Here, we have an Observable class called CraftOrchestrator that will track the different phases of the app. We'll focus on the brainstorming phase first, which is used for presenting different craft project ideas to the user."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "Here, our new profile has some instructions explaining its goal and a tool for generating titles."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "Because origami is a complicated craft, let's also include some additional instructions and tools but only when the user is working on an origami project."
+      },
+      {
+        "timestamp": "4:34",
+        "text": "OrigamiExpert makes use of another new type called DynamicInstructions. DynamicInstructions enables grouping of relevant tools and instructions together into a single component that can be reused throughout your codebase."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "OrigamiExpert contains knowledge and tools that can be reused every time we're prompting a model about origami. DynamicInstructions are also composable so nesting OrigamiExpert inside another DynamicInstructions body will concatenate the instructions and tools together. Here, we've created BrainstormFacilitator to hold our profile's instructions. Now we can clean up our brainstorming profile using the new declaration. Since brainstorming requires both a broad knowledge of crafts and creative thinking, this profile will use PrivateCloudComputeLanguageModel, which is a new model available in Foundation Models."
+      },
+      {
+        "timestamp": "5:33",
+        "text": "Be sure to check out the talk from Louis on PCC in Foundation Models to learn more about what this model has to offer. We'll also set the temperature to 1, to allow the model to produce more creative responses."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "We've just defined our first agent using DynamicProfiles."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "Let's move on to the next mode in our profile: planning."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "The \"planning\" profile is responsible for creating directions for an agreed upon craft project."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "Again, we'll use PCCLanguageModel since this requires in-depth knowledge of crafts."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "We'll also configure reasoningLevel, which is a capability available to most server models. This controls the model's capacity to think through the problem before responding. Since generating a tutorial is complex, we'll set it to deep."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "Lastly, the \"reviewing\" phase provides advice and guidance as the user works through the tutorial."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "To save on unnecessary server calls, this makes use of SystemLanguageModel."
+      },
+      {
+        "timestamp": "6:38",
+        "text": "And just like that, we've finished defining our crafting DynamicProfile."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "To make use of DynamicProfile in your session, it's as simple as using the new LanguageModelSession initializer."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "Note that the body of a DynamicProfile is re-evaluated each time the model is prompted, so as the app moves between each mode, the persona of the LanguageModelSession changes."
+      },
+      {
+        "timestamp": "7:04",
+        "text": "You can think of this as swapping hats, or switching agents. You can move from brainstorming to planning, to reviewing. All by changing the mode."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "You've now seen how you can route between different models using DynamicProfile. But it's important to consider that each model may have different context size limits."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "Our craft example switches between PCCLanguageModel and SystemLanguageModel. When moving between models, you may need to trim unnecessary entries to stay within the context size. But that's not the only reason for adjusting the model's context. You can also improve the model's focus by removing irrelevant entries, or redact private information from existing entries when moving to a less private model."
+      },
+      {
+        "timestamp": "7:51",
+        "text": "The transcript is LanguageModelSession's representation of the model's context. DynamicInstructions offers one way to modify the transcript. More specifically, it allows modifying the instructions entry. For updating the remaining entries, we'll use a window into the transcript called \"history\"."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "Dropping tool calls is one easy way to trim history. Let's take a look at how you'd implement this."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "historyTransform can be applied to a profile to transform the history prior to prompting the model."
+      },
+      {
+        "timestamp": "8:27",
+        "text": "This is the opportune time to filter out entries that may not be necessary for the request."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "Applying a transformation on our \"reviewing\" profile helps keep the transcript within the on device model's context size. Transforms don't permanently mutate the session's transcript. Instead, they're local transformations applied prior to prompting the model."
+      },
+      {
+        "timestamp": "8:49",
+        "text": "This means you don't need to worry about losing context that may become relevant at a later point."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "Our historyTransform has a lot going on. Let me show you how we can use custom modifiers to hide the complexity of our transform."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "First, we'll declare a new type that conforms to DynamicProfileModifier and apply our historyTransform."
+      },
+      {
+        "timestamp": "9:12",
+        "text": "We can then make it available for reuse by implementing an extension on DynamicProfile. Any new Profiles that would benefit from reducing context can now utilize the new modifier."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "We've made a number of useful modifiers available in the new Foundation Models framework utilities package. We encourage you to take a look. Custom modifiers are a great way to build reusable configuration for your declarations."
+      },
+      {
+        "timestamp": "9:40",
+        "text": "But transforms aren't the only way that you can influence the transcript. Let's take a look at another more stateful approach."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "At certain points in the session, you may need to summarize earlier entries from the existing transcript to reclaim context."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "Doing this after each model's response provides a clear boundary in the session's lifecycle."
+      },
+      {
+        "timestamp": "10:04",
+        "text": "Let's take a look at how we can perform our summarize operation after each response using a new set of modifiers."
+      },
+      {
+        "timestamp": "10:11",
+        "text": "Lifecycle modifiers provide access to your profile's progress by giving you the opportunity to run imperative code directly in your profile declaration. This can be useful for updating state external to your session, like reflecting progress in UI. But it's also useful for internal state updates, like changing the mode in our craft profile or modifying the session's history."
+      },
+      {
+        "timestamp": "10:37",
+        "text": "Let's use the onResponse modifier to mutate the history at the response boundary that I mentioned earlier. You'll notice this is also making use of another new concept: session properties. Session properties allow you to define state that's accessible from any Tool or Profile. The history property that we just used is a built-in property provided by the framework. It captures the session's history and can be used as an alternative to historyTransform for updating the transcript. Keep in mind that the history property is lossy and its changes will be reflected across all profiles in the session. For lossless transformations targeted to specific profiles, you should prefer historyTransform. In addition to history, you can also create your own session properties. Let's create a new property to store our conversation summary when onResponse is called."
+      },
+      {
+        "timestamp": "11:34",
+        "text": "You can declare properties using the @SessionPropertyEntry macro within an extension on SessionPropertyValues. All session properties are mutable and must have an initial value. Here, we've declared our summary as an optional string. Each Profile can now read the value of the summary by accessing the session property that we just declared. We'll include the summary in our profile's instructions to ensure they have the context on the transcript entries that were dropped."
+      },
+      {
+        "timestamp": "12:05",
+        "text": "Any profile can write to the property and changes will be visible across the session."
+      },
+      {
+        "timestamp": "12:12",
+        "text": "Now let me produce a conversation summary for you."
+      },
+      {
+        "timestamp": "12:15",
+        "text": "Use lifecycle modifiers to run code at specific points in the session. Use the history property to update the session's history for all profiles. And use custom session properties for storing state that's shared by all session components. And with that, I'll hand it back to Erik to teach you about agent orchestration. Thanks Oliver! Hopefully, you're starting to develop an intuition for how profiles can be used to build things like agents. Let's take a look at two common patterns for orchestrating agentic experiences."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "We like to refer to these patterns as baton-pass and phone-a-friend."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "Baton-pass is a collaboration and phone-a-friend is a consultation. Let's look at baton-pass first."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "In this pattern, there are two or more profiles, typically each leveraging different models."
+      },
+      {
+        "timestamp": "13:10",
+        "text": "There also needs to be a variable that controls which profile is active."
+      },
+      {
+        "timestamp": "13:16",
+        "text": "Finally, we give each profile a tool that allows the model to set that variable."
+      },
+      {
+        "timestamp": "13:23",
+        "text": "Together, these pieces make up the baton-pass pattern."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "If we're currently brainstorming and ask how to fold a crane, the brainstorm profile will call a tool to pass the baton to the tutorial profile. A tool output signals a successful handoff, and the tutorial profile produces the final answer."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "The most important attributes of the baton-pass pattern are that the full transcript history is visible to both profiles, and that the profile that receives the baton can carry it across the finish line and provide the final response."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "Both of those attributes will be in contrast to the next pattern we look at: phone-a-friend."
+      },
+      {
+        "timestamp": "14:08",
+        "text": "In the phone-a-friend pattern, you also rely on tool calling. The key difference is that instead of toggling a variable, the tool spawns a short-lived session."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "If we ask for a fun project for kids, the model may reason that it needs a title for the project, and call its phone-a-friend tool to consult with the title profile."
+      },
+      {
+        "timestamp": "14:31",
+        "text": "The phone-a-friend tool spawns a new session with an independent transcript prompts it, and then delivers the response back as tool output."
+      },
+      {
+        "timestamp": "14:42",
+        "text": "The child session disappears, and the parent session produces the final response. The most important attributes of the phone-a-friend pattern are that the transcripts for each profile are isolated, and that the parent profile is always responsible for giving the final answer."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "Baton-pass and phone-a-friend are good tools to have in your belt, but there are other options as well."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "For example, the Foundation Models framework utilities package houses a Skills type, which you may be familiar with as a popular pattern for procedural context loading."
+      },
+      {
+        "timestamp": "15:18",
+        "text": "So now that you've got a grasp on the many ways tools can be used for orchestration, we're going to look at a new knob you can use to exert control over when tool calls happen - Tool calling mode."
+      },
+      {
+        "timestamp": "15:29",
+        "text": "Tool calling mode has three options: allowed, disallowed, and required. The default value is \"allowed\", which is the existing behavior. The model may produce a tool call or it may respond directly. This is the option to use when you just don't know if tools will be necessary or not, which is the most common case."
+      },
+      {
+        "timestamp": "15:52",
+        "text": "\"disallowed\" prevents the model from calling tools. This can be helpful if the user navigates into a part of your app where the session's tools are known to be irrelevant."
+      },
+      {
+        "timestamp": "16:03",
+        "text": "Finally, \"required\" means that the model can only call tools. And this can be particularly useful in agentic systems that represent all actions as tool calls."
+      },
+      {
+        "timestamp": "16:15",
+        "text": "If you're using profiles, you can specify tool calling mode with a modifier."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "If you're not using a profile, tool calling mode can be set via GenerationOptions when calling respond(to:)."
+      },
+      {
+        "timestamp": "16:29",
+        "text": "Here's the most important thing to remember. When tool calling is required, the model is essentially in a while loop - it is your job to ensure that there is an exit condition of some kind."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "One good option is to conditionalize the tool call mode on a variable."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "Here, we're requiring tool calls until the model calls the database tool."
+      },
+      {
+        "timestamp": "16:55",
+        "text": "A second, more forceful option is to equip your model with a final answer tool that throws an error. Throwing an error aborts the tool calling loop and immediately returns control flow to you."
+      },
+      {
+        "timestamp": "17:08",
+        "text": "By default, when you throw an error from a tool, or when you cancel a response, your session's transcript will roll back to its previous state."
+      },
+      {
+        "timestamp": "17:18",
+        "text": "For advanced use cases where you want to allow cancelling part way through a response and then resuming again, you need to keep your transcript in state after an error."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "We've added new API to enable this. If you're using profiles, you can now set \"transcriptErrorHandlingPolicy\" using a modifier. If you're not using a profile, you can set it directly on your session."
+      },
+      {
+        "timestamp": "17:45",
+        "text": "The two options are \".revertTranscript\" and \".preserveTranscript\"."
+      },
+      {
+        "timestamp": "17:50",
+        "text": "When using \".preserveTranscript\", the onus is on you to put your transcript back into a good state if you intend to continue using your session."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "To facilitate that, the \"transcript\" property on session is now mutable. Remember though, you can only modify the transcript when the session's \"isResponding\" property is false. Attempting to mutate the transcript during a response is a programmer error."
+      },
+      {
+        "timestamp": "18:21",
+        "text": "Now that we've taken a look at our new APIs, we need to talk about the implications of mutating the transcript on performance and accuracy."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "Key-value, or KV caches are an important optimization mechanism in large language models and they can be invalidated by transcript mutations."
+      },
+      {
+        "timestamp": "18:39",
+        "text": "Generally, appending to the transcript preserves the KV cache, and minimizes the time-to-firsttoken."
+      },
+      {
+        "timestamp": "18:47",
+        "text": "If you rewrite history by removing entries, changing the attached tools, or updating the instructions, that will typically trigger a cache invalidation, and can increase latency."
+      },
+      {
+        "timestamp": "18:59",
+        "text": "Now, we didn't talk about this last year because we intentionally shaped LanguageModelsSession APIs to be append only. By default, they ensured optimal use."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "But this year, we're taking the training wheels off, so to say."
+      },
+      {
+        "timestamp": "19:18",
+        "text": "It's important to understand that different models have different caching behavior and the only way to be certain is by measuring."
+      },
+      {
+        "timestamp": "19:27",
+        "text": "The best way to do that is the upgraded Foundation Models Instrument in Xcode."
+      },
+      {
+        "timestamp": "19:33",
+        "text": "For more about detecting cache invalidations with Instruments, make sure to check out our video on debugging and profiling."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "In addition to performance implications, the other thing you have to be careful about when rewriting history is accuracy, because it's possible to confuse the model."
+      },
+      {
+        "timestamp": "19:51",
+        "text": "Let's say I have a session where I asked the model to think of fun origami project names."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "And then let's say I add a generate title tool to the session, and prompt it for more ideas. What do you expect will happen next? If we're lucky, the model will use the tool like we want."
+      },
+      {
+        "timestamp": "20:14",
+        "text": "But it's also possible that the model will notice it previously generated titles without the tool, and may think it's supposed to do that again. That's not what we want. Our history modification confused the model."
+      },
+      {
+        "timestamp": "20:30",
+        "text": "When you start to get into nuanced transcript modifications like this, it becomes even more important to use the Evaluations framework to create eval sets and quantify the effect of context engineering strategies. Data driven optimization is the only way to be confident. I highly recommend watching all of our videos about the evaluations framework."
+      },
+      {
+        "timestamp": "20:53",
+        "text": "Alright, that brings us to the end of our section on performance and accuracy."
+      },
+      {
+        "timestamp": "20:58",
+        "text": "That was a lot! Are you ready to bring it home Oliver? You know it. We've shown you how dynamic profiles allow you to steer model behavior and manage your session's transcript. We talked through patterns like phone-a-friend and baton-pass, tool calling mode, manual transcript management, and even KV caches. And we hope you're as enthusiastic about Foundation Models framework utilities as we are!"
+      },
+      {
+        "timestamp": "21:22",
+        "text": "Next, try playing around with the sample app. Or test out PCC together with the revamped Xcode instrument."
+      },
+      {
+        "timestamp": "21:32",
+        "text": "Until next time, thanks for watching. Thank you!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -118,6 +509,78 @@
       "code": "// Transcript mutation\n\n  public final class LanguageModelSession: Sendable {\n      public var transcriptErrorHandlingPolicy: TranscriptErrorHandlingPolicy { get set }\n\n      // Transcript is now settable\n      public var transcript: Transcript { get set }\n\n      // But you must not modify it during a response!\n      public var isResponding: Bool { get }\n  }"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:47"
+    },
+    {
+      "timestamp": "2:47",
+      "title": "The example app and agents",
+      "duration": "1:00"
+    },
+    {
+      "timestamp": "3:47",
+      "title": "Declaring a dynamic profile",
+      "duration": "0:58"
+    },
+    {
+      "timestamp": "4:45",
+      "title": "Dynamic instructions",
+      "duration": "0:51"
+    },
+    {
+      "timestamp": "5:36",
+      "title": "Configuring models per phase",
+      "duration": "1:45"
+    },
+    {
+      "timestamp": "7:21",
+      "title": "Transcript management and history transforms",
+      "duration": "1:29"
+    },
+    {
+      "timestamp": "8:50",
+      "title": "Custom modifiers",
+      "duration": "0:49"
+    },
+    {
+      "timestamp": "9:39",
+      "title": "Lifecycle modifiers and session properties",
+      "duration": "3:13"
+    },
+    {
+      "timestamp": "12:52",
+      "title": "Orchestration: baton-pass",
+      "duration": "1:14"
+    },
+    {
+      "timestamp": "14:06",
+      "title": "Orchestration: phone-a-friend and skills",
+      "duration": "1:12"
+    },
+    {
+      "timestamp": "15:18",
+      "title": "Tool calling mode",
+      "duration": "1:54"
+    },
+    {
+      "timestamp": "17:12",
+      "title": "Transcript error handling",
+      "duration": "1:15"
+    },
+    {
+      "timestamp": "18:27",
+      "title": "Performance, accuracy, and evaluations",
+      "duration": "2:57"
+    },
+    {
+      "timestamp": "21:24",
+      "title": "Next steps",
+      "duration": "0:19"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -128,5 +591,5 @@
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/242/4/7f05515d-be1a-43a0-9962-a1f77f115666/downloads/wwdc2026-242_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2026/242/4/7f05515d-be1a-43a0-9962-a1f77f115666/downloads/wwdc2026-242_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:32:06.061Z"
+  "extractedAt": "2026-10-17T18:42:00.077Z"
 }

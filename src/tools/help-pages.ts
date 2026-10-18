@@ -2,12 +2,12 @@
  * App Store Connect Help: web pages, without Markdown or JSON (2026-10-11). Each page holds its text in an article and
  * carries the whole help's navigation, one option per page with its title and section.
  */
+import { APPLE_PATHS } from '../utils/constants.js';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
 import { tables } from 'turndown-plugin-gfm';
 
 import { httpClient } from '../utils/http-client.js';
-import { HELP_PATH } from './search-result-parser.js';
 
 /** A help page without an article: Apple changed the pages' layout */
 class HelpPageLayoutError extends Error {}
@@ -61,12 +61,24 @@ export async function fetchHelpPage(url: string): Promise<string> {
   return turndown.turndown(article.innerHTML);
 }
 
+/** A help page without the heading that names the help */
+class HelpTitleMissingError extends Error {}
+
+/** The help's own name, as its front page heads itself ("App Store Connect Help") */
+export function helpTitleOf(html: string): string {
+  const title = new JSDOM(html).window.document.querySelector('h1')?.textContent.trim();
+  if (!title) {
+    throw new HelpTitleMissingError('The help\'s front page has no h1 naming it');
+  }
+  return title;
+}
+
 /**
  * Every page the help's navigation lists, read from any one page's HTML
  */
 export function helpPagesOf(html: string, url: string): HelpPage[] {
   const { document } = new JSDOM(html, { url }).window;
-  return [...document.querySelectorAll(`li.form-dropdown-option a[href^="${HELP_PATH}"]`)].map((link) => ({
+  return [...document.querySelectorAll(`li.form-dropdown-option a[href^="${APPLE_PATHS.HELP}"]`)].map((link) => ({
     url: new URL(link.getAttribute('href') ?? '', url).href.replace(/\/$/, ''),
     title: link.querySelector('.form-dropdown-option-title')?.textContent.trim() ?? '',
     section: link.querySelector('.form-dropdown-option-text')?.textContent.trim() ?? '',

@@ -1,47 +1,43 @@
+import { readFileSync } from 'node:fs';
 import type { Mock } from 'vitest';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { searchFrameworkSymbols } from '../../src/tools/search-framework-symbols.js';
 import { mockData, createTestFrameworkIndex } from '../helpers/test-helpers.js';
 
-// Mock dependencies
-vi.mock('../../src/utils/cache.js', () => ({
-  indexCache: { get: vi.fn(), set: vi.fn(), has: vi.fn() },
-  generateUrlCacheKey: vi.fn((url: string, params: Record<string, unknown>) => `${url}?${JSON.stringify(params)}`),
-}));
 vi.mock('../../src/utils/http-client.js');
 
-import { indexCache } from '../../src/utils/cache.js';
+import { pageCache } from '../../src/utils/cache.js';
+import { APPLE_URLS } from '../../src/utils/constants.js';
 import { httpClient } from '../../src/utils/http-client.js';
+
+/** Apple's technologies list as captured (`npm run types:captured`), already read: the IDs typed names resolve to */
+const technologies: unknown = JSON.parse(readFileSync(new URL('../../api-map/responses/technologies.json', import.meta.url), 'utf8'));
 
 describe('searchFrameworkSymbols', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pageCache.set(APPLE_URLS.TECHNOLOGIES_JSON, technologies as object);
   });
 
   describe('successful searches', () => {
     it('should search for classes in UIKit framework', async () => {
-      // Mock cache miss
-      (indexCache.get as Mock).mockReturnValue(null);
       
-      // Mock HTTP response
       (httpClient.getJson as Mock).mockResolvedValue(mockData.frameworkIndex);
 
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 10);
 
       expect(httpClient.getJson).toHaveBeenCalledWith(
         'https://developer.apple.com/tutorials/data/index/uikit'
       );
       expect(result).toContain('UIView');
       expect(result).toContain('UIViewController');
-      expect(result).toContain('Found:** 4 classes');
-      expect(indexCache.set).toHaveBeenCalled();
+      expect(result).toContain('Found:** 4 pages');
     });
 
     it('should search with wildcard pattern', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(mockData.frameworkIndex);
 
-      const result = await searchFrameworkSymbols('uikit', 'class', '*View', 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'class', '*View', 10);
 
       expect(result).toContain('UIView');
       expect(result).toContain('UITableView');
@@ -51,25 +47,14 @@ describe('searchFrameworkSymbols', () => {
     });
 
     it('should search all symbol types', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(mockData.frameworkIndex);
 
-      const result = await searchFrameworkSymbols('uikit', 'all', undefined, 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'all', undefined, 10);
 
-      expect(result).toContain('## Classes (4)');
-      expect(result).toContain('## Structs (1)');
+      expect(result).toContain('## class (4)');
+      expect(result).toContain('## struct (1)');
       expect(result).toContain('UIView');
       expect(result).toContain('List');
-    });
-
-    it('should use cache when available', async () => {
-      const cachedResult = '# Cached Result';
-      (indexCache.get as Mock).mockReturnValue(cachedResult);
-
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 10);
-
-      expect(result).toBe(cachedResult);
-      expect(httpClient.getJson).not.toHaveBeenCalled();
     });
 
     it('should respect limit parameter', async () => {
@@ -82,71 +67,39 @@ describe('searchFrameworkSymbols', () => {
         children: [],
       }));
 
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(
         createTestFrameworkIndex(manyItems)
       );
 
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 5);
+      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 5);
 
-      // Count occurrences of class links
       const classLinks = (result.match(/\[.*?\]/g) || []).length;
       expect(classLinks).toBe(5);
     });
 
-    it('should support Objective-C language', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
-      (httpClient.getJson as Mock).mockResolvedValue(mockData.frameworkIndex);
-
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'occ', 10);
-
-      expect(result).toContain('UIView');
-      expect(result).toContain('Found:** 1 classes');
-    });
   });
 
   describe('error cases', () => {
     it('should handle invalid framework gracefully', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockRejectedValue(new Error('404 Not Found'));
 
-      const result = await searchFrameworkSymbols('invalidframework', 'class', undefined, 'swift', 10);
-
-      expect(result).toContain('Error searching classes: 404 Not Found');
+      await expect(searchFrameworkSymbols('invalidframework', 'class', undefined, 10)).rejects.toThrow('404 Not Found');
     });
 
     it('should handle empty framework name', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockRejectedValue(new Error('Invalid URL'));
 
-      const result = await searchFrameworkSymbols('', 'class', undefined, 'swift', 10);
-
-      expect(result).toContain('Error searching classes');
-    });
-
-    it('should handle unsupported language', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
-      (httpClient.getJson as Mock).mockResolvedValue({
-        interfaceLanguages: {
-          swift: mockData.frameworkIndex.interfaceLanguages.swift,
-        },
-      });
-
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'java', 10);
-
-      expect(result).toContain('Language "java" not available');
-      expect(result).toContain('Available languages: swift');
+      await expect(searchFrameworkSymbols('', 'class', undefined, 10)).rejects.toThrow('Invalid URL');
     });
 
     it('should handle no results gracefully', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue({
         interfaceLanguages: {
           swift: [
             {
               path: '/documentation/uikit/uiview',
               title: 'UIView',
-              type: 'class',  // Not a macro
+              type: 'class',
               beta: false,
               deprecated: false,
               children: [],
@@ -155,30 +108,26 @@ describe('searchFrameworkSymbols', () => {
         }
       });
 
-      const result = await searchFrameworkSymbols('uikit', 'macro', undefined, 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'macro', undefined, 10);
 
-      expect(result).toContain('No macros found in uikit framework');
+      expect(result).toContain('No page in the UIKit index of kind macro');
     });
 
     it('should handle network errors', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockRejectedValue(new Error('Network error'));
 
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 10);
-
-      expect(result).toContain('Error searching classes: Network error');
+      await expect(searchFrameworkSymbols('uikit', 'class', undefined, 10)).rejects.toThrow('Network error');
     });
   });
 
   describe('edge cases', () => {
-    it('should handle special characters in pattern', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
+    it('reads brackets as a glob reads them, one of the letters inside', async () => {
       (httpClient.getJson as Mock).mockResolvedValue(mockData.frameworkIndex);
 
-      const result = await searchFrameworkSymbols('uikit', 'class', 'UI[View]*', 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'class', 'UI[View]*', 10);
 
-      // Special characters should be escaped, so no matches
-      expect(result).toContain('No classes found matching pattern "UI[View]*"');
+      expect(result).toContain('UIView');
+      expect(result).not.toContain('UITableView');
     });
 
     it('should handle deeply nested items', async () => {
@@ -205,29 +154,26 @@ describe('searchFrameworkSymbols', () => {
         },
       ]);
 
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(nestedIndex);
 
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 10);
 
       expect(result).toContain('UIView');
-      expect(result).toContain('Found:** 1 classes');
+      expect(result).toContain('Found:** 1 page');
     });
 
     it('should handle framework name case variations', async () => {
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(mockData.frameworkIndex);
 
-      // Test different case variations
-      const result1 = await searchFrameworkSymbols('UIKit', 'class', undefined, 'swift', 1);
-      const result2 = await searchFrameworkSymbols('UIKIT', 'class', undefined, 'swift', 1);
-      const result3 = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 1);
+      const result1 = await searchFrameworkSymbols('UIKit', 'class', undefined, 1);
+      const result2 = await searchFrameworkSymbols('UIKIT', 'class', undefined, 1);
+      const result3 = await searchFrameworkSymbols('uikit', 'class', undefined, 1);
 
-      // All should call the same lowercase URL
+      // All should call the same lowercase URL: one download, cached
       expect(httpClient.getJson).toHaveBeenCalledWith(
         'https://developer.apple.com/tutorials/data/index/uikit'
       );
-      expect(httpClient.getJson).toHaveBeenCalledTimes(3);
+      expect(httpClient.getJson).toHaveBeenCalledTimes(1);
     });
 
     it('should handle items with beta and deprecated flags', async () => {
@@ -250,15 +196,14 @@ describe('searchFrameworkSymbols', () => {
         },
       ]);
 
-      (indexCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(flaggedIndex);
 
-      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 'swift', 10);
+      const result = await searchFrameworkSymbols('uikit', 'class', undefined, 10);
 
       expect(result).toContain('BetaClass**');
-      expect(result).toContain('*(Beta, Class)*');
+      expect(result).toContain('*(class, beta)*');
       expect(result).toContain('DeprecatedClass**');
-      expect(result).toContain('*(Deprecated, Class)*');
+      expect(result).toContain('*(class, deprecated)*');
     });
   });
 });

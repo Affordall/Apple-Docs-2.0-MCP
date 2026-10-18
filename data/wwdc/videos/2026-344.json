@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/344/",
   "title": "Code-along: Make your app available to Siri",
-  "speakers": [],
-  "duration": "",
+  "duration": "24:20",
   "topics": [
     "App Services",
     "Machine Learning & AI"
@@ -12,9 +11,347 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Hi, I'm Justin, an engineer on the Swift Intelligence Frameworks team. Welcome to this code-along. In this video, I'll take an app and make it available to Siri, step by step. Imagine I start a conversation with Siri on my iPhone and ask: \"Who's coming to my picnic?\" Siri searches for the event, its attendees, and shows me the guest list.\n\nI realize it includes that one friend that's always late, so I say: \"Move it to noon… actually 11:30 am\".\n\nSiri asks to confirm the details, and I say: \"sounds good, thanks\".\n\nSiri makes the changes and renders a custom view.\n\nNow I need to update my friends: \"Text everyone going to the picnic and let them know about the change using emojis\".\n\nAfter double-checking the message, I say: \"Send it\".\n\nAnd just like that, Siri sends the message. Then I remember the event's note had a reminder to bring something important to the picnic. So I ask: \"What did I need to bring to the picnic again?\" Siri searches the event and finds a note to myself to bring a chocolate cake.\n\nI'm curious how much time I have to get ready, so I say: \"How long will it take to drive there?\" Siri finds the event's location, and gives me an estimate.\n\nThis is how Siri can make everyday things effortless… simply with a conversation. That's the mission for today.\n\nI'll take an existing app and make it available to Siri. Siri is powered by Apple Intelligence, Apple's personal intelligence system. Developers integrate their apps with Apple Intelligence through the App Intents framework, so their app's content and actions become available within Siri and other system experiences. The companion video \"Build intelligent Siri experiences with App Schemas\" covers the concepts behind the framework and how Apple Intelligence and Siri work with your app's content and actions. If App Intents is new to you, the video \"Get to know App Intents\" covers the core fundamentals like intents, entities, and queries, and how they connect to system features like Siri and Shortcuts.\n\nI've been working on a sample project called CometCal. It's a SwiftUI calendar app with a fun cosmic twist, and the source code is available for download on the Apple Developer website for you to follow along.\n\nIt does all the basics of a calendar app: showing today's events, viewing and editing them, creating more, and even managing different calendars.\n\nRight now, the only way to interact with it though is through the screen… but that's about to change! In this video, I'm going to update CometCal so that Siri can: understand the app's content and answer my questions. And take actions like updating an event… making Siri more helpful than ever. The first step is giving Siri an understanding of my app's content. Right now, Siri has no idea what a calendar or an event means inside CometCal. That's where App Schemas come in. App Schemas describe my app's content and actions in terms Siri can already understand. They define the structure of my entities, the parameters of my actions, and the outputs. No training phrases, no natural language processing on my end. App Schemas are organized into App Schema Domains.\n\nThe calendar domain covers everything related to scheduling: events, calendars, attendees, and the actions that operate on them. Now that the groundwork is set… time to suit up, jump into Xcode, and start the countdown! CometCal already has a CalendarModel in its data layer, that's the SwiftData model for calendars, like the difference between a Personal calendar and a Work calendar. The goal is to create an app entity that represents it using App Schemas, so Siri can understand what a calendar is in this app.\n\nI'll create a new Swift file called CalendarEntity, and import AppIntents.\n\nNext, I'll type calendar_ in the editor. Xcode offers every schema in the Calendar domain, right in autocomplete. Since the goal is a calendar entity, I'll select calendar_calendar.\n\nThe snippet fills in the structure: the @AppEntity macro, properties, DisplayRepresentation and query stubs. This is now a schematized entity, a type Siri can reason over. A few things to fill in. First, I'll set the id type to UUID to match the data model.\n\nTo enable matching by meaning and not just text, I'll conform to the IndexedEntity protocol. Conforming to IndexedEntity allows my app to donate entities using the Spotlight index to get the benefits of semantic understanding. When an entity is donated, Siri can resolve it by name, by property, or by context, without requiring a custom property query.\n\nTo keep things moving, I added ways to convert between the data model and the entity.\n\nThe CalendarEntity's initializer maps from CalendarModel to pull out what the entity needs. And the convenience .entity property on CalendarModel produces a CalendarEntity using the initializer. I'll use this soon in places like the query to convert between the two.\n\nNext, I'll add a @Dependency property for the CalendarManager in the query. That's CometCal's data layer that handles all the SwiftData operations. The @Dependency property wrapper is how App Intents injects shared resources into intents and queries, so instead of creating new instances, it provides the same object I register once as I've done on the right.\n\nThe CalendarManager is main-actor isolated, so I'll also annotate the query struct as @MainActor.\n\nI'll implement the method required by the EntityQuery protocol. This fetches calendars by ID using the CalendarManager dependency. Now, EntityQuery covers cases where the system already knows an entity's ID. But later, when creating events, the system will need to know which calendars are available so Siri can offer them as options. For that, I'll conform to EnumerableEntityQuery and add an allEntities method that returns all calendars.\n\nFor the DisplayRepresentation, I'll set the title to the calendar title and the image to a system image of a calendar. Siri and Spotlight use this when displaying the entities. That's one entity ready for orbit… almost. There's one more piece that's easy to miss. IndexedEntity defines the shape of my indexed content, but entities still need to be donated. To do that, I'll open the CalendarManager file.\n\nAnytime calendars, or any indexed entity for that matter, are changed, the index needs to be updated. For that, I have a CSSearchableIndex instance initialized in the CalendarManager's initializer that uses a unique name for CometCal. In the createCalendar method, just before returning the new calendar, I'll donate the entity by calling indexAppEntities using the searchable index instance from before.\n\nSimilarly, in the updateCalendar method, I'll index the updated calendar entity.\n\nAnd in the deleteCalendar method, I'll remove the entity from the index by calling deleteAppEntities, passing in the entity's id and type.\n\nI'll fire up the engines and give it a go… I'll open CometCal and create a new calendar called \"Lunar Orbit Log\" Then, I'll swipe down to search for \"Lunar Orbit Log\"… and there it is with the calendar icon and the title. With CalendarEntity working, the next two entities follow the same pattern, but each introduces something new and shiny. Here's a new file called AttendeeEntity with AppIntents already imported. Same pattern as before… type calendar_attendee and select the snippet.\n\nThe familiar parts are the same… All of that is wired up off-camera so I can keep moving at light speed. Feel free to pause here and check the completed source code. Unlike CalendarEntity, AttendeeEntity conforms to the TransientAppEntity protocol instead of IndexedEntity. That's intentional.\n\nA transient app entity is one that represents a temporary entity that doesn't require a unique identifier and isn't meant to be queried. That's the right fit here. In CometCal, an attendee represents a person's participation in a specific event, not the person themselves. The same person can attend multiple events, and indexing each attendance separately would create duplicative results in Spotlight. Since attendees are always accessed through the event that holds them, there's no need for an independent look up path. TransientAppEntity makes that explicit… no query to write, no index to maintain. Attendees have properties that are required by the schema like the boolean property to tell whether this attendance is optional.\n\nOne new item is the IntentPerson type… the system's standard way to represent a person with a name and contact information. This is useful when sharing this data between apps, like sending an attendee's email address to draft a message in the Mail app. The schema also includes two @AppEnum types. The schema defines the set of possible cases, and my app adopts the ones that apply. These are also schematized, so I'll create them quickly using code snippets. I'll use the calendar_attendeeStatus snippet for status.\n\nThe snippet comes with all the cases the schema supports. CometCal's model already maps directly, so no changes are needed, but if an app uses different terminology, simply map the existing model to the schema's cases so Siri can recognize the shape. Similarly, I'll use calendar_attendeeType for the attendee type.\n\nThe schema requires at least one case to describe what kind of attendee this is and since CometCal's attendees are all people, I'll add a person case.\n\nI'll fill in the types for status and type respectively.\n\nAnd that takes care of the AttendeeEntity.\n\nThat's two entities in orbit. One more to launch. The calendar and attendee entities find their orbit with the next one… the gravitational center that pulls them all together... the EventEntity. The system's search index really shines for the event entity. When someone asks \"When is my crew lunch?\", Siri can search the title. When they ask \"What events mention oxygen?\", it can search the note content. People can ask questions about their data, and Siri answers directly.\n\nHere's EventEntity with the calendar_event snippet already applied. Just like CalendarEntity, the EventEntity conforms to the IndexedEntity protocol and includes the indexing in CalendarManager to take advantage of the semantic index. There's a lot here. The schema covers a wide range of properties. But don't panic, the same patterns from the previous entities apply. The main difference is the number and variety of parameters.\n\nTo keep this mission on schedule, the familiar pieces are wired up off-camera. Feel free to pause and check the source code. The schema defines which properties are required and which are optional. The essentials like title or startDate are straightforward to wire up. Optional properties that my app doesn't use, like travelTime or virtualLocation, can simply stay unset. Properties that aren't part of the schema but exist on the data model, like isFavorite, can also be added to the entity. What makes this entity interesting is how it composes with the other entities built earlier. The calendar this event belongs to is a CalendarEntity… and the attendees is an array of AttendeeEntity.\n\nSiri understands these relationships with App Schemas.\n\nThe recurrence property is also one worth quickly pointing out.\n\nIt can be used to represent events that repeat, like a weekly workout or an important yearly anniversary. It uses Foundation's Calendar.RecurrenceRule type and converts to and from CometCal's simple frequency enum for cases like daily, weekly, monthly or yearly.\n\nAs part of the schema, there are also union values for an event's location and alarms.\n\nA union value is a property that can hold one of several different types. For example, the location can be either a PlaceDescriptor from the GeoToolbox framework, or a String. Again, we can simply implement these via code snippets.\n\nLike so. For alarms, it can be either a Duration or a Date.\n\nAssign the properties to these types accordingly.\n\nLike the attendee, there are also schematized enums here like the EventEntityStatus. Both enums related to events come complete from the snippets, so I'll add those and wire them up.\n\nLastly, assign the status property to the new status type. And with that, the content layer is fully fueled and ready for launch.\n\nTime to find out if this thing has liftoff! On the left is the detail view of the Meteor Shower Watch Party. The time, location, and note are all there on screen… But imagine I'm mid-conversation with Siri talking about meteors, and I suddenly remember about the party. Instead of leaving the conversation to open CometCal and find the details, I can just ask… \"Is the Meteor Shower Party happening anytime soon?\" \"What's the weather like out there?\" I can also switch to typing: \"When is the peak viewing time?\" I can also tap on the result to take me to CometCal.\n\nSiri answers every question using the app's content. No need for custom natural language... just entities and schemas. Now, you may have noticed that tapping the event from my conversation with Siri opens CometCal, but it just lands on the main screen.\n\nIt doesn't navigate to the event like I would expect. Siri doesn't know how to open a specific event in the app yet. I'm going to take a short detour to make this experience even better. To get this working, here's an OpenEventIntent. It's a small intent that conforms to the system.open schema. It takes an EventEntity as its target and tells the NavigationManager to navigate to that event. The system calls this whenever someone taps an event result in Spotlight or Siri, or asks Siri to open one.\n\nAnd that's it! Now if I tap on an event… this time, CometCal opens straight to the detail view of my Meteor Shower Watch Party. That's the OpenIntent bridging the gap. Siri can now understand the app's content better than ever, so people can ask Siri about any of it. Not bad for three structs and filling out a few code snippets, right? There's one more thing I can do to make my conversation with Siri feel even more natural. When someone has a specific event on screen, they might want to say something like \"email the people in this event\" without having to say the event's title. That's onscreen awareness... and it takes just two view modifiers. In CometCal's CalendarListView, where it lists all of my events, I'll add an .appEntityIdentifier modifier to the list, passing in an EntityIdentifier for each of the event entities. This connects the list to its entities, so when someone is browsing the list, the system knows which events are on screen. In the event detail view, when a single event's details are on screen, I'll append a .userActivity modifier with an EntityIdentifier. This tells the system that one specific event is front and center so Siri can resolve this event to exactly the one being viewed.\n\nAnd that's it! Here's what it enables.\n\nNow that Siri can understand what's currently onscreen and open event entities, I'll ask Siri to open the event in a natural way: \"Hey Siri, open that third event.\" Now that I am currently on the Meteor Shower Watch Party detail view, I'll try referring to this event rather than saying the entire title… \"Hey Siri, email the people in this event and ask someone to bring chocolate and marshmallows.\" Siri can use it's understanding of the onscreen event to find the attendees and hand them off to Mail.\n\nSeriously… two modifiers… that's all it takes to connect what's on screen to the app's content.\n\nSiri can now talk about the content. But to truly take off, I'll give Siri the ability to act. Once again, App Schemas lead the way, and this is where things get really interesting. I'll start with creating events. Just like entities, intents use code snippets too. I'll find the calendar_createEvent snippet and select it. It scaffolds the intent with the @AppIntent macro, the schema, all the parameters the schema requires, and a perform stub. The parameters, from title to note, come from the schema and I can use them in the intent's perform logic.\n\nI'll start by filling in the types. Then I'll add a @Dependency for the CalendarManager to use in the perform method. In the perform method, I'll mark it @MainActor and set EventEntity as the return value type.\n\nThe general pattern is straightforward: resolve the intent's parameters into something the data layer understands, perform the action, and return the result as an entity. For creating a calendar event, that means resolving the parameters like extracting the location from the union value, and converting recurrence if provided. I'll pass everything to calendarManager's createEvent method and return the result as an EventEntity.\n\nHere's what's remarkable. Because this conforms to an App Schema, Siri can handle all the heavy lifting. Interpreting language, asking for clarification, and confirming details… so people can just have a natural conversation with Siri. Time to take it for a launch… Imagine I want to create a new event, but I'm mid-spacewalk and my iPhone is floating just out of reach. Instead of grabbing it, I'll just ask Siri... \"Hey Siri, create a new event in the Lunar Orbit Log.\" \"Call it Zero Gravity Yoga for June 15th, 8am.\" Siri can resolve the title, the date, and the time of the new event. When it's done, the event is added to the calendar.\n\nJust like that, a few lines of code and the app works with Siri. That's the power of App Schemas. Now that events can be created with Siri, I'll keep the momentum going with updating events.\n\nHere's UpdateEventIntent, already filled out using the calendar_updateEvent snippet. The structure is similar to the create intent, but the key difference is that most parameters are optional since someone might only change one or two things. The event parameter is what Siri resolves; everything else is optional. The perform logic follows the same pattern: resolve each parameter if provided, then pass everything to the CalendarManager's updateEvent method and return the updated event. It might be more code than the create intent, but there's nothing completely new happening here.\n\nHowever, there's one important subtlety with optional parameters in update intents worth calling out. For example, when recurrence is nil, does that mean \"don't change it\" or \"remove it\"? A simple nil check doesn't tell me which case I'm dealing with. Zooming into the recurrence logic in the perform method, the @AppIntent macro wraps each property in an IntentParameter which exposes a valueState. This is how I tell the difference. .set with an actual value means a new value is provided. .set with a nil value means it's explicitly cleared. .unset means the parameter isn't part of the request.\n\nThis pattern applies to any optional parameter where clearing the value is a meaningful action. Now that the update intent is wired up, I'll send a few commands into orbit: \"Hey Siri, move this to 10 in the evening.\" \"Yep, that's fine\" \"Also, change this to repeat weekly and move it to my Deep Space calendar\" \"Sounds good\" \"Actually, do not repeat this event\" The detail view reflects every change. All from a few lines of code and an App Schema.\n\nThat update works, but Siri displays a default result card. This is CometCal, it deserves something with more... atmosphere. By default, Siri builds the result card from the display representation. Snippet views let me replace that with a custom SwiftUI view. I've prepared a SwiftUI view that takes an EventEntity and lays out the details in a stellar way. You can get really creative here… but also remember to keep it simple and lightweight.\n\nTo wire this all up, I'll open UpdateEventIntent.\n\nI'll add ShowsSnippetView to the perform method's return type. Then in the return statement, I'll pass the EventSnippetView. The same approach works for any other intent that returns a result, like the create intent.\n\n\"Hey Siri, push the crew lunch out by an hour\" I now get the new snippet! The cosmic gradient accent, dark blue background, the updated event details and a star icon… That's the app's personality shining through within Siri. That covers the update intent. The last action to wire up is delete, and it's the simplest of the three. Here's the DeleteEventIntent. This is pretty simple… just the event and an optional span for recurring events. The perform logic finds the event and deletes it.\n\nSiri automatically handles the confirmation dialog before anything is removed.\n\nTime to test the ejection sequence: \"Siri, delete that party.\" \"Yes, delete it.\" \"Also, delete the event happening June 9th.\" \"Oh… actually, never mind.\" Siri asks for confirmation before deleting any event, and also makes sure to disambiguate when more than one event matches. Three intents. Full event management with Siri. Mission accomplished! CometCal has gone from screen-bound to fully voice-piloted. A lot got built during this video. Here are some next steps for making your own apps work with Siri. Download the CometCal sample project and explore the full implementation. Browse the App Intents documentation to explore all the available App Schemas and domains For automated testing, check out this video to learn how to write tests for CometCal using the new AppIntentsTesting framework.\n\nAnd watch \"Explore advanced App Intents features for Siri and Apple Intelligence\" to go deeper into ways to refine how your app works with Siri that weren't covered in this video. You're now mission-ready to take your app to the final frontier. Thank you so much for following along!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm Justin, an engineer on the Swift Intelligence Frameworks team. Welcome to this code-along. In this video, I'll take an app and make it available to Siri, step by step. Imagine I start a conversation with Siri on my iPhone and ask: \"Who's coming to my picnic?\" Siri searches for the event, its attendees, and shows me the guest list."
+      },
+      {
+        "timestamp": "0:29",
+        "text": "I realize it includes that one friend that's always late, so I say: \"Move it to noon… actually 11:30 am\"."
+      },
+      {
+        "timestamp": "0:40",
+        "text": "Siri asks to confirm the details, and I say: \"sounds good, thanks\"."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Siri makes the changes and renders a custom view."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "Now I need to update my friends: \"Text everyone going to the picnic and let them know about the change using emojis\"."
+      },
+      {
+        "timestamp": "1:00",
+        "text": "After double-checking the message, I say: \"Send it\"."
+      },
+      {
+        "timestamp": "1:06",
+        "text": "And just like that, Siri sends the message. Then I remember the event's note had a reminder to bring something important to the picnic. So I ask: \"What did I need to bring to the picnic again?\" Siri searches the event and finds a note to myself to bring a chocolate cake."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "I'm curious how much time I have to get ready, so I say: \"How long will it take to drive there?\" Siri finds the event's location, and gives me an estimate."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "This is how Siri can make everyday things effortless… simply with a conversation. That's the mission for today."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "I'll take an existing app and make it available to Siri. Siri is powered by Apple Intelligence, Apple's personal intelligence system. Developers integrate their apps with Apple Intelligence through the App Intents framework, so their app's content and actions become available within Siri and other system experiences. The companion video \"Build intelligent Siri experiences with App Schemas\" covers the concepts behind the framework and how Apple Intelligence and Siri work with your app's content and actions. If App Intents is new to you, the video \"Get to know App Intents\" covers the core fundamentals like intents, entities, and queries, and how they connect to system features like Siri and Shortcuts."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "I've been working on a sample project called CometCal. It's a SwiftUI calendar app with a fun cosmic twist, and the source code is available for download on the Apple Developer website for you to follow along."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "It does all the basics of a calendar app: showing today's events, viewing and editing them, creating more, and even managing different calendars."
+      },
+      {
+        "timestamp": "2:45",
+        "text": "Right now, the only way to interact with it though is through the screen… but that's about to change! In this video, I'm going to update CometCal so that Siri can: understand the app's content and answer my questions. And take actions like updating an event… making Siri more helpful than ever. The first step is giving Siri an understanding of my app's content. Right now, Siri has no idea what a calendar or an event means inside CometCal. That's where App Schemas come in. App Schemas describe my app's content and actions in terms Siri can already understand. They define the structure of my entities, the parameters of my actions, and the outputs. No training phrases, no natural language processing on my end. App Schemas are organized into App Schema Domains."
+      },
+      {
+        "timestamp": "3:32",
+        "text": "The calendar domain covers everything related to scheduling: events, calendars, attendees, and the actions that operate on them. Now that the groundwork is set… time to suit up, jump into Xcode, and start the countdown! CometCal already has a CalendarModel in its data layer, that's the SwiftData model for calendars, like the difference between a Personal calendar and a Work calendar. The goal is to create an app entity that represents it using App Schemas, so Siri can understand what a calendar is in this app."
+      },
+      {
+        "timestamp": "4:02",
+        "text": "I'll create a new Swift file called CalendarEntity, and import AppIntents."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "Next, I'll type calendar_ in the editor. Xcode offers every schema in the Calendar domain, right in autocomplete. Since the goal is a calendar entity, I'll select calendar_calendar."
+      },
+      {
+        "timestamp": "4:25",
+        "text": "The snippet fills in the structure: the @AppEntity macro, properties, DisplayRepresentation and query stubs. This is now a schematized entity, a type Siri can reason over. A few things to fill in. First, I'll set the id type to UUID to match the data model."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "To enable matching by meaning and not just text, I'll conform to the IndexedEntity protocol. Conforming to IndexedEntity allows my app to donate entities using the Spotlight index to get the benefits of semantic understanding. When an entity is donated, Siri can resolve it by name, by property, or by context, without requiring a custom property query."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "To keep things moving, I added ways to convert between the data model and the entity."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "The CalendarEntity's initializer maps from CalendarModel to pull out what the entity needs. And the convenience .entity property on CalendarModel produces a CalendarEntity using the initializer. I'll use this soon in places like the query to convert between the two."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "Next, I'll add a @Dependency property for the CalendarManager in the query. That's CometCal's data layer that handles all the SwiftData operations. The @Dependency property wrapper is how App Intents injects shared resources into intents and queries, so instead of creating new instances, it provides the same object I register once as I've done on the right."
+      },
+      {
+        "timestamp": "5:49",
+        "text": "The CalendarManager is main-actor isolated, so I'll also annotate the query struct as @MainActor."
+      },
+      {
+        "timestamp": "5:55",
+        "text": "I'll implement the method required by the EntityQuery protocol. This fetches calendars by ID using the CalendarManager dependency. Now, EntityQuery covers cases where the system already knows an entity's ID. But later, when creating events, the system will need to know which calendars are available so Siri can offer them as options. For that, I'll conform to EnumerableEntityQuery and add an allEntities method that returns all calendars."
+      },
+      {
+        "timestamp": "6:24",
+        "text": "For the DisplayRepresentation, I'll set the title to the calendar title and the image to a system image of a calendar. Siri and Spotlight use this when displaying the entities. That's one entity ready for orbit… almost. There's one more piece that's easy to miss. IndexedEntity defines the shape of my indexed content, but entities still need to be donated. To do that, I'll open the CalendarManager file."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "Anytime calendars, or any indexed entity for that matter, are changed, the index needs to be updated. For that, I have a CSSearchableIndex instance initialized in the CalendarManager's initializer that uses a unique name for CometCal. In the createCalendar method, just before returning the new calendar, I'll donate the entity by calling indexAppEntities using the searchable index instance from before."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "Similarly, in the updateCalendar method, I'll index the updated calendar entity."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "And in the deleteCalendar method, I'll remove the entity from the index by calling deleteAppEntities, passing in the entity's id and type."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "I'll fire up the engines and give it a go… I'll open CometCal and create a new calendar called \"Lunar Orbit Log\" Then, I'll swipe down to search for \"Lunar Orbit Log\"… and there it is with the calendar icon and the title. With CalendarEntity working, the next two entities follow the same pattern, but each introduces something new and shiny. Here's a new file called AttendeeEntity with AppIntents already imported. Same pattern as before… type calendar_attendee and select the snippet."
+      },
+      {
+        "timestamp": "8:09",
+        "text": "The familiar parts are the same… All of that is wired up off-camera so I can keep moving at light speed. Feel free to pause here and check the completed source code. Unlike CalendarEntity, AttendeeEntity conforms to the TransientAppEntity protocol instead of IndexedEntity. That's intentional."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "A transient app entity is one that represents a temporary entity that doesn't require a unique identifier and isn't meant to be queried. That's the right fit here. In CometCal, an attendee represents a person's participation in a specific event, not the person themselves. The same person can attend multiple events, and indexing each attendance separately would create duplicative results in Spotlight. Since attendees are always accessed through the event that holds them, there's no need for an independent look up path. TransientAppEntity makes that explicit… no query to write, no index to maintain. Attendees have properties that are required by the schema like the boolean property to tell whether this attendance is optional."
+      },
+      {
+        "timestamp": "9:07",
+        "text": "One new item is the IntentPerson type… the system's standard way to represent a person with a name and contact information. This is useful when sharing this data between apps, like sending an attendee's email address to draft a message in the Mail app. The schema also includes two @AppEnum types. The schema defines the set of possible cases, and my app adopts the ones that apply. These are also schematized, so I'll create them quickly using code snippets. I'll use the calendar_attendeeStatus snippet for status."
+      },
+      {
+        "timestamp": "9:40",
+        "text": "The snippet comes with all the cases the schema supports. CometCal's model already maps directly, so no changes are needed, but if an app uses different terminology, simply map the existing model to the schema's cases so Siri can recognize the shape. Similarly, I'll use calendar_attendeeType for the attendee type."
+      },
+      {
+        "timestamp": "9:59",
+        "text": "The schema requires at least one case to describe what kind of attendee this is and since CometCal's attendees are all people, I'll add a person case."
+      },
+      {
+        "timestamp": "10:11",
+        "text": "I'll fill in the types for status and type respectively."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "And that takes care of the AttendeeEntity."
+      },
+      {
+        "timestamp": "10:22",
+        "text": "That's two entities in orbit. One more to launch. The calendar and attendee entities find their orbit with the next one… the gravitational center that pulls them all together... the EventEntity. The system's search index really shines for the event entity. When someone asks \"When is my crew lunch?\", Siri can search the title. When they ask \"What events mention oxygen?\", it can search the note content. People can ask questions about their data, and Siri answers directly."
+      },
+      {
+        "timestamp": "10:49",
+        "text": "Here's EventEntity with the calendar_event snippet already applied. Just like CalendarEntity, the EventEntity conforms to the IndexedEntity protocol and includes the indexing in CalendarManager to take advantage of the semantic index. There's a lot here. The schema covers a wide range of properties. But don't panic, the same patterns from the previous entities apply. The main difference is the number and variety of parameters."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "To keep this mission on schedule, the familiar pieces are wired up off-camera. Feel free to pause and check the source code. The schema defines which properties are required and which are optional. The essentials like title or startDate are straightforward to wire up. Optional properties that my app doesn't use, like travelTime or virtualLocation, can simply stay unset. Properties that aren't part of the schema but exist on the data model, like isFavorite, can also be added to the entity. What makes this entity interesting is how it composes with the other entities built earlier. The calendar this event belongs to is a CalendarEntity… and the attendees is an array of AttendeeEntity."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "Siri understands these relationships with App Schemas."
+      },
+      {
+        "timestamp": "12:07",
+        "text": "The recurrence property is also one worth quickly pointing out."
+      },
+      {
+        "timestamp": "12:12",
+        "text": "It can be used to represent events that repeat, like a weekly workout or an important yearly anniversary. It uses Foundation's Calendar.RecurrenceRule type and converts to and from CometCal's simple frequency enum for cases like daily, weekly, monthly or yearly."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "As part of the schema, there are also union values for an event's location and alarms."
+      },
+      {
+        "timestamp": "12:36",
+        "text": "A union value is a property that can hold one of several different types. For example, the location can be either a PlaceDescriptor from the GeoToolbox framework, or a String. Again, we can simply implement these via code snippets."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "Like so. For alarms, it can be either a Duration or a Date."
+      },
+      {
+        "timestamp": "12:58",
+        "text": "Assign the properties to these types accordingly."
+      },
+      {
+        "timestamp": "13:06",
+        "text": "Like the attendee, there are also schematized enums here like the EventEntityStatus. Both enums related to events come complete from the snippets, so I'll add those and wire them up."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Lastly, assign the status property to the new status type. And with that, the content layer is fully fueled and ready for launch."
+      },
+      {
+        "timestamp": "13:29",
+        "text": "Time to find out if this thing has liftoff! On the left is the detail view of the Meteor Shower Watch Party. The time, location, and note are all there on screen… But imagine I'm mid-conversation with Siri talking about meteors, and I suddenly remember about the party. Instead of leaving the conversation to open CometCal and find the details, I can just ask… \"Is the Meteor Shower Party happening anytime soon?\" \"What's the weather like out there?\" I can also switch to typing: \"When is the peak viewing time?\" I can also tap on the result to take me to CometCal."
+      },
+      {
+        "timestamp": "14:19",
+        "text": "Siri answers every question using the app's content. No need for custom natural language... just entities and schemas. Now, you may have noticed that tapping the event from my conversation with Siri opens CometCal, but it just lands on the main screen."
+      },
+      {
+        "timestamp": "14:33",
+        "text": "It doesn't navigate to the event like I would expect. Siri doesn't know how to open a specific event in the app yet. I'm going to take a short detour to make this experience even better. To get this working, here's an OpenEventIntent. It's a small intent that conforms to the system.open schema. It takes an EventEntity as its target and tells the NavigationManager to navigate to that event. The system calls this whenever someone taps an event result in Spotlight or Siri, or asks Siri to open one."
+      },
+      {
+        "timestamp": "15:08",
+        "text": "And that's it! Now if I tap on an event… this time, CometCal opens straight to the detail view of my Meteor Shower Watch Party. That's the OpenIntent bridging the gap. Siri can now understand the app's content better than ever, so people can ask Siri about any of it. Not bad for three structs and filling out a few code snippets, right? There's one more thing I can do to make my conversation with Siri feel even more natural. When someone has a specific event on screen, they might want to say something like \"email the people in this event\" without having to say the event's title. That's onscreen awareness... and it takes just two view modifiers. In CometCal's CalendarListView, where it lists all of my events, I'll add an .appEntityIdentifier modifier to the list, passing in an EntityIdentifier for each of the event entities. This connects the list to its entities, so when someone is browsing the list, the system knows which events are on screen. In the event detail view, when a single event's details are on screen, I'll append a .userActivity modifier with an EntityIdentifier. This tells the system that one specific event is front and center so Siri can resolve this event to exactly the one being viewed."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "And that's it! Here's what it enables."
+      },
+      {
+        "timestamp": "16:24",
+        "text": "Now that Siri can understand what's currently onscreen and open event entities, I'll ask Siri to open the event in a natural way: \"Hey Siri, open that third event.\" Now that I am currently on the Meteor Shower Watch Party detail view, I'll try referring to this event rather than saying the entire title… \"Hey Siri, email the people in this event and ask someone to bring chocolate and marshmallows.\" Siri can use it's understanding of the onscreen event to find the attendees and hand them off to Mail."
+      },
+      {
+        "timestamp": "16:58",
+        "text": "Seriously… two modifiers… that's all it takes to connect what's on screen to the app's content."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "Siri can now talk about the content. But to truly take off, I'll give Siri the ability to act. Once again, App Schemas lead the way, and this is where things get really interesting. I'll start with creating events. Just like entities, intents use code snippets too. I'll find the calendar_createEvent snippet and select it. It scaffolds the intent with the @AppIntent macro, the schema, all the parameters the schema requires, and a perform stub. The parameters, from title to note, come from the schema and I can use them in the intent's perform logic."
+      },
+      {
+        "timestamp": "17:40",
+        "text": "I'll start by filling in the types. Then I'll add a @Dependency for the CalendarManager to use in the perform method. In the perform method, I'll mark it @MainActor and set EventEntity as the return value type."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "The general pattern is straightforward: resolve the intent's parameters into something the data layer understands, perform the action, and return the result as an entity. For creating a calendar event, that means resolving the parameters like extracting the location from the union value, and converting recurrence if provided. I'll pass everything to calendarManager's createEvent method and return the result as an EventEntity."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "Here's what's remarkable. Because this conforms to an App Schema, Siri can handle all the heavy lifting. Interpreting language, asking for clarification, and confirming details… so people can just have a natural conversation with Siri. Time to take it for a launch… Imagine I want to create a new event, but I'm mid-spacewalk and my iPhone is floating just out of reach. Instead of grabbing it, I'll just ask Siri... \"Hey Siri, create a new event in the Lunar Orbit Log.\" \"Call it Zero Gravity Yoga for June 15th, 8am.\" Siri can resolve the title, the date, and the time of the new event. When it's done, the event is added to the calendar."
+      },
+      {
+        "timestamp": "19:14",
+        "text": "Just like that, a few lines of code and the app works with Siri. That's the power of App Schemas. Now that events can be created with Siri, I'll keep the momentum going with updating events."
+      },
+      {
+        "timestamp": "19:26",
+        "text": "Here's UpdateEventIntent, already filled out using the calendar_updateEvent snippet. The structure is similar to the create intent, but the key difference is that most parameters are optional since someone might only change one or two things. The event parameter is what Siri resolves; everything else is optional. The perform logic follows the same pattern: resolve each parameter if provided, then pass everything to the CalendarManager's updateEvent method and return the updated event. It might be more code than the create intent, but there's nothing completely new happening here."
+      },
+      {
+        "timestamp": "20:00",
+        "text": "However, there's one important subtlety with optional parameters in update intents worth calling out. For example, when recurrence is nil, does that mean \"don't change it\" or \"remove it\"? A simple nil check doesn't tell me which case I'm dealing with. Zooming into the recurrence logic in the perform method, the @AppIntent macro wraps each property in an IntentParameter which exposes a valueState. This is how I tell the difference. .set with an actual value means a new value is provided. .set with a nil value means it's explicitly cleared. .unset means the parameter isn't part of the request."
+      },
+      {
+        "timestamp": "20:38",
+        "text": "This pattern applies to any optional parameter where clearing the value is a meaningful action. Now that the update intent is wired up, I'll send a few commands into orbit: \"Hey Siri, move this to 10 in the evening.\" \"Yep, that's fine\" \"Also, change this to repeat weekly and move it to my Deep Space calendar\" \"Sounds good\" \"Actually, do not repeat this event\" The detail view reflects every change. All from a few lines of code and an App Schema."
+      },
+      {
+        "timestamp": "21:21",
+        "text": "That update works, but Siri displays a default result card. This is CometCal, it deserves something with more... atmosphere. By default, Siri builds the result card from the display representation. Snippet views let me replace that with a custom SwiftUI view. I've prepared a SwiftUI view that takes an EventEntity and lays out the details in a stellar way. You can get really creative here… but also remember to keep it simple and lightweight."
+      },
+      {
+        "timestamp": "21:49",
+        "text": "To wire this all up, I'll open UpdateEventIntent."
+      },
+      {
+        "timestamp": "21:53",
+        "text": "I'll add ShowsSnippetView to the perform method's return type. Then in the return statement, I'll pass the EventSnippetView. The same approach works for any other intent that returns a result, like the create intent."
+      },
+      {
+        "timestamp": "22:08",
+        "text": "\"Hey Siri, push the crew lunch out by an hour\" I now get the new snippet! The cosmic gradient accent, dark blue background, the updated event details and a star icon… That's the app's personality shining through within Siri. That covers the update intent. The last action to wire up is delete, and it's the simplest of the three. Here's the DeleteEventIntent. This is pretty simple… just the event and an optional span for recurring events. The perform logic finds the event and deletes it."
+      },
+      {
+        "timestamp": "22:45",
+        "text": "Siri automatically handles the confirmation dialog before anything is removed."
+      },
+      {
+        "timestamp": "22:53",
+        "text": "Time to test the ejection sequence: \"Siri, delete that party.\" \"Yes, delete it.\" \"Also, delete the event happening June 9th.\" \"Oh… actually, never mind.\" Siri asks for confirmation before deleting any event, and also makes sure to disambiguate when more than one event matches. Three intents. Full event management with Siri. Mission accomplished! CometCal has gone from screen-bound to fully voice-piloted. A lot got built during this video. Here are some next steps for making your own apps work with Siri. Download the CometCal sample project and explore the full implementation. Browse the App Intents documentation to explore all the available App Schemas and domains For automated testing, check out this video to learn how to write tests for CometCal using the new AppIntentsTesting framework."
+      },
+      {
+        "timestamp": "23:58",
+        "text": "And watch \"Explore advanced App Intents features for Siri and Apple Intelligence\" to go deeper into ways to refine how your app works with Siri that weren't covered in this video. You're now mission-ready to take your app to the final frontier. Thank you so much for following along!"
+      }
+    ]
   },
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:43"
+    },
+    {
+      "timestamp": "1:43",
+      "title": "App Schemas and the plan",
+      "duration": "2:01"
+    },
+    {
+      "timestamp": "3:44",
+      "title": "Build the CalendarEntity",
+      "duration": "4:16"
+    },
+    {
+      "timestamp": "8:00",
+      "title": "Build the AttendeeEntity",
+      "duration": "2:30"
+    },
+    {
+      "timestamp": "10:30",
+      "title": "Build the EventEntity",
+      "duration": "4:04"
+    },
+    {
+      "timestamp": "14:34",
+      "title": "Open events with OpenIntent",
+      "duration": "0:56"
+    },
+    {
+      "timestamp": "15:30",
+      "title": "Onscreen awareness",
+      "duration": "1:48"
+    },
+    {
+      "timestamp": "17:18",
+      "title": "Create events with Siri",
+      "duration": "2:06"
+    },
+    {
+      "timestamp": "19:24",
+      "title": "Update events",
+      "duration": "2:06"
+    },
+    {
+      "timestamp": "21:30",
+      "title": "Custom snippet views",
+      "duration": "1:00"
+    },
+    {
+      "timestamp": "22:30",
+      "title": "Delete events",
+      "duration": "1:05"
+    },
+    {
+      "timestamp": "23:35",
+      "title": "Next steps",
+      "duration": "0:45"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -77,5 +414,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2026/295"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:09.802Z"
+  "extractedAt": "2026-10-17T18:42:03.752Z"
 }

@@ -3,8 +3,7 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/287/",
   "title": "What’s new in RealityKit",
-  "speakers": [],
-  "duration": "",
+  "duration": "26:08",
   "topics": [
     "Graphics & Games",
     "Spatial Computing"
@@ -12,8 +11,348 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I’m Laurence, a software engineer on the RealityKit team. Welcome to my session, “What’s new in RealityKit”. In this session, I’ll discuss some of the new RealityKit features that are being released this year.\n\nWe introduced RealityKit in 2019 to enable you to integrate 3D content into your apps, providing realistic rendering and enhancing immersive experiences. Since then we’ve received a lot of feedback from you, which has helped us make this framework better year after year. RealityKit offers a wide variety of capabilities for your 3D content to blend seamlessly with the real-world environment, enabling you to create immersive apps and games on visionOS.\n\nAlongside visionOS, RealityKit also brings many key features of RealityKit to iOS, iPadOS, and macOS. With RealityKit’s cross-platform capabilities, you can write your app once and bring it to many different platforms with minimal code changes. This year I’m proud to announce that RealityKit is now supported on the latest tvOS! Now you can bring your existing apps and experiences to AppleTV or create new ones for the big screen! RealityKit is supported on all generations of AppleTV 4K. This year’s RealityKit update brings a wide array of new functionalities that make it easier than ever to create 3D experiences that blend the virtual and real world together. In this session, I’ll take you through some of these features, like the ManipulationComponent, EnvironmentBlendingComponent, MeshInstancesComponent and more. I’ll use some of these features to build a spatial puzzle game.\n\nThe game begins with a locked chest that’s anchored to a surface in front you. Around this chest there will be several objects that you can interact with. One of these objects will have the key that unlocks the chest attached to the bottom of it.\n\nBy grabbing and inspecting the objects you can find which one has the key. And once you have the key, you can unlock the chest and see your prize: a tiny fireworks display! First, I’m going to use the new native ARKit support in RealityKit to anchor models to the space in front of the player and handle anchor lifecycle changes. Then I’ll show how you can use the new ManipulationComponent to add interactions to 3D entities in a scene. I’ll also use a PhysicsBodyComponent to have them realistically drop down when released.\n\nThen I will use the new SceneUnderstanding APIs to allow the game entities to collide with our scene understanding mesh.\n\nAfter that I’m going to use the EnvironmentBlendingComponent to allow the app to better blend with the real world.\n\nNext, I will show you how you can use the new MeshInstancesComponent to efficiently draw multiple instances of a 3D model that I can use to decorate my scene.\n\nThen, I will go over some exciting new immersive media updates.\n\nI will also cover other new announcements like spatial accessories, updates to entities and more. I will start by anchoring 3D models to the real world environment using a new API that provides access to ARKit data directly through RealityKit. I’ll be using a RealityKit AnchorEntity to position my game on a table. Anchor entities are used to attach virtual content to real world surfaces. This year, we are making AnchorEntities more powerful by exposing the ARKit anchoring data directly. Let me show you how this is done. To gain access to ARKit data directly through RealityKit, you will need to first create a SpatialTrackingSession. The configuration for the session will tell RealityKit to send the new AnchorStateEvents to your app as the AnchorEntities’ states change. Then you can set up an AnchorEntity to filter the properties of the anchor you are looking for. In my app I want to look for a table with specific dimensions.\n\nOnce RealityKit finds the best anchor that matches the properties I set on my AnchorEntity, it will fire an AnchorStateEvent.\n\nThat AnchorStateEvent instance contains ARKit data such as the transform and extents of the anchor, that I can use to position my game. Let’s go through this in code.\n\nI’ll start by creating a SpatialTrackingSession which will allow RealityKit AnchorEntities to be tracked to the environment. For my game I need to track a plane to spawn the treasure chest on, so I’ll set up a SpatialTrackingSession configuration with plane tracking enabled.\n\nNow I can start the tracking session by running the configuration I just created.\n\nNext, I can spawn an AnchorEntity to help position my game on the table.\n\nI’ll classify the AnchorEntity as a table that should be a horizontal surface with a minimum bounds of 15cm squared associated with it. This AnchorEntity will start off in an unanchored state, but will become anchored when a table plane is detected that matches the classification and bounds provided.\n\nIn order to receive updates when the anchor state changes I’ll need to use the new AnchorStateEvents API.\n\nThe AnchorStateEvents API let’s you subscribe to events for when entities have been anchored, if they are about to be unanchored, or if they have failed to anchor.\n\nI will use the DidAnchor event in my app to position my game entities within the bounds of the table surface.\n\nIn my code I’ve added a subscription to the DidAnchor event to know when the anchor entity has successfully been anchored to the environment. The event structure provides me with my anchor entity, which has been updated to contain the new ARKitAnchorComponent.\n\nThis component holds the ARKit data such as extents and transforms that I can use to position my game entities onto the anchored surface. I can access this data by utilizing the anchor property of the ARKitAnchorComponent.\n\nTo use the anchor property I’ll have to cast it to its ARKit anchor type. In this case, I’ll try to cast it to a PlaneAnchor since my AnchorEntity is set up to look for planes.\n\nNow I have access to the raw ARKit extents and transforms for the anchor. I’ll be using the ARKit transforms, specifically the originFromAnchorTransform and anchorFromExtentTransform, to position my game and ensure it is centered on the anchored surface.\n\nNow, when I open the immersive space, game objects will be spawned once a suitable surface has been found.\n\nNext I’m going to add interactions to my scene using the new ManipulationComponent in RealityKit. The ManipulationComponent simplifies the process of picking up and rotating the 3D entities in your scene.\n\nIt even supports advanced gestures like swapping hands! I’ll use the ManipulationComponent to enable the player to grab and rotate the game objects to find the key underneath them. I’ll show you how you can add this functionality to the game, but if you want more information about how the ManipulationComponent works and what you can do with it, please watch the \"Better together: SwiftUI and RealityKit\" session.\n\nTo enable you to pick up the entities and interact with them, you only need to call the ManipulationComponent configureEntity function. This function will automatically add the necessary InputTarget, Collision, HoverEffect, and Manipulation components to the entity. And that’s it! Now you can pick up and rotate the entities with your hands. However, you’ll notice that the objects will smoothly animate back to where they originated from when they’re released.\n\nI’ll go back into my code and set the `releaseBehavior` property on the ManipulationComponent to stay.\n\nI’ll then assign this manipulationComponent instance to my entity. This will prevent the object from automatically animating back to its starting position when I release it. It will instead remain stationary.\n\nNext, I’ll have to make it fall to the floor. For that I’ll add a PhysicsBodyComponent to my entity. I’d like to be careful to only enable gravity on the PhysicsBodyComponent when the object is not being pinched and picked up. The new ManipulationEvents API makes it easy to do this! ManipulationEvents are events emitted by RealityKit that describe various interaction states that entities go through when they are being interacted with.\n\nFor example, the WillRelease event will get triggered when an entity is released by the player. Similarly, there are other events as well like WillBegin, WillEnd, DidUpdateTransform as well as DidHandOff.\n\nPlease read the documentation on developer.apple.com for more details.\n\nI’ll be using the WillBegin and WillEnd events to make sure my game entities are only reacting to gravity when they are not being interacted with.\n\nFirst I’ll add a subscription to the WillBegin event to change the physicsBodyComponent mode to kinematic to keep the physics system from interfering, while the object is being moved. Doing this will also prevent gravity from affecting the entity.\n\nNext, I’ll add a subscription to the WillEnd event to change the physicsBodyComponent mode back to dynamic since the entity is no longer being interacted with. Doing this will allow the entity to react to other physics objects in the scene. It will also respond to gravity! Now that I have the game objects responding to physics, I need them to collide with the player’s surroundings. I can do this by using the new Scene Understanding API that adds the mesh from my room to the app’s physics simulation. Through the SpatialTrackingSession API, RealityKit is able to generate a mesh of your surroundings. This mesh, known as the Scene Understanding mesh, can be used to add collision and physics to the real world objects in your room.\n\nYou can utilize the scene understanding mesh from your real world surroundings by setting the SceneUnderstandingFlags under the SpatialTrackingSession Configuration.\n\nvisionOS currently supports the collision and physics flags. I’ll be using both of these to enable my game objects to collide with the scene understanding mesh. I’ll set these flags on the SpatialTrackingSession Configuration before running it.\n\nTo do this, I’ll need to update the SpatialTrackingSession I set up earlier. All I have to do is add the collision and physics scene understanding flags to the SpatialTrackingSession configuration before we start the session.\n\nNow, the scene understanding mesh will participate in our game’s physics simulation and game objects will collide with the environment when I drop them on the table or the floor.\n\nNow that my game can interact with the environment, I want to have it respond visually to the environment as well. For this I can use the EnvironmentBlendingComponent. The EnvironmentBlendingComponent is a new component designed for immersive space apps in this year’s RealityKit update.\n\nThis component allows entities to be hidden by static real world objects. Entities with this component are realistically occluded either partially or fully depending on how much of the entity is covered by a static real world object. Dynamic moving objects like people and pets will not occlude objects with this component.\n\nIf I want to add this functionality, all I have to do is add the EnvironmentBlendingComponent and set its preferred blending mode to be occluded by the surroundings.\n\nNow if an entity with the EnvironmentBlendingComponent is positioned behind a real world object you will notice that the entity will be occluded by it! Please note that entities that use the EnvironmentBlendingComponent will be treated as part of their background environment and will always get drawn behind other virtual objects in your scene. Now that I have the EnvironmentBlendingComponent working, I can add some decorations to the surrounding game area using the new MeshInstancesComponent. Last year the LowLevelMesh and LowLevelTexture APIs were added to RealityKit to give you far greater control of your rendering data. In this year’s RealityKit update, this low level access is being expanded to another aspect of rendering: Instancing. In my app, I want to decorate the surrounding space and also define a playable area.\n\nI could spawn a bunch of duplicate entities around to decorate the space. However, to do this I’d need to clone my entity many times, which would create many copies of my ModelComponent. This could result in a large memory and processing footprint. A more efficient, and also convenient way to do this is by using the new MeshInstancesComponent.\n\nThe MeshInstancesComponent allows you to draw a mesh multiple times with a single entity. All you have to provide is a list of transforms to draw the mesh with. On iOS, iPadOS, macOS, and tvOS you can use a LowLevelBuffer to pass render data to your CustomMaterial to make each mesh instance look unique.\n\nIn addition to being convenient, the MeshInstancesComponent can also improve performance by reducing the amount of data that needs to be sent to the GPU. Instead of sending multiple copies of the model and materials to the GPU when drawing duplicate meshes, the MeshInstancesComponent will only send that data once.\n\nIt’s important to note that the models that are drawn with a single MeshInstancesComponent are still considered a part of a single entity. If you use this component to cover a large area, it may make sense to break it up into several smaller entities to allow culling to take place. Here’s how you can use the MeshInstancesComponent in code. First, I need a mesh to instance. I’ll get this by loading an entity from the app’s content bundle. Now, I can initialize the MeshInstancesComponent and the LowLevelInstanceData object. The LowLevelInstanceData object is what holds the data for each of the individual mesh instances.\n\nWhen I create a LowLevelInstanceData object I have to provide the number of instances that I need for my app. I’ll use 20 here to display a rough approximation of the play area without over crowding it. Next, I can assign the LowLevelInstanceData object to the MeshInstancesComponent subscripted by the index of the mesh part that I want to instance.\n\nIn my case, I know the mesh that I’m instancing is simple and only has one mesh part, so I am going to assign the LowLevelDataObject to partIndex: 0.\n\nNow I can populate the LowLevelInstanceData object with the transforms for each mesh instance.\n\nIn order to have varied decorations, I’ll randomize the scale, angle, and position for each of these instances.\n\nWith these values I can create a transform matrix and assign that to an instance.\n\nNow I can add the meshInstancesComponent to my entity and whenever my entity is drawn it’ll draw using the data from the MeshInstancesComponent.\n\nWith that ... the game is completed! You can start the game and anchor it to the surface in front of you. You can pick up and rotate the objects in the play area to find the key that unlocks the chest! I’ll briefly recap the new APIs I used to create this app. I used the new AnchorStateEvent APIs to anchor the content. Then I used the ManipulationComponent to allow interaction with the objects.\n\nI used the Scene understanding flags to enable the game entities to collide with the scene understanding mesh. Finally, I used the EnvironmentBlendingComponent and MeshInstancesComponent to help the game blend in with the real world.\n\nNext, I will share some other exciting features that are being added to RealityKit this year, like support for new immersive media. This year, we are introducing a brand new component called ImagePresentationComponent that is used for presenting images in RealityKit. It supports three kinds of images: traditional 2D images and photos, spatial photos, which are stereoscopic photos from your iPhone or Vision Pro, and spatial scenes, a new kind of 3D image created from an existing 2D image or photo.\n\nSpatial scenes are 3D images with real depth, generated from a 2D image. They’re like a diorama version of a photo, with motion parallax to accentuate the spatial scene’s depth as the viewer moves their head relative to the scene. Spatial scenes are a great way to bring your existing 2D photos to life, both in the Photos app on visionOS, and in your own app, with RealityKit.\n\nLet me take you through the code to add the three kinds of images to your app. I’ll start by showing you how to present a 2D image or photo with RealityKit.\n\nI’ll first find a URL for a 2D photo, and use that URL to create a new image presentation component. The initializer for the component is async since it can take a short while to load the image into memory.\n\nOnce the component is initialized, I can assign it to an entity to display it in my RealityKit scene.\n\nFor presenting spatial photos, there is one more step involved. You will need to assign a desired viewing mode for the component before setting it on the entity. And you can specify the desired viewing mode by first checking if your image supports it. If you do not specify a desired viewing mode or your image does not support it, then the ImagePresentationComponent will present your image in a 2D, or monoscopic viewing mode, even if it is a spatial photo.\n\nTo opt into immersive spatial photo presentation, use a desired viewing mode of spatialStereoImmersive instead. Whenever you create an image presentation component from a spatial photo, both spatial stereo modes will be available. Both 2D images and spatial photos are loaded from a file on disk. Displaying this image as a spatial scene requires a few additional steps, because we need to generate the spatial scene before we can present it. Let me show you how you can generate and present a spatial scene in code.\n\nYou can generate a spatial scene using a 2D image or a spatial photo. If you generate a spatial scene from a spatial photo, only one of the channels in the spatial photo, will be used as the 2D image for conversion.\n\nTo create a spatial scene, you don’t initialize the ImagePresentationComponent directly from the image URL. Instead, you can create a Spatial3DImage from the URL, and use the spatial 3D image to initialize the ImagePresentationComponent. However, the component isn’t yet ready to present as a spatial scene for that, you need to generate the scene first.\n\nWe do this by calling the spatial 3D image’s generate method. This will generate the spatial scene in a few seconds. After successful generation, the ImagePresentationComponent’s availableViewingModes will update to include the spatial3D and spatial3DImmersive modes. You can then set one of them as the desired viewing mode to opt into windowed or immersive presentation of the spatial scene. Note that you don’t have to generate the spatial scene in advance. You might want to wait until the person using your app presses a button, like in the Photos app. Setting the component’s desired viewing mode to .spatial3D before calling generate tells the component that you want to show the spatial scene as soon as it is ready.\n\nThis prompts the component to show a progress animation during the generation process, and to display the spatial scene as soon as generation completes. Here’s an example of how that looks on Vision Pro. Image presentation component shows the same generation animation as the Photos app on visionOS, and the end result looks great in 3D.\n\nHere’s a quick summary of all the different ways you can use ImagePresentationComponent to present a 2D image, a spatial photo, or a spatial scene.\n\nFor more information on this component, check out the “Presenting images in RealityKit” Sample Code on developer.apple.com.\n\nAnother immersive media update this year is that VideoPlayerComponent has been updated to support the playback of a wide range of immersive video formats! It now supports spatial video playback with full spatial styling, in both portal and immersive modes.\n\nApple Projected Media Profile videos such as 180 degree, 360 degree, and wide-field-of-view videos are also supported! People can also configure comfort settings for Apple Projected Media Profile videos and RealityKit will automatically adjust playback to accommodate.\n\nThese video formats, in addition to Apple Immersive Video, can be configured to be played in a variety of viewing modes. For a deeper look into these updates, please check out the “Support immersive video playback in visionOS apps” session.\n\nNext I’ll discuss some of our other updates this year. First, I'll introduce tracked Spatial Accessories.\n\nNext, I'll go over the latest updates with SwiftUI and RealityKit integration.\n\nAfter that, I'll cover the new entity updates. I'll give an overview of RealityKit's AVIF texture support.\n\nThen I'll discuss the new hover effect groupID feature.\n\nAnd finally I'll talk about the addition of post processing effects to RealityViews. Let's begin. RealityKit is adding support for tracking spatial accessories that allow you to interact with your apps in both Shared space and Full space. You can track spatial accessories in six degrees of freedom, and they also support haptics to enhance the interactions in your apps and games. To learn more about how to add spatial accessory input to your apps, watch the “Explore spatial accessory input on visionOS” session. This year, RealityKit is also introducing some brand new components to allow for better SwiftUI integration. The ViewAttachmentComponent makes it very simple to add SwiftUI views directly to your entities. Additionally, the PresentationComponent enables you to add modal presentations, like popovers, to entities Also, the new GestureComponent simplifies the process of adding SwiftUI gestures to entities.\n\nPlease check out the \"Better together: SwiftUI and RealityKit\" session for more information on what’s new with SwiftUI and RealityKit integration this year! There is also a new entity attach method that allows you to attach one entity to the pin of another entity. This API greatly simplifies attaching meshes to the joints of an animated skeleton.\n\nAttaching meshes this way will avoid having to manually align the meshes and will also avoid expensive hierarchical transform updates. Additionally, there is a new Entity initializer that allows you to load entities from in memory Data objects.\n\nWith this new initializer you can load entire RealityKit scenes or USDs from an online source or stream them over the network. The new initializer supports the same file formats as the existing entity initializers.\n\nFurthermore, RealityKit is adding support for AVIF encoded textures, which offer quality similar to jpeg with support for 10 bit colors while being significantly smaller in size. You can use the Preview app on your Mac or usdcrush in the Terminal to export USDs with this compression enabled. Also, the HoverEffectComponent is receiving a new feature: GroupIDs. GroupIDs are a way to create associations between hover effects. Any hover effects that share a GroupID will also share activations.\n\nAssigning hover effects a GroupID will give you complete control of how a hover effect is activated irrespective of their relative hierarchy to each other. Normally hover effects are applied hierarchically like in the example on the left where child entities inherit the effects of their parent entities. However, if an entity has a GroupID like Entity A and Entity B in the example on the right, then they will not propagate their effects to their children.\n\nAnother cool addition this year is support for post processing effects in RealityView. You can use the customPostProcessing API to add custom effects, like bloom, to your apps using Metal Performance Shaders, CIFilters, or your own shaders. This API is supported on iOS, iPadOS, macOS, and tvOS.\n\nThis year’s RealityKit update is focused on making the creation of 3D experiences with RealityKit easier than ever. I went over how you can create a spatial puzzle game that uses some of the new RealityKit APIs to anchor the game to your environment and to enable intuitive ways to interact with the game pieces.\n\nI also discussed the new immersive media updates that enable your apps to display spatial content directly in RealityKit.\n\nThen I covered some additional updates such as spatial accessory tracking, entity updates, and hover effect groupsIDs. With these new features it’s easier than ever to build 3D apps with RealityKit and I’m so excited to see what experiences you come up with. Thanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I’m Laurence, a software engineer on the RealityKit team. Welcome to my session, “What’s new in RealityKit”. In this session, I’ll discuss some of the new RealityKit features that are being released this year."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "We introduced RealityKit in 2019 to enable you to integrate 3D content into your apps, providing realistic rendering and enhancing immersive experiences. Since then we’ve received a lot of feedback from you, which has helped us make this framework better year after year. RealityKit offers a wide variety of capabilities for your 3D content to blend seamlessly with the real-world environment, enabling you to create immersive apps and games on visionOS."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "Alongside visionOS, RealityKit also brings many key features of RealityKit to iOS, iPadOS, and macOS. With RealityKit’s cross-platform capabilities, you can write your app once and bring it to many different platforms with minimal code changes. This year I’m proud to announce that RealityKit is now supported on the latest tvOS! Now you can bring your existing apps and experiences to AppleTV or create new ones for the big screen! RealityKit is supported on all generations of AppleTV 4K. This year’s RealityKit update brings a wide array of new functionalities that make it easier than ever to create 3D experiences that blend the virtual and real world together. In this session, I’ll take you through some of these features, like the ManipulationComponent, EnvironmentBlendingComponent, MeshInstancesComponent and more. I’ll use some of these features to build a spatial puzzle game."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "The game begins with a locked chest that’s anchored to a surface in front you. Around this chest there will be several objects that you can interact with. One of these objects will have the key that unlocks the chest attached to the bottom of it."
+      },
+      {
+        "timestamp": "2:07",
+        "text": "By grabbing and inspecting the objects you can find which one has the key. And once you have the key, you can unlock the chest and see your prize: a tiny fireworks display! First, I’m going to use the new native ARKit support in RealityKit to anchor models to the space in front of the player and handle anchor lifecycle changes. Then I’ll show how you can use the new ManipulationComponent to add interactions to 3D entities in a scene. I’ll also use a PhysicsBodyComponent to have them realistically drop down when released."
+      },
+      {
+        "timestamp": "2:44",
+        "text": "Then I will use the new SceneUnderstanding APIs to allow the game entities to collide with our scene understanding mesh."
+      },
+      {
+        "timestamp": "2:51",
+        "text": "After that I’m going to use the EnvironmentBlendingComponent to allow the app to better blend with the real world."
+      },
+      {
+        "timestamp": "2:58",
+        "text": "Next, I will show you how you can use the new MeshInstancesComponent to efficiently draw multiple instances of a 3D model that I can use to decorate my scene."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "Then, I will go over some exciting new immersive media updates."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "I will also cover other new announcements like spatial accessories, updates to entities and more. I will start by anchoring 3D models to the real world environment using a new API that provides access to ARKit data directly through RealityKit. I’ll be using a RealityKit AnchorEntity to position my game on a table. Anchor entities are used to attach virtual content to real world surfaces. This year, we are making AnchorEntities more powerful by exposing the ARKit anchoring data directly. Let me show you how this is done. To gain access to ARKit data directly through RealityKit, you will need to first create a SpatialTrackingSession. The configuration for the session will tell RealityKit to send the new AnchorStateEvents to your app as the AnchorEntities’ states change. Then you can set up an AnchorEntity to filter the properties of the anchor you are looking for. In my app I want to look for a table with specific dimensions."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "Once RealityKit finds the best anchor that matches the properties I set on my AnchorEntity, it will fire an AnchorStateEvent."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "That AnchorStateEvent instance contains ARKit data such as the transform and extents of the anchor, that I can use to position my game. Let’s go through this in code."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "I’ll start by creating a SpatialTrackingSession which will allow RealityKit AnchorEntities to be tracked to the environment. For my game I need to track a plane to spawn the treasure chest on, so I’ll set up a SpatialTrackingSession configuration with plane tracking enabled."
+      },
+      {
+        "timestamp": "4:48",
+        "text": "Now I can start the tracking session by running the configuration I just created."
+      },
+      {
+        "timestamp": "4:54",
+        "text": "Next, I can spawn an AnchorEntity to help position my game on the table."
+      },
+      {
+        "timestamp": "5:00",
+        "text": "I’ll classify the AnchorEntity as a table that should be a horizontal surface with a minimum bounds of 15cm squared associated with it. This AnchorEntity will start off in an unanchored state, but will become anchored when a table plane is detected that matches the classification and bounds provided."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "In order to receive updates when the anchor state changes I’ll need to use the new AnchorStateEvents API."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "The AnchorStateEvents API let’s you subscribe to events for when entities have been anchored, if they are about to be unanchored, or if they have failed to anchor."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "I will use the DidAnchor event in my app to position my game entities within the bounds of the table surface."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "In my code I’ve added a subscription to the DidAnchor event to know when the anchor entity has successfully been anchored to the environment. The event structure provides me with my anchor entity, which has been updated to contain the new ARKitAnchorComponent."
+      },
+      {
+        "timestamp": "6:07",
+        "text": "This component holds the ARKit data such as extents and transforms that I can use to position my game entities onto the anchored surface. I can access this data by utilizing the anchor property of the ARKitAnchorComponent."
+      },
+      {
+        "timestamp": "6:23",
+        "text": "To use the anchor property I’ll have to cast it to its ARKit anchor type. In this case, I’ll try to cast it to a PlaneAnchor since my AnchorEntity is set up to look for planes."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "Now I have access to the raw ARKit extents and transforms for the anchor. I’ll be using the ARKit transforms, specifically the originFromAnchorTransform and anchorFromExtentTransform, to position my game and ensure it is centered on the anchored surface."
+      },
+      {
+        "timestamp": "6:52",
+        "text": "Now, when I open the immersive space, game objects will be spawned once a suitable surface has been found."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "Next I’m going to add interactions to my scene using the new ManipulationComponent in RealityKit. The ManipulationComponent simplifies the process of picking up and rotating the 3D entities in your scene."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "It even supports advanced gestures like swapping hands! I’ll use the ManipulationComponent to enable the player to grab and rotate the game objects to find the key underneath them. I’ll show you how you can add this functionality to the game, but if you want more information about how the ManipulationComponent works and what you can do with it, please watch the \"Better together: SwiftUI and RealityKit\" session."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "To enable you to pick up the entities and interact with them, you only need to call the ManipulationComponent configureEntity function. This function will automatically add the necessary InputTarget, Collision, HoverEffect, and Manipulation components to the entity. And that’s it! Now you can pick up and rotate the entities with your hands. However, you’ll notice that the objects will smoothly animate back to where they originated from when they’re released."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "I’ll go back into my code and set the `releaseBehavior` property on the ManipulationComponent to stay."
+      },
+      {
+        "timestamp": "8:17",
+        "text": "I’ll then assign this manipulationComponent instance to my entity. This will prevent the object from automatically animating back to its starting position when I release it. It will instead remain stationary."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Next, I’ll have to make it fall to the floor. For that I’ll add a PhysicsBodyComponent to my entity. I’d like to be careful to only enable gravity on the PhysicsBodyComponent when the object is not being pinched and picked up. The new ManipulationEvents API makes it easy to do this! ManipulationEvents are events emitted by RealityKit that describe various interaction states that entities go through when they are being interacted with."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "For example, the WillRelease event will get triggered when an entity is released by the player. Similarly, there are other events as well like WillBegin, WillEnd, DidUpdateTransform as well as DidHandOff."
+      },
+      {
+        "timestamp": "9:13",
+        "text": "Please read the documentation on developer.apple.com for more details."
+      },
+      {
+        "timestamp": "9:19",
+        "text": "I’ll be using the WillBegin and WillEnd events to make sure my game entities are only reacting to gravity when they are not being interacted with."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "First I’ll add a subscription to the WillBegin event to change the physicsBodyComponent mode to kinematic to keep the physics system from interfering, while the object is being moved. Doing this will also prevent gravity from affecting the entity."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "Next, I’ll add a subscription to the WillEnd event to change the physicsBodyComponent mode back to dynamic since the entity is no longer being interacted with. Doing this will allow the entity to react to other physics objects in the scene. It will also respond to gravity! Now that I have the game objects responding to physics, I need them to collide with the player’s surroundings. I can do this by using the new Scene Understanding API that adds the mesh from my room to the app’s physics simulation. Through the SpatialTrackingSession API, RealityKit is able to generate a mesh of your surroundings. This mesh, known as the Scene Understanding mesh, can be used to add collision and physics to the real world objects in your room."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "You can utilize the scene understanding mesh from your real world surroundings by setting the SceneUnderstandingFlags under the SpatialTrackingSession Configuration."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "visionOS currently supports the collision and physics flags. I’ll be using both of these to enable my game objects to collide with the scene understanding mesh. I’ll set these flags on the SpatialTrackingSession Configuration before running it."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "To do this, I’ll need to update the SpatialTrackingSession I set up earlier. All I have to do is add the collision and physics scene understanding flags to the SpatialTrackingSession configuration before we start the session."
+      },
+      {
+        "timestamp": "11:07",
+        "text": "Now, the scene understanding mesh will participate in our game’s physics simulation and game objects will collide with the environment when I drop them on the table or the floor."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "Now that my game can interact with the environment, I want to have it respond visually to the environment as well. For this I can use the EnvironmentBlendingComponent. The EnvironmentBlendingComponent is a new component designed for immersive space apps in this year’s RealityKit update."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "This component allows entities to be hidden by static real world objects. Entities with this component are realistically occluded either partially or fully depending on how much of the entity is covered by a static real world object. Dynamic moving objects like people and pets will not occlude objects with this component."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "If I want to add this functionality, all I have to do is add the EnvironmentBlendingComponent and set its preferred blending mode to be occluded by the surroundings."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "Now if an entity with the EnvironmentBlendingComponent is positioned behind a real world object you will notice that the entity will be occluded by it! Please note that entities that use the EnvironmentBlendingComponent will be treated as part of their background environment and will always get drawn behind other virtual objects in your scene. Now that I have the EnvironmentBlendingComponent working, I can add some decorations to the surrounding game area using the new MeshInstancesComponent. Last year the LowLevelMesh and LowLevelTexture APIs were added to RealityKit to give you far greater control of your rendering data. In this year’s RealityKit update, this low level access is being expanded to another aspect of rendering: Instancing. In my app, I want to decorate the surrounding space and also define a playable area."
+      },
+      {
+        "timestamp": "12:55",
+        "text": "I could spawn a bunch of duplicate entities around to decorate the space. However, to do this I’d need to clone my entity many times, which would create many copies of my ModelComponent. This could result in a large memory and processing footprint. A more efficient, and also convenient way to do this is by using the new MeshInstancesComponent."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "The MeshInstancesComponent allows you to draw a mesh multiple times with a single entity. All you have to provide is a list of transforms to draw the mesh with. On iOS, iPadOS, macOS, and tvOS you can use a LowLevelBuffer to pass render data to your CustomMaterial to make each mesh instance look unique."
+      },
+      {
+        "timestamp": "13:41",
+        "text": "In addition to being convenient, the MeshInstancesComponent can also improve performance by reducing the amount of data that needs to be sent to the GPU. Instead of sending multiple copies of the model and materials to the GPU when drawing duplicate meshes, the MeshInstancesComponent will only send that data once."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "It’s important to note that the models that are drawn with a single MeshInstancesComponent are still considered a part of a single entity. If you use this component to cover a large area, it may make sense to break it up into several smaller entities to allow culling to take place. Here’s how you can use the MeshInstancesComponent in code. First, I need a mesh to instance. I’ll get this by loading an entity from the app’s content bundle. Now, I can initialize the MeshInstancesComponent and the LowLevelInstanceData object. The LowLevelInstanceData object is what holds the data for each of the individual mesh instances."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "When I create a LowLevelInstanceData object I have to provide the number of instances that I need for my app. I’ll use 20 here to display a rough approximation of the play area without over crowding it. Next, I can assign the LowLevelInstanceData object to the MeshInstancesComponent subscripted by the index of the mesh part that I want to instance."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "In my case, I know the mesh that I’m instancing is simple and only has one mesh part, so I am going to assign the LowLevelDataObject to partIndex: 0."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "Now I can populate the LowLevelInstanceData object with the transforms for each mesh instance."
+      },
+      {
+        "timestamp": "15:19",
+        "text": "In order to have varied decorations, I’ll randomize the scale, angle, and position for each of these instances."
+      },
+      {
+        "timestamp": "15:27",
+        "text": "With these values I can create a transform matrix and assign that to an instance."
+      },
+      {
+        "timestamp": "15:34",
+        "text": "Now I can add the meshInstancesComponent to my entity and whenever my entity is drawn it’ll draw using the data from the MeshInstancesComponent."
+      },
+      {
+        "timestamp": "15:44",
+        "text": "With that ... the game is completed! You can start the game and anchor it to the surface in front of you. You can pick up and rotate the objects in the play area to find the key that unlocks the chest! I’ll briefly recap the new APIs I used to create this app. I used the new AnchorStateEvent APIs to anchor the content. Then I used the ManipulationComponent to allow interaction with the objects."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "I used the Scene understanding flags to enable the game entities to collide with the scene understanding mesh. Finally, I used the EnvironmentBlendingComponent and MeshInstancesComponent to help the game blend in with the real world."
+      },
+      {
+        "timestamp": "16:28",
+        "text": "Next, I will share some other exciting features that are being added to RealityKit this year, like support for new immersive media. This year, we are introducing a brand new component called ImagePresentationComponent that is used for presenting images in RealityKit. It supports three kinds of images: traditional 2D images and photos, spatial photos, which are stereoscopic photos from your iPhone or Vision Pro, and spatial scenes, a new kind of 3D image created from an existing 2D image or photo."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "Spatial scenes are 3D images with real depth, generated from a 2D image. They’re like a diorama version of a photo, with motion parallax to accentuate the spatial scene’s depth as the viewer moves their head relative to the scene. Spatial scenes are a great way to bring your existing 2D photos to life, both in the Photos app on visionOS, and in your own app, with RealityKit."
+      },
+      {
+        "timestamp": "17:25",
+        "text": "Let me take you through the code to add the three kinds of images to your app. I’ll start by showing you how to present a 2D image or photo with RealityKit."
+      },
+      {
+        "timestamp": "17:36",
+        "text": "I’ll first find a URL for a 2D photo, and use that URL to create a new image presentation component. The initializer for the component is async since it can take a short while to load the image into memory."
+      },
+      {
+        "timestamp": "17:49",
+        "text": "Once the component is initialized, I can assign it to an entity to display it in my RealityKit scene."
+      },
+      {
+        "timestamp": "17:56",
+        "text": "For presenting spatial photos, there is one more step involved. You will need to assign a desired viewing mode for the component before setting it on the entity. And you can specify the desired viewing mode by first checking if your image supports it. If you do not specify a desired viewing mode or your image does not support it, then the ImagePresentationComponent will present your image in a 2D, or monoscopic viewing mode, even if it is a spatial photo."
+      },
+      {
+        "timestamp": "18:24",
+        "text": "To opt into immersive spatial photo presentation, use a desired viewing mode of spatialStereoImmersive instead. Whenever you create an image presentation component from a spatial photo, both spatial stereo modes will be available. Both 2D images and spatial photos are loaded from a file on disk. Displaying this image as a spatial scene requires a few additional steps, because we need to generate the spatial scene before we can present it. Let me show you how you can generate and present a spatial scene in code."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "You can generate a spatial scene using a 2D image or a spatial photo. If you generate a spatial scene from a spatial photo, only one of the channels in the spatial photo, will be used as the 2D image for conversion."
+      },
+      {
+        "timestamp": "19:10",
+        "text": "To create a spatial scene, you don’t initialize the ImagePresentationComponent directly from the image URL. Instead, you can create a Spatial3DImage from the URL, and use the spatial 3D image to initialize the ImagePresentationComponent. However, the component isn’t yet ready to present as a spatial scene for that, you need to generate the scene first."
+      },
+      {
+        "timestamp": "19:32",
+        "text": "We do this by calling the spatial 3D image’s generate method. This will generate the spatial scene in a few seconds. After successful generation, the ImagePresentationComponent’s availableViewingModes will update to include the spatial3D and spatial3DImmersive modes. You can then set one of them as the desired viewing mode to opt into windowed or immersive presentation of the spatial scene. Note that you don’t have to generate the spatial scene in advance. You might want to wait until the person using your app presses a button, like in the Photos app. Setting the component’s desired viewing mode to .spatial3D before calling generate tells the component that you want to show the spatial scene as soon as it is ready."
+      },
+      {
+        "timestamp": "20:15",
+        "text": "This prompts the component to show a progress animation during the generation process, and to display the spatial scene as soon as generation completes. Here’s an example of how that looks on Vision Pro. Image presentation component shows the same generation animation as the Photos app on visionOS, and the end result looks great in 3D."
+      },
+      {
+        "timestamp": "20:37",
+        "text": "Here’s a quick summary of all the different ways you can use ImagePresentationComponent to present a 2D image, a spatial photo, or a spatial scene."
+      },
+      {
+        "timestamp": "20:46",
+        "text": "For more information on this component, check out the “Presenting images in RealityKit” Sample Code on developer.apple.com."
+      },
+      {
+        "timestamp": "20:55",
+        "text": "Another immersive media update this year is that VideoPlayerComponent has been updated to support the playback of a wide range of immersive video formats! It now supports spatial video playback with full spatial styling, in both portal and immersive modes."
+      },
+      {
+        "timestamp": "21:11",
+        "text": "Apple Projected Media Profile videos such as 180 degree, 360 degree, and wide-field-of-view videos are also supported! People can also configure comfort settings for Apple Projected Media Profile videos and RealityKit will automatically adjust playback to accommodate."
+      },
+      {
+        "timestamp": "21:28",
+        "text": "These video formats, in addition to Apple Immersive Video, can be configured to be played in a variety of viewing modes. For a deeper look into these updates, please check out the “Support immersive video playback in visionOS apps” session."
+      },
+      {
+        "timestamp": "21:43",
+        "text": "Next I’ll discuss some of our other updates this year. First, I'll introduce tracked Spatial Accessories."
+      },
+      {
+        "timestamp": "21:51",
+        "text": "Next, I'll go over the latest updates with SwiftUI and RealityKit integration."
+      },
+      {
+        "timestamp": "21:56",
+        "text": "After that, I'll cover the new entity updates. I'll give an overview of RealityKit's AVIF texture support."
+      },
+      {
+        "timestamp": "22:04",
+        "text": "Then I'll discuss the new hover effect groupID feature."
+      },
+      {
+        "timestamp": "22:08",
+        "text": "And finally I'll talk about the addition of post processing effects to RealityViews. Let's begin. RealityKit is adding support for tracking spatial accessories that allow you to interact with your apps in both Shared space and Full space. You can track spatial accessories in six degrees of freedom, and they also support haptics to enhance the interactions in your apps and games. To learn more about how to add spatial accessory input to your apps, watch the “Explore spatial accessory input on visionOS” session. This year, RealityKit is also introducing some brand new components to allow for better SwiftUI integration. The ViewAttachmentComponent makes it very simple to add SwiftUI views directly to your entities. Additionally, the PresentationComponent enables you to add modal presentations, like popovers, to entities Also, the new GestureComponent simplifies the process of adding SwiftUI gestures to entities."
+      },
+      {
+        "timestamp": "23:04",
+        "text": "Please check out the \"Better together: SwiftUI and RealityKit\" session for more information on what’s new with SwiftUI and RealityKit integration this year! There is also a new entity attach method that allows you to attach one entity to the pin of another entity. This API greatly simplifies attaching meshes to the joints of an animated skeleton."
+      },
+      {
+        "timestamp": "23:27",
+        "text": "Attaching meshes this way will avoid having to manually align the meshes and will also avoid expensive hierarchical transform updates. Additionally, there is a new Entity initializer that allows you to load entities from in memory Data objects."
+      },
+      {
+        "timestamp": "23:42",
+        "text": "With this new initializer you can load entire RealityKit scenes or USDs from an online source or stream them over the network. The new initializer supports the same file formats as the existing entity initializers."
+      },
+      {
+        "timestamp": "23:57",
+        "text": "Furthermore, RealityKit is adding support for AVIF encoded textures, which offer quality similar to jpeg with support for 10 bit colors while being significantly smaller in size. You can use the Preview app on your Mac or usdcrush in the Terminal to export USDs with this compression enabled. Also, the HoverEffectComponent is receiving a new feature: GroupIDs. GroupIDs are a way to create associations between hover effects. Any hover effects that share a GroupID will also share activations."
+      },
+      {
+        "timestamp": "24:30",
+        "text": "Assigning hover effects a GroupID will give you complete control of how a hover effect is activated irrespective of their relative hierarchy to each other. Normally hover effects are applied hierarchically like in the example on the left where child entities inherit the effects of their parent entities. However, if an entity has a GroupID like Entity A and Entity B in the example on the right, then they will not propagate their effects to their children."
+      },
+      {
+        "timestamp": "24:57",
+        "text": "Another cool addition this year is support for post processing effects in RealityView. You can use the customPostProcessing API to add custom effects, like bloom, to your apps using Metal Performance Shaders, CIFilters, or your own shaders. This API is supported on iOS, iPadOS, macOS, and tvOS."
+      },
+      {
+        "timestamp": "25:19",
+        "text": "This year’s RealityKit update is focused on making the creation of 3D experiences with RealityKit easier than ever. I went over how you can create a spatial puzzle game that uses some of the new RealityKit APIs to anchor the game to your environment and to enable intuitive ways to interact with the game pieces."
+      },
+      {
+        "timestamp": "25:36",
+        "text": "I also discussed the new immersive media updates that enable your apps to display spatial content directly in RealityKit."
+      },
+      {
+        "timestamp": "25:44",
+        "text": "Then I covered some additional updates such as spatial accessory tracking, entity updates, and hover effect groupsIDs. With these new features it’s easier than ever to build 3D apps with RealityKit and I’m so excited to see what experiences you come up with. Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -107,6 +446,48 @@
       "code": "// Load entity from Data object\n    \nif let (data, response) = try? await URLSession.shared.data(from: url) {\n    if let entity = try? await Entity(from: data) {\n        content.add(entity)\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "3:19"
+    },
+    {
+      "timestamp": "3:19",
+      "title": "Anchoring updates",
+      "duration": "3:33"
+    },
+    {
+      "timestamp": "6:52",
+      "title": "ManipulationComponent",
+      "duration": "3:09"
+    },
+    {
+      "timestamp": "10:01",
+      "title": "Scene understanding",
+      "duration": "1:17"
+    },
+    {
+      "timestamp": "11:18",
+      "title": "EnvironmentBlendingComponent",
+      "duration": "1:08"
+    },
+    {
+      "timestamp": "12:26",
+      "title": "MeshInstancesComponent",
+      "duration": "4:02"
+    },
+    {
+      "timestamp": "16:28",
+      "title": "Immersive media",
+      "duration": "5:15"
+    },
+    {
+      "timestamp": "21:43",
+      "title": "Accessories and more",
+      "duration": "4:25"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -145,5 +526,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2025/296"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:26.855Z"
+  "extractedAt": "2026-10-17T18:44:21.708Z"
 }

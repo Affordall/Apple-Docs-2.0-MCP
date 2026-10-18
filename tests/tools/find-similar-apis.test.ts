@@ -1,23 +1,15 @@
-import type { Mocked, MockedFunction } from 'vitest';
+import type { Mocked } from 'vitest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleFindSimilarApis } from '../../src/tools/find-similar-apis.js';
 import { httpClient } from '../../src/utils/http-client.js';
-import { convertToJsonApiUrl } from '../../src/utils/url-converter.js';
 
 vi.mock('../../src/utils/http-client.js');
-vi.mock('../../src/utils/url-converter.js', () => ({
-  convertToJsonApiUrl: vi.fn(),
-  convertToJsonUrl: vi.fn(),
-  isValidAppleDeveloperUrl: vi.fn().mockReturnValue(true),
-}));
 
 const mockHttpClient = httpClient as Mocked<typeof httpClient>;
-const mockConvertToJsonApiUrl = convertToJsonApiUrl as MockedFunction<typeof convertToJsonApiUrl>;
 
 describe('find-similar-apis', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockConvertToJsonApiUrl.mockReturnValue('https://developer.apple.com/documentation/swiftui/text.json');
   });
 
   describe('handleFindSimilarApis', () => {
@@ -72,16 +64,16 @@ describe('find-similar-apis', () => {
 
       const result = await handleFindSimilarApis(mockApiUrl, 'shallow');
 
-      expect(mockConvertToJsonApiUrl).toHaveBeenCalledWith(mockApiUrl);
+      expect(mockHttpClient.getJson).toHaveBeenCalledWith('https://developer.apple.com/tutorials/data/documentation/swiftui/text.json');
       expect(mockHttpClient.getJson).toHaveBeenCalledTimes(1);
       
       expect(result).toContain('# Similar APIs to Text');
       expect(result).toContain('Structure · iOS 13.0+');
       expect(result).toContain('## See Also: Text Display');
-      expect(result).toContain('### [Label]');
+      expect(result).toContain('[Label]');
       expect(result).toContain('A view that displays text and an icon.');
-      expect(result).toContain('### [TextField]');
-      expect(result).toContain('2 similar APIs found');
+      expect(result).toContain('[TextField]');
+      expect(result).toContain('Found 2 similar APIs');
     });
 
     it('should include topic sections with medium search depth', async () => {
@@ -91,9 +83,9 @@ describe('find-similar-apis', () => {
 
       expect(result).toContain('## See Also: Text Display');
       expect(result).toContain('## Topic Group: Creating Text Views');
-      expect(result).toContain('### [init(_:)]');
-      expect(result).toContain('### [init(String)]');
-      expect(result).toContain('4 similar APIs found');
+      expect(result).toContain('[init(_:)]');
+      expect(result).toContain('[init(String)]');
+      expect(result).toContain('Found 4 similar APIs');
     });
 
     it('should perform deep search with related APIs', async () => {
@@ -121,36 +113,12 @@ describe('find-similar-apis', () => {
         .mockResolvedValueOnce(mockJsonResponse)
         .mockResolvedValueOnce(relatedApiResponse);
 
-      mockConvertToJsonApiUrl
-        .mockReturnValueOnce('https://developer.apple.com/documentation/swiftui/text.json')
-        .mockReturnValueOnce('https://developer.apple.com/documentation/swiftui/label.json');
-
       const result = await handleFindSimilarApis(mockApiUrl, 'deep');
 
-      // Deep search makes multiple calls (1 initial + up to 3 for related APIs)
       expect(mockHttpClient.getJson.mock.calls.length).toBeGreaterThanOrEqual(2);
       expect(result).toContain('## See Also: Text Display');
-      expect(result).toContain('### [Label]');
+      expect(result).toContain('[Label]');
       expect(result).toContain('LabelStyle');
-    });
-
-    it('should filter by category', async () => {
-      mockHttpClient.getJson.mockResolvedValue(mockJsonResponse);
-
-      const result = await handleFindSimilarApis(mockApiUrl, 'medium', 'Creating');
-
-      expect(result).toContain('## Topic Group: Creating Text Views');
-      expect(result).not.toContain('## See Also: Text Display');
-      expect(result).toContain('2 similar APIs found');
-    });
-
-    it('should exclude alternatives when includeAlternatives is false', async () => {
-      mockHttpClient.getJson.mockResolvedValue(mockJsonResponse);
-
-      const result = await handleFindSimilarApis(mockApiUrl, 'medium', undefined, false);
-
-      expect(result).toContain('## See Also: Text Display');
-      expect(result).not.toContain('## Topic Group: Creating Text Views');
     });
 
     it('should handle APIs with no similar items', async () => {
@@ -171,11 +139,7 @@ describe('find-similar-apis', () => {
     });
 
     it('should handle invalid URL', async () => {
-      mockConvertToJsonApiUrl.mockReturnValue(null);
-
-      await expect(handleFindSimilarApis('invalid-url')).rejects.toThrow(
-        'Invalid Apple Developer Documentation URL'
-      );
+      await expect(handleFindSimilarApis('invalid-url')).rejects.toThrow('invalid-url is not a documentation page');
     });
 
     it('should handle fetch errors gracefully', async () => {
@@ -220,10 +184,9 @@ describe('find-similar-apis', () => {
 
       const result = await handleFindSimilarApis(mockApiUrl);
 
-      // Label should appear only once despite being in two sections
-      const labelOccurrences = (result.match(/### \[Label\]/g) || []).length;
+      const labelOccurrences = (result.match(/\[Label\]/g) || []).length;
       expect(labelOccurrences).toBe(1);
-      expect(result).toContain('3 similar APIs found');
+      expect(result).toContain('Found 3 similar APIs');
     });
   });
 
@@ -255,8 +218,8 @@ describe('find-similar-apis', () => {
 
     expect(result).toContain('**Deprecated:** Use [`NavigationStack`](https://developer.apple.com/documentation/swiftui/navigationstack) '
       + 'and [`NavigationSplitView`](https://developer.apple.com/documentation/swiftui/navigationsplitview) instead.');
-    expect(result.indexOf('[NavigationSplitView]')).toBeLessThan(result.indexOf('[tabItem(_:)]'));
-    expect(result).toContain('Similarity: 10/10');
+    // The deprecation note names it too; its own line comes before the See Also one
+    expect(result.lastIndexOf('NavigationSplitView')).toBeLessThan(result.indexOf('tabItem(_:)'));
     expect(result).toContain('Pairs with `NavigationStack`.');
   });
 });

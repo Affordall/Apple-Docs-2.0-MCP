@@ -25,6 +25,7 @@ No API key or account is needed.
 
 - Before writing or fixing code that calls an Apple framework, search first with `search_apple_docs` (or
   `search_docs_map` for a name or part of one), then read the page with `get_apple_doc_content`.
-- For working code, call `get_wwdc_code_examples` with the type the code uses, then `get_wwdc_video` for the session.
+- For working code, call `search_wwdc_content` with `view: "examples"` and the type the code uses as `query`, then
+  `get_wwdc_video` for the session.
 - For design questions, search with type `design` and read the guideline page.
 - The server sends its own search instructions when it connects; follow them.

@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10143/",
   "title": "Explore HLS variants in AVFoundation",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video"
@@ -11,8 +10,400 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  Nishant Nelogal: Hello, and welcome to WWDC.\n\nMy name is Nishant, and I’m an engineer on the AVFoundation team.\n\nToday, we will be looking at HLS Variants.\n\nFirst, we will look at how you can inspect HLS variants, using AVFoundation APIs, and later on, we will see how we can use the HLS variants with downloads.\n\nSo let's start with variant inspection.\n\nYou all must be familiar with what a typical master playlist looks like.\n\nHere is an example.\n\nIn this particular playlist, we have two variants.\n\nOne of the variants is an SDR variant with stereo audio, and the other one is a Dolby Vision variant with Dolby Atmos audio.\n\nThe asset representing this particular playlist may be presented something like this in your app.\n\nLooking closely, you see that the asset has 4K, Dolby Vision, and Dolby Atmos badges.\n\nEarlier, you had to get such information out of the band.\n\nNow in iOS 15, you can directly inspect the HLS playlist to infer them.\n\nFor that, you start with an AVURLAsset pointing to the location of your master playlist.\n\nLater on, you can obtain the HLS playlist via the variant's property.\n\nThis AVAssetVariant, as we see here, represents an HLS variant as is from the master playlist.\n\nSo it has multiple properties representing different media attributes.\n\nSome of the attributes, such as the media bitrate, can be accessed directly.\n\nOther attributes, such as those related to video and audio renditions, are grouped together in their own subclasses.\n\nThey are called as VideoAttributes and AudioAttributes, respectively.\n\nAs you see, each of them has relevant properties, which you can use to understand your asset.\n\nNow you know how to inspect HLS variants in AVFoundation.\n\nLet's see how we can use them with downloads.\n\nDownloading HLS content for offline playback has been supported since 2016.\n\nIf you're not familiar with HLS download APIs, I would suggest you check out our earlier talk on the topic from WWDC 2020.\n\nIn iOS 15, we are taking our HLS download APIs and making them even more powerful.\n\nTypically, you would like to influence the HLS variants selected for the download.\n\nThis may be due to business requirements, or you just want to provide more choice to your users.\n\nBefore, you could provide such input via downloadTask options.\n\nWe had an option for HDR, an option for lossless audio, and a few other attributes.\n\nIn iOS 15, we are expanding the variant selection with the use of NSPredicates.\n\nYou may be already familiar with using predicates from Core Data.\n\nIf not, don’t worry, you will learn about them today.\n\nSo to get started, let me introduce the variant qualifier interface.\n\nThis interface allows you to specify your variant preferences to AVFoundation.\n\nAnd, as I said, they can be constructed using NSPredicates.\n\nLet’s understand by looking at few examples.\n\nHere, we have a NSPredicate which expresses peak bitrate to be less than five megabits.\n\nYou use this to construct your variant qualifier, which instructs AVFoundation to prefer variants under five megabits.\n\nSimple enough, right? Let’s take a look at another example.\n\nHere we create an NSPredicate for HDR video range.\n\nAnd similarly as before, you can construct a variant qualifier for it.\n\nYou can also combine multiple predicates to create a compound predicate and use them to create your variant qualifier.\n\nAny property on variant can be used to create a predicate against.\n\nFor properties such as audio channel count, which cannot be easily expressed using the predicate format string, we have custom constructors.\n\nYou can look them up in our header doc for variant qualifier.\n\nOnce you have your variant qualifier, you use it to create something called as content configuration.\n\nEach content configuration represents a set of video, audio, and subtitle renditions.\n\nOK, let's understand with an example.\n\nHere is the variant qualifier which combines the two predicates we saw earlier.\n\nEh, this is compounding. Ha-ha.\n\nIt informs AVFoundation to prefer HDR variants under five megabits.\n\nWe also have a set of media selections representing English and French audio, and English subtitle renditions.\n\nBoth of these can be used to create a content configuration object.\n\nYou can create multiple of these content configurations and provide it to the downloadTask.\n\nThese multiple content configurations are tied together by the download configuration interface.\n\nThis is the root which holds everything together.\n\nIt is created with an AVURLAsset and needs an asset name, and optionally, an image.\n\nThe asset name and image are displayed in the Settings app.\n\nThis allows your users to manage all of their downloads in one place in the Settings app.\n\nAnd of course, the downloadTask can be configured with multiple content configurations.\n\nLooking closely, one of the content configurations will be designated as primary and the rest will be auxiliary.\n\nThe difference between the two is you typically want to download a primary set of video, audio, and subtitle renditions and then complement them with additional audio or subtitle renditions.\n\nBy specifying your additional renditions as auxiliary content configurations, you instruct AVFoundation to optimize and avoid downloading multiple video renditions.\n\nIt becomes more clear as we go over an example.\n\nHere is the complete example.\n\nFirst, we start by creating a download configuration with AVURLAsset and a title.\n\nThe primary content configuration is the same one we saw earlier.\n\nIt is configured to download HDR variants under five megabits, with English and French audio and English subtitle renditions.\n\nIn this particular example, we would like to complement it with an auxiliary content configuration to download English audio in lossless format.\n\nNow we have both our content configurations, which we want to download.\n\nMake sure to set optimizesAuxiliary ContentConfigurations to true.\n\nBy the way, it is true by default, and it allows AVFoundation to choose lossless variant, such that the lossless variant’s video rendition is the same as the primary content configuration.\n\nSetting it to false may cause lossless variant to be evaluated independently, which may cause duplicate video renditions to be downloaded.\n\nThis may increase your download size, which we don’t want.\n\nOK, once you have the download configuration, you can use it to create the downloadTask.\n\nYou resume the downloadTask to start the download.\n\nStarting in iOS 15, you can also observe the progress of the downloadTask using NSProgress interface.\n\nThe NSProgress object is KVO-observable, and you can use it to update your user interface.\n\nMoving on.\n\nWe understand that some of you may have business logic for selecting variants, which may be harder to express via predicates.\n\nFor such cases, you can also choose to choose the variants you want to download explicitly.\n\nHere in this example, we have already picked our primary and auxiliary variant and the media selections to go with it.\n\nWe can instruct AVFoundation to download them as is, by creating a qualifier with the variant directly.\n\nBe careful to select variants so that they are playable on the device where they are downloaded.\n\nThat's all we have today, folks.\n\nTo wrap up, we looked at how you can inspect HLS variants and use them to configure the downloadTask.\n\nAlong the way, we encountered different interfaces for downloadTask configuration.\n\nThe first one was variant qualifier.\n\nThis is used to express your variant preferences.\n\nThen we saw content configuration interface.\n\nThe content configuration ties together your variant preferences and your media selection choices.\n\nFinally, we saw the download configuration.\n\nThe download configuration is the root interface which ties everything together.\n\nLast, but not the least, we also learned that you can monitor your downloadTask using NSProgress.\n\nFor more information, check our header docs.\n\nThey're very well commented.\n\nThank you for watching and bye-bye! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ Nishant Nelogal: Hello, and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:09",
+        "text": "My name is Nishant, and I’m an engineer on the AVFoundation team."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "Today, we will be looking at HLS Variants."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "First, we will look at how you can inspect HLS variants, using AVFoundation APIs, and later on, we will see how we can use the HLS variants with downloads."
+      },
+      {
+        "timestamp": "0:28",
+        "text": "So let's start with variant inspection."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "You all must be familiar with what a typical master playlist looks like."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "Here is an example."
+      },
+      {
+        "timestamp": "0:39",
+        "text": "In this particular playlist, we have two variants."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "One of the variants is an SDR variant with stereo audio, and the other one is a Dolby Vision variant with Dolby Atmos audio."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "The asset representing this particular playlist may be presented something like this in your app."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "Looking closely, you see that the asset has 4K, Dolby Vision, and Dolby Atmos badges."
+      },
+      {
+        "timestamp": "1:06",
+        "text": "Earlier, you had to get such information out of the band."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Now in iOS 15, you can directly inspect the HLS playlist to infer them."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "For that, you start with an AVURLAsset pointing to the location of your master playlist."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "Later on, you can obtain the HLS playlist via the variant's property."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "This AVAssetVariant, as we see here, represents an HLS variant as is from the master playlist."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "So it has multiple properties representing different media attributes."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "Some of the attributes, such as the media bitrate, can be accessed directly."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "Other attributes, such as those related to video and audio renditions, are grouped together in their own subclasses."
+      },
+      {
+        "timestamp": "1:53",
+        "text": "They are called as VideoAttributes and AudioAttributes, respectively."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "As you see, each of them has relevant properties, which you can use to understand your asset."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Now you know how to inspect HLS variants in AVFoundation."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "Let's see how we can use them with downloads."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "Downloading HLS content for offline playback has been supported since 2016."
+      },
+      {
+        "timestamp": "2:19",
+        "text": "If you're not familiar with HLS download APIs, I would suggest you check out our earlier talk on the topic from WWDC 2020."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "In iOS 15, we are taking our HLS download APIs and making them even more powerful."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "Typically, you would like to influence the HLS variants selected for the download."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "This may be due to business requirements, or you just want to provide more choice to your users."
+      },
+      {
+        "timestamp": "2:45",
+        "text": "Before, you could provide such input via downloadTask options."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "We had an option for HDR, an option for lossless audio, and a few other attributes."
+      },
+      {
+        "timestamp": "2:57",
+        "text": "In iOS 15, we are expanding the variant selection with the use of NSPredicates."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "You may be already familiar with using predicates from Core Data."
+      },
+      {
+        "timestamp": "3:08",
+        "text": "If not, don’t worry, you will learn about them today."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "So to get started, let me introduce the variant qualifier interface."
+      },
+      {
+        "timestamp": "3:17",
+        "text": "This interface allows you to specify your variant preferences to AVFoundation."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "And, as I said, they can be constructed using NSPredicates."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "Let’s understand by looking at few examples."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "Here, we have a NSPredicate which expresses peak bitrate to be less than five megabits."
+      },
+      {
+        "timestamp": "3:37",
+        "text": "You use this to construct your variant qualifier, which instructs AVFoundation to prefer variants under five megabits."
+      },
+      {
+        "timestamp": "3:44",
+        "text": "Simple enough, right? Let’s take a look at another example."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "Here we create an NSPredicate for HDR video range."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "And similarly as before, you can construct a variant qualifier for it."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "You can also combine multiple predicates to create a compound predicate and use them to create your variant qualifier."
+      },
+      {
+        "timestamp": "4:06",
+        "text": "Any property on variant can be used to create a predicate against."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "For properties such as audio channel count, which cannot be easily expressed using the predicate format string, we have custom constructors."
+      },
+      {
+        "timestamp": "4:20",
+        "text": "You can look them up in our header doc for variant qualifier."
+      },
+      {
+        "timestamp": "4:24",
+        "text": "Once you have your variant qualifier, you use it to create something called as content configuration."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "Each content configuration represents a set of video, audio, and subtitle renditions."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "OK, let's understand with an example."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "Here is the variant qualifier which combines the two predicates we saw earlier."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "Eh, this is compounding. Ha-ha."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "It informs AVFoundation to prefer HDR variants under five megabits."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "We also have a set of media selections representing English and French audio, and English subtitle renditions."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "Both of these can be used to create a content configuration object."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "You can create multiple of these content configurations and provide it to the downloadTask."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "These multiple content configurations are tied together by the download configuration interface."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "This is the root which holds everything together."
+      },
+      {
+        "timestamp": "5:23",
+        "text": "It is created with an AVURLAsset and needs an asset name, and optionally, an image."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "The asset name and image are displayed in the Settings app."
+      },
+      {
+        "timestamp": "5:35",
+        "text": "This allows your users to manage all of their downloads in one place in the Settings app."
+      },
+      {
+        "timestamp": "5:40",
+        "text": "And of course, the downloadTask can be configured with multiple content configurations."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "Looking closely, one of the content configurations will be designated as primary and the rest will be auxiliary."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "The difference between the two is you typically want to download a primary set of video, audio, and subtitle renditions and then complement them with additional audio or subtitle renditions."
+      },
+      {
+        "timestamp": "6:10",
+        "text": "By specifying your additional renditions as auxiliary content configurations, you instruct AVFoundation to optimize and avoid downloading multiple video renditions."
+      },
+      {
+        "timestamp": "6:21",
+        "text": "It becomes more clear as we go over an example."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "Here is the complete example."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "First, we start by creating a download configuration with AVURLAsset and a title."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "The primary content configuration is the same one we saw earlier."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "It is configured to download HDR variants under five megabits, with English and French audio and English subtitle renditions."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "In this particular example, we would like to complement it with an auxiliary content configuration to download English audio in lossless format."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "Now we have both our content configurations, which we want to download."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "Make sure to set optimizesAuxiliary ContentConfigurations to true."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "By the way, it is true by default, and it allows AVFoundation to choose lossless variant, such that the lossless variant’s video rendition is the same as the primary content configuration."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "Setting it to false may cause lossless variant to be evaluated independently, which may cause duplicate video renditions to be downloaded."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "This may increase your download size, which we don’t want."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "OK, once you have the download configuration, you can use it to create the downloadTask."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "You resume the downloadTask to start the download."
+      },
+      {
+        "timestamp": "7:42",
+        "text": "Starting in iOS 15, you can also observe the progress of the downloadTask using NSProgress interface."
+      },
+      {
+        "timestamp": "7:48",
+        "text": "The NSProgress object is KVO-observable, and you can use it to update your user interface."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "Moving on."
+      },
+      {
+        "timestamp": "7:57",
+        "text": "We understand that some of you may have business logic for selecting variants, which may be harder to express via predicates."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "For such cases, you can also choose to choose the variants you want to download explicitly."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "Here in this example, we have already picked our primary and auxiliary variant and the media selections to go with it."
+      },
+      {
+        "timestamp": "8:18",
+        "text": "We can instruct AVFoundation to download them as is, by creating a qualifier with the variant directly."
+      },
+      {
+        "timestamp": "8:25",
+        "text": "Be careful to select variants so that they are playable on the device where they are downloaded."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "That's all we have today, folks."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "To wrap up, we looked at how you can inspect HLS variants and use them to configure the downloadTask."
+      },
+      {
+        "timestamp": "8:38",
+        "text": "Along the way, we encountered different interfaces for downloadTask configuration."
+      },
+      {
+        "timestamp": "8:43",
+        "text": "The first one was variant qualifier."
+      },
+      {
+        "timestamp": "8:46",
+        "text": "This is used to express your variant preferences."
+      },
+      {
+        "timestamp": "8:49",
+        "text": "Then we saw content configuration interface."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "The content configuration ties together your variant preferences and your media selection choices."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "Finally, we saw the download configuration."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "The download configuration is the root interface which ties everything together."
+      },
+      {
+        "timestamp": "9:06",
+        "text": "Last, but not the least, we also learned that you can monitor your downloadTask using NSProgress."
+      },
+      {
+        "timestamp": "9:12",
+        "text": "For more information, check our header docs."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "They're very well commented."
+      },
+      {
+        "timestamp": "9:17",
+        "text": "Thank you for watching and bye-bye! ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -89,5 +480,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10655"
     }
   ],
-  "extractedAt": "2026-10-11T16:42:29.552Z"
+  "extractedAt": "2026-10-17T18:52:29.935Z"
 }

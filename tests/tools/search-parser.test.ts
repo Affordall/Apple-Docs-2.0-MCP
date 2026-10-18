@@ -1,14 +1,5 @@
-import { vi, describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { parseSearchResults } from '../../src/tools/search-parser.js';
-
-// Mock the cache to prevent interference between tests
-vi.mock('../../src/utils/cache.js', () => ({
-  searchCache: {
-    get: vi.fn().mockReturnValue(null),
-    set: vi.fn(),
-  },
-  generateUrlCacheKey: vi.fn((url, params) => `${url}-${params.query}`),
-}));
 
 type Metadata = { title?: string; permalink?: string; kind?: string; description?: string; hierarchy?: string };
 
@@ -45,8 +36,8 @@ const stream = (results: unknown[]) => {
 
 describe('parseSearchResults', () => {
   const mockSearchUrl = 'https://developer.apple.com/search/?q=test';
-  const text = (jsonl: string, query = 'test', filter = 'all') =>
-    parseSearchResults([jsonl], query, mockSearchUrl, filter).content[0].text;
+  const text = (jsonl: string, query = 'test', filter?: string) =>
+    parseSearchResults(jsonl, query, mockSearchUrl, filter).content[0].text;
 
   describe('successful parsing', () => {
     it('should parse search results from the streamed response', () => {
@@ -76,54 +67,33 @@ describe('parseSearchResults', () => {
         }),
       ]));
 
-      expect(output).not.toContain('WWDC Video');
-      expect(output).toContain('## 🎨 Design Guidelines');
+      expect(output).toContain('WWDC Video');
+      expect(output).toContain('**Kind:** article');
       expect(output).toContain('**URL:** https://developer.apple.com/design/human-interface-guidelines/buttons');
     });
 
-    it('should list WWDC sessions under all, each with the call that reads its transcript and code', () => {
+    it('should list WWDC sessions with no type, each with the call that reads its transcript and code', () => {
       const output = text(stream([wwdcSession('wwdc2023-10013', 'Meet StoreKit for SwiftUI')]));
 
-      expect(output).toContain('## 🎥 WWDC Sessions');
+      expect(output).toContain('**Kind:** Video');
       expect(output).toContain('### 1. Meet StoreKit for SwiftUI');
       expect(output).toContain('**URL:** https://developer.apple.com/videos/play/wwdc2023/10013');
       expect(output).toContain('get_wwdc_video (year: "2023", videoId: "10013")');
     });
 
-    it('should leave WWDC sessions out of the other filters, and other events out of all', () => {
+    it('should leave other events out of an unfiltered search', () => {
       const jsonl = stream([
         wwdcSession('wwdc2023-10013', 'Meet StoreKit for SwiftUI'),
         wwdcSession('tech-talks-110358', 'A tech talk the bundled data does not hold'),
       ]);
 
-      expect(text(jsonl, 'storekit', 'documentation')).not.toContain('Meet StoreKit');
-      expect(text(jsonl, 'storekit', 'sample')).not.toContain('Meet StoreKit');
       expect(text(jsonl)).not.toContain('A tech talk');
-    });
-
-    it('should list a page found by both searches once', () => {
-      const session = wwdcSession('wwdc2023-10035', 'Perform accessibility audits for your app');
-      const output = parseSearchResults([stream([session]), stream([session])], 'audit', mockSearchUrl, 'all').content[0].text;
-
-      expect(output.split('Perform accessibility audits for your app').length - 1).toBe(1);
-    });
-
-    it('should keep only design guidelines under the design filter', () => {
-      const jsonl = stream([
-        result('UIButton', '/documentation/uikit/uibutton'),
-        result('Buttons', '/design/human-interface-guidelines/buttons', { kind: 'article' }),
-      ]);
-
-      expect(text(jsonl, 'buttons', 'design')).not.toContain('uikit/uibutton');
-      expect(text(jsonl, 'buttons', 'design')).toContain('human-interface-guidelines/buttons');
-      expect(text(jsonl, 'buttons', 'documentation')).not.toContain('human-interface-guidelines/buttons');
     });
 
     it('should handle empty results', () => {
       const output = text(stream([]));
 
       expect(output).toContain('No results found for "test"');
-      expect(output).toContain('### Suggestions:');
     });
 
     it('should take the framework from the hierarchy', () => {
@@ -146,16 +116,6 @@ describe('parseSearchResults', () => {
       expect(output).toContain('[View all results on Apple Developer]');
     });
 
-    it('should apply the type filter', () => {
-      const jsonl = stream([
-        result('GaugeStyle', '/documentation/swiftui/gaugestyle'),
-        result('Building a gauge', '/documentation/swiftui/building-a-gauge', { kind: 'sampleCode' }),
-      ]);
-
-      expect(text(jsonl, 'gauge', 'documentation')).not.toContain('building-a-gauge');
-      expect(text(jsonl, 'gauge', 'sample')).not.toContain('swiftui/gaugestyle');
-      expect(text(jsonl, 'gauge', 'sample')).toContain('building-a-gauge');
-    });
   });
 
   describe('error cases', () => {
@@ -163,11 +123,10 @@ describe('parseSearchResults', () => {
       const output = text('');
 
       expect(output).toContain('No results found');
-      expect(output).toContain('### Suggestions:');
     });
 
-    it('should report a malformed response', () => {
-      expect(text('<html>not a stream</html>')).toContain('Error parsing search results');
+    it('throws on a malformed response', () => {
+      expect(() => text('<html>not a stream</html>')).toThrow(SyntaxError);
     });
 
     it('should skip results with missing fields', () => {

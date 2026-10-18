@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/283/",
   "title": "Explore enhancements to visionOS object tracking",
-  "speakers": [],
-  "duration": "",
+  "duration": "14:05",
   "topics": [
     "Graphics & Games",
     "Spatial Computing"
@@ -12,8 +11,252 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello, welcome to explore enhancements to visionOS object tracking. I'm Nathan Kong, a Strategic Partnerships Manager on the visionOS team. In this session, we will share the new object tracking and spatial accessory capabilities that build upon features described in previous sessions. As a reminder, in visionOS 2.0 we introduced object tracking, which allows you to turn real world objects into virtual anchors. With only a USDZ model of the item you'd like to track, you can create a reference object through machine learning training in Create ML on your Mac.\n\nBy passing reference objects to our APIs, your app can get the position and orientation of the physical objects to create immersive spatial experiences. In visionOS 27, we are expanding object tracking, giving you the ability to track objects in motion, including handheld items alongside other enhancements.\n\nFor example, you can now accurately track and measure physical spaces using handheld items such as this medical probe. Here we can precisely measure the distance between the vertebrae on this physical spine model. This can enable exciting use cases such surgical training, home remodeling, or guided assembly.\n\nSwitching to spatial accessories, in visionOS 26, we introduced the first set of spatial accessories including the Logitech Muse and the PSVR2 Sense controllers.\n\nSpatial accessories are electronic devices that communicate with Apple Vision Pro, which tracks their realtime position and orientation in the real world.\n\nThese devices also enhance interactivity and immersion in your apps through buttons and haptics.\n\nNow, in visionOS 27, we are expanding support to enable anyone to build your own accessory.\n\nFor example, we can mount an accessory like this Spatial Anchor inside of a physical steering wheel in order to seamlessly align a full scale digital vehicle to it.\n\nWhen I reach out and grab the steering wheel, I truly feel like I'm inside this car.\n\nThis capability unlocks incredible experiences such as immersive racing and flight simulations or vehicle interior design.\n\nIn the remainder of this session we will cover improvements to object tracking, show you how to create a spatial accessory, and conclude with considerations you should keep in mind when deciding which approach is best for your visionOS app. Now let's dive into object tracking.\n\nObject tracking now supports high frame rate tracking. This enables your app to have a better understanding of the position of objects as they move in space. Along with this, we're adding a new extended training mode in Create ML for increased tracking accuracy and robustness, especially when holding objects in hand.\n\nTo enable even more accurate tracking use cases, we're introducing an API to obtain the object's pose in metric space, unaffected by any display corrections. This is essential to enable measuring applications like the medical probe example from before.\n\nLastly, we're bringing object tracking to iOS this year. Let's take a look at some of these updates in action using this flashlight. If I have access to a photorealistic 3D model of the flashlight, I can use it as the reference object for object tracking.\n\nSince my app understands the position of the flashlight, I can take advantage of the new Physical Surroundings Light in RealityKit to relight this room in real time. I can also swap the digital pattern being projected onto the surfaces around me. Even though my hand is occluding part of the flashlight, my app is still able to track the position of the object robustly.\n\nAlternatively, I can 3D print a marker like this as the reference object and mount it to the flashlight.\n\nThis is an easy way to track any handheld object, even if you're unable to obtain a photorealistic 3D model of the device.\n\nNow, let's discuss the specific updates to show you how to upgrade an existing object tracking experience or start a new one from scratch.\n\nFirst I'm going to explain how to enable the new high frame rate tracking.\n\nWe're adding a new Reference Object Configuration API in ARKit on visionOS. It let's you enable high frame rate tracking for an individual reference object before creating your object tracking session. Once, configured, you can pass this configuration object as an additional parameter when loading the reference object as before. Since this this is not a training setting, it can be applied to any reference object depending on the application's needs. Next let's discuss the new extended training mode we added to Create ML.\n\nWhen training a reference object in Create ML, you can now choose between the standard and the extended training mode. The new extended training setting increases the accuracy and robustness of tracking, and is recommended to be used in combination with high frame rate tracking. Please note that the extended training takes significantly longer compared to standard mode.\n\nYou will find the training mode setting in the Object Tracking template in the Create ML app, right below the viewing angle settings. Everything else stays exactly the same when it comes to training a reference object.\n\nIf you prefer to train reference objects through the command line interface, you can configure the training mode there as well. This gives you the flexibility to run the training on a remote machine.\n\nNow we'll review the new benefits of obtaining object poses in metric space.\n\nBy default, object anchor transforms are optimized for placing virtual content aligned with the tracked object in the mixed immersion style.\n\nTo achieve this, the object poses are slightly altered to match the displayed camera images, impacting the accuracy in absolute world coordinates. This can be a limitation when trying to use object tracking for spatial measuring tasks.\n\nIn visionOS 27, we're adding the ARKit Coordinate Space Correction API that let's you obtain the anchor transform with or without these corrections. When querying a tracked object's pose, it provides two options: rendered, returns the pose with display corrections applied to keep virtual content visually aligned with the real-world object, and none, returns the object's pose in metric space, without any corrections. This is useful for measuring the distance between tracked objects or determining where an object sits in physical space as shown in the medical probe demo earlier.\n\nLast but not least, this year we're bringing object tracking to iOS! But first, let's bring back the globe from WWDC24! In iOS 27, we're adding support for reference objects in our ARKit APIs.\n\nMachine learning training is not platform specific. So once trained, all reference objects will be supported in both iOS and visionOS apps.\n\nHere's all it takes to get object tracking running on iOS. You load your reference objects and create a world tracking configuration. These are the same reference object files you use on visionOS.\n\nYou assign objects to either detectionObjects for objects that are mostly stationary, or trackingObjects for high frame rate tracking of moving objects. Then you run the session and handle the anchors in your delegate.\n\nWhen ARKit recognizes an object, didAdd is called and you get an ARObjectAnchor that you can attach content to. While the object gets tracked, didUpdate provides the latest poses, which you can use for your custom app behavior.\n\nAnd if the object is removed from the scene, didRemove lets you clean up and remove the anchor entity created in didAdd.\n\nThose are all the updates to object tracking in visionOS 27. To learn more about how to develop an app with the object tracking API, you can watch the \"Explore object tracking for visionOS\" WWDC session or explore documentation. Next, we'll explore how you can turn your object of interest into a spatial accessory.\n\nI'll start by defining a spatial accessory and highlight some of their benefits. Then I'll cover design considerations you should keep in mind when creating your accessory. I'll explain the process to validate your design and prepare it for visionOS. Share some easy plug-and-play accessories and finally show you how to prepare your visionOS app to take advantage of these devices. Now let's get started with the basics.\n\nA spatial accessory is an electronic device which must contain a board with the following components. A constellation of LEDs visible to Apple Vision Pro for tracking. An IMU to capture the orientation and acceleration of the accessory. And a Bluetooth chip to send the signals to Vision Pro. Spatial accessories can also host any variety of inputs including buttons or a touchpad, and outputs like haptics. Any accessory that has these key components is compatible with visionOS.\n\nLet's take a look at spatial accessories in action. By installing the aforementioned components into the flashlight from before, we can make the device itself a spatial accessory. Even when I quickly wave this flashlight, the digital beam of light follows smoothly due to the low latency tracking enabled by the embedded IMU. And using this physical button I added to accessory, I can turn the digital light off and on, making my experience even more interactive. Vision Pro is able to track this spatial accessory, by seeing the LEDs installed inside the flashlight. Now we'll cover some of the benefits spatial accessories offer. These devices can be tracked at high frequency up to the full display rate with low latency and support use-cases that demand fast motion.\n\nSpatial accessories will continue to track robustly, even when temporarily occluded.\n\nYou can track the accessory under lower light conditions. Lastly, the physical buttons and haptics allow you to make your experiences even more interactive and immersive.\n\nBefore you get started with creating your own accessory, there are important design considerations you should keep in mind. It's important to spread the LEDs around the device in such a way that it creates a distinct and unique pattern when viewed from various angles. Both the LEDs and IMU should be rigidly fixed to the board for accurate tracking.\n\nLast but not least, you should consider the primary way users will interact with your accessory. For example, a handheld accessory should position most of the LEDs in areas where users will not hold the device. You should also consider the size and position of the battery to ensure the accessory is ergonomic.\n\nFor larger accessories used out of arms reach, you should consider the number of LEDs, LED size, and distance between them to ensure the accessory can be tracked accurately even when far away.\n\nFor more information on specific requirements and reference designs, please check out the \"Spatial Accessories\" chapter of the \"Accessory Design Guidelines\" for Apple Devices. Now that you've designed a spatial accessory, let's explore how to validate that it works as expected and prepare it for your visionOS app. The first step is to connect your accessory via Bluetooth to your Vision Pro and validate the signals sent from the device with the ARKit accessory tracking debug view. This tool lets you examine how your Vision Pro sees the accessory and can be found in settings when your device is in developer mode. It helps you with three things: One, verify your LEDs through the headset's IR camera, so you can confirm they're bright, distinct, and properly synchronized. Two, validate your IMU with live metrics on frequency, latency, and per-axis values, in order to check scale, alignment, and motion response. Three, debug timing between your accessory and the headset using the device's IR illuminators as a sync reference.\n\nNext, in order for your visionOS app to track a spatial accessory, you will need to train it with the CreateML bundle.\n\nThis workflow uses information about both the physical appearance of the device and the location of the LEDs to create a reference accessory file.\n\nTo get started, create a USDZ of your design that contains a photorealistic 3D model of the device annotated with the positions of the IMU and LEDs. Using this annotated USDZ, you can use the command line interface to generate the reference accessory file and add it to your app.\n\nAs the manufacturer of the accessory, you bundle this file in your app and declare it as an exported UTType in your Info.plist. This registers your accessory system-wide, so any app on Apple Vision Pro can use it.\n\nIf you're a developer using a third-party accessory, you can also bundle the file yourself and declare it as an imported type, so your app works independently.\n\nBefore building a spatial accessory from scratch, you can also start testing and develop apps with plug-and-play accessories.\n\nManufacturers like DFRobot and MIKROE will release off-the-shelf reference hardware and development kits later this year.\n\nThese accessories can be immediately used for testing or implemented in your visionOS app. Let's see one of these plug-and-play accessories in action.\n\nAs you can see here, I can simply mount a spatial accessory like the seeMote Cap to the flashlight and use the Spatial Accessories API to enable the same digital relighting experience as before.\n\nNow that you have a spatial accessory, let's explore how to connect it to your app. You discover accessories using the new GCSpatialAccessory class. This works with any device that has a referenceaccessory bundle.\n\nWhen you call Accessory(device), ARKit resolves it automatically. From there, you can run an AccessoryTrackingProvider just like before.\n\nWe're also adding a new updateAccessories method to switch between accessories while your session is running to avoiding interruptions to tracking. And with that you can create your own spatial accessory and connect it to your visionOS app. To learn more about how to enable tracking with inputs and haptics in your app, you can watch the \"Explore spatial accessory input on visionOS\" session.\n\nLet's wrap things up. Today you've seen four different approaches for tracking an object in your app. Let's review some considerations you should keep in mind when selecting which approach to use.\n\nObject tracking excels in scenarios where accurate and precise tracking is required, such as measurement applications.\n\nIn case you do not have access to a photorealistic 3D model, you can train your referenceObject on a marker you mount on the object of interest.\n\nSpatial accessories offer even higher refresh rates and lower latency, which is optimal for experiences that demand fast moving objects.\n\nIf you want to create an even more interactive and immersive experience with physical objects, you can design your own accessory with custom buttons and haptics.\n\nThe possibilities enabled by these new object tracking capabilities are endless. We're excited to see the transformational experiences for work and play you can create. Have a fantastic WWDC26!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hello, welcome to explore enhancements to visionOS object tracking. I'm Nathan Kong, a Strategic Partnerships Manager on the visionOS team. In this session, we will share the new object tracking and spatial accessory capabilities that build upon features described in previous sessions. As a reminder, in visionOS 2.0 we introduced object tracking, which allows you to turn real world objects into virtual anchors. With only a USDZ model of the item you'd like to track, you can create a reference object through machine learning training in Create ML on your Mac."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "By passing reference objects to our APIs, your app can get the position and orientation of the physical objects to create immersive spatial experiences. In visionOS 27, we are expanding object tracking, giving you the ability to track objects in motion, including handheld items alongside other enhancements."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "For example, you can now accurately track and measure physical spaces using handheld items such as this medical probe. Here we can precisely measure the distance between the vertebrae on this physical spine model. This can enable exciting use cases such surgical training, home remodeling, or guided assembly."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "Switching to spatial accessories, in visionOS 26, we introduced the first set of spatial accessories including the Logitech Muse and the PSVR2 Sense controllers."
+      },
+      {
+        "timestamp": "1:25",
+        "text": "Spatial accessories are electronic devices that communicate with Apple Vision Pro, which tracks their realtime position and orientation in the real world."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "These devices also enhance interactivity and immersion in your apps through buttons and haptics."
+      },
+      {
+        "timestamp": "1:40",
+        "text": "Now, in visionOS 27, we are expanding support to enable anyone to build your own accessory."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "For example, we can mount an accessory like this Spatial Anchor inside of a physical steering wheel in order to seamlessly align a full scale digital vehicle to it."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "When I reach out and grab the steering wheel, I truly feel like I'm inside this car."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "This capability unlocks incredible experiences such as immersive racing and flight simulations or vehicle interior design."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "In the remainder of this session we will cover improvements to object tracking, show you how to create a spatial accessory, and conclude with considerations you should keep in mind when deciding which approach is best for your visionOS app. Now let's dive into object tracking."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "Object tracking now supports high frame rate tracking. This enables your app to have a better understanding of the position of objects as they move in space. Along with this, we're adding a new extended training mode in Create ML for increased tracking accuracy and robustness, especially when holding objects in hand."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "To enable even more accurate tracking use cases, we're introducing an API to obtain the object's pose in metric space, unaffected by any display corrections. This is essential to enable measuring applications like the medical probe example from before."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "Lastly, we're bringing object tracking to iOS this year. Let's take a look at some of these updates in action using this flashlight. If I have access to a photorealistic 3D model of the flashlight, I can use it as the reference object for object tracking."
+      },
+      {
+        "timestamp": "3:06",
+        "text": "Since my app understands the position of the flashlight, I can take advantage of the new Physical Surroundings Light in RealityKit to relight this room in real time. I can also swap the digital pattern being projected onto the surfaces around me. Even though my hand is occluding part of the flashlight, my app is still able to track the position of the object robustly."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "Alternatively, I can 3D print a marker like this as the reference object and mount it to the flashlight."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "This is an easy way to track any handheld object, even if you're unable to obtain a photorealistic 3D model of the device."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "Now, let's discuss the specific updates to show you how to upgrade an existing object tracking experience or start a new one from scratch."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "First I'm going to explain how to enable the new high frame rate tracking."
+      },
+      {
+        "timestamp": "3:50",
+        "text": "We're adding a new Reference Object Configuration API in ARKit on visionOS. It let's you enable high frame rate tracking for an individual reference object before creating your object tracking session. Once, configured, you can pass this configuration object as an additional parameter when loading the reference object as before. Since this this is not a training setting, it can be applied to any reference object depending on the application's needs. Next let's discuss the new extended training mode we added to Create ML."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "When training a reference object in Create ML, you can now choose between the standard and the extended training mode. The new extended training setting increases the accuracy and robustness of tracking, and is recommended to be used in combination with high frame rate tracking. Please note that the extended training takes significantly longer compared to standard mode."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "You will find the training mode setting in the Object Tracking template in the Create ML app, right below the viewing angle settings. Everything else stays exactly the same when it comes to training a reference object."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "If you prefer to train reference objects through the command line interface, you can configure the training mode there as well. This gives you the flexibility to run the training on a remote machine."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "Now we'll review the new benefits of obtaining object poses in metric space."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "By default, object anchor transforms are optimized for placing virtual content aligned with the tracked object in the mixed immersion style."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "To achieve this, the object poses are slightly altered to match the displayed camera images, impacting the accuracy in absolute world coordinates. This can be a limitation when trying to use object tracking for spatial measuring tasks."
+      },
+      {
+        "timestamp": "5:25",
+        "text": "In visionOS 27, we're adding the ARKit Coordinate Space Correction API that let's you obtain the anchor transform with or without these corrections. When querying a tracked object's pose, it provides two options: rendered, returns the pose with display corrections applied to keep virtual content visually aligned with the real-world object, and none, returns the object's pose in metric space, without any corrections. This is useful for measuring the distance between tracked objects or determining where an object sits in physical space as shown in the medical probe demo earlier."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "Last but not least, this year we're bringing object tracking to iOS! But first, let's bring back the globe from WWDC24! In iOS 27, we're adding support for reference objects in our ARKit APIs."
+      },
+      {
+        "timestamp": "6:12",
+        "text": "Machine learning training is not platform specific. So once trained, all reference objects will be supported in both iOS and visionOS apps."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "Here's all it takes to get object tracking running on iOS. You load your reference objects and create a world tracking configuration. These are the same reference object files you use on visionOS."
+      },
+      {
+        "timestamp": "6:33",
+        "text": "You assign objects to either detectionObjects for objects that are mostly stationary, or trackingObjects for high frame rate tracking of moving objects. Then you run the session and handle the anchors in your delegate."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "When ARKit recognizes an object, didAdd is called and you get an ARObjectAnchor that you can attach content to. While the object gets tracked, didUpdate provides the latest poses, which you can use for your custom app behavior."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "And if the object is removed from the scene, didRemove lets you clean up and remove the anchor entity created in didAdd."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "Those are all the updates to object tracking in visionOS 27. To learn more about how to develop an app with the object tracking API, you can watch the \"Explore object tracking for visionOS\" WWDC session or explore documentation. Next, we'll explore how you can turn your object of interest into a spatial accessory."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "I'll start by defining a spatial accessory and highlight some of their benefits. Then I'll cover design considerations you should keep in mind when creating your accessory. I'll explain the process to validate your design and prepare it for visionOS. Share some easy plug-and-play accessories and finally show you how to prepare your visionOS app to take advantage of these devices. Now let's get started with the basics."
+      },
+      {
+        "timestamp": "7:47",
+        "text": "A spatial accessory is an electronic device which must contain a board with the following components. A constellation of LEDs visible to Apple Vision Pro for tracking. An IMU to capture the orientation and acceleration of the accessory. And a Bluetooth chip to send the signals to Vision Pro. Spatial accessories can also host any variety of inputs including buttons or a touchpad, and outputs like haptics. Any accessory that has these key components is compatible with visionOS."
+      },
+      {
+        "timestamp": "8:14",
+        "text": "Let's take a look at spatial accessories in action. By installing the aforementioned components into the flashlight from before, we can make the device itself a spatial accessory. Even when I quickly wave this flashlight, the digital beam of light follows smoothly due to the low latency tracking enabled by the embedded IMU. And using this physical button I added to accessory, I can turn the digital light off and on, making my experience even more interactive. Vision Pro is able to track this spatial accessory, by seeing the LEDs installed inside the flashlight. Now we'll cover some of the benefits spatial accessories offer. These devices can be tracked at high frequency up to the full display rate with low latency and support use-cases that demand fast motion."
+      },
+      {
+        "timestamp": "8:56",
+        "text": "Spatial accessories will continue to track robustly, even when temporarily occluded."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "You can track the accessory under lower light conditions. Lastly, the physical buttons and haptics allow you to make your experiences even more interactive and immersive."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "Before you get started with creating your own accessory, there are important design considerations you should keep in mind. It's important to spread the LEDs around the device in such a way that it creates a distinct and unique pattern when viewed from various angles. Both the LEDs and IMU should be rigidly fixed to the board for accurate tracking."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "Last but not least, you should consider the primary way users will interact with your accessory. For example, a handheld accessory should position most of the LEDs in areas where users will not hold the device. You should also consider the size and position of the battery to ensure the accessory is ergonomic."
+      },
+      {
+        "timestamp": "9:45",
+        "text": "For larger accessories used out of arms reach, you should consider the number of LEDs, LED size, and distance between them to ensure the accessory can be tracked accurately even when far away."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "For more information on specific requirements and reference designs, please check out the \"Spatial Accessories\" chapter of the \"Accessory Design Guidelines\" for Apple Devices. Now that you've designed a spatial accessory, let's explore how to validate that it works as expected and prepare it for your visionOS app. The first step is to connect your accessory via Bluetooth to your Vision Pro and validate the signals sent from the device with the ARKit accessory tracking debug view. This tool lets you examine how your Vision Pro sees the accessory and can be found in settings when your device is in developer mode. It helps you with three things: One, verify your LEDs through the headset's IR camera, so you can confirm they're bright, distinct, and properly synchronized. Two, validate your IMU with live metrics on frequency, latency, and per-axis values, in order to check scale, alignment, and motion response. Three, debug timing between your accessory and the headset using the device's IR illuminators as a sync reference."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "Next, in order for your visionOS app to track a spatial accessory, you will need to train it with the CreateML bundle."
+      },
+      {
+        "timestamp": "11:02",
+        "text": "This workflow uses information about both the physical appearance of the device and the location of the LEDs to create a reference accessory file."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "To get started, create a USDZ of your design that contains a photorealistic 3D model of the device annotated with the positions of the IMU and LEDs. Using this annotated USDZ, you can use the command line interface to generate the reference accessory file and add it to your app."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "As the manufacturer of the accessory, you bundle this file in your app and declare it as an exported UTType in your Info.plist. This registers your accessory system-wide, so any app on Apple Vision Pro can use it."
+      },
+      {
+        "timestamp": "11:39",
+        "text": "If you're a developer using a third-party accessory, you can also bundle the file yourself and declare it as an imported type, so your app works independently."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "Before building a spatial accessory from scratch, you can also start testing and develop apps with plug-and-play accessories."
+      },
+      {
+        "timestamp": "11:55",
+        "text": "Manufacturers like DFRobot and MIKROE will release off-the-shelf reference hardware and development kits later this year."
+      },
+      {
+        "timestamp": "12:02",
+        "text": "These accessories can be immediately used for testing or implemented in your visionOS app. Let's see one of these plug-and-play accessories in action."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "As you can see here, I can simply mount a spatial accessory like the seeMote Cap to the flashlight and use the Spatial Accessories API to enable the same digital relighting experience as before."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "Now that you have a spatial accessory, let's explore how to connect it to your app. You discover accessories using the new GCSpatialAccessory class. This works with any device that has a referenceaccessory bundle."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "When you call Accessory(device), ARKit resolves it automatically. From there, you can run an AccessoryTrackingProvider just like before."
+      },
+      {
+        "timestamp": "12:43",
+        "text": "We're also adding a new updateAccessories method to switch between accessories while your session is running to avoiding interruptions to tracking. And with that you can create your own spatial accessory and connect it to your visionOS app. To learn more about how to enable tracking with inputs and haptics in your app, you can watch the \"Explore spatial accessory input on visionOS\" session."
+      },
+      {
+        "timestamp": "13:04",
+        "text": "Let's wrap things up. Today you've seen four different approaches for tracking an object in your app. Let's review some considerations you should keep in mind when selecting which approach to use."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "Object tracking excels in scenarios where accurate and precise tracking is required, such as measurement applications."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "In case you do not have access to a photorealistic 3D model, you can train your referenceObject on a marker you mount on the object of interest."
+      },
+      {
+        "timestamp": "13:29",
+        "text": "Spatial accessories offer even higher refresh rates and lower latency, which is optimal for experiences that demand fast moving objects."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "If you want to create an even more interactive and immersive experience with physical objects, you can design your own accessory with custom buttons and haptics."
+      },
+      {
+        "timestamp": "13:45",
+        "text": "The possibilities enabled by these new object tracking capabilities are endless. We're excited to see the transformational experiences for work and play you can create. Have a fantastic WWDC26!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -45,6 +288,43 @@
       "title": "Discover and connect a spatial accessory",
       "language": "swift",
       "code": "import ARKit\nimport GameController\n\n// Generic accessory discovery\n\nif let device = GCSpatialAccessory.spatialAccessories.first {\n\n        // Resolves the .referenceaccessory bundle automatically\n        \n        let accessory = try await Accessory(device: device)\n        let provider = AccessoryTrackingProvider(accessories: [accessory])\n        try await arkitSession.run([provider])\n}\n\n// Update tracked accessories without restarting the session                             \n\ntry await provider.updateAccessories([newAccessory])"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:20"
+    },
+    {
+      "timestamp": "2:20",
+      "title": "Object tracking",
+      "duration": "5:00"
+    },
+    {
+      "timestamp": "7:20",
+      "title": "Spatial accessories",
+      "duration": "0:27"
+    },
+    {
+      "timestamp": "7:47",
+      "title": "Creating a spatial accessory",
+      "duration": "4:01"
+    },
+    {
+      "timestamp": "11:48",
+      "title": "Plug-and-play accessories",
+      "duration": "0:34"
+    },
+    {
+      "timestamp": "12:22",
+      "title": "Implementing in your app",
+      "duration": "0:41"
+    },
+    {
+      "timestamp": "13:03",
+      "title": "Next steps",
+      "duration": "1:02"
     }
   ],
   "resources": {
@@ -83,5 +363,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10101"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:19.959Z"
+  "extractedAt": "2026-10-17T18:42:13.468Z"
 }

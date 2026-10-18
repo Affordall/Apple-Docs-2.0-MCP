@@ -3,7 +3,6 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10338/",
   "title": "Meet the presenters: Sync to iCloud with CKSyncEngine",
-  "speakers": [],
   "duration": "",
   "topics": [
     "System Services"
@@ -21,5 +20,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10188"
     }
   ],
-  "extractedAt": "2026-10-11T16:38:15.891Z"
+  "extractedAt": "2026-10-17T18:48:12.536Z"
 }

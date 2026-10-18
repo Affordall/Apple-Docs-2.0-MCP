@@ -23,7 +23,7 @@
         "Audio & Video",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "25:20",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2026/303/",
@@ -36,7 +36,7 @@
       "topics": [
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "59:40",
       "hasCode": false,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2026/8018/",
@@ -49,7 +49,7 @@
       "topics": [
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "16:28",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2026/305/",
@@ -62,7 +62,7 @@
       "topics": [
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "17:58",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2026/304/",
@@ -75,7 +75,7 @@
       "topics": [
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "17:44",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2026/341/",
@@ -89,7 +89,7 @@
         "Audio & Video",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "18:27",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2025/319/",
@@ -103,7 +103,7 @@
         "Audio & Video",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "16:57",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2025/300/",
@@ -118,7 +118,7 @@
         "Photos & Camera",
         "Spatial Computing"
       ],
-      "duration": "",
+      "duration": "19:19",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2025/251/",
@@ -131,7 +131,7 @@
       "topics": [
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "19:20",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2025/253/",
@@ -151,7 +151,7 @@
         "Spatial Computing",
         "SwiftUI & UI Frameworks"
       ],
-      "duration": "",
+      "duration": "38:47",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2025/317/",
@@ -165,7 +165,7 @@
         "Machine Learning & AI",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "22:49",
       "hasCode": false,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2024/10204/",
@@ -179,7 +179,7 @@
         "Photos & Camera",
         "Spatial Computing"
       ],
-      "duration": "",
+      "duration": "21:52",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2024/10166/",
@@ -197,7 +197,7 @@
         "Photos & Camera",
         "Spatial Computing"
       ],
-      "duration": "",
+      "duration": "21:18",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2024/10139/",
@@ -211,7 +211,7 @@
         "Machine Learning & AI",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "23:48",
       "hasCode": false,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2024/10162/",
@@ -226,7 +226,7 @@
         "Machine Learning & AI",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "34:29",
       "hasCode": false,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2024/10177/",
@@ -240,7 +240,7 @@
         "Machine Learning & AI",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "16:06",
       "hasCode": false,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2024/10164/",
@@ -481,7 +481,7 @@
         "Graphics & Games",
         "Photos & Camera"
       ],
-      "duration": "",
+      "duration": "13:43",
       "hasCode": true,
       "hasTranscript": true,
       "url": "https://developer.apple.com/videos/play/wwdc2023/10136/",

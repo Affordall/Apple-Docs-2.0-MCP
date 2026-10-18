@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110921/",
   "title": "Q&A: Swift Standard Library",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Developer Tools",
@@ -34,5 +33,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110354"
     }
   ],
-  "extractedAt": "2026-10-11T16:39:41.483Z"
+  "extractedAt": "2026-10-17T18:49:38.950Z"
 }

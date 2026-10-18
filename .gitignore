@@ -13,6 +13,7 @@ coverage/
 .claude/
 .kiro/
 CLAUDE.md
-# Private notes: how our sessions use the tools, local paths, how we build and run it
+# Private notes: how our sessions use the tools, local paths, how we build and run it, what we plan to change
 PRIVATE-README.md
 DEVLOG.MD
+TOOL-FOLD-PLAN.md

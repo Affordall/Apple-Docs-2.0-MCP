@@ -9,7 +9,7 @@
 **Building your next iOS app with an agent? Let it read Apple's own docs first: fewer rewrites, fewer interruptions.**
 
 [![npm version](https://img.shields.io/npm/v/apple-docs-2.0-mcp?style=flat-square&color=cb3837)](https://www.npmjs.com/package/apple-docs-2.0-mcp)
-[![MCP tools](https://img.shields.io/badge/MCP-19_tools-5c4ee5?style=flat-square)](#️-available-tools)
+[![MCP tools](https://img.shields.io/badge/MCP-7_tools-5c4ee5?style=flat-square)](#️-available-tools)
 [![Node.js](https://img.shields.io/node/v/apple-docs-2.0-mcp?style=flat-square&logo=nodedotjs&logoColor=white&label=Node.js&color=339933)](https://nodejs.org/en/download)
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-0d1117?style=flat-square)](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.mishafyi/apple-docs-2.0-mcp)
 [![skills.sh](https://skills.sh/b/mishafyi/apple-docs-2.0-mcp?style=flat-square)](https://skills.sh/mishafyi/apple-docs-2.0-mcp)
@@ -21,7 +21,7 @@
 
 <br />
 
-<img src="https://cdn.jsdelivr.net/gh/mishafyi/Apple-Docs-2.0-MCP@main/assets/banner.png" alt="Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,629 pages, and Sample Code with WWDC included" width="1200" />
+<img src="https://cdn.jsdelivr.net/gh/mishafyi/Apple-Docs-2.0-MCP@main/assets/banner.png" alt="Apple Docs 2.0 MCP: doc search optimized for agents, a complete index of 336,723 pages, and Sample Code with WWDC included" width="1200" />
 
 </div>
 
@@ -76,7 +76,7 @@ Look up NavigationStack in Apple's docs, then show me the WWDC code that uses it
 
 ## 🆕 What's New in 2.0
 
-Apple Docs 2.0 MCP keeps every tool of Apple Docs MCP 1.0.26 and fixes what stopped working or came back incomplete,
+Apple Docs 2.0 MCP keeps everything Apple Docs MCP 1.0.26 does and fixes what stopped working or came back incomplete,
 so your assistant answers from Apple's own documentation instead of guessing.
 
 ### 🔍 Search that returns results
@@ -90,10 +90,10 @@ it finds.
 
 ### 🗺️ Look up any page by name
 
-A new tool, `search_docs_map`, finds any of 336,629 pages by name, or part of one, offline:
+A new tool, `search_docs_map`, finds any of 336,723 pages by name, or part of one, offline:
 
 - API symbols: types, methods, properties, enum cases, macros
-- articles, tutorials and sample code
+- articles and sample code
 - Info.plist and entitlement keys
 - web-service endpoints, such as the App Store Connect API's
 - Human Interface Guidelines and App Store Connect Help pages
@@ -112,8 +112,8 @@ writes code.
 
 ### 🎥 WWDC 2014–2026, with code
 
-1,700 sessions are built in, WWDC26 included, and work offline: transcripts for 1,416 of them and code samples for
-715, each sample with the time it appears in the video. Sessions are filed under the same topics as on Apple's
+1,700 sessions are built in, WWDC26 included, and work offline: transcripts for 1,416 of them, each paragraph with the
+time it starts, chapters for 480, and code samples for 715, each sample with the time it appears in the video. Sessions are filed under the same topics as on Apple's
 website.
 
 Ask how a new API works, and the assistant can quote the WWDC session that introduced it, with its code.
@@ -130,7 +130,7 @@ Ask which frameworks fit a task, such as machine learning or audio, and the assi
 ### 🛠️ Built to keep working
 
 Up-to-date dependencies, requests that look like a normal browser's and wait their turn (Apple returns empty searches
-when they come too fast), automatic retries when a request fails, and 255 automated tests. All 63 usage examples in
+when they come too fast), automatic retries when a request fails, and 207 automated tests. All 63 usage examples in
 the original's README run without errors.
 
 Nothing to set up: no API key or account.
@@ -149,7 +149,8 @@ Nothing to set up: no API key or account.
 - 📋 **Technology catalog**: every Apple framework and technology by category, beta ones marked
 - 📰 **Documentation updates**: release notes, framework updates and WWDC "What's new" pages
 - 🎯 **Technology overviews**: Apple's guides to app design, games, AI and machine learning, data and more
-- 💻 **Sample code**: Apple's sample projects with their summaries and Download links
+- 💻 **Sample code**: every sample project, ranked by Apple's search, and the Sample Code Library by framework or
+  section, with summaries and Download links
 - 🎥 **WWDC library**: 1,700 sessions from 2014 to 2026 with transcripts, timed code examples, resources and related
   sessions, offline
 
@@ -302,25 +303,13 @@ Add to your Zed `settings.json`:
 
 | Tool | Returns |
 |------|---------|
-| `search_apple_docs` | Apple's search results as links, each with its title, framework, type and one-line summary, grouped into documentation, design, sample code, App Store Connect Help and WWDC sessions |
-| `search_docs_map` 🆕 | The pages whose title contains the text, in any case, shortest titles first and optionally within given technologies, each with its kind, technology and link |
-| `get_apple_doc_content` | One documentation page as Markdown, rendered from its JSON: summary, declaration, overview, code, the articles that mention it, a property list key's details, Topics with each member's declaration and summary, Relationships, See Also and availability; a web-service endpoint with its URL, parameters, body and responses; a tutorial with each step's code and its project files; a sample's Download; an App Store Connect Help article |
-| `search_framework_symbols` | The symbols of one framework whose names match a wildcard, each with its kind and link |
-| `get_related_apis` | What one API inherits from and conforms to, plus its See Also and the first APIs of each Topics group, each with a summary |
-| `find_similar_apis` | Alternatives to one API, led for a deprecated one by the replacements its deprecation note names, then its See Also and Topics |
-| `resolve_references_batch` | The pages one documentation page links to, each with its title, kind, summary and, for a symbol, its declaration |
-| `get_platform_compatibility` | The OS versions in which one API was introduced and deprecated on each platform, with Apple's deprecation note |
-| `list_technologies` | Every Apple framework and technology with its link, by category, beta ones marked |
-| `get_documentation_updates` | Links to Apple's release notes, framework updates pages and WWDC "What's new" pages, each with its summary |
-| `get_technology_overviews` | Links to Apple's Technology Overviews guides, grouped by collection with each collection's summary |
-| `get_sample_code` | Apple's sample-code projects, each with its link and one-line summary, grouped by framework |
-| `list_wwdc_videos` | The WWDC sessions of a year, topic or title word, each with its link, topics and whether it has a transcript and code |
-| `search_wwdc_content` | The WWDC sessions whose transcripts or code contain the words, each with up to three matching passages |
-| `get_wwdc_video` | One WWDC session with its links and downloads, full transcript, timed code examples and related sessions |
-| `get_wwdc_code_examples` | WWDC code examples whose code mentions a type or framework, each with its session and the time it appears |
-| `browse_wwdc_topics` | The WWDC topics with their session counts, or the sessions of one topic |
-| `find_related_wwdc_videos` | The sessions related to one WWDC session, Apple's own picks first, then sessions that share its topics |
-| `list_wwdc_years` | The WWDC years with their session counts |
+| `search_apple_docs` | Apple's search results in Apple's order, each with its title, Apple's kind, framework, one-line summary and link: documentation, design guidelines, sample code, App Store Connect Help and WWDC sessions; `type` searches one of them, as Apple's search page filters |
+| `search_docs_map` 🆕 | The pages whose title contains the text, in any case, shortest titles first, each with its kind, Beta or Deprecated mark, technology, the page it sits under and link; optionally within technologies (by name or ID, every page their sidebars list) or of one kind. `source: "index"` reads one framework's sidebar live instead and matches a wildcard |
+| `get_apple_doc_content` | One documentation page as Markdown, rendered from its JSON, in Swift or Objective-C: summary, every declaration with its overloads, overview, code, the articles that mention it, a property list key's details, Topics with each member's declaration and summary, Relationships, See Also and availability with Apple's notes; a web-service endpoint with its URL, parameters, body and responses; a tutorial with each step's code and its project files; a sample's Download; an App Store Connect Help article. `view` gives one part of an API's page: `"related"`, `"similar"` (what to use instead, led by the pages its deprecation note names), `"references"` (the pages it links to, with summaries) or `"availability"` |
+| `list_technologies` | Four of Apple's catalogs: every framework and technology with its summary, by category; the Sample Code Library, featured samples first; the Updates page's release notes and updates pages; the Technology Overviews' collections and articles. The first two name a TSV of the whole catalog |
+| `list_wwdc_videos` | The WWDC sessions of a year or topic, or with the text in their title or topic names, each with its link, topics and whether it has a transcript and code; `view: "years"` counts each year's sessions, `view: "topics"` lists the topics or one topic's sessions |
+| `search_wwdc_content` | The WWDC sessions whose transcripts or code contain the text, as typed, most matches first, each passage with the time it starts; `view: "examples"` lists the code examples that contain the text instead; names a folder of every session as text |
+| `get_wwdc_video` | One WWDC session with its links and downloads, chapters, timed transcript, timed code examples and related sessions; `view: "related"` lists the sessions Apple relates to it, then those that share the most of its topics |
 
 The documentation tools fetch developer.apple.com; the WWDC tools read the bundled data and `search_docs_map` reads the
 docs map, both without a network request.
@@ -360,30 +349,34 @@ Every request goes through one HTTP client: `fetch` with a Safari's headers, at 
 searches one at a time, 15 seconds apart, as Apple answers quicker ones with no results. Each attempt has a 2-minute
 timeout, with up to 3 retries and backoff on network errors, timeouts and 5xx answers.
 
+Apple's JSON is cached as Apple sends it, by URL, and shared by every tool: a page another tool just read isn't
+downloaded again, and requests for one URL at the same moment share one download.
+
 | Content | Cached for |
 |---------|------------|
-| Documentation pages | 30 minutes |
-| Framework indexes | 1 hour |
-| Technologies, sample code, technology overviews | 2 hours |
-| Documentation updates | 30 minutes |
+| Pages, catalog pages and the technologies list | 30 minutes |
+| Sidebars (framework and catalog indexes) | 1 hour |
+| The docs map, parsed | while in use; freed after 30 idle minutes |
 | Searches | not cached |
 
 ## 📦 WWDC Data
 
 The WWDC sessions are bundled in `data/wwdc/`, so the WWDC tools work offline and without rate limits:
 
-- 📹 **1,700 sessions** from 2014 to 2026, 1,416 with transcripts and 715 with code examples
+- 📹 **1,700 sessions** from 2014 to 2026, 1,416 with transcripts, each paragraph timed (all but 6 Apple no longer
+  lists), 715 with code examples, 480 with chapters
 - 🏷️ **19 topics**, taken from Apple's topic pages
-- 💾 **41 MB** of JSON
+- 💾 **48 MB** of JSON
 
 `npx tsx scripts/add-wwdc-year.ts <year>` adds a year, or refreshes it, from Apple's pages; a session Apple no longer
 lists keeps its stored data.
 
 ## 🗺️ Docs Map
 
-`api-map/apple-docs-map.tsv` lists 336,629 pages (URL, title, kind, technology, group and tree) from Apple's navigator
-indexes, the Human Interface Guidelines and App Store Connect Help's navigation. `search_docs_map` reads it on each
-call. `npx tsx scripts/build-docs-map.ts api-map/apple-docs-map.tsv` rebuilds it in about 10 minutes.
+`api-map/apple-docs-map.tsv` lists 336,723 pages (URL, title, kind, technology, group, tree, the technology's ID, Beta
+or Deprecated marks, and the other technologies whose sidebars list the page) from Apple's navigator indexes, the Human
+Interface Guidelines and App Store Connect Help's navigation. `search_docs_map` keeps it in memory while in use.
+`npx tsx scripts/build-docs-map.ts api-map/apple-docs-map.tsv` rebuilds it in about 10 minutes.
 
 ## 🧪 Development
 
@@ -391,7 +384,7 @@ call. `npx tsx scripts/build-docs-map.ts api-map/apple-docs-map.tsv` rebuilds it
 git clone https://github.com/mishafyi/Apple-Docs-2.0-MCP.git
 cd Apple-Docs-2.0-MCP
 npx pnpm@10 install
-npx pnpm@10 run build          # tsc into dist/, then the WWDC data into dist/data/
+npx pnpm@10 run build          # tsc into dist/
 
 # Run your build in Claude Code in place of the npm package
 claude mcp add apple-docs -- node "$PWD/dist/index.js"

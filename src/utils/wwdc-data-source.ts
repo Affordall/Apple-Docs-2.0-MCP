@@ -1,141 +1,45 @@
-/**
- * WWDC Data Source - Loads data from bundled JSON files
- *
- * This module provides functions to load WWDC video data from
- * JSON files that are bundled with the npm package.
- */
-
 import { promises as fs } from 'fs';
 import path from 'path';
-import { logger } from './logger.js';
-import { wwdcDataCache } from './cache.js';
-import { getWWDCDataDirectory } from './wwdc-data-source-path.js';
-import type { WWDCVideo, GlobalMetadata, TopicIndex, YearIndex } from '../types/wwdc.js';
+import { fileURLToPath } from 'url';
+import type { GlobalMetadata, TopicIndex, TranscriptData, WWDCVideo, YearIndex } from '../types/wwdc.js';
 
-// Get the data directory from the separate module
-const WWDC_DATA_DIR = getWWDCDataDirectory();
+// The package's data/ folder: two levels up from src/utils/ and from dist/utils/ alike
+const WWDC_DATA_DIR = fileURLToPath(new URL('../../data/wwdc', import.meta.url));
+
+/** A year, topic or session the bundled data doesn't have */
+class WWDCDataNotFoundError extends Error {}
 
 /**
- * Read file from bundled data directory
+ * A bundled file's text; `what` names it in the error when the bundle doesn't have it ("Video 2025-219")
  */
-async function readBundledFile(filePath: string): Promise<string> {
-  const fullPath = path.join(WWDC_DATA_DIR, filePath);
-
+async function fetchData(filePath: string, what: string): Promise<string> {
   try {
-    const content = await fs.readFile(fullPath, 'utf-8');
-    logger.debug(`Loaded bundled data: ${filePath}`);
-    return content;
+    return await fs.readFile(path.join(WWDC_DATA_DIR, filePath), 'utf-8');
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`Failed to read bundled data: ${filePath}`, error);
-    throw new Error(`Failed to load WWDC data from ${filePath}: ${errorMessage}`, { cause: error });
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      throw new WWDCDataNotFoundError(`${what} not found in the bundled WWDC data`, { cause: error });
+    }
+    throw error;
   }
 }
 
-/**
- * Fetch data with caching support
- */
-async function fetchData(filePath: string): Promise<string> {
-  const cacheKey = `wwdc:${filePath}`;
-
-  // Check cache first
-  const cached = wwdcDataCache.get(cacheKey);
-  if (cached) {
-    logger.debug(`Cache hit: ${filePath}`);
-    return cached;
-  }
-
-  // Read from bundled data
-  const data = await readBundledFile(filePath);
-
-  // Cache the data
-  wwdcDataCache.set(cacheKey, data);
-
-  return data;
+/** A transcript's text: its paragraphs in order, as the page shows them */
+export function transcriptText(transcript: TranscriptData): string {
+  return transcript.segments.map((segment) => segment.text).join('\n\n');
 }
 
-/**
- * Load global metadata (index.json)
- */
 export async function loadGlobalMetadata(): Promise<GlobalMetadata> {
-  try {
-    const data = await fetchData('index.json');
-    return JSON.parse(data);
-  } catch (error) {
-    logger.error('Failed to load global metadata', error);
-    throw new Error('Failed to load WWDC metadata. Please ensure the package is properly installed.', { cause: error });
-  }
+  return JSON.parse(await fetchData('index.json', 'The WWDC index')) as GlobalMetadata;
 }
 
-/**
- * Load topic index
- */
 export async function loadTopicIndex(topicId: string): Promise<TopicIndex> {
-  try {
-    const data = await fetchData(`by-topic/${topicId}/index.json`);
-    return JSON.parse(data);
-  } catch (error) {
-    logger.error(`Failed to load topic index: ${topicId}`, error);
-    throw new Error(`Topic not found: ${topicId}`, { cause: error });
-  }
+  return JSON.parse(await fetchData(`by-topic/${topicId}/index.json`, `Topic ${topicId}`)) as TopicIndex;
 }
 
-/**
- * Load year index
- */
 export async function loadYearIndex(year: string): Promise<YearIndex> {
-  try {
-    const data = await fetchData(`by-year/${year}/index.json`);
-    return JSON.parse(data);
-  } catch (error) {
-    logger.error(`Failed to load year index: ${year}`, error);
-    throw new Error(`Year not found: ${year}`, { cause: error });
-  }
+  return JSON.parse(await fetchData(`by-year/${year}/index.json`, `Year ${year}`)) as YearIndex;
 }
 
-/**
- * Load individual video data
- */
 export async function loadVideoData(year: string, videoId: string): Promise<WWDCVideo> {
-  try {
-    const data = await fetchData(`videos/${year}-${videoId}.json`);
-    return JSON.parse(data);
-  } catch (error) {
-    logger.error(`Failed to load video: ${year}-${videoId}`, error);
-    throw new Error(`Video not found: ${year}-${videoId}`, { cause: error });
-  }
-}
-
-/**
- * Load all videos list
- */
-export async function loadAllVideos(): Promise<WWDCVideo[]> {
-  try {
-    const data = await fetchData('all-videos.json');
-    return JSON.parse(data);
-  } catch (error) {
-    logger.error('Failed to load all videos', error);
-    throw new Error('Failed to load WWDC video list', { cause: error });
-  }
-}
-
-/**
- * Clear the WWDC data cache
- */
-export function clearDataCache(): void {
-  wwdcDataCache.clear();
-  logger.info('WWDC data cache cleared');
-}
-
-/**
- * Check if WWDC data is available
- */
-export async function isDataAvailable(): Promise<boolean> {
-  try {
-    await fs.access(WWDC_DATA_DIR);
-    await fs.access(path.join(WWDC_DATA_DIR, 'index.json'));
-    return true;
-  } catch {
-    return false;
-  }
+  return JSON.parse(await fetchData(`videos/${year}-${videoId}.json`, `Video ${year}-${videoId}`)) as WWDCVideo;
 }

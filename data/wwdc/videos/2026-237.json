@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/237/",
   "title": "What’s new in image understanding",
-  "speakers": [],
-  "duration": "",
+  "duration": "15:46",
   "topics": [
     "App Services",
     "Machine Learning & AI"
@@ -12,8 +11,292 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Megan Williams, from the Vision framework team.\n\nThis year there are some powerful advancements in image understanding, which you can now use to create incredible experiences in your apps. I'll talk about a few of them, starting with what's new - Oh, that's weird, my agenda is missing. Let me see if I can create one quickly.\n\nI made notes of the topics I want to cover. I bet AI can help me make an agenda. I'll use this picture of my notes. And ask a large language model to generate an agenda. This is pretty easy to do with the Foundation Models framework. Thankfully, this year Foundation Models is supporting image inputs. Great! The model made me an agenda. Now I can get back to the presentation. This year, there's more ways than ever to bring image understanding to your apps. Starting with what's new in Vision, the tap-to-segment API allows you to isolate any object in an image just by tapping on it. There's also a new and powerful way to analyze images, using large language models. I'll talk about how to do this with the Foundation Models framework. Then I'll show how you can create image-based tools for LLMs that unlock even more possibilities in image understanding. Finally, Vision is also now available on watchOS. I'll show how to use Vision to enhance your watch apps. But first, I'll show you some of the awesome things you can do with the tap-to-segment API.\n\nVision already has several image segmentation capabilities. For example, there's person segmentation, which will isolate all of the people in an image. But, what if I want to segment something else in the image? Like this flower vase? Now with Vision's tap-to-segment API, I can choose any object in the image to segment. Like this board game, a piece of clothing, or even the floor. There are multiple ways that I can select an object to segment. I'll demonstrate a few of them.\n\nIn my app, I have a photo from a cafe and I want to segment the coffee cup on the table. First, I can choose a point on the cup. And now the cup is isolated. This works well for simple objects, but if my subject is complex, then selecting just one point may not be enough. For example, maybe I want to include the plate as well. I can instead draw a bounding box around all of the objects I want to segment.\n\nAnd now I'm able to get both the cup and the plate.\n\nI can also draw a lasso around an object. I'll use a lasso to segment this croissant.\n\nAnother great option is to draw a scribble.\n\nI can scribble over multiple objects to easily segment all of them at once.\n\nOnce I have a mask, I can refine the mask by adding or subtracting more points.\n\nI've already segmented this cup with an initial point, and now I want to include the plate. I'll just tap the plate, and now it's included too.\n\nI can also remove sections from my mask. Maybe I only want the coffee, not the cup. I can choose a point on the cup to exclude from my mask, and now I get just the coffee.\n\nTo use the API, you'll start with an image. You can use an ImageRequestHandler to hold your image. In Vision, images are processed using requests. To segment an object, you'll use GenerateIterativeSegmentationRequest.\n\nUse the ImageRequestHandler to perform the request.\n\nThis generates a mask of the segmented object.\n\nThe mask is a PixelBuffer that shows which pixels belong to the segmented object. Here's the code. I'll start with an image and create an ImageRequestHandler. Now I'll create the request, using a point inside the object I want to segment as a starting seed. Then I'll use the ImageRequestHandler to perform the request on the image. This produces a segmentation mask of the object.\n\nI can now refine this mask with a new point if I want.\n\nTo do this, I'll just include the point in the request. And then I'll perform the request again. There are a few other things to keep in mind.\n\nVision uses a normalized coordinates system with the coordinate origin in the lower left hand corner. Points should be normalized to the image width and height, with coordinate values between 0 and 1.\n\nIt's also important when you're drawing a lasso, that your stroke width is wide enough. Thin strokes may not produce the best result. The line width should be at least 1% of the total image width.\n\nLastly, I want to mention that before you perform a segmentation request for the first time on a device, you'll have to download the model.\n\nYou can use the downloadAssets API to begin a download.\n\nAnd if you're not sure whether the model is downloaded or not, you can check assetStatus to see if the model is ready to use.\n\nWith tap-to-segment, you can now interactively segment any part of an image you'd like.\n\nNow, I want to talk about a new and exciting way to analyze images using the Foundation Models framework. I showed an example earlier of using a large language model to put together an agenda, using a photo of my sticky notes. But large language models can do a lot more. I can also ask a model to help generate captions for the images in my app. Models tend to do well with descriptive tasks.\n\nIt can even help me with my interior decorating, and provide some helpful suggestions for my living room.\n\nAnd my personal favorite, I can use a large language model to create a recipe from a picture of my fridge.\n\nThe possibilities are endless. And the API to do this is really simple.\n\nHere's the code to generate a caption for an image.\n\nI'm using the prompt builder syntax from Foundation Models. I have a text prompt with instructions for the model about how to process the image. Then I'll include the image as an attachment in my prompt.\n\nNow I can ask the model to respond to the prompt, and it will generate a caption for me.\n\nNow you can try this with your own prompts. There are now multiple ways to analyze images, each with their own benefits. The Foundation Models framework leverages large language models, which can do almost anything you ask them. By comparison, traditional image processing frameworks, like Vision, use a fixed set of computer vision APIs. Vision APIs are fined tuned for specific tasks, which they do really well. And Vision is fast. Often fast enough to analyze video frames in real time.\n\nBut you don't always have to choose between Vision and Foundation Models to analyze your images. There's a way to leverage Vision's expertise with Foundation Model's versatility using tool calling. I'll demonstrate how you can give large language models access to tools that run traditional image processing APIs, like those in Vision, to take image understanding to new levels. But first, I'll give a quick refresher on tool calling.\n\nEarlier I showed how you can give a prompt to a model and have it generate a response.\n\nWith tool calling, your model can now invoke a tool to run external code and get back a result. The model can use this result in its response.\n\nFor example, I can have a weather tool, which fetches a weather forecast for a specific day. My prompt is a question about the weather. The model can't answer the question by itself, so it makes a tool call to the weather tool.\n\nWhen a model makes a tool call, it will generate arguments needed by the tool. In this case, the argument will be the date that the model wants to fetch the weather for.\n\nThe tool will then fetch the weather for the requested date and report back to the model.\n\nNow the model can respond to the question about the weather.\n\nFor more information on tool calling, check out \"Deep dive into the Foundation Models framework\".\n\nThis year, tool calling supports image arguments. For example, now you can give a photo of a plant and ask a question about it.\n\nIf the model can't identify the plant by itself, I could create my own plant identification tool and give the model access.\n\nThe model would call the tool on the image to identify the plant. Rather than passing the whole image as an argument, the model would instead pass a reference to the image.\n\nThe tool will analyze the image and return the name of the plant. Now the model can respond with the correct information. Here's the code. My tool conforms to the tool protocol from the Foundation Models framework. Tools must define input arguments.\n\nFor my plant identifier tool, I want the argument to be an ImageReference. This signals to the model that the argument needs to be a reference to an existing image from the current chat session.\n\nTools also need to define a call method, which is invoked when the model calls the tool.\n\nInside the call method, I can access the imageReference from the tool arguments.\n\nBut now I need to resolve this reference into an actual image. Each imageReference is only valid in the context of the transcript from which it was generated. To access this transcript, use the history session property.\n\nUsing the transcript, the imageReference is resolved back into an imageAttachment.\n\nNow the attachment is converted into a pixelBuffer, so it can be analyzed.\n\nTools can provide a lot of utility for models, particularly in tasks that models don't do well. While you can write own tools, for common tasks, Vision is providing some tools for you.\n\nSome models struggle to read barcodes and QR codes.\n\nI have an event flyer here, and I'm asking the model to extract information like the date, location, and website registration. Without tools enabled, the model can find the location and the date, but it can't read the QR code. Vision provides a barcode reader tool which will help the model.\n\nNow the model can make a tool call to the barcode reader. The tool will analyze the image and return the website from the QR code. Now the model can read all of the information correctly Vision gives you two tools. You've already seen the barcode reader tool for scanning barcodes and QR codes. There's also an OCR tool which is good for helping models read really fine or dense text. It can read text in over 30 languages.\n\nTo use the tools, all you need to do is import Vision, and then configure your language model session with the tools you want to use.\n\nNow the model will be able to call the tool to help answer your prompts. It's also important that you give attached images a label when you want the model to make an image-based tool call.\n\nThis label is how the model will identify which image to pass to the tool.\n\nYou can also make your own tools using Vision. Vision supports over 30 different types of image analysis. I've mentioned image segmentation, but I'll highlight a few more.\n\nVision can also do facial analysis, pose estimation, detection and image classification, and even trajectory analysis and object tracking. Check out \"Discover Swift enhancements in the Vision framework\" to see the full list.\n\nThis year, Vision is available in more places than ever. You can even use Vision to enhance your watchOS apps.\n\nI have a watch app that displays information about local wildlife I can look at when I'm on a hike. It has a bunch of different animals I might encounter, and I can select an animal to learn more about it.\n\nThe app displays a photo of the animal, but because the watch screen is so small, it's hard to see. Vision can help. I can use Vision's saliency analysis to identify subjects of interest in the photo. Then I can crop the image to feature the main subject more prominently.\n\nHere's the code to generate a crop using Vision. First I'll the create the request. I'm using GenerateObjectnessBasedSaliencyImageRequest. Now I'll perform the request on the image. This produces a saliency observation.\n\nFrom this observation I can access the bounding boxes of the salient objects detected in the image.\n\nI'll take most prominent object, and use this for my crop.\n\nI've updated my app to display only the salient portion of the image.\n\nNow when I select an animal, I can get a zoomed in view.\n\nThat looks much better.\n\nI've covered a lot in this video. Here's a quick recap. Vision's new tap-to-segment API lets you interactively segment objects in an image.\n\nFoundation Models now supports image inputs for large language models, which lets you analyze images in new ways that weren't possible before. And you can create tools that use frameworks like Vision to make your image analysis even better. You can also use Vision to enhance your apps on all platforms, including watchOS.\n\nYou can download the watchOS and tap-to-segment sample apps I showed earlier from the developer website. And don't forget to watch \"Discover Swift enhancements in the Vision framework\" to learn about more Vision APIs. You can also check out \"What's new in the Foundation Models framework\" to learn about the other ways large language models can enhance your apps. Thanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hi, I'm Megan Williams, from the Vision framework team."
+      },
+      {
+        "timestamp": "0:10",
+        "text": "This year there are some powerful advancements in image understanding, which you can now use to create incredible experiences in your apps. I'll talk about a few of them, starting with what's new - Oh, that's weird, my agenda is missing. Let me see if I can create one quickly."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "I made notes of the topics I want to cover. I bet AI can help me make an agenda. I'll use this picture of my notes. And ask a large language model to generate an agenda. This is pretty easy to do with the Foundation Models framework. Thankfully, this year Foundation Models is supporting image inputs. Great! The model made me an agenda. Now I can get back to the presentation. This year, there's more ways than ever to bring image understanding to your apps. Starting with what's new in Vision, the tap-to-segment API allows you to isolate any object in an image just by tapping on it. There's also a new and powerful way to analyze images, using large language models. I'll talk about how to do this with the Foundation Models framework. Then I'll show how you can create image-based tools for LLMs that unlock even more possibilities in image understanding. Finally, Vision is also now available on watchOS. I'll show how to use Vision to enhance your watch apps. But first, I'll show you some of the awesome things you can do with the tap-to-segment API."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "Vision already has several image segmentation capabilities. For example, there's person segmentation, which will isolate all of the people in an image. But, what if I want to segment something else in the image? Like this flower vase? Now with Vision's tap-to-segment API, I can choose any object in the image to segment. Like this board game, a piece of clothing, or even the floor. There are multiple ways that I can select an object to segment. I'll demonstrate a few of them."
+      },
+      {
+        "timestamp": "2:19",
+        "text": "In my app, I have a photo from a cafe and I want to segment the coffee cup on the table. First, I can choose a point on the cup. And now the cup is isolated. This works well for simple objects, but if my subject is complex, then selecting just one point may not be enough. For example, maybe I want to include the plate as well. I can instead draw a bounding box around all of the objects I want to segment."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "And now I'm able to get both the cup and the plate."
+      },
+      {
+        "timestamp": "2:51",
+        "text": "I can also draw a lasso around an object. I'll use a lasso to segment this croissant."
+      },
+      {
+        "timestamp": "3:00",
+        "text": "Another great option is to draw a scribble."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "I can scribble over multiple objects to easily segment all of them at once."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "Once I have a mask, I can refine the mask by adding or subtracting more points."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "I've already segmented this cup with an initial point, and now I want to include the plate. I'll just tap the plate, and now it's included too."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "I can also remove sections from my mask. Maybe I only want the coffee, not the cup. I can choose a point on the cup to exclude from my mask, and now I get just the coffee."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "To use the API, you'll start with an image. You can use an ImageRequestHandler to hold your image. In Vision, images are processed using requests. To segment an object, you'll use GenerateIterativeSegmentationRequest."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "Use the ImageRequestHandler to perform the request."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "This generates a mask of the segmented object."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "The mask is a PixelBuffer that shows which pixels belong to the segmented object. Here's the code. I'll start with an image and create an ImageRequestHandler. Now I'll create the request, using a point inside the object I want to segment as a starting seed. Then I'll use the ImageRequestHandler to perform the request on the image. This produces a segmentation mask of the object."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "I can now refine this mask with a new point if I want."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "To do this, I'll just include the point in the request. And then I'll perform the request again. There are a few other things to keep in mind."
+      },
+      {
+        "timestamp": "4:51",
+        "text": "Vision uses a normalized coordinates system with the coordinate origin in the lower left hand corner. Points should be normalized to the image width and height, with coordinate values between 0 and 1."
+      },
+      {
+        "timestamp": "5:05",
+        "text": "It's also important when you're drawing a lasso, that your stroke width is wide enough. Thin strokes may not produce the best result. The line width should be at least 1% of the total image width."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "Lastly, I want to mention that before you perform a segmentation request for the first time on a device, you'll have to download the model."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "You can use the downloadAssets API to begin a download."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "And if you're not sure whether the model is downloaded or not, you can check assetStatus to see if the model is ready to use."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "With tap-to-segment, you can now interactively segment any part of an image you'd like."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "Now, I want to talk about a new and exciting way to analyze images using the Foundation Models framework. I showed an example earlier of using a large language model to put together an agenda, using a photo of my sticky notes. But large language models can do a lot more. I can also ask a model to help generate captions for the images in my app. Models tend to do well with descriptive tasks."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "It can even help me with my interior decorating, and provide some helpful suggestions for my living room."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "And my personal favorite, I can use a large language model to create a recipe from a picture of my fridge."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "The possibilities are endless. And the API to do this is really simple."
+      },
+      {
+        "timestamp": "6:40",
+        "text": "Here's the code to generate a caption for an image."
+      },
+      {
+        "timestamp": "6:45",
+        "text": "I'm using the prompt builder syntax from Foundation Models. I have a text prompt with instructions for the model about how to process the image. Then I'll include the image as an attachment in my prompt."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "Now I can ask the model to respond to the prompt, and it will generate a caption for me."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "Now you can try this with your own prompts. There are now multiple ways to analyze images, each with their own benefits. The Foundation Models framework leverages large language models, which can do almost anything you ask them. By comparison, traditional image processing frameworks, like Vision, use a fixed set of computer vision APIs. Vision APIs are fined tuned for specific tasks, which they do really well. And Vision is fast. Often fast enough to analyze video frames in real time."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "But you don't always have to choose between Vision and Foundation Models to analyze your images. There's a way to leverage Vision's expertise with Foundation Model's versatility using tool calling. I'll demonstrate how you can give large language models access to tools that run traditional image processing APIs, like those in Vision, to take image understanding to new levels. But first, I'll give a quick refresher on tool calling."
+      },
+      {
+        "timestamp": "8:14",
+        "text": "Earlier I showed how you can give a prompt to a model and have it generate a response."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "With tool calling, your model can now invoke a tool to run external code and get back a result. The model can use this result in its response."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "For example, I can have a weather tool, which fetches a weather forecast for a specific day. My prompt is a question about the weather. The model can't answer the question by itself, so it makes a tool call to the weather tool."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "When a model makes a tool call, it will generate arguments needed by the tool. In this case, the argument will be the date that the model wants to fetch the weather for."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "The tool will then fetch the weather for the requested date and report back to the model."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "Now the model can respond to the question about the weather."
+      },
+      {
+        "timestamp": "9:08",
+        "text": "For more information on tool calling, check out \"Deep dive into the Foundation Models framework\"."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "This year, tool calling supports image arguments. For example, now you can give a photo of a plant and ask a question about it."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "If the model can't identify the plant by itself, I could create my own plant identification tool and give the model access."
+      },
+      {
+        "timestamp": "9:32",
+        "text": "The model would call the tool on the image to identify the plant. Rather than passing the whole image as an argument, the model would instead pass a reference to the image."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "The tool will analyze the image and return the name of the plant. Now the model can respond with the correct information. Here's the code. My tool conforms to the tool protocol from the Foundation Models framework. Tools must define input arguments."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "For my plant identifier tool, I want the argument to be an ImageReference. This signals to the model that the argument needs to be a reference to an existing image from the current chat session."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "Tools also need to define a call method, which is invoked when the model calls the tool."
+      },
+      {
+        "timestamp": "10:23",
+        "text": "Inside the call method, I can access the imageReference from the tool arguments."
+      },
+      {
+        "timestamp": "10:29",
+        "text": "But now I need to resolve this reference into an actual image. Each imageReference is only valid in the context of the transcript from which it was generated. To access this transcript, use the history session property."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "Using the transcript, the imageReference is resolved back into an imageAttachment."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "Now the attachment is converted into a pixelBuffer, so it can be analyzed."
+      },
+      {
+        "timestamp": "10:57",
+        "text": "Tools can provide a lot of utility for models, particularly in tasks that models don't do well. While you can write own tools, for common tasks, Vision is providing some tools for you."
+      },
+      {
+        "timestamp": "11:11",
+        "text": "Some models struggle to read barcodes and QR codes."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "I have an event flyer here, and I'm asking the model to extract information like the date, location, and website registration. Without tools enabled, the model can find the location and the date, but it can't read the QR code. Vision provides a barcode reader tool which will help the model."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "Now the model can make a tool call to the barcode reader. The tool will analyze the image and return the website from the QR code. Now the model can read all of the information correctly Vision gives you two tools. You've already seen the barcode reader tool for scanning barcodes and QR codes. There's also an OCR tool which is good for helping models read really fine or dense text. It can read text in over 30 languages."
+      },
+      {
+        "timestamp": "12:09",
+        "text": "To use the tools, all you need to do is import Vision, and then configure your language model session with the tools you want to use."
+      },
+      {
+        "timestamp": "12:19",
+        "text": "Now the model will be able to call the tool to help answer your prompts. It's also important that you give attached images a label when you want the model to make an image-based tool call."
+      },
+      {
+        "timestamp": "12:31",
+        "text": "This label is how the model will identify which image to pass to the tool."
+      },
+      {
+        "timestamp": "12:37",
+        "text": "You can also make your own tools using Vision. Vision supports over 30 different types of image analysis. I've mentioned image segmentation, but I'll highlight a few more."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "Vision can also do facial analysis, pose estimation, detection and image classification, and even trajectory analysis and object tracking. Check out \"Discover Swift enhancements in the Vision framework\" to see the full list."
+      },
+      {
+        "timestamp": "13:09",
+        "text": "This year, Vision is available in more places than ever. You can even use Vision to enhance your watchOS apps."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "I have a watch app that displays information about local wildlife I can look at when I'm on a hike. It has a bunch of different animals I might encounter, and I can select an animal to learn more about it."
+      },
+      {
+        "timestamp": "13:31",
+        "text": "The app displays a photo of the animal, but because the watch screen is so small, it's hard to see. Vision can help. I can use Vision's saliency analysis to identify subjects of interest in the photo. Then I can crop the image to feature the main subject more prominently."
+      },
+      {
+        "timestamp": "13:53",
+        "text": "Here's the code to generate a crop using Vision. First I'll the create the request. I'm using GenerateObjectnessBasedSaliencyImageRequest. Now I'll perform the request on the image. This produces a saliency observation."
+      },
+      {
+        "timestamp": "14:13",
+        "text": "From this observation I can access the bounding boxes of the salient objects detected in the image."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "I'll take most prominent object, and use this for my crop."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "I've updated my app to display only the salient portion of the image."
+      },
+      {
+        "timestamp": "14:31",
+        "text": "Now when I select an animal, I can get a zoomed in view."
+      },
+      {
+        "timestamp": "14:36",
+        "text": "That looks much better."
+      },
+      {
+        "timestamp": "14:39",
+        "text": "I've covered a lot in this video. Here's a quick recap. Vision's new tap-to-segment API lets you interactively segment objects in an image."
+      },
+      {
+        "timestamp": "14:50",
+        "text": "Foundation Models now supports image inputs for large language models, which lets you analyze images in new ways that weren't possible before. And you can create tools that use frameworks like Vision to make your image analysis even better. You can also use Vision to enhance your apps on all platforms, including watchOS."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "You can download the watchOS and tap-to-segment sample apps I showed earlier from the developer website. And don't forget to watch \"Discover Swift enhancements in the Vision framework\" to learn about more Vision APIs. You can also check out \"What's new in the Foundation Models framework\" to learn about the other ways large language models can enhance your apps. Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -45,6 +328,38 @@
       "title": "Create a crop that highlights a prominent subject (watchOS / saliency)",
       "language": "swift",
       "code": "// Create a crop that highlights a prominent subject\nfunc generateImageCrop(in image: CGImage) async throws -> NormalizedRect? {\n    let request = GenerateObjectnessBasedSaliencyImageRequest()\n    let observation = try await request.perform(on: image)\n    let prominentObjects = observation.salientObjects\n    return prominentObjects.first\n}"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:36"
+    },
+    {
+      "timestamp": "1:36",
+      "title": "Segment images with tap-to-segment",
+      "duration": "4:14"
+    },
+    {
+      "timestamp": "5:50",
+      "title": "Image inputs for Foundation Models",
+      "duration": "2:07"
+    },
+    {
+      "timestamp": "7:57",
+      "title": "Image-based tool calling",
+      "duration": "5:12"
+    },
+    {
+      "timestamp": "13:09",
+      "title": "Vision on watchOS",
+      "duration": "1:30"
+    },
+    {
+      "timestamp": "14:39",
+      "title": "Next steps",
+      "duration": "1:07"
     }
   ],
   "resources": {
@@ -81,5 +396,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10163"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:59.826Z"
+  "extractedAt": "2026-10-17T18:42:53.334Z"
 }

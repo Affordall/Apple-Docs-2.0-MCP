@@ -3,7 +3,6 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/111486/",
   "title": "17 big & little things at WWDC23",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,13 +10,117 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Seventeen big and little things from Apple WWDC23.\n\nMeet a new friend? Swap info, like that, with NameDrop.\n\nAnd your contact poster that you'll design and redesign will show up when you call or FaceTime.\n\nThey missed it? Leave a FaceTime message.\n\nAnd when you do connect, easily switch from iPhone to Apple TV.\n\nWait, where's the Siri remote?  Now iPhone will find that too.\n\nAnd you'll find the perfect reaction with stickers from your own photos.\n\nOoh, shiny.\n\nReflect on your day with suggestions from your photos, music, locations, even workouts, or just get some stuff off your chest.\n\nThen clear your head with a long ride.\n\nGet lost for a little while, but not like lost, lost, because you can take topographic and offline maps with you.\n\nAnd Snoopy too! Check In automatically lets a friend know when you get home.\n\nAnd while you're out, Adaptive Audio keeps your attention on the important sounds around you.\n\nSpeaking of, multiple timers and widgets are now on all your devices, including the world's thinnest 15-inch laptop, the new MacBook Air.\n\nPut in some serious work with Game Mode on Mac.\n\nWhen you're charging iPhone, Standby will turn it into a simple clock, a music player, or even a live scoreboard.\n\nUgh, I might have to take this.\n\n♪ Elevator music ♪ Nope! Screen your calls with Live Voicemail.\n\nThat's so  cool! A-ha! New and improved Autocorrect.\n\nAnd you can log your moods and emotions right on iPhone, iPad, and watch.\n\nHold on.\n\nThere was something else -- something really big.\n\n♪ Piano music bridge ♪ This.\n\n♪  ♪ Yeah. It was a big day.\n\nGet all the updates on apple.com.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "Seventeen big and little things from Apple WWDC23."
+      },
+      {
+        "timestamp": "0:05",
+        "text": "Meet a new friend? Swap info, like that, with NameDrop."
+      },
+      {
+        "timestamp": "0:09",
+        "text": "And your contact poster that you'll design and redesign will show up when you call or FaceTime."
+      },
+      {
+        "timestamp": "0:13",
+        "text": "They missed it? Leave a FaceTime message."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "And when you do connect, easily switch from iPhone to Apple TV."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "Wait, where's the Siri remote? Now iPhone will find that too."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "And you'll find the perfect reaction with stickers from your own photos."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Ooh, shiny."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "Reflect on your day with suggestions from your photos, music, locations, even workouts, or just get some stuff off your chest."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "Then clear your head with a long ride."
+      },
+      {
+        "timestamp": "0:41",
+        "text": "Get lost for a little while, but not like lost, lost, because you can take topographic and offline maps with you."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "And Snoopy too! Check In automatically lets a friend know when you get home."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "And while you're out, Adaptive Audio keeps your attention on the important sounds around you."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "Speaking of, multiple timers and widgets are now on all your devices, including the world's thinnest 15-inch laptop, the new MacBook Air."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "Put in some serious work with Game Mode on Mac."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "When you're charging iPhone, Standby will turn it into a simple clock, a music player, or even a live scoreboard."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "Ugh, I might have to take this."
+      },
+      {
+        "timestamp": "1:25",
+        "text": "♪ Elevator music ♪ Nope! Screen your calls with Live Voicemail."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "That's so cool! A-ha! New and improved Autocorrect."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "And you can log your moods and emotions right on iPhone, iPad, and watch."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "Hold on."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "There was something else -- something really big."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "♪ Piano music bridge ♪ This."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "♪ ♪ Yeah. It was a big day."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Get all the updates on apple.com."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
     "hdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2023/111486/1/E48AB1B2-961B-4614-91E7-45A9FAF3D835/downloads/wwdc2023-111486_hd.mp4?dl=1",
     "sdVideo": "https://devstreaming-cdn.apple.com/videos/wwdc/2023/111486/1/E48AB1B2-961B-4614-91E7-45A9FAF3D835/downloads/wwdc2023-111486_sd.mp4?dl=1"
   },
-  "extractedAt": "2026-10-11T16:35:54.533Z"
+  "extractedAt": "2026-10-17T18:45:54.247Z"
 }

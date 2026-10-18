@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10645/",
   "title": "Support multiple users in your tvOS app",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Audio & Video"
@@ -11,8 +10,328 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello, and welcome to WWDC.\n\nHi, my name is Caleb.\n\nI'm a software engineer on the tvOS team.\n\nToday, I'm excited to share with you a great new way for your apps to support multiple users on Apple TV.\n\nApple TV is designed to be used by everyone in your home.\n\nAnd we think it's really important that everyone who uses Apple TV is able to access all of their own content and data.\n\nIn tvOS 13, we made switching users easy by adding fast user switching right in Control Center.\n\nWe also added the TVUserManager API, so apps can link their own user profiles with users on the device.\n\nSo if your app has its own user profiles, I encourage you to watch \"Mastering the Living Room with tvOS\" from WWDC 2019, so you can learn how TVUserManager can help you take people right to their content.\n\nBut what if your app doesn't have its own user profiles? What if you want to store separate data for each user instead? Today, tvOS apps have access to a single set of resources for the entire device.\n\nThat means things like iCloud, Game Center, and Local Storage for your app's data are the same no matter who is using Apple TV.\n\nBut wouldn't it be great if your app knew who is using it so you could create a personalized user interface and access data from their other devices using iCloud.\n\nIn tvOS 14, we're making it really easy for your apps to do exactly that.\n\nNow each person who uses your app will have access to all of their own data in iCloud, Achievements, and Friends, and Game Center, and even their own local data and preferences.\n\nAnd because your apps can access data in each user's iCloud, everyone using Apple TV will now be able to start a game on their iPhone, continue playing on Apple TV, and easily sync their progress across all of their other devices.\n\nLet's talk about how this works.\n\nWhen your app declares support from multiple users in tvOS 14, you'll be given access to accounts and storage for the selected user.\n\nWhen a new user is selected, you're rapidly given a chance to save any unsaved data, then it'll be terminated.\n\nIf your app was running in the foreground when a new user was selected, it will be automatically relaunched for the new user.\n\nSo far, I've only mentioned iCloud and Game Center by name, but I'm happy to share that all of the API we provide for storing data, both locally on Apple TV and in the cloud, support storing individual user data.\n\nAnd the best part is you don't have to make any code changes.\n\nYou can keep using all of the API you're already using to read and write data and the system will take care of the rest.\n\nBy now, you're probably excited to learn how to enable this for your apps.\n\nOnly three things you need to do to support multiple users in your tvOS apps.\n\nI'm going to go over them with you now starting with the User Management capability.\n\nIn tvOS 14 and Xcode 12, we have a new Runs as Current User option in the User Management capability.\n\nThis tells the system that you want your app to be able to support multiple users.\n\nYou can add User Management capability by navigating to your app's Signing & Capabilities editor in Xcode.\n\nAnd when you add this to your app target in Xcode 12, the Runs as Current User option will be selected by default.\n\nNext, I'd like to talk about the changes to the application lifecycle.\n\nEarlier I mentioned that when a selected user changes, your app will be terminated.\n\nIf your app is currently running, you'll want to make sure you save any unsaved data before your process exits.\n\nYou can do that by implementing applicationWillTerminate in your app delegate.\n\nAnd note, you're given a limited amount of time to perform tasks when this function is called.\n\nSo be sure to do as little work as possible to save any user data.\n\nLet's take a look at an example.\n\nHere I implemented applicationWillTerminate in my app delegate, First, I check whether my game has any changes that need to be saved.\n\nIf not, it's best to return right away so the system may continue switching users.\n\nNext, I ask my game to save any unsaved data both locally and to CloudKit.\n\nOnce this function returns, the system is free to terminate my process and switch users.\n\nSo I'm using a semaphore to keep it running long enough to save data asyncronously.\n\nThere's one last change you may have to make if your app uses CloudKit subscription notifications.\n\nWhen your app supports multiple users, it may get CloudKit notifications for other users on the device who've used your app.\n\nTo help make your app more efficient, you should check the new subscriptionOwnerUserRecordID property on seeking notification and compare it with the Record ID of the current CloudKit user.\n\nIf notification was meant for a different user, it can be safely discarded.\n\nIn this example, I implemented the application didReceiveRemoteNotification function in my app delegate.\n\nI start by initializing a seeking notification object fromRemoteNotificationDictionary : userInfo.\n\nNext I checked the notification .subscriptionOwnerUserRecordID and make sure it's equal to my game object's currentUserRecordID.\n\nOnce I know this notification is meant for the current user, I tell my game object to handle notification and call the completion handler. That's it.\n\nThat's all you need to do to prepare your app to support multiple users in tvOS 14.\n\nAnd now I'd like to show you a demo.\n\nHere I have a simple game that I ran from Xcode.\n\nThis game syncs all its data with iCloud using NSPersistentCloudKitContainer.\n\nThe main menu allows me to resume the game I started playing earlier and to view my fastest solve times from previous games.\n\nRight now my high score is one minute and nine seconds.\n\nIf I select Resume Game, you can see the current state of the game board.\n\nI can flip over tiles to try to find matching Memoji.\n\nNow my friend Felipe wants to play and show off his high score.\n\nHe opens Control Center and switches to his user.\n\nBut the game stays the same. That's not very exciting.\n\nLet's see what we can do about that.\n\nHere I have the Xcode project for my game.\n\nI'm going to show you how easy it is to add support from multiple users to your tvOS app or game.\n\nFirst you'll navigate to the Signing & Capabilities editor of your app target.\n\nNext, you'll add the User Management capability.\n\nAnd last, you'll make sure the Runs as Current User option is selected.\n\nThat's it. Let's build and run and switch back to Apple TV.\n\nIf I resume my game or view my high scores you can see the same game data that I showed you earlier.\n\nBut now let's see what happens when I switch users.\n\nNotice that the game was terminated, the system switched users, and the game was relaunched for Felipe.\n\nNow when Felipe plays the game, he sees his own data.\n\nHe doesn't have an in-progress game yet, so he has an option to start a new game with no matches.\n\nAnd notice his high score of 39 seconds is faster than mine.\n\nAgain, all this data is synced with iCloud and is kept completely separate for each user.\n\nAnd I didn't have to make any code changes to support this.\n\nWe are really excited for your games and apps to take full advantage of multiple users in tvOS 14.\n\nTo wrap up the new Runs as Current User option and the User Management capability allows your apps to easily support multiple users in tvOS 14.\n\nYou can use existing API to store separate data for each person using your app with no code changes required.\n\nThis allows you to take full advantage of multiple users on Apple TV and provide everyone with a seamless experience when they use your app across all their devices.\n\nThanks for watching and enjoy\nthe rest of the conference.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello, and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Hi, my name is Caleb."
+      },
+      {
+        "timestamp": "0:10",
+        "text": "I'm a software engineer on the tvOS team."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "Today, I'm excited to share with you a great new way for your apps to support multiple users on Apple TV."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "Apple TV is designed to be used by everyone in your home."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "And we think it's really important that everyone who uses Apple TV is able to access all of their own content and data."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "In tvOS 13, we made switching users easy by adding fast user switching right in Control Center."
+      },
+      {
+        "timestamp": "0:41",
+        "text": "We also added the TVUserManager API, so apps can link their own user profiles with users on the device."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "So if your app has its own user profiles, I encourage you to watch \"Mastering the Living Room with tvOS\" from WWDC 2019, so you can learn how TVUserManager can help you take people right to their content."
+      },
+      {
+        "timestamp": "1:05",
+        "text": "But what if your app doesn't have its own user profiles? What if you want to store separate data for each user instead? Today, tvOS apps have access to a single set of resources for the entire device."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "That means things like iCloud, Game Center, and Local Storage for your app's data are the same no matter who is using Apple TV."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "But wouldn't it be great if your app knew who is using it so you could create a personalized user interface and access data from their other devices using iCloud."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "In tvOS 14, we're making it really easy for your apps to do exactly that."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "Now each person who uses your app will have access to all of their own data in iCloud, Achievements, and Friends, and Game Center, and even their own local data and preferences."
+      },
+      {
+        "timestamp": "1:53",
+        "text": "And because your apps can access data in each user's iCloud, everyone using Apple TV will now be able to start a game on their iPhone, continue playing on Apple TV, and easily sync their progress across all of their other devices."
+      },
+      {
+        "timestamp": "2:07",
+        "text": "Let's talk about how this works."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "When your app declares support from multiple users in tvOS 14, you'll be given access to accounts and storage for the selected user."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "When a new user is selected, you're rapidly given a chance to save any unsaved data, then it'll be terminated."
+      },
+      {
+        "timestamp": "2:24",
+        "text": "If your app was running in the foreground when a new user was selected, it will be automatically relaunched for the new user."
+      },
+      {
+        "timestamp": "2:32",
+        "text": "So far, I've only mentioned iCloud and Game Center by name, but I'm happy to share that all of the API we provide for storing data, both locally on Apple TV and in the cloud, support storing individual user data."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "And the best part is you don't have to make any code changes."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "You can keep using all of the API you're already using to read and write data and the system will take care of the rest."
+      },
+      {
+        "timestamp": "2:58",
+        "text": "By now, you're probably excited to learn how to enable this for your apps."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "Only three things you need to do to support multiple users in your tvOS apps."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "I'm going to go over them with you now starting with the User Management capability."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "In tvOS 14 and Xcode 12, we have a new Runs as Current User option in the User Management capability."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "This tells the system that you want your app to be able to support multiple users."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "You can add User Management capability by navigating to your app's Signing & Capabilities editor in Xcode."
+      },
+      {
+        "timestamp": "3:32",
+        "text": "And when you add this to your app target in Xcode 12, the Runs as Current User option will be selected by default."
+      },
+      {
+        "timestamp": "3:40",
+        "text": "Next, I'd like to talk about the changes to the application lifecycle."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Earlier I mentioned that when a selected user changes, your app will be terminated."
+      },
+      {
+        "timestamp": "3:51",
+        "text": "If your app is currently running, you'll want to make sure you save any unsaved data before your process exits."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "You can do that by implementing applicationWillTerminate in your app delegate."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "And note, you're given a limited amount of time to perform tasks when this function is called."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "So be sure to do as little work as possible to save any user data."
+      },
+      {
+        "timestamp": "4:12",
+        "text": "Let's take a look at an example."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "Here I implemented applicationWillTerminate in my app delegate, First, I check whether my game has any changes that need to be saved."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "If not, it's best to return right away so the system may continue switching users."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "Next, I ask my game to save any unsaved data both locally and to CloudKit."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "Once this function returns, the system is free to terminate my process and switch users."
+      },
+      {
+        "timestamp": "4:40",
+        "text": "So I'm using a semaphore to keep it running long enough to save data asyncronously."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "There's one last change you may have to make if your app uses CloudKit subscription notifications."
+      },
+      {
+        "timestamp": "4:53",
+        "text": "When your app supports multiple users, it may get CloudKit notifications for other users on the device who've used your app."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "To help make your app more efficient, you should check the new subscriptionOwnerUserRecordID property on seeking notification and compare it with the Record ID of the current CloudKit user."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "If notification was meant for a different user, it can be safely discarded."
+      },
+      {
+        "timestamp": "5:18",
+        "text": "In this example, I implemented the application didReceiveRemoteNotification function in my app delegate."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "I start by initializing a seeking notification object fromRemoteNotificationDictionary : userInfo."
+      },
+      {
+        "timestamp": "5:33",
+        "text": "Next I checked the notification .subscriptionOwnerUserRecordID and make sure it's equal to my game object's currentUserRecordID."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "Once I know this notification is meant for the current user, I tell my game object to handle notification and call the completion handler. That's it."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "That's all you need to do to prepare your app to support multiple users in tvOS 14."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "And now I'd like to show you a demo."
+      },
+      {
+        "timestamp": "5:59",
+        "text": "Here I have a simple game that I ran from Xcode."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "This game syncs all its data with iCloud using NSPersistentCloudKitContainer."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "The main menu allows me to resume the game I started playing earlier and to view my fastest solve times from previous games."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "Right now my high score is one minute and nine seconds."
+      },
+      {
+        "timestamp": "6:21",
+        "text": "If I select Resume Game, you can see the current state of the game board."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "I can flip over tiles to try to find matching Memoji."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "Now my friend Felipe wants to play and show off his high score."
+      },
+      {
+        "timestamp": "6:35",
+        "text": "He opens Control Center and switches to his user."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "But the game stays the same. That's not very exciting."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "Let's see what we can do about that."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "Here I have the Xcode project for my game."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "I'm going to show you how easy it is to add support from multiple users to your tvOS app or game."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "First you'll navigate to the Signing & Capabilities editor of your app target."
+      },
+      {
+        "timestamp": "7:04",
+        "text": "Next, you'll add the User Management capability."
+      },
+      {
+        "timestamp": "7:09",
+        "text": "And last, you'll make sure the Runs as Current User option is selected."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "That's it. Let's build and run and switch back to Apple TV."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "If I resume my game or view my high scores you can see the same game data that I showed you earlier."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "But now let's see what happens when I switch users."
+      },
+      {
+        "timestamp": "7:30",
+        "text": "Notice that the game was terminated, the system switched users, and the game was relaunched for Felipe."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "Now when Felipe plays the game, he sees his own data."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "He doesn't have an in-progress game yet, so he has an option to start a new game with no matches."
+      },
+      {
+        "timestamp": "7:47",
+        "text": "And notice his high score of 39 seconds is faster than mine."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "Again, all this data is synced with iCloud and is kept completely separate for each user."
+      },
+      {
+        "timestamp": "7:58",
+        "text": "And I didn't have to make any code changes to support this."
+      },
+      {
+        "timestamp": "8:01",
+        "text": "We are really excited for your games and apps to take full advantage of multiple users in tvOS 14."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "To wrap up the new Runs as Current User option and the User Management capability allows your apps to easily support multiple users in tvOS 14."
+      },
+      {
+        "timestamp": "8:17",
+        "text": "You can use existing API to store separate data for each person using your app with no code changes required."
+      },
+      {
+        "timestamp": "8:25",
+        "text": "This allows you to take full advantage of multiple users on Apple TV and provide everyone with a seamless experience when they use your app across all their devices."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "Thanks for watching and enjoy the rest of the conference."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -54,5 +373,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110384"
     }
   ],
-  "extractedAt": "2026-10-11T16:44:54.219Z"
+  "extractedAt": "2026-10-17T18:54:48.822Z"
 }

@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/222/",
   "title": "Meet the new MetricKit",
-  "speakers": [],
-  "duration": "",
+  "duration": "17:43",
   "topics": [
     "Developer Tools",
     "System Services"
@@ -12,8 +11,304 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Yonni, and I'm an engineer on the MetricKit team. Great apps and games monitor and optimize their performance out in the real world, on real devices. MetricKit is the framework that can provide you real insights into the quality of your app's experience. In this session, I will start off with an introduction to MetricKit, including what's new in iOS 27.\n\nThen, I'll show you how to start receiving your first metric report.\n\nYour first diagnostic report. And finally, I'll explore how to get even more rich data by connecting performance problems to specific areas in your app.\n\nI'll start with an overview of the framework.\n\nOptimizing your app's performance is a process. You start by collecting data, and analyze it to identify problems. For each problem, you triage it to find the root cause, fix it, and go back to step one to monitor the results. MetricKit is the collection piece in that workflow.\n\nThe framework provides two types of data: metrics and diagnostics. Metrics give you a sense of whether an area of performance is improving or worsening overall, while diagnostics tell you which code path is causing a performance problem.\n\nIn iOS 27, the framework has been rebuilt from the ground up with a contextually rich and expressive modern Swift-first API.\n\nThe new MetricKit APIs are the future of the framework. All of the advances I'll be discussing today are exclusive to this new set of APIs. Metrics are your app's ongoing health signal.\n\nLaunch time, hangs, and animation metrics tell you how responsive and smooth your app feels. A slow launch can frustrate people and lead them to leave your app, while a fast launch gets people right into your app's core experiences.\n\nResource consumption metrics like CPU, GPU, Disk writes, and network transfers tell you how hard your app is working and how it's affecting device health.\n\nFor example, MetricKit launch times like the time to first draw metric, provide a histogram of launch counts that fall within certain time range buckets. This graph shows the time it took for the app to launch, every time someone opened it over the course of a day.\n\nMost of the launches took between 510 and 540 milliseconds, with a few outliers.\n\nYou can also track ongoing performance by deriving your own insights from the data MetricKit provides.\n\nFor example, MetricKit reported that for this app, it had a total hang time on average of 3 seconds while the app was used for 30 minutes. That information can be used to derive an average hang rate of 6 seconds per hour.\n\nIf you aggregate this data across all devices, this can give you a measurable signal of how your app's performance is trending.\n\nIn iOS 27, MetricKit can provide each metric as a function of the app's state.\n\nFor example, when measuring hang time in an app that has multiple tabs, MetricKit can provide this metric intersected with when the active tab is tab 1, tab 2 or tab 3. I'll go into this more later. In iOS 27, MetricKit now also provides a new metric - Metal frame rate. Frame rate is a key metric for game developers to understand render performance. To learn more about optimizing your game for the platform, check out the session \"Find and fix performance issues in your Metal game\".\n\nIn addition to metrics, MetricKit also provides diagnostics. Diagnostics contain useful information that helps you identify which code path caused a performance problem so you can investigate and fix it.\n\nIn iOS 27, MetricKit provides memory exception diagnostics. So when your app or extension is terminated for exceeding its memory limit, you get more insight on what happened.\n\nI'll dive in to explore how your app can get performance metrics.\n\nAs people use your app throughout the day, MetricKit continuously collects metrics like app launches, hangs, memory, and CPU and delivers it to your app in a daily report.\n\nIn this report, MetricKit provides an entry that spans the full day usage of the app. It also provides separate entries for smaller breakdowns, typically a few hours each. These smaller breakdowns are only present when there are metrics associated with them. Here's how the data is structured. Inside each interval, metrics are organized into metric groups. Each group represents an aspect of the system, things like .cpu, .memory, .display, and .gpu. Inside a group, you'll find individual performance metrics.\n\nI'll work through this in code.\n\nYour entry point is the MetricManager class. To receive reports, you await them through the metricReports property.\n\nThis setup should be done at app start up to avoid any data loss from delayed subscription. MetricManager should be kept alive so that the streams can continue to deliver reports as subsequent data becomes ready.\n\nWith just these few lines, your app is now receiving structured metric data.\n\nTypically, you may want to send these metrics to a server so you can examine your app's health across many devices. MetricReports are Codable, which makes it easy to encode into a format like JSON to send to the server.\n\nJust create a JSONEncoder and encode the entire report.\n\nIf you just want to access a particular group of metrics, or a particular value, you can also inspect the metric report further. To do this, iterate through your intervalEntries. This includes a full-day aggregated entry and smaller breakdown windows when available. Then, filter the metrics down to the group you are interested in. In this case, memoryMetrics contains only metrics in the memory group.\n\nFinally, switch over the metric cases to access the type of metric you're interested in, as well as the value of that metric in this report. In this case, the code only handles the peakMemory value. Perform this work in a detached task or a dedicated service class as soon as your app launches.\n\nGoing back to the workflow. You have now completed the collection phase. And ready to move on to analysis.\n\nAnalyzing metrics across all devices is a data science problem. To enable this analysis, you'll want to set up a server that can ingest each of these reports and aggregate them according to the dimensions that you care about.\n\nYou'll need to decide what the best statistical analysis is for the data that you want to generate, and the insights that you want to find.\n\nUsing your custom aggregation, this can give you a baseline, an idea of how your app is performing already. Then, monitor your aggregated metrics to detect when things are getting better or worse.\n\nI've shown how you could identify issues in your app using metrics. Now, I will cover how you can fix these issues using diagnostics.\n\nMetrics are a great way to monitor your app. As you collect metrics and monitor performance over time, you can enter the triage phase of your workflow. Diagnostics are particularly helpful in this phase.\n\nWhen something goes wrong, like a crash or a hang, the system captures a diagnostic on device. A diagnostic report packages up the details and delivers it immediately to your app through MetricKit.\n\nInside, you get useful information to triage the issue. For example, many diagnostics include backtraces that show you the exact call stack at the time of the event.\n\nOne of the most important diagnostics is for crashes. Crash diagnostics not only provide a backtrace, but they'll also indicate why your app was terminated and an exception type that tells you what kind of failure it is.\n\nIn iOS 27, a termination category now indicates how each crash was accounted for in metrics.\n\nThat way, if abnormal terminations are trending up, you can correlate those directly with individual diagnostics.\n\nIn this example, the symbolicated backtrace begins in the system at thread start. As execution flows downward, it crosses into the app's code. To find the crash site, you can follow the calls all the way down. Here, execution reaches the app's submitReport() function and stops. This indicates that this is the point of failure in the execution path.\n\nNow, you can use this information to target fixes in this function.\n\nTo get diagnostic reports, you await on the diagnosticReports of your MetricManager instance. Like MetricReports, start listening to this stream as soon as a your app launches on a detached task or a dedicated service class.\n\nJust like MetricReports, DiagnosticReports are Codable. This code awaits incoming diagnosticReports, then encodes them into JSON using a JSONEncoder.\n\nNow, you can send all of this diagnostic information to your analytics server.\n\nDiagnostics reports are also structured, so you can pick and choose what you want to receive. For example, this code awaits diagnosticReports, and switches on the cases of different types of diagnostics. In the case of a crash diagnostic, it extracts the backtrace, the reason, and the category. Now, this information can be processed by the app, like sending it up to a server. In the case of hang diagnostics, it can use the hang case to process that report differently.\n\nI've covered how to get metric and diagnostic reports for your app. Next, I'm going to show you how to contextualize this data.\n\nSo far, the metrics and diagnostics provided by MetricKit, represent the overall picture of the app's performance. But, to investigate individual issues, you might need richer, more granular data that tells you more about the state of the app, like what the user flow is or how the app is configured. MetricKit can give you data contextualized to meaningful information you defined about your app.\n\nHere's an example. I have an expense reporting app that allows employees to scan receipts, submit expenses and track their spending by categories and budgets. These functions are organized in a Reports tab and a Spending tab.\n\nI'm interested in the scroll hitch metric. It indicates that during the course of the day, the app had a total hitch time of 4.5 seconds while scrolling for 5 minutes. That is a hitch rate of 15 milliseconds per second. But that's an average scroll hitch rate over all app usage, even if someone is going back and forth between the Reports tab and the Spending tab. To know what conditions of the app this metric was collected under, you can report app states through the StateReporting framework. I'll explore that now.\n\nStates are information you define that describes your app's configuration or behavior, so that MetricKit can aggregate metrics as a function of those characteristics. As people use your app, parameters might change depending on how they're using it.\n\nIn the expense app, people might move between tabs during their usage. They could be on the Reports tab to add a new expense, leave the app, and come back to the Spending tab when they want to check on their daily meal budget. As the app transitions between these states, it reports these transitions. Then, MetricKit can intersect them with metric and diagnostic data.\n\nYou can also add more details for each state by adding a custom structured type. For the expense app, this could be details about the items in the view, like whether the list of transactions is considered a small, medium or large list and whether the transactions on that list are sorted.\n\nNow, instead of getting a single blended metric across all of these states, like a total scroll hitch rate of 15 ms/s, metrics are reported for each individual state. And in the expense app, there are individual metrics for each tab. In this example, scrolling on the Spending tab was incredibly smooth, with a hitch rate of just 1 ms/s. But, when scrolling through the Reports tab, the hitch rate spiked to 71 ms/s. With this granularity, you can make a much more focused conclusion: the Spending tab is performing great! But the Reports tab is experiencing critical interruptions, and that's exactly where your optimization effort should focus.\n\nEach state you provide is scoped to a domain. A domain describes a function or area of an app. A domain can only have one active state at a given time.\n\nSeparate domains allow multiple states to be in flight at the same time. In the expense app, I'm testing out an experimental change, and I want to know if it helps with performance. With the experiment turned on, expenses are fetched in small batches from the database. Turned off, it uses larger batches instead. By placing the tab state and the batch size state in separate domains, MetricKit will deliver separate metrics for each tab and each batch size.\n\nStates follow a transition model. Your app reports the state it's moving to, and MetricKit tracks how long it remains in that state. There's no start or end pairs - the app reports the condition it is in, at any given time.\n\nTo report states in your app, start by importing the StateReporting framework. Then, create a domain - typically a reverse DNS string - and register it when you set up your MetricManager instance.\n\nFinally, report the transitions as your app enters the states that you define. In this case, the app transitions to a state identified by the string \"Reports\".\n\nIf you want to further granularize your data, you can provide additional structured information for these states by defining your own struct with the ReportableMetadata macro. Then, create a new StateReporter with this metadata type.\n\nFinally, report transitions by including the label and your custom type. This example transitions to the \"Reports\" state, and also provides a ViewConfiguration struct that includes values for the listSize and whether items on this list are sorted.\n\nBefore adding states to your app, your metric report provides broad metrics across all usages of your app. The stateEntries property contains state-aware metrics. This is empty when there are no states reported. After adding states, your MetricReport will now have StateEntry values. State entries provide another way to perceive your app's metrics. Each state has its own StateEntry with metric values aggregated across the time spent in that individual state. When you're ready to send this data to your analytics server, you can choose to group your MetricReport data by state reporting domain. Configure your JSONEncoder to group state entries by each domain. Set the key encodingFormatKey on the encoder's userInfo property to the value byStateReportingDomain. Now, when the report is encoded, both state entries and interval entries, will contain your app's performance metrics, grouped by each domain and state that exists in the report.\n\nHere are some best practices to keep in mind when defining states.\n\nDomains should be narrowly scoped so that each app area can have its state and ability to understand data for those states.\n\nState transitions should represent stable, meaningful phases, not transient UI events.\n\nCarefully consider what each state means, so that if a regression appears, the state will give enough information to target your fix. Carefully plan out the number of state transitions in your app and how you plan to interpret the data that each state and domain generates. Too many states can result in data that's too granular and can actually make it harder to interpret the overall picture. There are also upper limits to the number of states to minimize overhead.\n\nFinally, use the Points of Interest instrument to validate that the states you report match your expectations before you ship.\n\nMetricKit lets you find and fix performance problems faster than ever. Continue to monitor the data on an ongoing basis to target and plan your performance work.\n\nUse MetricManager to start collecting performance metrics to monitor your app's health.\n\nAnalyze diagnostics to identify specific opportunities for improvements.\n\nContextualize the data you get by reporting important states of your app.\n\nExplore the new types of data provided by MetricKit, like memory diagnostics and Metal frame rate metric.\n\nFinally, if you're using the MXMetricManager API, migrate over to the new MetricManager API to take advantage of all these new capabilities. Thank you and have a great WWDC!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm Yonni, and I'm an engineer on the MetricKit team. Great apps and games monitor and optimize their performance out in the real world, on real devices. MetricKit is the framework that can provide you real insights into the quality of your app's experience. In this session, I will start off with an introduction to MetricKit, including what's new in iOS 27."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Then, I'll show you how to start receiving your first metric report."
+      },
+      {
+        "timestamp": "0:34",
+        "text": "Your first diagnostic report. And finally, I'll explore how to get even more rich data by connecting performance problems to specific areas in your app."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "I'll start with an overview of the framework."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Optimizing your app's performance is a process. You start by collecting data, and analyze it to identify problems. For each problem, you triage it to find the root cause, fix it, and go back to step one to monitor the results. MetricKit is the collection piece in that workflow."
+      },
+      {
+        "timestamp": "1:07",
+        "text": "The framework provides two types of data: metrics and diagnostics. Metrics give you a sense of whether an area of performance is improving or worsening overall, while diagnostics tell you which code path is causing a performance problem."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "In iOS 27, the framework has been rebuilt from the ground up with a contextually rich and expressive modern Swift-first API."
+      },
+      {
+        "timestamp": "1:33",
+        "text": "The new MetricKit APIs are the future of the framework. All of the advances I'll be discussing today are exclusive to this new set of APIs. Metrics are your app's ongoing health signal."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "Launch time, hangs, and animation metrics tell you how responsive and smooth your app feels. A slow launch can frustrate people and lead them to leave your app, while a fast launch gets people right into your app's core experiences."
+      },
+      {
+        "timestamp": "2:00",
+        "text": "Resource consumption metrics like CPU, GPU, Disk writes, and network transfers tell you how hard your app is working and how it's affecting device health."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "For example, MetricKit launch times like the time to first draw metric, provide a histogram of launch counts that fall within certain time range buckets. This graph shows the time it took for the app to launch, every time someone opened it over the course of a day."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "Most of the launches took between 510 and 540 milliseconds, with a few outliers."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "You can also track ongoing performance by deriving your own insights from the data MetricKit provides."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "For example, MetricKit reported that for this app, it had a total hang time on average of 3 seconds while the app was used for 30 minutes. That information can be used to derive an average hang rate of 6 seconds per hour."
+      },
+      {
+        "timestamp": "2:55",
+        "text": "If you aggregate this data across all devices, this can give you a measurable signal of how your app's performance is trending."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "In iOS 27, MetricKit can provide each metric as a function of the app's state."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "For example, when measuring hang time in an app that has multiple tabs, MetricKit can provide this metric intersected with when the active tab is tab 1, tab 2 or tab 3. I'll go into this more later. In iOS 27, MetricKit now also provides a new metric - Metal frame rate. Frame rate is a key metric for game developers to understand render performance. To learn more about optimizing your game for the platform, check out the session \"Find and fix performance issues in your Metal game\"."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "In addition to metrics, MetricKit also provides diagnostics. Diagnostics contain useful information that helps you identify which code path caused a performance problem so you can investigate and fix it."
+      },
+      {
+        "timestamp": "3:55",
+        "text": "In iOS 27, MetricKit provides memory exception diagnostics. So when your app or extension is terminated for exceeding its memory limit, you get more insight on what happened."
+      },
+      {
+        "timestamp": "4:06",
+        "text": "I'll dive in to explore how your app can get performance metrics."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "As people use your app throughout the day, MetricKit continuously collects metrics like app launches, hangs, memory, and CPU and delivers it to your app in a daily report."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "In this report, MetricKit provides an entry that spans the full day usage of the app. It also provides separate entries for smaller breakdowns, typically a few hours each. These smaller breakdowns are only present when there are metrics associated with them. Here's how the data is structured. Inside each interval, metrics are organized into metric groups. Each group represents an aspect of the system, things like .cpu, .memory, .display, and .gpu. Inside a group, you'll find individual performance metrics."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "I'll work through this in code."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "Your entry point is the MetricManager class. To receive reports, you await them through the metricReports property."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "This setup should be done at app start up to avoid any data loss from delayed subscription. MetricManager should be kept alive so that the streams can continue to deliver reports as subsequent data becomes ready."
+      },
+      {
+        "timestamp": "5:20",
+        "text": "With just these few lines, your app is now receiving structured metric data."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "Typically, you may want to send these metrics to a server so you can examine your app's health across many devices. MetricReports are Codable, which makes it easy to encode into a format like JSON to send to the server."
+      },
+      {
+        "timestamp": "5:39",
+        "text": "Just create a JSONEncoder and encode the entire report."
+      },
+      {
+        "timestamp": "5:44",
+        "text": "If you just want to access a particular group of metrics, or a particular value, you can also inspect the metric report further. To do this, iterate through your intervalEntries. This includes a full-day aggregated entry and smaller breakdown windows when available. Then, filter the metrics down to the group you are interested in. In this case, memoryMetrics contains only metrics in the memory group."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "Finally, switch over the metric cases to access the type of metric you're interested in, as well as the value of that metric in this report. In this case, the code only handles the peakMemory value. Perform this work in a detached task or a dedicated service class as soon as your app launches."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "Going back to the workflow. You have now completed the collection phase. And ready to move on to analysis."
+      },
+      {
+        "timestamp": "6:37",
+        "text": "Analyzing metrics across all devices is a data science problem. To enable this analysis, you'll want to set up a server that can ingest each of these reports and aggregate them according to the dimensions that you care about."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "You'll need to decide what the best statistical analysis is for the data that you want to generate, and the insights that you want to find."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "Using your custom aggregation, this can give you a baseline, an idea of how your app is performing already. Then, monitor your aggregated metrics to detect when things are getting better or worse."
+      },
+      {
+        "timestamp": "7:13",
+        "text": "I've shown how you could identify issues in your app using metrics. Now, I will cover how you can fix these issues using diagnostics."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "Metrics are a great way to monitor your app. As you collect metrics and monitor performance over time, you can enter the triage phase of your workflow. Diagnostics are particularly helpful in this phase."
+      },
+      {
+        "timestamp": "7:37",
+        "text": "When something goes wrong, like a crash or a hang, the system captures a diagnostic on device. A diagnostic report packages up the details and delivers it immediately to your app through MetricKit."
+      },
+      {
+        "timestamp": "7:50",
+        "text": "Inside, you get useful information to triage the issue. For example, many diagnostics include backtraces that show you the exact call stack at the time of the event."
+      },
+      {
+        "timestamp": "8:02",
+        "text": "One of the most important diagnostics is for crashes. Crash diagnostics not only provide a backtrace, but they'll also indicate why your app was terminated and an exception type that tells you what kind of failure it is."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "In iOS 27, a termination category now indicates how each crash was accounted for in metrics."
+      },
+      {
+        "timestamp": "8:24",
+        "text": "That way, if abnormal terminations are trending up, you can correlate those directly with individual diagnostics."
+      },
+      {
+        "timestamp": "8:31",
+        "text": "In this example, the symbolicated backtrace begins in the system at thread start. As execution flows downward, it crosses into the app's code. To find the crash site, you can follow the calls all the way down. Here, execution reaches the app's submitReport() function and stops. This indicates that this is the point of failure in the execution path."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "Now, you can use this information to target fixes in this function."
+      },
+      {
+        "timestamp": "8:59",
+        "text": "To get diagnostic reports, you await on the diagnosticReports of your MetricManager instance. Like MetricReports, start listening to this stream as soon as a your app launches on a detached task or a dedicated service class."
+      },
+      {
+        "timestamp": "9:14",
+        "text": "Just like MetricReports, DiagnosticReports are Codable. This code awaits incoming diagnosticReports, then encodes them into JSON using a JSONEncoder."
+      },
+      {
+        "timestamp": "9:26",
+        "text": "Now, you can send all of this diagnostic information to your analytics server."
+      },
+      {
+        "timestamp": "9:31",
+        "text": "Diagnostics reports are also structured, so you can pick and choose what you want to receive. For example, this code awaits diagnosticReports, and switches on the cases of different types of diagnostics. In the case of a crash diagnostic, it extracts the backtrace, the reason, and the category. Now, this information can be processed by the app, like sending it up to a server. In the case of hang diagnostics, it can use the hang case to process that report differently."
+      },
+      {
+        "timestamp": "10:03",
+        "text": "I've covered how to get metric and diagnostic reports for your app. Next, I'm going to show you how to contextualize this data."
+      },
+      {
+        "timestamp": "10:10",
+        "text": "So far, the metrics and diagnostics provided by MetricKit, represent the overall picture of the app's performance. But, to investigate individual issues, you might need richer, more granular data that tells you more about the state of the app, like what the user flow is or how the app is configured. MetricKit can give you data contextualized to meaningful information you defined about your app."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "Here's an example. I have an expense reporting app that allows employees to scan receipts, submit expenses and track their spending by categories and budgets. These functions are organized in a Reports tab and a Spending tab."
+      },
+      {
+        "timestamp": "10:50",
+        "text": "I'm interested in the scroll hitch metric. It indicates that during the course of the day, the app had a total hitch time of 4.5 seconds while scrolling for 5 minutes. That is a hitch rate of 15 milliseconds per second. But that's an average scroll hitch rate over all app usage, even if someone is going back and forth between the Reports tab and the Spending tab. To know what conditions of the app this metric was collected under, you can report app states through the StateReporting framework. I'll explore that now."
+      },
+      {
+        "timestamp": "11:23",
+        "text": "States are information you define that describes your app's configuration or behavior, so that MetricKit can aggregate metrics as a function of those characteristics. As people use your app, parameters might change depending on how they're using it."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "In the expense app, people might move between tabs during their usage. They could be on the Reports tab to add a new expense, leave the app, and come back to the Spending tab when they want to check on their daily meal budget. As the app transitions between these states, it reports these transitions. Then, MetricKit can intersect them with metric and diagnostic data."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "You can also add more details for each state by adding a custom structured type. For the expense app, this could be details about the items in the view, like whether the list of transactions is considered a small, medium or large list and whether the transactions on that list are sorted."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Now, instead of getting a single blended metric across all of these states, like a total scroll hitch rate of 15 ms/s, metrics are reported for each individual state. And in the expense app, there are individual metrics for each tab. In this example, scrolling on the Spending tab was incredibly smooth, with a hitch rate of just 1 ms/s. But, when scrolling through the Reports tab, the hitch rate spiked to 71 ms/s. With this granularity, you can make a much more focused conclusion: the Spending tab is performing great! But the Reports tab is experiencing critical interruptions, and that's exactly where your optimization effort should focus."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "Each state you provide is scoped to a domain. A domain describes a function or area of an app. A domain can only have one active state at a given time."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "Separate domains allow multiple states to be in flight at the same time. In the expense app, I'm testing out an experimental change, and I want to know if it helps with performance. With the experiment turned on, expenses are fetched in small batches from the database. Turned off, it uses larger batches instead. By placing the tab state and the batch size state in separate domains, MetricKit will deliver separate metrics for each tab and each batch size."
+      },
+      {
+        "timestamp": "13:43",
+        "text": "States follow a transition model. Your app reports the state it's moving to, and MetricKit tracks how long it remains in that state. There's no start or end pairs - the app reports the condition it is in, at any given time."
+      },
+      {
+        "timestamp": "13:57",
+        "text": "To report states in your app, start by importing the StateReporting framework. Then, create a domain - typically a reverse DNS string - and register it when you set up your MetricManager instance."
+      },
+      {
+        "timestamp": "14:10",
+        "text": "Finally, report the transitions as your app enters the states that you define. In this case, the app transitions to a state identified by the string \"Reports\"."
+      },
+      {
+        "timestamp": "14:21",
+        "text": "If you want to further granularize your data, you can provide additional structured information for these states by defining your own struct with the ReportableMetadata macro. Then, create a new StateReporter with this metadata type."
+      },
+      {
+        "timestamp": "14:35",
+        "text": "Finally, report transitions by including the label and your custom type. This example transitions to the \"Reports\" state, and also provides a ViewConfiguration struct that includes values for the listSize and whether items on this list are sorted."
+      },
+      {
+        "timestamp": "14:51",
+        "text": "Before adding states to your app, your metric report provides broad metrics across all usages of your app. The stateEntries property contains state-aware metrics. This is empty when there are no states reported. After adding states, your MetricReport will now have StateEntry values. State entries provide another way to perceive your app's metrics. Each state has its own StateEntry with metric values aggregated across the time spent in that individual state. When you're ready to send this data to your analytics server, you can choose to group your MetricReport data by state reporting domain. Configure your JSONEncoder to group state entries by each domain. Set the key encodingFormatKey on the encoder's userInfo property to the value byStateReportingDomain. Now, when the report is encoded, both state entries and interval entries, will contain your app's performance metrics, grouped by each domain and state that exists in the report."
+      },
+      {
+        "timestamp": "15:53",
+        "text": "Here are some best practices to keep in mind when defining states."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "Domains should be narrowly scoped so that each app area can have its state and ability to understand data for those states."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "State transitions should represent stable, meaningful phases, not transient UI events."
+      },
+      {
+        "timestamp": "16:13",
+        "text": "Carefully consider what each state means, so that if a regression appears, the state will give enough information to target your fix. Carefully plan out the number of state transitions in your app and how you plan to interpret the data that each state and domain generates. Too many states can result in data that's too granular and can actually make it harder to interpret the overall picture. There are also upper limits to the number of states to minimize overhead."
+      },
+      {
+        "timestamp": "16:41",
+        "text": "Finally, use the Points of Interest instrument to validate that the states you report match your expectations before you ship."
+      },
+      {
+        "timestamp": "16:49",
+        "text": "MetricKit lets you find and fix performance problems faster than ever. Continue to monitor the data on an ongoing basis to target and plan your performance work."
+      },
+      {
+        "timestamp": "17:00",
+        "text": "Use MetricManager to start collecting performance metrics to monitor your app's health."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "Analyze diagnostics to identify specific opportunities for improvements."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Contextualize the data you get by reporting important states of your app."
+      },
+      {
+        "timestamp": "17:15",
+        "text": "Explore the new types of data provided by MetricKit, like memory diagnostics and Metal frame rate metric."
+      },
+      {
+        "timestamp": "17:22",
+        "text": "Finally, if you're using the MXMetricManager API, migrate over to the new MetricManager API to take advantage of all these new capabilities. Thank you and have a great WWDC!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -71,6 +366,28 @@
       "code": "// Send encoded metric reports to the server\n\nimport MetricKit\n\nfor await report in manager.metricReports {\n    let encoder = JSONEncoder()\n    \n    let formatKey = MetricReport.encodingFormatKey\n    encoder.userInfo[formatKey] = MetricReport.EncodingFormat.byStateReportingDomain\n    \n    let jsonData = try encoder.encode(report)\n    sendToServer(jsonData)\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:01",
+      "title": "Introduction",
+      "duration": "4:06"
+    },
+    {
+      "timestamp": "4:07",
+      "title": "Metrics",
+      "duration": "3:06"
+    },
+    {
+      "timestamp": "7:13",
+      "title": "Diagnostics",
+      "duration": "2:50"
+    },
+    {
+      "timestamp": "10:03",
+      "title": "Context",
+      "duration": "7:40"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -111,5 +428,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2026/268"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:27.059Z"
+  "extractedAt": "2026-10-17T18:42:20.190Z"
 }

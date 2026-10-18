@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/372/",
   "title": "Unwrap PaperKit",
-  "speakers": [],
-  "duration": "",
+  "duration": "7:39",
   "topics": [
     "App Services",
     "SwiftUI & UI Frameworks"
@@ -12,8 +11,128 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi, I'm Matt, an engineer on the Pencil and Paper team. Apps that give users a canvas to create whatever they want, have been some of the most iconic and empowering experiences on Apple platforms. And PaperKit is what powers the canvas experience across many of Apple's own applications. When you sketch an idea, drop in an image, or mark up a document in Notes, that's PaperKit. It's the full canvas experience, pencil, shapes, text, images, all working together. When you open a PDF in Preview and add a signature, highlight a passage, or circle something important, that's PaperKit too.\n\nAnd when you're ideating in Freeform on macOS, that's also PaperKit.\n\nAnd in iOS, macOS and visionOS 27, PaperKit opens up. Today I'll show you how to unwrap PaperKit, so you can take full control over your canvas experience. I'll start with the data model, which gives you access to everything on the canvas.\n\nThen, I'll show you how to work with elements like shapes and images.\n\nAnd I'll finish with adornments, which let you add interactive overlays and controls.\n\nLet's get going with the data model. I've been building a comic book editor powered by PaperKit. I've already set up some basic templates. But that's as far as I got. Now I need to turn those templates into PaperMarkup. PaperMarkup has a new subelements property. It gives you access to every element on the canvas as a MarkupOrderedSet, which is an ordered collection you can read from and write to. This code snippet creates a shape element for each panel.\n\nAnd then update's the markup.\n\nThat's it. Let's try this on the iPad.\n\nI'll add a three-page panel to my comic. Great. It's showing up exactly how I wanted. The canvas is fully interactive, which is a problem for my comic book editor. I can select the panels, drag them around and even delete them.\n\nThat's not what I want. The template elements should not be editable. To fix this, I need to change how those shape elements behave. Every element on the canvas conforms to the Markup protocol.\n\nThis gives you common properties like frame and rotation. There is also a new allowedInteractions property, which is a MarkupInteractions option set. It gives you fine-grained control over what can be modified on each element. Markup interactions lets you control moving, resizing and rotating, deleting, styling, and selecting, individually or in any combination. And if you want to lock down everything at once, read-only combines them all into a single flag, which is perfect for the comic template.\n\nTo limit interactions with panels in the comic book editor, I need to set .allowedInteractions to .readOnly. I'll give it a try. Now when I tap a panel border, nothing happens. The template shapes are read-only. I can add a speech bubble, move that around, and stylize it, but the panels stay fixed. Perfect. The app is starting to take shape, but the panels need to really pop, so I've added a color picker in the toolbar for styling our template.\n\nTo implement styling, I'm going to dive into elements. Every element in PaperMarkup has a concrete type.\n\nShapes, images, links, loupes, and pencil strokes. They are all part of the same Markup ordered set, and conform to the Markup protocol. But each of these types have their own custom properties. Let's take a deeper look at shapes. PaperKit supports many shape types and each type has its own properties, like corner radius for rounded rectangles, or control points for curved lines.\n\nI used rectangles for the comic panels. They have a stroke color and that's what we're looking for. To apply a color to our panels, I need to iterate over the subelements.\n\nThen set their stroke and fill colors.\n\nTo give it that extra pop, I'm going to use the same color for the markup background. And lastly I update the markup on the paperMarkupViewController. Let me check the result on the iPad.\n\nAnd just like that, the canvas transforms. The page is styled with the color I chose, and it's starting to unwrap into something more personal. PaperKit is built on top of PencilKit, so I can use the Apple Pencil to draw.\n\nEach stroke becomes a markup element and I can use all of the PencilKit model APIs. Those APIs now support character recognition and Bézier path conversion. For all the details, check out \"Reading Between the strokes with PencilKit\".\n\nNow let's look at how to add custom controls with adornments. I want to add a button to each panel that lets users create artwork. But I don't want those controls to become part of the document. They shouldn't be saved, printed, or exported. I want them to exist on top of the canvas, only when I'm editing. That's exactly what Markup adornments are, a visual overlay anchored to canvas coordinates. This makes adornments ideal for buttons, annotations, and collaboration UI. They automatically track zoom and scroll, and they're completely separate from the persisted markup. For each panel, I create a MarkupAdornment. I anchor it to the center of the panel, and I give it an SF Symbol icon through the imageConfiguration.\n\nThen I assign the array to the controller's adornments property.\n\nTo handle taps, I implement the delegate method didTapAdornmentWithID.\n\nWhen the user taps an adornment, I present the ImagePlaygroundViewController.\n\nWhen an image comes back from Image Playground, I create an ImageMarkup.\n\nThen, I insert it into the subelements and update the view controller's markup. Let's give it another try.\n\nI'll tap one of the panels to create some artwork.\n\nMy comic is going to be about a super hero dog fighting crime in the city.\n\nAnd the generated image fills the panel.\n\nTo learn more about generating images in your app, watch \"Create high-quality images using Image Playground\". And now with just a couple more images, some text and fonts, I've got the first page of my comic.\n\nOur super hero dog is going to save the day. Now you can build a fully interactive, canvas-based experience in your app with PaperKit. Use the data model to programmatically read and modify what's on the canvas. And add adornments to create interactive overlays tailored to your app. I can't wait to see how you will unwrap PaperKit. Thanks for watching!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi, I'm Matt, an engineer on the Pencil and Paper team. Apps that give users a canvas to create whatever they want, have been some of the most iconic and empowering experiences on Apple platforms. And PaperKit is what powers the canvas experience across many of Apple's own applications. When you sketch an idea, drop in an image, or mark up a document in Notes, that's PaperKit. It's the full canvas experience, pencil, shapes, text, images, all working together. When you open a PDF in Preview and add a signature, highlight a passage, or circle something important, that's PaperKit too."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "And when you're ideating in Freeform on macOS, that's also PaperKit."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "And in iOS, macOS and visionOS 27, PaperKit opens up. Today I'll show you how to unwrap PaperKit, so you can take full control over your canvas experience. I'll start with the data model, which gives you access to everything on the canvas."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Then, I'll show you how to work with elements like shapes and images."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "And I'll finish with adornments, which let you add interactive overlays and controls."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "Let's get going with the data model. I've been building a comic book editor powered by PaperKit. I've already set up some basic templates. But that's as far as I got. Now I need to turn those templates into PaperMarkup. PaperMarkup has a new subelements property. It gives you access to every element on the canvas as a MarkupOrderedSet, which is an ordered collection you can read from and write to. This code snippet creates a shape element for each panel."
+      },
+      {
+        "timestamp": "1:51",
+        "text": "And then update's the markup."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "That's it. Let's try this on the iPad."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "I'll add a three-page panel to my comic. Great. It's showing up exactly how I wanted. The canvas is fully interactive, which is a problem for my comic book editor. I can select the panels, drag them around and even delete them."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "That's not what I want. The template elements should not be editable. To fix this, I need to change how those shape elements behave. Every element on the canvas conforms to the Markup protocol."
+      },
+      {
+        "timestamp": "2:28",
+        "text": "This gives you common properties like frame and rotation. There is also a new allowedInteractions property, which is a MarkupInteractions option set. It gives you fine-grained control over what can be modified on each element. Markup interactions lets you control moving, resizing and rotating, deleting, styling, and selecting, individually or in any combination. And if you want to lock down everything at once, read-only combines them all into a single flag, which is perfect for the comic template."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "To limit interactions with panels in the comic book editor, I need to set .allowedInteractions to .readOnly. I'll give it a try. Now when I tap a panel border, nothing happens. The template shapes are read-only. I can add a speech bubble, move that around, and stylize it, but the panels stay fixed. Perfect. The app is starting to take shape, but the panels need to really pop, so I've added a color picker in the toolbar for styling our template."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "To implement styling, I'm going to dive into elements. Every element in PaperMarkup has a concrete type."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "Shapes, images, links, loupes, and pencil strokes. They are all part of the same Markup ordered set, and conform to the Markup protocol. But each of these types have their own custom properties. Let's take a deeper look at shapes. PaperKit supports many shape types and each type has its own properties, like corner radius for rounded rectangles, or control points for curved lines."
+      },
+      {
+        "timestamp": "4:16",
+        "text": "I used rectangles for the comic panels. They have a stroke color and that's what we're looking for. To apply a color to our panels, I need to iterate over the subelements."
+      },
+      {
+        "timestamp": "4:27",
+        "text": "Then set their stroke and fill colors."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "To give it that extra pop, I'm going to use the same color for the markup background. And lastly I update the markup on the paperMarkupViewController. Let me check the result on the iPad."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "And just like that, the canvas transforms. The page is styled with the color I chose, and it's starting to unwrap into something more personal. PaperKit is built on top of PencilKit, so I can use the Apple Pencil to draw."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "Each stroke becomes a markup element and I can use all of the PencilKit model APIs. Those APIs now support character recognition and Bézier path conversion. For all the details, check out \"Reading Between the strokes with PencilKit\"."
+      },
+      {
+        "timestamp": "5:17",
+        "text": "Now let's look at how to add custom controls with adornments. I want to add a button to each panel that lets users create artwork. But I don't want those controls to become part of the document. They shouldn't be saved, printed, or exported. I want them to exist on top of the canvas, only when I'm editing. That's exactly what Markup adornments are, a visual overlay anchored to canvas coordinates. This makes adornments ideal for buttons, annotations, and collaboration UI. They automatically track zoom and scroll, and they're completely separate from the persisted markup. For each panel, I create a MarkupAdornment. I anchor it to the center of the panel, and I give it an SF Symbol icon through the imageConfiguration."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "Then I assign the array to the controller's adornments property."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "To handle taps, I implement the delegate method didTapAdornmentWithID."
+      },
+      {
+        "timestamp": "6:14",
+        "text": "When the user taps an adornment, I present the ImagePlaygroundViewController."
+      },
+      {
+        "timestamp": "6:21",
+        "text": "When an image comes back from Image Playground, I create an ImageMarkup."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "Then, I insert it into the subelements and update the view controller's markup. Let's give it another try."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "I'll tap one of the panels to create some artwork."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "My comic is going to be about a super hero dog fighting crime in the city."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "And the generated image fills the panel."
+      },
+      {
+        "timestamp": "6:53",
+        "text": "To learn more about generating images in your app, watch \"Create high-quality images using Image Playground\". And now with just a couple more images, some text and fonts, I've got the first page of my comic."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "Our super hero dog is going to save the day. Now you can build a fully interactive, canvas-based experience in your app with PaperKit. Use the data model to programmatically read and modify what's on the canvas. And add adornments to create interactive overlays tailored to your app. I can't wait to see how you will unwrap PaperKit. Thanks for watching!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -53,6 +172,33 @@
       "code": "import ImagePlayground\nimport PaperKit\n\nfunc imageViewController(_ imageViewController: ImagePlaygroundViewController, didCreateImageAt imageURL: URL) {\n    guard let panelFrame = activeGenerationPanelFrame,\n          let paperMarkupViewController = pageViewController.paperViewController,\n          var markup = paperMarkupViewController.markup,\n          let image = UIImage(contentsOfFile: imageURL.path) else { return }\n\n    let imageMarkup = ImageMarkup(frame: panelFrame, image: image)\n    markup.subelements.append(imageMarkup)\n    paperMarkupViewController.markup = markup\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:22"
+    },
+    {
+      "timestamp": "1:22",
+      "title": "Data model",
+      "duration": "2:19"
+    },
+    {
+      "timestamp": "3:41",
+      "title": "Elements",
+      "duration": "1:36"
+    },
+    {
+      "timestamp": "5:17",
+      "title": "Adornments",
+      "duration": "1:54"
+    },
+    {
+      "timestamp": "7:11",
+      "title": "Next steps",
+      "duration": "0:28"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -83,5 +229,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2025/285"
     }
   ],
-  "extractedAt": "2026-10-11T16:32:57.515Z"
+  "extractedAt": "2026-10-17T18:42:51.657Z"
 }

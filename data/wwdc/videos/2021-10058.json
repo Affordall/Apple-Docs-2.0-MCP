@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10058/",
   "title": "Meet AsyncSequence",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Swift"
@@ -11,8 +10,520 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Philippe Hausler: Hi, my name is Philippe, and I am really excited to introduce you to a cool new feature in Swift, AsyncSequence.\n\nToday we'll go over what async sequences are and the fundamentals behind them.\n\nThen we'll talk about how you can use them in your code and go over a few of the new AsyncSequence APIs.\n\nAnd finally, we'll explore how you can build your own async sequences.\n\nSo let's dive right in.\n\nThis is a really simple tool I wrote to illustrate some of the cool new stuff you can do with AsyncSequence.\n\nIn this tool, we start off with a URL to an endpoint.\n\nIt lists recent earthquakes.\n\nNow, normally downloading stuff is really an asynchronous task that can take some time.\n\nBut in this case, we don't want to wait for all the things to download; instead, we want to show things as they are received.\n\nSo I decided to shake things up a bit and use the new async/await features to get the lines responded from this endpoint.\n\nThe data that we're fetching is formatted as comma-separated text, so each line is a complete row of data.\n\nSince the async sequence of lines is emitting each line as it's received, that means we can potentially have a really large download ahead of us.\n\nBut by emitting them as we get them, the snippet feels really responsive, and the most awesome part about it is that you can use the same things that you're familiar with using from regular sequences in this new async context.\n\nThat means that you can use the new for-await-in syntax to iterate, and functions like map, filter, and reduce; or -- like in this sample -- the dropFirst function to manipulate those values.\n\nSo how does this work? Well, a lot of things that I'm going to talk about today have their groundwork based in the async/await talk.\n\nBut let's recap a few key points.\n\nAsync functions let you write concurrent code without the need for callbacks, by using the await keyword.\n\nCalling an async function will suspend and then be resumed whenever a value or error is produced.\n\nAsyncSequence, on the other hand, will suspend on each element and resume when the underlying iterator produces a value or throws.\n\nBasically, as the name implies, they're just like regular sequences but with a few key differences.\n\nNamely, each element is delivered asynchronously.\n\nBut because they are an asynchronous delivery, that means that failure is definitely a possibility.\n\nSome async sequences throw, but if failure is not an option, others do not.\n\nJust like functions that throw, the compiler will help make sure that errors are handled when iterating or composing.\n\nGenerally speaking, asynchronous sequences are a description of how to produce values over time.\n\nSo an async sequence may be zero or more values and then signify completion with returning a nil from its iterator, just like sequences.\n\nWhen an error occurs, that's also a point at which the async sequence is at a terminal state, and after an error happens, they'll return nil for any subsequent calls to next on their iterator.\n\nSo let's take a dive into how that definition works by first starting off with regular iteration.\n\nHere we have a pretty familiar pattern.\n\nThis is a for-in loop.\n\nIn this case, it's iterating quakes from a sequence and then calling a function when the magnitude is above a certain value.\n\nThe compiler has knowledge of how this iteration should work, but what it does isn't magic.\n\nThe compilation step really just does some straightforward transformations.\n\nLet's examine those transformations so you can understand what the asynchronous form of this is.\n\nThis is roughly what the compiler does when building the previous code.\n\nIt first starts off by creating an iterator variable and then uses a while loop to get every quake produced by the iterator when next is invoked.\n\nTo use the new async/await functionality, there is one slight alteration that can be made.\n\nIt's as simple as changing that next function to be an asynchronous one.\n\nWe can now have the iteration participate in Swift concurrency by awaiting the next quake.\n\nLet's rewind back to uncover what this would have been like if the loop was on an async sequence.\n\nAs previously mentioned, we need to await each item out of the async sequence.\n\nThis is reflected in the new for-await-in syntax.\n\nThis all means that if you know how to use Sequence, you already have a good idea on how to use AsyncSequence.\n\nThere are a few ways you can utilize async sequences.\n\nAs we just covered, you can use the new for-await-in syntax; or if the async sequence throws, you can use the new for-try-await-in syntax.\n\nThis lets you easily iterate the values produced asynchronously -- without having to muck about with closures -- and use the syntax you are already familiar with to iterate through them.\n\nEven things like break and continue just work.\n\nNow you have now had a good introduction to the theory of async sequences.\n\nLet's explore that iteration just a bit further.\n\nGiven a source that is an async sequence, you can await each value by using the for-await-in syntax.\n\nThis means that it will await each item produced by the iterator, and when it would hit a terminal, it completes the loop.\n\nWhen iterating async sequences, breaking is obviously a good way to terminate iteration early from inside the loop.\n\nThis works just like regular sequences.\n\nHere we're breaking when the location data is not present for the quake.\n\nOr if we have some of value we want to skip, we can use continue.\n\nIn this case, if the depth is greater than some value, we're skipping those and continuing on to await the next quake.\n\nThis next iteration from the download works just like before, but in this case, the source that we have can throw an error.\n\nJust like throwing functions, try is required to process each element when the AsyncSequence being iterated can throw.\n\nAnd also just like throwing functions, the compiler will detect when you're missing a try and offer you a Fix-it to correct the mistake.\n\nThis means that when an async sequence can produce errors, you're always safe, because the language forces you to either throw that error or catch it.\n\nThis second iteration runs sequentially after the iteration of the first loop.\n\nRunning code sequentially isn't always what's desired.\n\nIf it's useful to run the iteration concurrent to other things going on, you can create a new async task that encapsulates the iteration.\n\nThis can be useful when you know the async sequences you're using might run indefinitely.\n\nNow, even though that sequence could potentially be indefinite, it's considerably less common to occur.\n\nBut in the world of asynchronous behavior, it is something much more common and something that you need to consider when using them.\n\nThankfully, the facilities for concurrency in Swift make this really easy and safe to do.\n\nThis can be also really helpful when you want to potentially cancel the iteration externally.\n\nHere we can run the two iterations concurrently and terminate the iteration later on.\n\nIt's pretty easy with tasks to scope the work of an iteration that might be indefinite to the lifetime of some container.\n\nLet's next take a tour of some of the AsyncSequence APIs that are available as of macOS Monterey, iOS 15, tvOS 15, and watchOS 8.\n\nThere are a lot of them, but I'll show you some of the highlights.\n\nReading from files is often a prime use case for asynchronous behavior.\n\nFileHandle now has a new bytes property that gives access to an asynchronous sequence of bytes from that FileHandle.\n\nThis can be used in conjunction with the new extension on AsyncSequence that converts asynchronous sequences of bytes into lines.\n\nBut dealing with files is so common that we decided that URL should have accessors for both bytes and lines.\n\nThis is that same API that I used in the initial example.\n\nIt's a convenience property on URL to return an AsyncSequence of lines from the contents, either from a file or from the network.\n\nI'm certain this will make a number of previously really complicated tasks easy and safe.\n\nSometimes getting things from the network requires a bit more control over the responses and authentication.\n\nSo URLSession now has a bytes function to fetch an async sequence of bytes given a URL or URLRequest.\n\nIf you want to know more, you should definitely check out the session \"Use async/ await with URLSession\" for some more details on this and a whole lot more new asynchronous capabilities with URLSession.\n\nBut files and networks are not the only thing that makes sense for AsyncSequence.\n\nNotifications can be now awaited with the new notifications API.\n\nAnd iteration is not the only way to interact with an AsyncSequence.\n\nIn this example, we're awaiting the first notification for remote changes that has a store UUID that matches.\n\nUsing methods like firstWhere, along with the notifications async sequence, allows for some really neat new design patterns that can make code that was previously expressing complicated logic now compact and easier to read.\n\nAnd if all of those weren't cool enough, there are a whole lot of new APIs for asynchronously manipulating values from async sequences.\n\nThese should be pretty familiar, because they're some of the same functions that are available on Sequence.\n\nWe've already covered a few so far, like dropFirst and firstWhere, but there are a whole lot more than just those.\n\nPretty much anything you can think of for using on Sequence now has an asynchronous counterpart for working with AsyncSequence.\n\nNow that was a lot to take in, and you might be thinking, \"Hey, those new APIs are really cool, and that syntax is super neat, but how can I make my own async sequences?\" Well, let's do exactly that! There are a few ways of implementing an async sequence, but I'm going to focus in on how to adapt your existing code.\n\nParticularly, there are a few design patterns that work really well with AsyncSequence, and we have some fantastic facilities for making what you already have interact with this new concept.\n\nSome of those design patterns are like closures that are called multiple times, but also some delegates can work nicely too.\n\nPretty much anything that does not need a response back and is just informing of a new value that occurs can be a prime candidate for making an async sequence.\n\nThese design patterns are really common and you likely already have a few in your apps today.\n\nThis is an example of a common handler pattern.\n\nIt's a class that has a handler property and a start and stop method.\n\nIt seems like a perfect candidate for AsyncSequence.\n\nExisting usage might be something like this where a monitor is created, and a handler to get values is assigned, and then the monitor is started so that quakes can be sent to the handler.\n\nLater on, the monitor might be stopped to cancel the events being produced.\n\nWe can use the same interface to adapt the usage to the new AsyncStream type.\n\nIt takes only a small bit of code to use it and allows you to build an async sequence.\n\nWhen constructing an async stream, an element type and construction closure is specified.\n\nThe closure has a continuation that can yield values more than once, finish, or handle termination.\n\nSo this means, in this case, the monitor can be created inside the construction closure.\n\nAnd then the handler can be assigned to yield quakes to the continuation.\n\nAnd then the onTermination can handle the cancellation and cleanup.\n\nAnd then we can start monitoring.\n\nThe same monitor code that we had before can easily be encapsulated within the async stream's construction.\n\nThis reduces the need to replicate the same logic in every use site.\n\nAnd this is how the usage of this async stream would work.\n\nYou can use the powerful transformation functions -- like filter -- and the new for-await-in syntax.\n\nThis lets you focus on the intent of your code instead of needing to worry about replicating the bookkeeping, since everything is wrapped up into one place.\n\nThere's a lot of flexibility with AsyncStream to create your own async sequences.\n\nThis is really just one example and there are likely numerous others that you can adapt in your own code.\n\nAsyncStream is a great way to adapt your existing code to become an async sequence.\n\nIt handles all of the things you would expect from an async sequence, like safety, iteration, and cancellation; but they also handle buffering.\n\nAsyncStream is a solid way of building your own async sequences and a suitable return type from your own APIs, since the only source of elements being produced is from the construction.\n\nAnd if you need to represent errors being thrown? Well, we have a type for that! AsyncThrowingStream that is just like AsyncStream but can handle errors.\n\nIt offers the same flexibility and safety as AsyncStream but can handle failures by throwing from its iteration.\n\nAsyncSequence is a really powerful tool that is both safe and familiar for dealing with more than one asynchronous value.\n\nIf you know how to use Sequence, you already know how to use AsyncSequence.\n\nWe've gone over what async sequences are, and how they're used, and introduced you to AsyncStream.\n\nWe've dived into the theory and what defines them, and a few of the newly introduced async sequences, and finally, how to build your own.\n\nI eagerly await what you do with them next.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Philippe Hausler: Hi, my name is Philippe, and I am really excited to introduce you to a cool new feature in Swift, AsyncSequence."
+      },
+      {
+        "timestamp": "0:17",
+        "text": "Today we'll go over what async sequences are and the fundamentals behind them."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "Then we'll talk about how you can use them in your code and go over a few of the new AsyncSequence APIs."
+      },
+      {
+        "timestamp": "0:29",
+        "text": "And finally, we'll explore how you can build your own async sequences."
+      },
+      {
+        "timestamp": "0:34",
+        "text": "So let's dive right in."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "This is a really simple tool I wrote to illustrate some of the cool new stuff you can do with AsyncSequence."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "In this tool, we start off with a URL to an endpoint."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "It lists recent earthquakes."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Now, normally downloading stuff is really an asynchronous task that can take some time."
+      },
+      {
+        "timestamp": "0:54",
+        "text": "But in this case, we don't want to wait for all the things to download; instead, we want to show things as they are received."
+      },
+      {
+        "timestamp": "1:00",
+        "text": "So I decided to shake things up a bit and use the new async/await features to get the lines responded from this endpoint."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "The data that we're fetching is formatted as comma-separated text, so each line is a complete row of data."
+      },
+      {
+        "timestamp": "1:14",
+        "text": "Since the async sequence of lines is emitting each line as it's received, that means we can potentially have a really large download ahead of us."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "But by emitting them as we get them, the snippet feels really responsive, and the most awesome part about it is that you can use the same things that you're familiar with using from regular sequences in this new async context."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "That means that you can use the new for-await-in syntax to iterate, and functions like map, filter, and reduce; or -- like in this sample -- the dropFirst function to manipulate those values."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "So how does this work? Well, a lot of things that I'm going to talk about today have their groundwork based in the async/await talk."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "But let's recap a few key points."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "Async functions let you write concurrent code without the need for callbacks, by using the await keyword."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "Calling an async function will suspend and then be resumed whenever a value or error is produced."
+      },
+      {
+        "timestamp": "2:12",
+        "text": "AsyncSequence, on the other hand, will suspend on each element and resume when the underlying iterator produces a value or throws."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "Basically, as the name implies, they're just like regular sequences but with a few key differences."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "Namely, each element is delivered asynchronously."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "But because they are an asynchronous delivery, that means that failure is definitely a possibility."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "Some async sequences throw, but if failure is not an option, others do not."
+      },
+      {
+        "timestamp": "2:45",
+        "text": "Just like functions that throw, the compiler will help make sure that errors are handled when iterating or composing."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "Generally speaking, asynchronous sequences are a description of how to produce values over time."
+      },
+      {
+        "timestamp": "2:57",
+        "text": "So an async sequence may be zero or more values and then signify completion with returning a nil from its iterator, just like sequences."
+      },
+      {
+        "timestamp": "3:05",
+        "text": "When an error occurs, that's also a point at which the async sequence is at a terminal state, and after an error happens, they'll return nil for any subsequent calls to next on their iterator."
+      },
+      {
+        "timestamp": "3:17",
+        "text": "So let's take a dive into how that definition works by first starting off with regular iteration."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Here we have a pretty familiar pattern."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "This is a for-in loop."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "In this case, it's iterating quakes from a sequence and then calling a function when the magnitude is above a certain value."
+      },
+      {
+        "timestamp": "3:35",
+        "text": "The compiler has knowledge of how this iteration should work, but what it does isn't magic."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "The compilation step really just does some straightforward transformations."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Let's examine those transformations so you can understand what the asynchronous form of this is."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "This is roughly what the compiler does when building the previous code."
+      },
+      {
+        "timestamp": "3:56",
+        "text": "It first starts off by creating an iterator variable and then uses a while loop to get every quake produced by the iterator when next is invoked."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "To use the new async/await functionality, there is one slight alteration that can be made."
+      },
+      {
+        "timestamp": "4:10",
+        "text": "It's as simple as changing that next function to be an asynchronous one."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "We can now have the iteration participate in Swift concurrency by awaiting the next quake."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "Let's rewind back to uncover what this would have been like if the loop was on an async sequence."
+      },
+      {
+        "timestamp": "4:28",
+        "text": "As previously mentioned, we need to await each item out of the async sequence."
+      },
+      {
+        "timestamp": "4:33",
+        "text": "This is reflected in the new for-await-in syntax."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "This all means that if you know how to use Sequence, you already have a good idea on how to use AsyncSequence."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "There are a few ways you can utilize async sequences."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "As we just covered, you can use the new for-await-in syntax; or if the async sequence throws, you can use the new for-try-await-in syntax."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "This lets you easily iterate the values produced asynchronously -- without having to muck about with closures -- and use the syntax you are already familiar with to iterate through them."
+      },
+      {
+        "timestamp": "5:10",
+        "text": "Even things like break and continue just work."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "Now you have now had a good introduction to the theory of async sequences."
+      },
+      {
+        "timestamp": "5:18",
+        "text": "Let's explore that iteration just a bit further."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "Given a source that is an async sequence, you can await each value by using the for-await-in syntax."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "This means that it will await each item produced by the iterator, and when it would hit a terminal, it completes the loop."
+      },
+      {
+        "timestamp": "5:36",
+        "text": "When iterating async sequences, breaking is obviously a good way to terminate iteration early from inside the loop."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "This works just like regular sequences."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "Here we're breaking when the location data is not present for the quake."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "Or if we have some of value we want to skip, we can use continue."
+      },
+      {
+        "timestamp": "5:55",
+        "text": "In this case, if the depth is greater than some value, we're skipping those and continuing on to await the next quake."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "This next iteration from the download works just like before, but in this case, the source that we have can throw an error."
+      },
+      {
+        "timestamp": "6:12",
+        "text": "Just like throwing functions, try is required to process each element when the AsyncSequence being iterated can throw."
+      },
+      {
+        "timestamp": "6:20",
+        "text": "And also just like throwing functions, the compiler will detect when you're missing a try and offer you a Fix-it to correct the mistake."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "This means that when an async sequence can produce errors, you're always safe, because the language forces you to either throw that error or catch it."
+      },
+      {
+        "timestamp": "6:37",
+        "text": "This second iteration runs sequentially after the iteration of the first loop."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "Running code sequentially isn't always what's desired."
+      },
+      {
+        "timestamp": "6:46",
+        "text": "If it's useful to run the iteration concurrent to other things going on, you can create a new async task that encapsulates the iteration."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "This can be useful when you know the async sequences you're using might run indefinitely."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "Now, even though that sequence could potentially be indefinite, it's considerably less common to occur."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "But in the world of asynchronous behavior, it is something much more common and something that you need to consider when using them."
+      },
+      {
+        "timestamp": "7:15",
+        "text": "Thankfully, the facilities for concurrency in Swift make this really easy and safe to do."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "This can be also really helpful when you want to potentially cancel the iteration externally."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "Here we can run the two iterations concurrently and terminate the iteration later on."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "It's pretty easy with tasks to scope the work of an iteration that might be indefinite to the lifetime of some container."
+      },
+      {
+        "timestamp": "7:40",
+        "text": "Let's next take a tour of some of the AsyncSequence APIs that are available as of macOS Monterey, iOS 15, tvOS 15, and watchOS 8."
+      },
+      {
+        "timestamp": "7:51",
+        "text": "There are a lot of them, but I'll show you some of the highlights."
+      },
+      {
+        "timestamp": "7:55",
+        "text": "Reading from files is often a prime use case for asynchronous behavior."
+      },
+      {
+        "timestamp": "8:00",
+        "text": "FileHandle now has a new bytes property that gives access to an asynchronous sequence of bytes from that FileHandle."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "This can be used in conjunction with the new extension on AsyncSequence that converts asynchronous sequences of bytes into lines."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "But dealing with files is so common that we decided that URL should have accessors for both bytes and lines."
+      },
+      {
+        "timestamp": "8:24",
+        "text": "This is that same API that I used in the initial example."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "It's a convenience property on URL to return an AsyncSequence of lines from the contents, either from a file or from the network."
+      },
+      {
+        "timestamp": "8:37",
+        "text": "I'm certain this will make a number of previously really complicated tasks easy and safe."
+      },
+      {
+        "timestamp": "8:42",
+        "text": "Sometimes getting things from the network requires a bit more control over the responses and authentication."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "So URLSession now has a bytes function to fetch an async sequence of bytes given a URL or URLRequest."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "If you want to know more, you should definitely check out the session \"Use async/ await with URLSession\" for some more details on this and a whole lot more new asynchronous capabilities with URLSession."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "But files and networks are not the only thing that makes sense for AsyncSequence."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "Notifications can be now awaited with the new notifications API."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "And iteration is not the only way to interact with an AsyncSequence."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "In this example, we're awaiting the first notification for remote changes that has a store UUID that matches."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "Using methods like firstWhere, along with the notifications async sequence, allows for some really neat new design patterns that can make code that was previously expressing complicated logic now compact and easier to read."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "And if all of those weren't cool enough, there are a whole lot of new APIs for asynchronously manipulating values from async sequences."
+      },
+      {
+        "timestamp": "9:55",
+        "text": "These should be pretty familiar, because they're some of the same functions that are available on Sequence."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "We've already covered a few so far, like dropFirst and firstWhere, but there are a whole lot more than just those."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "Pretty much anything you can think of for using on Sequence now has an asynchronous counterpart for working with AsyncSequence."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "Now that was a lot to take in, and you might be thinking, \"Hey, those new APIs are really cool, and that syntax is super neat, but how can I make my own async sequences?\" Well, let's do exactly that! There are a few ways of implementing an async sequence, but I'm going to focus in on how to adapt your existing code."
+      },
+      {
+        "timestamp": "10:35",
+        "text": "Particularly, there are a few design patterns that work really well with AsyncSequence, and we have some fantastic facilities for making what you already have interact with this new concept."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "Some of those design patterns are like closures that are called multiple times, but also some delegates can work nicely too."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "Pretty much anything that does not need a response back and is just informing of a new value that occurs can be a prime candidate for making an async sequence."
+      },
+      {
+        "timestamp": "11:04",
+        "text": "These design patterns are really common and you likely already have a few in your apps today."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "This is an example of a common handler pattern."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "It's a class that has a handler property and a start and stop method."
+      },
+      {
+        "timestamp": "11:17",
+        "text": "It seems like a perfect candidate for AsyncSequence."
+      },
+      {
+        "timestamp": "11:21",
+        "text": "Existing usage might be something like this where a monitor is created, and a handler to get values is assigned, and then the monitor is started so that quakes can be sent to the handler."
+      },
+      {
+        "timestamp": "11:32",
+        "text": "Later on, the monitor might be stopped to cancel the events being produced."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "We can use the same interface to adapt the usage to the new AsyncStream type."
+      },
+      {
+        "timestamp": "11:44",
+        "text": "It takes only a small bit of code to use it and allows you to build an async sequence."
+      },
+      {
+        "timestamp": "11:51",
+        "text": "When constructing an async stream, an element type and construction closure is specified."
+      },
+      {
+        "timestamp": "11:57",
+        "text": "The closure has a continuation that can yield values more than once, finish, or handle termination."
+      },
+      {
+        "timestamp": "12:04",
+        "text": "So this means, in this case, the monitor can be created inside the construction closure."
+      },
+      {
+        "timestamp": "12:10",
+        "text": "And then the handler can be assigned to yield quakes to the continuation."
+      },
+      {
+        "timestamp": "12:14",
+        "text": "And then the onTermination can handle the cancellation and cleanup."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "And then we can start monitoring."
+      },
+      {
+        "timestamp": "12:20",
+        "text": "The same monitor code that we had before can easily be encapsulated within the async stream's construction."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "This reduces the need to replicate the same logic in every use site."
+      },
+      {
+        "timestamp": "12:30",
+        "text": "And this is how the usage of this async stream would work."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "You can use the powerful transformation functions -- like filter -- and the new for-await-in syntax."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "This lets you focus on the intent of your code instead of needing to worry about replicating the bookkeeping, since everything is wrapped up into one place."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "There's a lot of flexibility with AsyncStream to create your own async sequences."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "This is really just one example and there are likely numerous others that you can adapt in your own code."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "AsyncStream is a great way to adapt your existing code to become an async sequence."
+      },
+      {
+        "timestamp": "13:05",
+        "text": "It handles all of the things you would expect from an async sequence, like safety, iteration, and cancellation; but they also handle buffering."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "AsyncStream is a solid way of building your own async sequences and a suitable return type from your own APIs, since the only source of elements being produced is from the construction."
+      },
+      {
+        "timestamp": "13:25",
+        "text": "And if you need to represent errors being thrown? Well, we have a type for that! AsyncThrowingStream that is just like AsyncStream but can handle errors."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "It offers the same flexibility and safety as AsyncStream but can handle failures by throwing from its iteration."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "AsyncSequence is a really powerful tool that is both safe and familiar for dealing with more than one asynchronous value."
+      },
+      {
+        "timestamp": "13:51",
+        "text": "If you know how to use Sequence, you already know how to use AsyncSequence."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "We've gone over what async sequences are, and how they're used, and introduced you to AsyncStream."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "We've dived into the theory and what defines them, and a few of the newly introduced async sequences, and finally, how to build your own."
+      },
+      {
+        "timestamp": "14:11",
+        "text": "I eagerly await what you do with them next."
+      },
+      {
+        "timestamp": "14:14",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -154,5 +665,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10109"
     }
   ],
-  "extractedAt": "2026-10-11T16:43:29.997Z"
+  "extractedAt": "2026-10-17T18:53:25.341Z"
 }

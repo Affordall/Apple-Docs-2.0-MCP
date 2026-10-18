@@ -1,10 +1,20 @@
-import { vi } from 'vitest';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-/**
- * Mock data for tests
- */
+import { registerTools } from '../../src/tools/handlers.js';
+
+/** A client connected to a server with every tool registered, over the SDK's in-memory transport */
+export async function connectClient(): Promise<Client> {
+  const server = new McpServer({ name: 'apple-docs-mcp', version: 'test' });
+  registerTools(server);
+  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: 'test', version: 'test' });
+  await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+  return client;
+}
+
 export const mockData = {
-  // Framework index data
   frameworkIndex: {
     interfaceLanguages: {
       swift: [
@@ -62,7 +72,6 @@ export const mockData = {
     },
   },
 
-  // Search results HTML
   searchResultsHtml: `
     <html>
       <body>
@@ -88,13 +97,14 @@ export const mockData = {
     </html>
   `,
 
-  // Doc JSON data
   docJsonData: {
+    identifier: { url: 'doc://com.apple.uikit/documentation/UIKit/UIView', interfaceLanguage: 'swift' },
     primaryContentSections: [
       {
         kind: 'declarations',
         declarations: [
           {
+            platforms: [],
             tokens: [
               { text: 'class', kind: 'keyword' },
               { text: ' ' },
@@ -111,7 +121,6 @@ export const mockData = {
     },
   },
 
-  // Technologies data
   technologiesData: {
     technologies: [
       {
@@ -132,61 +141,8 @@ export const mockData = {
   },
 };
 
-/**
- * Create a mock HTTP client
- */
-export const createMockHttpClient = () => ({
-  getJson: vi.fn(),
-  getText: vi.fn(),
-  get: vi.fn(),
-});
-
-/**
- * Create a mock cache
- */
-export const createMockCache = () => ({
-  get: vi.fn(),
-  set: vi.fn(),
-  has: vi.fn(),
-  delete: vi.fn(),
-  clear: vi.fn(),
-  size: vi.fn(() => 0),
-  getStats: vi.fn(() => ({ hits: 0, misses: 0, sets: 0, deletes: 0 })),
-});
-
-/**
- * Wait for all promises to resolve
- */
-export const flushPromises = () => new Promise(resolve => setImmediate(resolve));
-
-/**
- * Mock MCP server response
- */
-export const createMockMCPResponse = (content: string, isError = false) => ({
-  content: [
-    {
-      type: 'text' as const,
-      text: content,
-    },
-  ],
-  isError,
-});
-
-/**
- * Create a test framework index with specific items
- */
 export const createTestFrameworkIndex = (items: any[]) => ({
   interfaceLanguages: {
     swift: items,
   },
-});
-
-/**
- * Create a test search result
- */
-export const createTestSearchResult = (title: string, url: string, description: string) => ({
-  title,
-  url,
-  description,
-  type: 'Documentation',
 });

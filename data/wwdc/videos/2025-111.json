@@ -3,15 +3,56 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/111/",
   "title": "Keynote (ASL)",
-  "speakers": [],
-  "duration": "",
+  "duration": "1:32:26",
   "topics": [
     "Essentials"
   ],
   "hasTranscript": false,
   "hasCode": false,
+  "chapters": [
+    {
+      "timestamp": "0:00:00",
+      "title": "Introduction",
+      "duration": "3:48"
+    },
+    {
+      "timestamp": "0:03:48",
+      "title": "iOS",
+      "duration": "37:47"
+    },
+    {
+      "timestamp": "0:41:35",
+      "title": "watchOS",
+      "duration": "7:13"
+    },
+    {
+      "timestamp": "0:48:48",
+      "title": "tvOS",
+      "duration": "4:47"
+    },
+    {
+      "timestamp": "0:53:35",
+      "title": "macOS",
+      "duration": "12:48"
+    },
+    {
+      "timestamp": "1:06:23",
+      "title": "visionOS",
+      "duration": "7:54"
+    },
+    {
+      "timestamp": "1:14:17",
+      "title": "iPadOS",
+      "duration": "11:48"
+    },
+    {
+      "timestamp": "1:26:05",
+      "title": "Developers",
+      "duration": "6:21"
+    }
+  ],
   "resources": {
     "resourceLinks": []
   },
-  "extractedAt": "2026-10-11T16:33:18.965Z"
+  "extractedAt": "2026-10-17T18:43:15.311Z"
 }

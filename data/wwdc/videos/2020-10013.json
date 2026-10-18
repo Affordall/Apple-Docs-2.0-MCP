@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10013/",
   "title": "Get to know Metal function pointers",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Graphics & Games"
@@ -11,8 +10,324 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nHello everyone. My name is Rich Forster, and I'm a GPU software engineer at Apple. In this session, I'm going to talk to you about the new function pointers API that we've added to Metal this year. Let's start with the humble function pointer.\n\nFunction pointers give us the power to refer to code that we can call. They make our code extensible by allowing us to write our code so that it can later call code that we have never seen before.\n\nThe classic example is the callback, where execution jumps to code identified with a function pointer. This lets us provide functions for plug-ins, specializations or notifications. But we can do so much more. Today I am going to talk about how we expose function pointer support in Metal and how we use visible functions to achieve our goals. I will cover the different compilation models we support, what they mean, and when to use them. I will then discuss tables of visible functions and finish with a discussion of performance. So let's start with function pointers in Metal.\n\nWhen we added function pointers to Metal, we knew there would be a range of opportunities to use them. The obvious case is ray tracing, where we use function pointers to specify our custom intersection functions. And I would encourage you to watch the ray tracing talk which accompanies this session.\n\nRay tracing is also a great place to talk about other uses of function pointers, and that's where I'd like to start today.\n\nWhen we apply ray tracing to the classic Cornell Box, we fire our rays into the scene, and when they hit surfaces, we need to shade the intersections. Typically, we have the material for the surface that we intersect, and then we will continue tracing until we hit a light, at which point we will evaluate the contribution of the light. Let's revisit the process flow for ray tracing. First, we generate rays which start from the camera and are emitted into the scene.\n\nWe then test those rays for intersection with the geometry in the scene.\n\nNext, we compute a color at each intersection point and update the image. This process is called shading.\n\nThe shading process can also generate additional rays. So we test those rays for intersection with the scene and repeat this process as many times as we'd like to simulate light bouncing around the scene. Today, we're going to simplify things for this presentation and start by considering a path tracer that performs a single intersection and then shades the result of that intersection. This will be in a single computer kernel that creates a compute pipeline that includes the code for each of these three stages. However, the stage I want to focus on is shading. This is the last step before we output our image and provides a range of opportunities to use function pointers.\n\nWithin our ray tracing kernel, shading happens near the end.\n\nOnce we have an intersection, we find the matching material and perform our shading for that material. In this example, all of our material and lighting code lives in the shade function which exists elsewhere in our file. Let's dig deeper into the shade function.\n\nOur shade function has several steps.\n\nThis is a simple path tracer, so it immediately calculates the lighting from the light at the intersection point on the surface.\n\nAnd then we use the material to apply that lighting at the intersection point.\n\nIn terms of flow, we can consider lighting and material as separate stages. But there's more than one type of light and more than one type of material.\n\nWe can break lighting into separate types of light, which will require different code for each light type.\n\nAnd the code for materials can be even more varied than the code for lights. We are going to use the new visible function type in Metal to help us work with our lighting and material functions.\n\nVisible is a new function qualification attribute like vertex, fragment or kernel. We can use the visible attributes on function definitions, and when we use the visible attribute, we are declaring that we want to manipulate the function from the Metal API. We check if we can use the API to perform this manipulation with the device query.\n\nWith visible functions, we can consider our code as a flexible object that we can refer to. In this case, let's consider the code for our area lights. That code is an object that can exist outside of the kernel that represents our pipeline. The code can exist in another Metal file or another Metal library.\n\nTo declare our lighting function as visible, we add the visible attribute before the definition of the function.\n\nThis will allow us to create a Metal function object to represent the code in this function.\n\nOur next step is to connect our Metal shader code to our pipeline so that we can call it. First, we wrap our area light code in a Metal function object. Then the new Metal function object can be added to the pipeline.\n\nWith the visible attribute on our area light function, we can wrap it in a Metal function object on the CPU.\n\nWe create a Metal function object by name for our visible function using the standard methods.\n\nWe then add the function object to the compute pipeline descriptor as part of the linkedFunctions to allow the pipeline creation process to add it to the pipeline so that we can refer to it later with a function pointer. Now that we're talking about adding visible functions to our pipelines, we need to discuss the compilation model choices that we have available.\n\nOnce we have Metal function objects for each of our lighting and material functions, we can add them to our pipeline.\n\nWhen we build our pipeline, we can take a copy of each of those visible functions. We call this \"single compilation,\" since we then have a single object that represents our pipeline and all of the visible functions that it uses.\n\nWe use the same linkedFunctions object that we saw earlier to list the functions that we may call from our pipeline. Then we create our ComputePipelineState using the standard pipeline creation API.\n\nThe creation of our pipeline results in an object that contains both a specialized version of our kernel code and specialized copies of all of our functions. This specialization is similar to link-time optimization, where the kernel code and the visible functions can be optimized based on their usage.\n\nHowever, this optimization can increase the time taken to create our pipeline and results in a larger pipeline object due to the copies of the function objects that we add into the pipeline. But what we may want to do is have our function objects outside of our pipeline as separate objects that our pipeline can call but does not have to copy. This is the foundation of a separately compiled pipeline.\n\nWhen we create each Metal function object, we can compile each function to a stand-alone GPU binary form so that we can keep the function code separate and reuse it across multiple pipelines.\n\nTo compile our functions to binary, we will use a function descriptor. This allows us to add options to the creation of a Metal function object. In the case of creating our function, this snippet of code creates the same resulting Metal function as the same method with a name parameter. However, the functionDescriptor lets us specify more configuration options.\n\nWe request binary precompilation by using the \"options\" property of the descriptor. The function creation will now precompile our function to binary.\n\nWe then provide our new function in the binary function's array of the linkedFunctions object. This indicates that we are referring to the binary version of the function rather than requesting copying and specialization of the function for the compute pipeline. As you can see, we can mix and match precompiled functions with those we want specialized. And then we use the standard call to create the pipeline, as before.\n\nNow that we have covered both single and separate compilation, this is a good point to compare the advantages of each.\n\nFor single compilation, we create visible functions using our standard methods. For separate compilation, we will precompile to binary to allow us to share the compile binary and avoid the binary compilation of our function during pipeline creation.\n\nWhen we configure our pipeline descriptor, we use the functions array to indicate that we want them specialized and the binaryFunctions array to indicate that we want to use the binary versions.\n\nThe result of specialization is a larger pipeline in the single-compilation case. Separate compilation will result in a pipeline that adds calls to binary functions, and the binary functions will be shared.\n\nSpecialization of functions also requires a longer pipeline creation time than adding calls to binary functions. As I mentioned earlier, this is similar to link-time optimization, where the compiler can take advantage of knowing the whole pipeline but requires extra build time to apply the specializations.\n\nAll of that function specialization means that single compilation has the best runtime performance. The flexibility of the separately compiled pipeline means that there is some runtime overhead to calling our binary functions. As we saw earlier, you can mix sets of precompiled functions and functions for specialization, but a fully specialized, single-compilation pipeline will offer the best performance. It should always be possible to create a new single-compilation pipeline in the background to replace any separately compiled functions in an existing pipeline.\n\nGoing back to our separate compilation pipeline, we have our array of functions available to call from the pipeline. However, whenever you think you have a fixed set of functions, another function always appears.\n\nIn this case, we have a new wood material that we want to add to our pipeline. Incremental compilation is intended for adding new functions to an existing pipeline. The appearance of new functions is typically quite common in dynamic environments, especially games where streaming may load new assets with new shaders.\n\nPutting this into code, first we need to make the choice to support incremental compilation when we create our initial compute pipeline. The default is to not support incremental compilation because enabling the later addition of binary functions means that pipeline creation has to expect possible calls to binary functions even if none are specified at pipeline creation time.\n\nWe then use a function descriptor to create the Metal function object for our wood shader as a precompiled binary function.\n\nFinally, we use a newly added method on ComputePipelineState to create a compute pipeline with any additional binary functions.\n\nNext, I want to talk about visible function tables. Visible function tables are how we pass function pointers to our visible functions to the GPU.\n\nGoing back to the set of the lighting and material functions that we considered for our shading, we need to provide these to the kernel running on the GPU.\n\nTo allow us to group our related functions together and pass them to the GPU, we create visible function tables using the Metal API.\n\nVisible function tables are then an object that we can pass to our Metal shader code.\n\nBefore we start, let's add some using declarations to define our function pointer types to avoid making our code examples too wordy.\n\nVisible function tables can be specified as kernel parameters, and they use buffer binding points. We can also pass them in argument buffers.\n\nThen, in our shaders, we access our functions by index. We can take a pointer to the function or call it directly from the table.\n\nOn the CPU, we allocate the visible function tables from the ComputePipelineState based on the number of function entries we want in the table.\n\nWe then populate the table with handles to the functions that we specified when creating the pipeline state.\n\nFinally, when we come to use the table, we set it on our computeCommandEncoder or argumentEncoder as required. Don't forget to call useResource if using an argumentEncoder. To ensure that using incrementally compiled pipelines is as low-cost as possible, we ensure that you can reuse the visible function tables from the ancestor pipelines. The handles that are already in the table are still valid, and you just need to add the new function handles to the table. You do not need to create and build an entirely new table. And finally, you just need to make sure that you do not access the newly added function handles from older pipelines.\n\nLast but not least today, I want to discuss the performance considerations of using function pointers in your application. There's three main areas we will cover in performance. Let's start with function groups for optimization.\n\nGoing back to our earlier diagram, we could already see that we had groups of functions for specific purposes. However, pipeline creation is unaware of these relationships.\n\nWe can group the functions based upon their use in the shader. We know which functions we will be using for lighting and which we will use for materials.\n\nTo express the grouping of functions in our shading function, we've updated it to include function groups for the calls we make. In Metal, function groups let us tell the compiler where the functions will be used.\n\nIn our shader code, we apply function groups attributes to the lines where we invoke our functions to give names to the group of possible functions that are callable from that location.\n\nThen, when configuring our compute pipeline descriptor, we specify the groups in a dictionary with the setter functions that may be called for each group. This gives the compiler the maximum amount of information possible and can help with the optimization when generating the pipeline.\n\nOn top of the specialization that the compiler performs for functions in our functions array, the compiler is able to take advantage of any commonalities between the setter functions in each group and then apply that to the call site marked with the function groups attribute.\n\nAll this new flexibility also means that you can now implement recursive functions.\n\nIf we go back to where we started with the ray tracing process flow, this model of ray tracing, where we consider multiple bounces, can be implemented in either an iterative or recursive manner.\n\nIf we focus on the relationship between intersection and shading, we can follow this call graph.\n\nWith our recursive path tracer, after an intersection, we shade the intersection point.\n\nIn this case, we hit our new wood material function. This wood material includes a reflection component, and so it intersects another ray with the scene and shades the intersection.\n\nAgain, we intersect a surface covered in the wood material. This then reflects and intersects the scene again. We hit the wood material one more time. We could continue, but typically you would limit the depth in a recursive ray tracer for both performance and to avoid overflowing the stack, so we will stop here. To support the varying stack usage for compute kernels that call chains of visible functions, we expose the maxCallStackDepth property on the compute pipeline descriptor so that we can specify how deep we expect to call functions from our kernel. The default is 1 so that the typical use cases of visible functions and intersection functions work out of the box. This value is expected to be used for any chains of visible function calls, but in the case of ray tracing, this code could have been written in an iterative manner to reduce stack usage. The last performance consideration I want to discuss today was the impact of divergence when we use function pointers. Before diving into function pointers, though, I should highlight that last year's \"Ray Tracing with Metal\" presentation covered high-level methods to handle the divergence inherent in ray tracing when subsequent bounces become less coherent. This included ray coherency with block linear layout, ray compaction for active rays and interleaved tiling for load balancing across GPUs. I recommend reviewing that presentation for a great review of ideas of ray tracing optimizations.\n\nFor function pointers, however, we need to consider divergence at the thread level. When we dispatch our threadgroups, we know that they execute in smaller groups of threads, defined as a SIMD group. In this example, we have eight SIMD groups.\n\nThe threads in the SIMD group perform best when they execute the same instruction at the same time.\n\nDivergence occurs when the next instruction to execute is different for the threads of the SIMD group, typically, when they reach a branch in our shader code. This is normally handled by letting a subset of the threads execute their instruction while the other threads are left unused. We have the best performance when all threads are actively executing useful instructions.\n\nFunction pointers are another case that can lead to divergence. When we invoke a function via a function pointer, we need to consider how divergent the setter function pointers will be. In the worst case, within a SIMD group, each thread could be calling a different function, and the execution time will be the time to execute each of the required functions one after the other.\n\nBut if we consider the entire threadgroup, we may have enough work to create full SIMD groups.\n\nTo handle our divergence, we are going to reorder the function calls to introduce coherence to our SIMD groups. This means that the function call for one thread will likely be executed by another thread in the threadgroup.\n\nIn terms of code, we will start by writing all the function parameters and the index of the thread and the function to call to threadgroup memory. We will then use our favorite sort to sort a function indices.\n\nNext, we invoke the functions in their sorted order.\n\nThe results of the functions go back to threadgroup memory, and then each thread can read its result from there. We can also implement a similar version using device memory for our parameters and results. In the case of calling complex functions, this should reduce the overhead of divergence. There's a lot of great things you can do with function pointers in Metal. Today we've covered the creation and use of visible functions and how we add them to visible function tables to provide functions that we can call from our compute kernels.\n\nWe've discussed the different compilation models that allow you to choose how you balance pipeline size and creation time against runtime performance and needing to be able to dynamically add functions. And we finished on some performance considerations for using function pointers in your application. I've really enjoyed working on function pointers this year, and I'm really glad to be able to share it with you. I hope you've had a great WWDC.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Hello everyone. My name is Rich Forster, and I'm a GPU software engineer at Apple. In this session, I'm going to talk to you about the new function pointers API that we've added to Metal this year. Let's start with the humble function pointer."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "Function pointers give us the power to refer to code that we can call. They make our code extensible by allowing us to write our code so that it can later call code that we have never seen before."
+      },
+      {
+        "timestamp": "0:35",
+        "text": "The classic example is the callback, where execution jumps to code identified with a function pointer. This lets us provide functions for plug-ins, specializations or notifications. But we can do so much more. Today I am going to talk about how we expose function pointer support in Metal and how we use visible functions to achieve our goals. I will cover the different compilation models we support, what they mean, and when to use them. I will then discuss tables of visible functions and finish with a discussion of performance. So let's start with function pointers in Metal."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "When we added function pointers to Metal, we knew there would be a range of opportunities to use them. The obvious case is ray tracing, where we use function pointers to specify our custom intersection functions. And I would encourage you to watch the ray tracing talk which accompanies this session."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "Ray tracing is also a great place to talk about other uses of function pointers, and that's where I'd like to start today."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "When we apply ray tracing to the classic Cornell Box, we fire our rays into the scene, and when they hit surfaces, we need to shade the intersections. Typically, we have the material for the surface that we intersect, and then we will continue tracing until we hit a light, at which point we will evaluate the contribution of the light. Let's revisit the process flow for ray tracing. First, we generate rays which start from the camera and are emitted into the scene."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "We then test those rays for intersection with the geometry in the scene."
+      },
+      {
+        "timestamp": "2:19",
+        "text": "Next, we compute a color at each intersection point and update the image. This process is called shading."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "The shading process can also generate additional rays. So we test those rays for intersection with the scene and repeat this process as many times as we'd like to simulate light bouncing around the scene. Today, we're going to simplify things for this presentation and start by considering a path tracer that performs a single intersection and then shades the result of that intersection. This will be in a single computer kernel that creates a compute pipeline that includes the code for each of these three stages. However, the stage I want to focus on is shading. This is the last step before we output our image and provides a range of opportunities to use function pointers."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "Within our ray tracing kernel, shading happens near the end."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "Once we have an intersection, we find the matching material and perform our shading for that material. In this example, all of our material and lighting code lives in the shade function which exists elsewhere in our file. Let's dig deeper into the shade function."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "Our shade function has several steps."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "This is a simple path tracer, so it immediately calculates the lighting from the light at the intersection point on the surface."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "And then we use the material to apply that lighting at the intersection point."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "In terms of flow, we can consider lighting and material as separate stages. But there's more than one type of light and more than one type of material."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "We can break lighting into separate types of light, which will require different code for each light type."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "And the code for materials can be even more varied than the code for lights. We are going to use the new visible function type in Metal to help us work with our lighting and material functions."
+      },
+      {
+        "timestamp": "4:16",
+        "text": "Visible is a new function qualification attribute like vertex, fragment or kernel. We can use the visible attributes on function definitions, and when we use the visible attribute, we are declaring that we want to manipulate the function from the Metal API. We check if we can use the API to perform this manipulation with the device query."
+      },
+      {
+        "timestamp": "4:38",
+        "text": "With visible functions, we can consider our code as a flexible object that we can refer to. In this case, let's consider the code for our area lights. That code is an object that can exist outside of the kernel that represents our pipeline. The code can exist in another Metal file or another Metal library."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "To declare our lighting function as visible, we add the visible attribute before the definition of the function."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "This will allow us to create a Metal function object to represent the code in this function."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "Our next step is to connect our Metal shader code to our pipeline so that we can call it. First, we wrap our area light code in a Metal function object. Then the new Metal function object can be added to the pipeline."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "With the visible attribute on our area light function, we can wrap it in a Metal function object on the CPU."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "We create a Metal function object by name for our visible function using the standard methods."
+      },
+      {
+        "timestamp": "5:44",
+        "text": "We then add the function object to the compute pipeline descriptor as part of the linkedFunctions to allow the pipeline creation process to add it to the pipeline so that we can refer to it later with a function pointer. Now that we're talking about adding visible functions to our pipelines, we need to discuss the compilation model choices that we have available."
+      },
+      {
+        "timestamp": "6:05",
+        "text": "Once we have Metal function objects for each of our lighting and material functions, we can add them to our pipeline."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "When we build our pipeline, we can take a copy of each of those visible functions. We call this \"single compilation,\" since we then have a single object that represents our pipeline and all of the visible functions that it uses."
+      },
+      {
+        "timestamp": "6:29",
+        "text": "We use the same linkedFunctions object that we saw earlier to list the functions that we may call from our pipeline. Then we create our ComputePipelineState using the standard pipeline creation API."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "The creation of our pipeline results in an object that contains both a specialized version of our kernel code and specialized copies of all of our functions. This specialization is similar to link-time optimization, where the kernel code and the visible functions can be optimized based on their usage."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "However, this optimization can increase the time taken to create our pipeline and results in a larger pipeline object due to the copies of the function objects that we add into the pipeline. But what we may want to do is have our function objects outside of our pipeline as separate objects that our pipeline can call but does not have to copy. This is the foundation of a separately compiled pipeline."
+      },
+      {
+        "timestamp": "7:30",
+        "text": "When we create each Metal function object, we can compile each function to a stand-alone GPU binary form so that we can keep the function code separate and reuse it across multiple pipelines."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "To compile our functions to binary, we will use a function descriptor. This allows us to add options to the creation of a Metal function object. In the case of creating our function, this snippet of code creates the same resulting Metal function as the same method with a name parameter. However, the functionDescriptor lets us specify more configuration options."
+      },
+      {
+        "timestamp": "8:09",
+        "text": "We request binary precompilation by using the \"options\" property of the descriptor. The function creation will now precompile our function to binary."
+      },
+      {
+        "timestamp": "8:21",
+        "text": "We then provide our new function in the binary function's array of the linkedFunctions object. This indicates that we are referring to the binary version of the function rather than requesting copying and specialization of the function for the compute pipeline. As you can see, we can mix and match precompiled functions with those we want specialized. And then we use the standard call to create the pipeline, as before."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "Now that we have covered both single and separate compilation, this is a good point to compare the advantages of each."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "For single compilation, we create visible functions using our standard methods. For separate compilation, we will precompile to binary to allow us to share the compile binary and avoid the binary compilation of our function during pipeline creation."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "When we configure our pipeline descriptor, we use the functions array to indicate that we want them specialized and the binaryFunctions array to indicate that we want to use the binary versions."
+      },
+      {
+        "timestamp": "9:22",
+        "text": "The result of specialization is a larger pipeline in the single-compilation case. Separate compilation will result in a pipeline that adds calls to binary functions, and the binary functions will be shared."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "Specialization of functions also requires a longer pipeline creation time than adding calls to binary functions. As I mentioned earlier, this is similar to link-time optimization, where the compiler can take advantage of knowing the whole pipeline but requires extra build time to apply the specializations."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "All of that function specialization means that single compilation has the best runtime performance. The flexibility of the separately compiled pipeline means that there is some runtime overhead to calling our binary functions. As we saw earlier, you can mix sets of precompiled functions and functions for specialization, but a fully specialized, single-compilation pipeline will offer the best performance. It should always be possible to create a new single-compilation pipeline in the background to replace any separately compiled functions in an existing pipeline."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "Going back to our separate compilation pipeline, we have our array of functions available to call from the pipeline. However, whenever you think you have a fixed set of functions, another function always appears."
+      },
+      {
+        "timestamp": "10:44",
+        "text": "In this case, we have a new wood material that we want to add to our pipeline. Incremental compilation is intended for adding new functions to an existing pipeline. The appearance of new functions is typically quite common in dynamic environments, especially games where streaming may load new assets with new shaders."
+      },
+      {
+        "timestamp": "11:04",
+        "text": "Putting this into code, first we need to make the choice to support incremental compilation when we create our initial compute pipeline. The default is to not support incremental compilation because enabling the later addition of binary functions means that pipeline creation has to expect possible calls to binary functions even if none are specified at pipeline creation time."
+      },
+      {
+        "timestamp": "11:27",
+        "text": "We then use a function descriptor to create the Metal function object for our wood shader as a precompiled binary function."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "Finally, we use a newly added method on ComputePipelineState to create a compute pipeline with any additional binary functions."
+      },
+      {
+        "timestamp": "11:45",
+        "text": "Next, I want to talk about visible function tables. Visible function tables are how we pass function pointers to our visible functions to the GPU."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "Going back to the set of the lighting and material functions that we considered for our shading, we need to provide these to the kernel running on the GPU."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "To allow us to group our related functions together and pass them to the GPU, we create visible function tables using the Metal API."
+      },
+      {
+        "timestamp": "12:16",
+        "text": "Visible function tables are then an object that we can pass to our Metal shader code."
+      },
+      {
+        "timestamp": "12:23",
+        "text": "Before we start, let's add some using declarations to define our function pointer types to avoid making our code examples too wordy."
+      },
+      {
+        "timestamp": "12:31",
+        "text": "Visible function tables can be specified as kernel parameters, and they use buffer binding points. We can also pass them in argument buffers."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "Then, in our shaders, we access our functions by index. We can take a pointer to the function or call it directly from the table."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "On the CPU, we allocate the visible function tables from the ComputePipelineState based on the number of function entries we want in the table."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "We then populate the table with handles to the functions that we specified when creating the pipeline state."
+      },
+      {
+        "timestamp": "13:06",
+        "text": "Finally, when we come to use the table, we set it on our computeCommandEncoder or argumentEncoder as required. Don't forget to call useResource if using an argumentEncoder. To ensure that using incrementally compiled pipelines is as low-cost as possible, we ensure that you can reuse the visible function tables from the ancestor pipelines. The handles that are already in the table are still valid, and you just need to add the new function handles to the table. You do not need to create and build an entirely new table. And finally, you just need to make sure that you do not access the newly added function handles from older pipelines."
+      },
+      {
+        "timestamp": "13:48",
+        "text": "Last but not least today, I want to discuss the performance considerations of using function pointers in your application. There's three main areas we will cover in performance. Let's start with function groups for optimization."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "Going back to our earlier diagram, we could already see that we had groups of functions for specific purposes. However, pipeline creation is unaware of these relationships."
+      },
+      {
+        "timestamp": "14:13",
+        "text": "We can group the functions based upon their use in the shader. We know which functions we will be using for lighting and which we will use for materials."
+      },
+      {
+        "timestamp": "14:23",
+        "text": "To express the grouping of functions in our shading function, we've updated it to include function groups for the calls we make. In Metal, function groups let us tell the compiler where the functions will be used."
+      },
+      {
+        "timestamp": "14:37",
+        "text": "In our shader code, we apply function groups attributes to the lines where we invoke our functions to give names to the group of possible functions that are callable from that location."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "Then, when configuring our compute pipeline descriptor, we specify the groups in a dictionary with the setter functions that may be called for each group. This gives the compiler the maximum amount of information possible and can help with the optimization when generating the pipeline."
+      },
+      {
+        "timestamp": "15:08",
+        "text": "On top of the specialization that the compiler performs for functions in our functions array, the compiler is able to take advantage of any commonalities between the setter functions in each group and then apply that to the call site marked with the function groups attribute."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "All this new flexibility also means that you can now implement recursive functions."
+      },
+      {
+        "timestamp": "15:31",
+        "text": "If we go back to where we started with the ray tracing process flow, this model of ray tracing, where we consider multiple bounces, can be implemented in either an iterative or recursive manner."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "If we focus on the relationship between intersection and shading, we can follow this call graph."
+      },
+      {
+        "timestamp": "15:50",
+        "text": "With our recursive path tracer, after an intersection, we shade the intersection point."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "In this case, we hit our new wood material function. This wood material includes a reflection component, and so it intersects another ray with the scene and shades the intersection."
+      },
+      {
+        "timestamp": "16:08",
+        "text": "Again, we intersect a surface covered in the wood material. This then reflects and intersects the scene again. We hit the wood material one more time. We could continue, but typically you would limit the depth in a recursive ray tracer for both performance and to avoid overflowing the stack, so we will stop here. To support the varying stack usage for compute kernels that call chains of visible functions, we expose the maxCallStackDepth property on the compute pipeline descriptor so that we can specify how deep we expect to call functions from our kernel. The default is 1 so that the typical use cases of visible functions and intersection functions work out of the box. This value is expected to be used for any chains of visible function calls, but in the case of ray tracing, this code could have been written in an iterative manner to reduce stack usage. The last performance consideration I want to discuss today was the impact of divergence when we use function pointers. Before diving into function pointers, though, I should highlight that last year's \"Ray Tracing with Metal\" presentation covered high-level methods to handle the divergence inherent in ray tracing when subsequent bounces become less coherent. This included ray coherency with block linear layout, ray compaction for active rays and interleaved tiling for load balancing across GPUs. I recommend reviewing that presentation for a great review of ideas of ray tracing optimizations."
+      },
+      {
+        "timestamp": "17:37",
+        "text": "For function pointers, however, we need to consider divergence at the thread level. When we dispatch our threadgroups, we know that they execute in smaller groups of threads, defined as a SIMD group. In this example, we have eight SIMD groups."
+      },
+      {
+        "timestamp": "17:54",
+        "text": "The threads in the SIMD group perform best when they execute the same instruction at the same time."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "Divergence occurs when the next instruction to execute is different for the threads of the SIMD group, typically, when they reach a branch in our shader code. This is normally handled by letting a subset of the threads execute their instruction while the other threads are left unused. We have the best performance when all threads are actively executing useful instructions."
+      },
+      {
+        "timestamp": "18:24",
+        "text": "Function pointers are another case that can lead to divergence. When we invoke a function via a function pointer, we need to consider how divergent the setter function pointers will be. In the worst case, within a SIMD group, each thread could be calling a different function, and the execution time will be the time to execute each of the required functions one after the other."
+      },
+      {
+        "timestamp": "18:47",
+        "text": "But if we consider the entire threadgroup, we may have enough work to create full SIMD groups."
+      },
+      {
+        "timestamp": "18:54",
+        "text": "To handle our divergence, we are going to reorder the function calls to introduce coherence to our SIMD groups. This means that the function call for one thread will likely be executed by another thread in the threadgroup."
+      },
+      {
+        "timestamp": "19:08",
+        "text": "In terms of code, we will start by writing all the function parameters and the index of the thread and the function to call to threadgroup memory. We will then use our favorite sort to sort a function indices."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "Next, we invoke the functions in their sorted order."
+      },
+      {
+        "timestamp": "19:27",
+        "text": "The results of the functions go back to threadgroup memory, and then each thread can read its result from there. We can also implement a similar version using device memory for our parameters and results. In the case of calling complex functions, this should reduce the overhead of divergence. There's a lot of great things you can do with function pointers in Metal. Today we've covered the creation and use of visible functions and how we add them to visible function tables to provide functions that we can call from our compute kernels."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "We've discussed the different compilation models that allow you to choose how you balance pipeline size and creation time against runtime performance and needing to be able to dynamically add functions. And we finished on some performance considerations for using function pointers in your application. I've really enjoyed working on function pointers this year, and I'm really glad to be able to share it with you. I hope you've had a great WWDC."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -132,5 +447,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10157"
     }
   ],
-  "extractedAt": "2026-10-11T16:46:34.701Z"
+  "extractedAt": "2026-10-17T18:56:30.011Z"
 }

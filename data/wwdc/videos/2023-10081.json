@@ -3,8 +3,7 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10081/",
   "title": "Enhance your spatial computing app with RealityKit",
-  "speakers": [],
-  "duration": "",
+  "duration": "20:41",
   "topics": [
     "Graphics & Games",
     "Spatial Computing"
@@ -12,8 +11,744 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop ♪ ♪ Hello, my name is Yujin, and I'm an engineer on the RealityKit team.\n\nToday, I'm going to show you new features in RealityKit that you can use to enhance your spatial computing apps.\n\nSince the time we released RealityKit in 2019, We've seen apps use its rich feature set to create some amazing experiences.\n\nNow spatial computing adds even more features to RealityKit, like portals, particle emitters, RealityView attachments, and many more.\n\nIn the session titled \"Build spatial experiences with RealityKit,\" we learned about the basic building blocks of RealityKit: entities, which are container objects; components, which define specific behavior on entities; and systems, which act on both entities and components to add functionality.\n\nWe covered the RealityView API, which acts as a bridge between SwiftUI and RealityKit.\n\nWe also showed you how to add interaction, animations, and Spatial Audio to your RealityKit scene.\n\nIf you haven't watched it already, I highly recommend that you check out that session.\n\nIn this session, we will cover new features in RealityKit that will help make your app even more engaging and immersive.\n\nFirst, we will learn how to embed SwiftUI views into our RealityKit content using attachments in RealityView.\n\nNext, we will look at how to add video playback within our RealityKit scene.\n\nThen we will learn how to use portals to open a window to an alternate world.\n\nWe'll go through how to use the Particle Emitters API to enhance your scene with visual effects.\n\nFinally, we'll learn how to use anchors in RealityKit to attach 3D content to real-world locations, such as a wall.\n\nLet's get started with RealityView attachments.\n\nAttachments are a useful way to embed SwiftUI content into your RealityKit scene.\n\nIn this example app, I've used attachments to put text labels beneath the models of the earth and moon.\n\nI've also attached a view that explains how the moon affects tides on our ocean.\n\nLet's see how to make this in code.\n\nInside of my app, I'm using a RealityView to render my earth model.\n\nA RealityView is a view that lets us add RealityKit entities.\n\nEntities need to be added to a RealityView in order to be rendered, animated, and simulated.\n\nHere we simply load an entity for the earth and add it to the RealityView's content.\n\nLet's now change our RealityView to use attachments.\n\nAttachments are views that can be placed at specific locations relative to your RealityKit content.\n\nThere are two parts to setting up attachments.\n\nFirst, there's the added parameter in the make closure of our RealityView.\n\nSecond, there's an attachments view builder that is added to our RealityView.\n\nLet's cover the attachments view builder first.\n\nHere you can provide SwiftUI views that you want to add to your RealityKit content.\n\nIn this example, I've added a text view to label the Earth.\n\nWe'll also add a tag modifier to the view so that we can later identify it when our view gets delivered to the make closure as an entity.\n\nThis tag can be any hashable value.\n\nHere I've used the string earth_label.\n\nIn the make closure of our RealityView, the attachments parameter contains our views that are now represented as entities.\n\nTo get our view in entity form, we call entity(for:) on our attachments and pass in the same tag that we provided in the view builder, earth_label.\n\nThe result that we get is a view attachment entity, which we can add to our RealityKit content, just like any other entity.\n\nTo make the label appear beneath the earth, we'll add the attachment as a child of our earth entity and position it slightly below.\n\nWe can now repeat this process for all the other attachments we want to add using a different tag for each.\n\nLet's take a look in Xcode.\n\nIn my sample app, I'll add three attachments to my RealityView.\n\nFirst, I'll add a label below the earth.\n\nI'll also do the same for the moon.\n\nFinally, I'll add a short paragraph explaining the role of the moon's orbit on the tides.\n\nI've styled this using a glassBackgroundEffect in SwiftUI.\n\nIn the make closure of the RealityView, I'll add the corresponding entities to my content.\n\nFirst, I'll add the earthAttachment below the earth.\n\nI'll do the same for the moon.\n\nFinally, I'll place the tides explainer to the left of my container entity.\n\nI'll build and run my app, and we'll see the attachments that I've created displayed next to my models.\n\nLet's recap the data flow for attachments.\n\nAttachments start off in the attachments view builder in our RealityView.\n\nHere, we can provide SwiftUI views that we want to add to our RealityKit scene.\n\nIn the make closure of our RealityView, we get the attachments back as entities, which we can then add to our scene.\n\nWe can also update the entities inside of the update closure.\n\nThis closure is called when there are changes to our SwiftUI view state.\n\nYou can use this to respond to dynamically changing content in your RealityView.\n\nFor a more detailed usage of attachments, check out the session \"Work with Reality Composer Pro content in Xcode.\" RealityView attachments are a useful way of adding text content in other UI elements to a scene.\n\nAdditionally, we can also add a video to our app to make it more engaging.\n\nTo do this, let's use VideoPlayerComponent.\n\nVideo player component is a new component type in RealityKit that is used for embedding video content inside of a 3D scene.\n\nAs a reminder, components define specific behavior that you can attach to entities.\n\nTo play a video using VideoPlayerComponent, we'll first load a video file from our resources bundle.\n\nThen we'll use that to create an AVPlayer instance.\n\nWith it, we can now create a VideoPlayerComponent.\n\nWhen you attach a VideoPlayerComponent to an entity, a rectangular mesh that matches the aspect ratio of the video is automatically generated for you.\n\nThis behavior is analogous to existing video player APIs, such as VideoPlayer in SwiftUI and AVPlayerLayer in Core Animation.\n\nHowever, since RealityKit is a 3D framework, your video will be represented as an entity with a mesh so that you can move and position it in 3D space.\n\nAll video formats that are supported by AV Foundation will work with VideoPlayerComponent, including 2D video formats and 3D video using MV-HEVC.\n\nFinally, VideoPlayerComponent will automatically display captions that are provided through the AVPlayer.\n\nTo learn more about how to create your own video content, including 3D videos, check out the session entitled \"Deliver video content for spatial experiences.\" To add video to my RealityKit scene, we'll first create an AVPlayerItem using the URL to my video asset.\n\nWe'll then create an AVPlayer.\n\nOn the entity, we'll add a VideoPlayerComponent initialized with the AVPlayer that we just created.\n\nVideoPlayerComponent will automatically generate a mesh that is sized based on the aspect ratio of my video.\n\nBecause RealityKit works in real-world units, by default, the video will be one meter in height.\n\nTo make the video a different size, we can scale the entity.\n\nIn my case, I'd like the video to be 40 centimeters tall, so we'll multiply the entity scale by 0.4.\n\nFinally, we're ready to play the video.\n\nWe'll set the current item to our AVPlayerItem, and then call play on the AVPlayer.\n\nLet's rebuild and run our app with this code.\n\nI've added a Learn More button to our app, which will add the video entity to our scene.\n\nOn button click, I'll fade in the video using an opacity component and a fromToByAnimation.\n\nFor our video content, I've prepared a short clip that explains the role of the Moon's gravitational force on the Earth's rising tides.\n\nLet's take a look.\n\nThe moon orbits our planet.\n\nIts gravitational pull exerts a powerful force on our oceans, causing it to bulge ever so slightly towards the lunar sphere. < VideoPlayerComponent respects the systemwide preferences for captions.\n\nLet's turn them on in the Settings app under the Accessibility section.\n\nAnd so it is, that twice a day, in a never-ending cycle, the tides rise and fall, driven by this unceasing interplay of earth and moon. < VideoPlayerComponent also supports passthrough tinting.\n\nWhen this feature is enabled, your passthrough content is adjusted to match colors in the video.\n\nThis is the same treatment that is used when watching movies and TV shows inside of the TV app on this platform.\n\nTo use passthrough tinting, you can set the isPassthroughTintingEnabled property to true.\n\nYou can also subscribe to VideoPlayerEvents to be notified when properties on a VideoPlayerComponent change, such as the content type, viewing mode, and video size.\n\nTo subscribe to events, you can call the subscribe function on your RealityViews content and specify the event type and entity.\n\nYou can respond to events inside of the event handler closure.\n\nVideoPlayerComponent is a great addition to our 3D scene.\n\nSo far, our app features a model of the earth and moon, but I'd like to present it against a backdrop of outer space.\n\nI think it would be pretty cool if we can make ourselves a magic window in the room that reveals the moon's orbit in outer space.\n\nWe can do this using a portal to render our scene.\n\nA portal creates an opening to a different world that is visible through a mesh surface.\n\nEntities inside of this world use separate lighting and are masked by the portal's geometry.\n\nThis example demonstrates three distinct features in RealityKit.\n\nFirst, a portal is used to render the scene in outer space.\n\nThen a particle effect is used to decorate the rim of the portal.\n\nFinally, anchoring is used to place the portal on the wall of our room.\n\nLet's start with portals.\n\nTo make a portal, we must first create a world.\n\nTo do this, we add an entity in our scene that has a World component.\n\nThis component marks its entity tree as belonging to a different world.\n\nEntities in a world are only visible through a portal surface.\n\nTo add content to our world, we can attach entities as children of the world entity.\n\nHere, we'll add models for the sky, earth, and moon, as well as an ImageBasedLight to define the lighting inside of the world.\n\nAll descendants of the world entity will appear only inside of this world.\n\nNext, we'll make a portal.\n\nTo do this, we add an entity with a model component.\n\nThe model component contains two properties, a mesh and a material.\n\nFor the mesh, we'll generate a circular plane to act as the surface of the portal.\n\nFor the material, we'll assign a new portal material in order to make the mesh appear as a portal.\n\nTo connect the portal with our world, we'll add a portal component to the entity and set its target property to the world entity.\n\nThis allows the portal to act as a mask to reveal the content inside of our world.\n\nLet's see how this looks in code.\n\nIn our RealityView, I've added calls to two functions that will implement makeWorld and makePortal.\n\nIn our makeWorld function, we'll create a world entity and populate it with the portal's contents.\n\nIn the makePortal function, we'll create a portal and link it to the world that we just created.\n\nFinally, we'll add both of these entities to our RealityView's content.\n\nLet's dive into each of these functions.\n\nInside of the makeWorld function, we create an entity and attach a WorldComponent.\n\nNext, we load an EnvironmentResource to use as our ImageBasedLight.\n\nWe'll apply this to the world using the ImageBasedLight component and ImageBasedLight ReceiverComponent.\n\nTo learn more about image-based lighting in RealityKit, check out the session \"Explore rendering for spatial computing.\" Next, we'll populate the world with our contents.\n\nI'll load models for the earth, moon, and sky, and add them to the world as children.\n\nBecause these entities are children of the world, they will only be visible through the portal.\n\nLet's move on to the makePortal function.\n\nTo make a portal, we first need a mesh.\n\nWe'll create one by making a model component for the entity.\n\nTo make our portal circular, we'll generate a plane with equal dimensions and a corner radius that is half the size.\n\nI'll also create a PortalMaterial to use as a material for the ModelComponent.\n\nFinally, we'll also attach a portal component that is initialized with the world entity that we created earlier.\n\nThis links the portal with the world so that we can see the world's contents through the mesh.\n\nNext, let's decorate the rim of the portal with a particle effect.\n\nTo do this, we can use the ParticleEmitterComponent provided in RealityKit.\n\nParticle emitters can be used to represent many different visual effects in RealityKit, such as sparks, snow, and impact effects.\n\nParticle emitters can be created either via Reality Composer Pro or at runtime using RealityKit through the ParticleEmitterComponent Here, I've prepared a particle asset using Reality Composer Pro.\n\nWe can use this to decorate the portal that we created earlier.\n\nLet's load this into our scene and modify the particle properties at runtime using RealityKit.\n\nTo update the particles over time, I've created a custom system called ParticleTransitionSystem.\n\nHere, we'll use an EntityQuery to find entities that have a ParticleEmitterComponent.\n\nInside of the system update, we'll perform our query and iterate over the resulting entities.\n\nOn each entity, we'll call the function updateParticles, which we will implement next.\n\nTo learn more about custom systems in RealityKit, check out the session \"Build spatial experiences with RealityKit.\" Inside of our updateParticles function, we'll first get the ParticleEmitterComponent from the entity.\n\nThe ParticleEmitterComponent contains many properties that control various aspects of particle look and behavior.\n\nHere, we'll set the lifeSpan and vortexStrength properties based on the entity's scale, so that as the entity grows in size, the particles start spinning faster around the portal.\n\nFinally, let's apply our changes by assigning the component back to the entity.\n\nAnd we are set.\n\nTo learn about all the different properties on particle emitters, check out the session \"Meet Reality Composer Pro.\" We're almost done adding the final touch to our app.\n\nTo finish, let's attach our portal to the wall in our room.\n\nTo do this, we can use anchors in RealityKit.\n\nAnchors can be used to place content on walls, floors, or locations relative to your head or hand.\n\nAnchors in RealityKit support two tracking modes, .continuous and .once.\n\nWhen using the continuous tracking mode, the anchor entity moves along with the anchor over time, such as when your head moves.\n\nWhen using the once tracking mode, the anchor entity will not move after being positioned once.\n\nTo listen to when an entity becomes anchored, you can subscribe to the AnchoredStateChanged event in RealityKit.\n\nNote that while you can use anchors to parent entities to place 3D content, explicit transforms of the anchors themselves are not visible to the app to preserve user privacy.\n\nTo get access to anchor transforms, you will need to use ARKit.\n\nFor more information on this, check out the session, \"Meet ARKit for spatial computing.\" To use anchors in our app, we first need to modify our app to use an immersive space.\n\nAn immersive space is a special type of container that allows your app to render content outside of the window.\n\nTo do this, we can add an ImmersiveSpace to our SwiftUI scene.\n\nWe'll also add an .immersionStyle modifier and set it to mixed.\n\nInside of the ImmersiveSpace, we can use a RealityView to place content that will be anchored.\n\nTo learn more about Immersive Spaces, check out the session \"Go beyond the window with SwiftUI.\" Inside of our RealityView, we can use an anchor entity as a container for our portal.\n\nWe initialize an anchor entity with a specification of the type of surface that we would like to anchor our content on.\n\nIn our case, we are looking for a vertical wall with a minimum size of one meter by one meter.\n\nWhen an anchor is found that matches the specification, RealityKit will automatically attach our content to the wall.\n\nAnd we are finally done.\n\nWhen we run our app, we get a portal that is attached to the wall.\n\nFrom portals and particles to anchors and attachments, RealityKit provides many features that let you build immersive experiences.\n\nLet's summarize everything that we went over in this session.\n\nAttachments in RealityView let you embed SwiftUI content inside of your entity hierarchy so that you can place UI elements alongside 3D elements.\n\nVideoPlayerComponent, portals, and particle effects let you add dynamic elements to enhance your scene in RealityKit.\n\nFinally, anchors let you attach 3D content to real-world surfaces such as your floor or wall.\n\nThe session \"Build spatial experiences with RealityKit\" goes over key concepts like entities, components, and RealityView.\n\nThe session \"Work with Reality Composer Pro content in Xcode\" takes you through the process of building an immersive app using Reality Composer Pro together with RealityKit.\n\nI can't wait to see all the things you'll create using these new features in RealityKit.\n\nThank you for watching.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop ♪ ♪ Hello, my name is Yujin, and I'm an engineer on the RealityKit team."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "Today, I'm going to show you new features in RealityKit that you can use to enhance your spatial computing apps."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "Since the time we released RealityKit in 2019, We've seen apps use its rich feature set to create some amazing experiences."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "Now spatial computing adds even more features to RealityKit, like portals, particle emitters, RealityView attachments, and many more."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "In the session titled \"Build spatial experiences with RealityKit,\" we learned about the basic building blocks of RealityKit: entities, which are container objects; components, which define specific behavior on entities; and systems, which act on both entities and components to add functionality."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "We covered the RealityView API, which acts as a bridge between SwiftUI and RealityKit."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "We also showed you how to add interaction, animations, and Spatial Audio to your RealityKit scene."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "If you haven't watched it already, I highly recommend that you check out that session."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "In this session, we will cover new features in RealityKit that will help make your app even more engaging and immersive."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "First, we will learn how to embed SwiftUI views into our RealityKit content using attachments in RealityView."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "Next, we will look at how to add video playback within our RealityKit scene."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "Then we will learn how to use portals to open a window to an alternate world."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "We'll go through how to use the Particle Emitters API to enhance your scene with visual effects."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "Finally, we'll learn how to use anchors in RealityKit to attach 3D content to real-world locations, such as a wall."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "Let's get started with RealityView attachments."
+      },
+      {
+        "timestamp": "2:08",
+        "text": "Attachments are a useful way to embed SwiftUI content into your RealityKit scene."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "In this example app, I've used attachments to put text labels beneath the models of the earth and moon."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "I've also attached a view that explains how the moon affects tides on our ocean."
+      },
+      {
+        "timestamp": "2:27",
+        "text": "Let's see how to make this in code."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "Inside of my app, I'm using a RealityView to render my earth model."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "A RealityView is a view that lets us add RealityKit entities."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "Entities need to be added to a RealityView in order to be rendered, animated, and simulated."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "Here we simply load an entity for the earth and add it to the RealityView's content."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "Let's now change our RealityView to use attachments."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "Attachments are views that can be placed at specific locations relative to your RealityKit content."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "There are two parts to setting up attachments."
+      },
+      {
+        "timestamp": "3:05",
+        "text": "First, there's the added parameter in the make closure of our RealityView."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "Second, there's an attachments view builder that is added to our RealityView."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "Let's cover the attachments view builder first."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "Here you can provide SwiftUI views that you want to add to your RealityKit content."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "In this example, I've added a text view to label the Earth."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "We'll also add a tag modifier to the view so that we can later identify it when our view gets delivered to the make closure as an entity."
+      },
+      {
+        "timestamp": "3:39",
+        "text": "This tag can be any hashable value."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "Here I've used the string earth_label."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "In the make closure of our RealityView, the attachments parameter contains our views that are now represented as entities."
+      },
+      {
+        "timestamp": "3:54",
+        "text": "To get our view in entity form, we call entity(for:) on our attachments and pass in the same tag that we provided in the view builder, earth_label."
+      },
+      {
+        "timestamp": "4:05",
+        "text": "The result that we get is a view attachment entity, which we can add to our RealityKit content, just like any other entity."
+      },
+      {
+        "timestamp": "4:13",
+        "text": "To make the label appear beneath the earth, we'll add the attachment as a child of our earth entity and position it slightly below."
+      },
+      {
+        "timestamp": "4:23",
+        "text": "We can now repeat this process for all the other attachments we want to add using a different tag for each."
+      },
+      {
+        "timestamp": "4:29",
+        "text": "Let's take a look in Xcode."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "In my sample app, I'll add three attachments to my RealityView."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "First, I'll add a label below the earth."
+      },
+      {
+        "timestamp": "4:40",
+        "text": "I'll also do the same for the moon."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "Finally, I'll add a short paragraph explaining the role of the moon's orbit on the tides."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "I've styled this using a glassBackgroundEffect in SwiftUI."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "In the make closure of the RealityView, I'll add the corresponding entities to my content."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "First, I'll add the earthAttachment below the earth."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "I'll do the same for the moon."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "Finally, I'll place the tides explainer to the left of my container entity."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "I'll build and run my app, and we'll see the attachments that I've created displayed next to my models."
+      },
+      {
+        "timestamp": "5:23",
+        "text": "Let's recap the data flow for attachments."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "Attachments start off in the attachments view builder in our RealityView."
+      },
+      {
+        "timestamp": "5:32",
+        "text": "Here, we can provide SwiftUI views that we want to add to our RealityKit scene."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "In the make closure of our RealityView, we get the attachments back as entities, which we can then add to our scene."
+      },
+      {
+        "timestamp": "5:46",
+        "text": "We can also update the entities inside of the update closure."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "This closure is called when there are changes to our SwiftUI view state."
+      },
+      {
+        "timestamp": "5:56",
+        "text": "You can use this to respond to dynamically changing content in your RealityView."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "For a more detailed usage of attachments, check out the session \"Work with Reality Composer Pro content in Xcode.\" RealityView attachments are a useful way of adding text content in other UI elements to a scene."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "Additionally, we can also add a video to our app to make it more engaging."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "To do this, let's use VideoPlayerComponent."
+      },
+      {
+        "timestamp": "6:27",
+        "text": "Video player component is a new component type in RealityKit that is used for embedding video content inside of a 3D scene."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "As a reminder, components define specific behavior that you can attach to entities."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "To play a video using VideoPlayerComponent, we'll first load a video file from our resources bundle."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "Then we'll use that to create an AVPlayer instance."
+      },
+      {
+        "timestamp": "6:54",
+        "text": "With it, we can now create a VideoPlayerComponent."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "When you attach a VideoPlayerComponent to an entity, a rectangular mesh that matches the aspect ratio of the video is automatically generated for you."
+      },
+      {
+        "timestamp": "7:09",
+        "text": "This behavior is analogous to existing video player APIs, such as VideoPlayer in SwiftUI and AVPlayerLayer in Core Animation."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "However, since RealityKit is a 3D framework, your video will be represented as an entity with a mesh so that you can move and position it in 3D space."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "All video formats that are supported by AV Foundation will work with VideoPlayerComponent, including 2D video formats and 3D video using MV-HEVC."
+      },
+      {
+        "timestamp": "7:43",
+        "text": "Finally, VideoPlayerComponent will automatically display captions that are provided through the AVPlayer."
+      },
+      {
+        "timestamp": "7:51",
+        "text": "To learn more about how to create your own video content, including 3D videos, check out the session entitled \"Deliver video content for spatial experiences.\" To add video to my RealityKit scene, we'll first create an AVPlayerItem using the URL to my video asset."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "We'll then create an AVPlayer."
+      },
+      {
+        "timestamp": "8:15",
+        "text": "On the entity, we'll add a VideoPlayerComponent initialized with the AVPlayer that we just created."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "VideoPlayerComponent will automatically generate a mesh that is sized based on the aspect ratio of my video."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Because RealityKit works in real-world units, by default, the video will be one meter in height."
+      },
+      {
+        "timestamp": "8:37",
+        "text": "To make the video a different size, we can scale the entity."
+      },
+      {
+        "timestamp": "8:41",
+        "text": "In my case, I'd like the video to be 40 centimeters tall, so we'll multiply the entity scale by 0.4."
+      },
+      {
+        "timestamp": "8:50",
+        "text": "Finally, we're ready to play the video."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "We'll set the current item to our AVPlayerItem, and then call play on the AVPlayer."
+      },
+      {
+        "timestamp": "8:59",
+        "text": "Let's rebuild and run our app with this code."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "I've added a Learn More button to our app, which will add the video entity to our scene."
+      },
+      {
+        "timestamp": "9:08",
+        "text": "On button click, I'll fade in the video using an opacity component and a fromToByAnimation."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "For our video content, I've prepared a short clip that explains the role of the Moon's gravitational force on the Earth's rising tides."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "Let's take a look."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "The moon orbits our planet."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "Its gravitational pull exerts a powerful force on our oceans, causing it to bulge ever so slightly towards the lunar sphere. < VideoPlayerComponent respects the systemwide preferences for captions."
+      },
+      {
+        "timestamp": "9:43",
+        "text": "Let's turn them on in the Settings app under the Accessibility section."
+      },
+      {
+        "timestamp": "9:49",
+        "text": "And so it is, that twice a day, in a never-ending cycle, the tides rise and fall, driven by this unceasing interplay of earth and moon. < VideoPlayerComponent also supports passthrough tinting."
+      },
+      {
+        "timestamp": "10:08",
+        "text": "When this feature is enabled, your passthrough content is adjusted to match colors in the video."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "This is the same treatment that is used when watching movies and TV shows inside of the TV app on this platform."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "To use passthrough tinting, you can set the isPassthroughTintingEnabled property to true."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "You can also subscribe to VideoPlayerEvents to be notified when properties on a VideoPlayerComponent change, such as the content type, viewing mode, and video size."
+      },
+      {
+        "timestamp": "10:39",
+        "text": "To subscribe to events, you can call the subscribe function on your RealityViews content and specify the event type and entity."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "You can respond to events inside of the event handler closure."
+      },
+      {
+        "timestamp": "10:53",
+        "text": "VideoPlayerComponent is a great addition to our 3D scene."
+      },
+      {
+        "timestamp": "10:58",
+        "text": "So far, our app features a model of the earth and moon, but I'd like to present it against a backdrop of outer space."
+      },
+      {
+        "timestamp": "11:06",
+        "text": "I think it would be pretty cool if we can make ourselves a magic window in the room that reveals the moon's orbit in outer space."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "We can do this using a portal to render our scene."
+      },
+      {
+        "timestamp": "11:19",
+        "text": "A portal creates an opening to a different world that is visible through a mesh surface."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "Entities inside of this world use separate lighting and are masked by the portal's geometry."
+      },
+      {
+        "timestamp": "11:32",
+        "text": "This example demonstrates three distinct features in RealityKit."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "First, a portal is used to render the scene in outer space."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "Then a particle effect is used to decorate the rim of the portal."
+      },
+      {
+        "timestamp": "11:45",
+        "text": "Finally, anchoring is used to place the portal on the wall of our room."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "Let's start with portals."
+      },
+      {
+        "timestamp": "11:53",
+        "text": "To make a portal, we must first create a world."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "To do this, we add an entity in our scene that has a World component."
+      },
+      {
+        "timestamp": "12:02",
+        "text": "This component marks its entity tree as belonging to a different world."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "Entities in a world are only visible through a portal surface."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "To add content to our world, we can attach entities as children of the world entity."
+      },
+      {
+        "timestamp": "12:17",
+        "text": "Here, we'll add models for the sky, earth, and moon, as well as an ImageBasedLight to define the lighting inside of the world."
+      },
+      {
+        "timestamp": "12:27",
+        "text": "All descendants of the world entity will appear only inside of this world."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "Next, we'll make a portal."
+      },
+      {
+        "timestamp": "12:35",
+        "text": "To do this, we add an entity with a model component."
+      },
+      {
+        "timestamp": "12:38",
+        "text": "The model component contains two properties, a mesh and a material."
+      },
+      {
+        "timestamp": "12:43",
+        "text": "For the mesh, we'll generate a circular plane to act as the surface of the portal."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "For the material, we'll assign a new portal material in order to make the mesh appear as a portal."
+      },
+      {
+        "timestamp": "12:55",
+        "text": "To connect the portal with our world, we'll add a portal component to the entity and set its target property to the world entity."
+      },
+      {
+        "timestamp": "13:03",
+        "text": "This allows the portal to act as a mask to reveal the content inside of our world."
+      },
+      {
+        "timestamp": "13:11",
+        "text": "Let's see how this looks in code."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "In our RealityView, I've added calls to two functions that will implement makeWorld and makePortal."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "In our makeWorld function, we'll create a world entity and populate it with the portal's contents."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "In the makePortal function, we'll create a portal and link it to the world that we just created."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "Finally, we'll add both of these entities to our RealityView's content."
+      },
+      {
+        "timestamp": "13:39",
+        "text": "Let's dive into each of these functions."
+      },
+      {
+        "timestamp": "13:43",
+        "text": "Inside of the makeWorld function, we create an entity and attach a WorldComponent."
+      },
+      {
+        "timestamp": "13:50",
+        "text": "Next, we load an EnvironmentResource to use as our ImageBasedLight."
+      },
+      {
+        "timestamp": "13:55",
+        "text": "We'll apply this to the world using the ImageBasedLight component and ImageBasedLight ReceiverComponent."
+      },
+      {
+        "timestamp": "14:02",
+        "text": "To learn more about image-based lighting in RealityKit, check out the session \"Explore rendering for spatial computing.\" Next, we'll populate the world with our contents."
+      },
+      {
+        "timestamp": "14:14",
+        "text": "I'll load models for the earth, moon, and sky, and add them to the world as children."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "Because these entities are children of the world, they will only be visible through the portal."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "Let's move on to the makePortal function."
+      },
+      {
+        "timestamp": "14:29",
+        "text": "To make a portal, we first need a mesh."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "We'll create one by making a model component for the entity."
+      },
+      {
+        "timestamp": "14:36",
+        "text": "To make our portal circular, we'll generate a plane with equal dimensions and a corner radius that is half the size."
+      },
+      {
+        "timestamp": "14:44",
+        "text": "I'll also create a PortalMaterial to use as a material for the ModelComponent."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "Finally, we'll also attach a portal component that is initialized with the world entity that we created earlier."
+      },
+      {
+        "timestamp": "14:57",
+        "text": "This links the portal with the world so that we can see the world's contents through the mesh."
+      },
+      {
+        "timestamp": "15:04",
+        "text": "Next, let's decorate the rim of the portal with a particle effect."
+      },
+      {
+        "timestamp": "15:09",
+        "text": "To do this, we can use the ParticleEmitterComponent provided in RealityKit."
+      },
+      {
+        "timestamp": "15:14",
+        "text": "Particle emitters can be used to represent many different visual effects in RealityKit, such as sparks, snow, and impact effects."
+      },
+      {
+        "timestamp": "15:24",
+        "text": "Particle emitters can be created either via Reality Composer Pro or at runtime using RealityKit through the ParticleEmitterComponent Here, I've prepared a particle asset using Reality Composer Pro."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "We can use this to decorate the portal that we created earlier."
+      },
+      {
+        "timestamp": "15:42",
+        "text": "Let's load this into our scene and modify the particle properties at runtime using RealityKit."
+      },
+      {
+        "timestamp": "15:49",
+        "text": "To update the particles over time, I've created a custom system called ParticleTransitionSystem."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "Here, we'll use an EntityQuery to find entities that have a ParticleEmitterComponent."
+      },
+      {
+        "timestamp": "16:03",
+        "text": "Inside of the system update, we'll perform our query and iterate over the resulting entities."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "On each entity, we'll call the function updateParticles, which we will implement next."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "To learn more about custom systems in RealityKit, check out the session \"Build spatial experiences with RealityKit.\" Inside of our updateParticles function, we'll first get the ParticleEmitterComponent from the entity."
+      },
+      {
+        "timestamp": "16:32",
+        "text": "The ParticleEmitterComponent contains many properties that control various aspects of particle look and behavior."
+      },
+      {
+        "timestamp": "16:39",
+        "text": "Here, we'll set the lifeSpan and vortexStrength properties based on the entity's scale, so that as the entity grows in size, the particles start spinning faster around the portal."
+      },
+      {
+        "timestamp": "16:51",
+        "text": "Finally, let's apply our changes by assigning the component back to the entity."
+      },
+      {
+        "timestamp": "16:56",
+        "text": "And we are set."
+      },
+      {
+        "timestamp": "16:58",
+        "text": "To learn about all the different properties on particle emitters, check out the session \"Meet Reality Composer Pro.\" We're almost done adding the final touch to our app."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "To finish, let's attach our portal to the wall in our room."
+      },
+      {
+        "timestamp": "17:14",
+        "text": "To do this, we can use anchors in RealityKit."
+      },
+      {
+        "timestamp": "17:19",
+        "text": "Anchors can be used to place content on walls, floors, or locations relative to your head or hand."
+      },
+      {
+        "timestamp": "17:27",
+        "text": "Anchors in RealityKit support two tracking modes, .continuous and .once."
+      },
+      {
+        "timestamp": "17:32",
+        "text": "When using the continuous tracking mode, the anchor entity moves along with the anchor over time, such as when your head moves."
+      },
+      {
+        "timestamp": "17:40",
+        "text": "When using the once tracking mode, the anchor entity will not move after being positioned once."
+      },
+      {
+        "timestamp": "17:47",
+        "text": "To listen to when an entity becomes anchored, you can subscribe to the AnchoredStateChanged event in RealityKit."
+      },
+      {
+        "timestamp": "17:54",
+        "text": "Note that while you can use anchors to parent entities to place 3D content, explicit transforms of the anchors themselves are not visible to the app to preserve user privacy."
+      },
+      {
+        "timestamp": "18:06",
+        "text": "To get access to anchor transforms, you will need to use ARKit."
+      },
+      {
+        "timestamp": "18:11",
+        "text": "For more information on this, check out the session, \"Meet ARKit for spatial computing.\" To use anchors in our app, we first need to modify our app to use an immersive space."
+      },
+      {
+        "timestamp": "18:23",
+        "text": "An immersive space is a special type of container that allows your app to render content outside of the window."
+      },
+      {
+        "timestamp": "18:30",
+        "text": "To do this, we can add an ImmersiveSpace to our SwiftUI scene."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "We'll also add an .immersionStyle modifier and set it to mixed."
+      },
+      {
+        "timestamp": "18:40",
+        "text": "Inside of the ImmersiveSpace, we can use a RealityView to place content that will be anchored."
+      },
+      {
+        "timestamp": "18:46",
+        "text": "To learn more about Immersive Spaces, check out the session \"Go beyond the window with SwiftUI.\" Inside of our RealityView, we can use an anchor entity as a container for our portal."
+      },
+      {
+        "timestamp": "18:59",
+        "text": "We initialize an anchor entity with a specification of the type of surface that we would like to anchor our content on."
+      },
+      {
+        "timestamp": "19:06",
+        "text": "In our case, we are looking for a vertical wall with a minimum size of one meter by one meter."
+      },
+      {
+        "timestamp": "19:13",
+        "text": "When an anchor is found that matches the specification, RealityKit will automatically attach our content to the wall."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "And we are finally done."
+      },
+      {
+        "timestamp": "19:22",
+        "text": "When we run our app, we get a portal that is attached to the wall."
+      },
+      {
+        "timestamp": "19:28",
+        "text": "From portals and particles to anchors and attachments, RealityKit provides many features that let you build immersive experiences."
+      },
+      {
+        "timestamp": "19:37",
+        "text": "Let's summarize everything that we went over in this session."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "Attachments in RealityView let you embed SwiftUI content inside of your entity hierarchy so that you can place UI elements alongside 3D elements."
+      },
+      {
+        "timestamp": "19:51",
+        "text": "VideoPlayerComponent, portals, and particle effects let you add dynamic elements to enhance your scene in RealityKit."
+      },
+      {
+        "timestamp": "20:00",
+        "text": "Finally, anchors let you attach 3D content to real-world surfaces such as your floor or wall."
+      },
+      {
+        "timestamp": "20:08",
+        "text": "The session \"Build spatial experiences with RealityKit\" goes over key concepts like entities, components, and RealityView."
+      },
+      {
+        "timestamp": "20:17",
+        "text": "The session \"Work with Reality Composer Pro content in Xcode\" takes you through the process of building an immersive app using Reality Composer Pro together with RealityKit."
+      },
+      {
+        "timestamp": "20:28",
+        "text": "I can't wait to see all the things you'll create using these new features in RealityKit."
+      },
+      {
+        "timestamp": "20:32",
+        "text": "Thank you for watching."
+      },
+      {
+        "timestamp": "20:34",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -57,6 +792,43 @@
       "title": "Anchoring the portal",
       "language": "swift",
       "code": "import SwiftUI\nimport RealityKit\n\nstruct PortalApp: App {\n\n    @State private var immersionStyle: ImmersionStyle = .mixed\n\n    var body: some SwiftUI.Scene {\n        ImmersiveSpace {\n            RealityView { content in\n                let anchor = AnchorEntity(.plane(.vertical, classification: .wall,\n                                                 minimumBounds: [1, 1]))\n                content.add(anchor)\n\n                anchor.addChild(makePortal())\n            }\n        }\n        .immersionStyle(selection: $immersionStyle, in: .mixed)\n    }\n}"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:05"
+    },
+    {
+      "timestamp": "2:05",
+      "title": "RealityView attachments",
+      "duration": "4:06"
+    },
+    {
+      "timestamp": "6:11",
+      "title": "Video playback",
+      "duration": "4:48"
+    },
+    {
+      "timestamp": "10:59",
+      "title": "Portals",
+      "duration": "4:05"
+    },
+    {
+      "timestamp": "15:04",
+      "title": "Particle emitters",
+      "duration": "2:02"
+    },
+    {
+      "timestamp": "17:06",
+      "title": "Anchors",
+      "duration": "2:22"
+    },
+    {
+      "timestamp": "19:28",
+      "title": "Wrap-up",
+      "duration": "1:13"
     }
   ],
   "resources": {
@@ -119,5 +891,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10273"
     }
   ],
-  "extractedAt": "2026-10-11T16:37:05.177Z"
+  "extractedAt": "2026-10-17T18:47:05.450Z"
 }

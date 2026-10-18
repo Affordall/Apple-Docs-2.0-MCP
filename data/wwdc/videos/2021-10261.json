@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10261/",
   "title": "Faster and simpler notarization for Mac apps",
-  "speakers": [],
   "duration": "",
   "topics": [
     "App Store, Distribution & Marketing",
@@ -13,8 +12,216 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Olivia Hillman: Hi, I'm Olivia Hillman, and I'm a security engineer working on Apple's Notary service.\n\nI'm going to talk to you about some exciting work we've been doing to make notarizing Mac apps faster and simpler.\n\nI'll start with a brief overview of what the Notary service is.\n\nThen I'll dive into our new tool and I'll share how you can get started using it.\n\nSo, let's begin! Notarization is for Mac developers that distribute their software outside of the App Store, and this talk specifically is for those of you that use the existing command-line tool, altool to interact with Notary.\n\nIf you're notarizing with Xcode only, your workflow isn't changing.\n\nMac developers submit their software to be notarized before it's distributed, so it can run on a user's Mac.\n\nThis notarization process gives users confidence that software running on their machines has been checked by Apple for malicious components.\n\nNotarization has been helping to protect customers since macOS 10.14.\n\nAnd now, we've made it faster and simpler to use.\n\nFor more background about Notary, check out our in-depth 2019 talk \"All about Notarization\".\n\nLet's take a look at the Notary workflow.\n\nDevelopers build their software and send it to us for notarization.\n\nThe Notary service runs automated analysis that scans the software for malicious content and checks for code signing issues.\n\nIf there are no issues, Notary publishes a ticket to be retrieved by users’ Macs when they launch the software.\n\nAnd then we return the result to your developer team.\n\nWe're committed to completing this process within 15 minutes for 98 percent of Notary submissions, and most complete in under five.\n\nYou can then provide your app for users to download, and macOS checks the software before it can run on a user's machine.\n\nWe care about protecting customers from malware and making it easier for developers to submit to Notary and even faster for users to get access to new software.\n\nAnd with that mission in mind, I'm thrilled to share with you the new way to notarize.\n\nIntroducing notarytool.\n\nnotarytool provides a one-line command for submitting your software and waiting for your result.\n\nWe've introduced targeted enhancements focused specifically on the needs of Mac developers that are notarizing software independently without the need for altool's App Store support.\n\nThese improvements make notarization faster and easier, all while we continue to protect customers from malware.\n\nDevelopers depend on the Notary service, so we want it to be as reliable as possible and available whenever developers need it.\n\nIn addition to the changes to the client software, we've also streamlined the service.\n\nIn fact, we've built a new dedicated service backend that's focused on reliability just for Notary.\n\nThe new service is designed to bring you improvements in end-to-end processing speed, and we're excited for you to try it out.\n\nWe know you may be waiting as your submission uploads, so we've worked hard to make upload speed up to four times faster for most developers.\n\nTo take advantage of these incredible performance and reliability gains, be sure to transition from altool to notarytool.\n\nnotarytool is easy to use and carefully designed with your notarization workflow in mind.\n\nWe've heard your feedback and we wanted to improve the developer interaction with a simpler client and a single line to get things done.\n\nSo let's say I'm a developer and I've just finished building the latest bug fix to my app.\n\nI want to get this published as soon as possible.\n\nThe quickest way for me to accomplish this with altool on the command line is with a polling loop, like this.\n\nI first submit my application, and when that's done, I start to continuously poll for status until processing is complete.\n\nNow, with notarytool, we've added a wait flag to the client that allows you to submit and wait for your notarization result all in one command.\n\nAs soon as your job completes, the program will display the results of your submission.\n\nOnce you receive your submission result, you're only one command away from viewing your Notary log using the new client.\n\nYou'll be able to view details about your result directly from notarytool, including any reasons why your application may not be notarized.\n\nWe've also added a brand-new feature that's accessible to you when you submit to Notary: webhook notifications.\n\nThis feature allows you to specify a URL for a server callback as soon as we finish processing your software.\n\nBy specifying a webhook URL when you submit, you can seamlessly add notarization into your continuous integration workflows by automatically retrieving your result and your Notary log when you receive a notification.\n\nWe can't wait for you to start using this powerful new tool, and we look forward to receiving your feedback about notarytool and this new developer experience.\n\nnotarytool is the new client for interacting with the Notary service and is distributed with Xcode.\n\naltool isn't going away, but is now deprecated for use with Notary.\n\nnotarytool makes your workflow faster and simpler with a client that's dedicated to the Notary service.\n\nYou'll be able to find more details about the latest features and performance improvements in the documentation linked to this talk in the coming weeks.\n\nAccess to the tool is available with the latest Xcode build, with information to help you get started in the tool's man pages.\n\nSo make the switch today to start distributing software more quickly and seamlessly than ever before.\n\nThank you.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Olivia Hillman: Hi, I'm Olivia Hillman, and I'm a security engineer working on Apple's Notary service."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "I'm going to talk to you about some exciting work we've been doing to make notarizing Mac apps faster and simpler."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "I'll start with a brief overview of what the Notary service is."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "Then I'll dive into our new tool and I'll share how you can get started using it."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "So, let's begin! Notarization is for Mac developers that distribute their software outside of the App Store, and this talk specifically is for those of you that use the existing command-line tool, altool to interact with Notary."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "If you're notarizing with Xcode only, your workflow isn't changing."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "Mac developers submit their software to be notarized before it's distributed, so it can run on a user's Mac."
+      },
+      {
+        "timestamp": "0:59",
+        "text": "This notarization process gives users confidence that software running on their machines has been checked by Apple for malicious components."
+      },
+      {
+        "timestamp": "1:08",
+        "text": "Notarization has been helping to protect customers since macOS 10.14."
+      },
+      {
+        "timestamp": "1:13",
+        "text": "And now, we've made it faster and simpler to use."
+      },
+      {
+        "timestamp": "1:17",
+        "text": "For more background about Notary, check out our in-depth 2019 talk \"All about Notarization\"."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "Let's take a look at the Notary workflow."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "Developers build their software and send it to us for notarization."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "The Notary service runs automated analysis that scans the software for malicious content and checks for code signing issues."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "If there are no issues, Notary publishes a ticket to be retrieved by users’ Macs when they launch the software."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "And then we return the result to your developer team."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "We're committed to completing this process within 15 minutes for 98 percent of Notary submissions, and most complete in under five."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "You can then provide your app for users to download, and macOS checks the software before it can run on a user's machine."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "We care about protecting customers from malware and making it easier for developers to submit to Notary and even faster for users to get access to new software."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "And with that mission in mind, I'm thrilled to share with you the new way to notarize."
+      },
+      {
+        "timestamp": "2:20",
+        "text": "Introducing notarytool."
+      },
+      {
+        "timestamp": "2:23",
+        "text": "notarytool provides a one-line command for submitting your software and waiting for your result."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "We've introduced targeted enhancements focused specifically on the needs of Mac developers that are notarizing software independently without the need for altool's App Store support."
+      },
+      {
+        "timestamp": "2:42",
+        "text": "These improvements make notarization faster and easier, all while we continue to protect customers from malware."
+      },
+      {
+        "timestamp": "2:50",
+        "text": "Developers depend on the Notary service, so we want it to be as reliable as possible and available whenever developers need it."
+      },
+      {
+        "timestamp": "2:59",
+        "text": "In addition to the changes to the client software, we've also streamlined the service."
+      },
+      {
+        "timestamp": "3:05",
+        "text": "In fact, we've built a new dedicated service backend that's focused on reliability just for Notary."
+      },
+      {
+        "timestamp": "3:14",
+        "text": "The new service is designed to bring you improvements in end-to-end processing speed, and we're excited for you to try it out."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "We know you may be waiting as your submission uploads, so we've worked hard to make upload speed up to four times faster for most developers."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "To take advantage of these incredible performance and reliability gains, be sure to transition from altool to notarytool."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "notarytool is easy to use and carefully designed with your notarization workflow in mind."
+      },
+      {
+        "timestamp": "3:44",
+        "text": "We've heard your feedback and we wanted to improve the developer interaction with a simpler client and a single line to get things done."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "So let's say I'm a developer and I've just finished building the latest bug fix to my app."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "I want to get this published as soon as possible."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "The quickest way for me to accomplish this with altool on the command line is with a polling loop, like this."
+      },
+      {
+        "timestamp": "4:10",
+        "text": "I first submit my application, and when that's done, I start to continuously poll for status until processing is complete."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "Now, with notarytool, we've added a wait flag to the client that allows you to submit and wait for your notarization result all in one command."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "As soon as your job completes, the program will display the results of your submission."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "Once you receive your submission result, you're only one command away from viewing your Notary log using the new client."
+      },
+      {
+        "timestamp": "4:43",
+        "text": "You'll be able to view details about your result directly from notarytool, including any reasons why your application may not be notarized."
+      },
+      {
+        "timestamp": "4:52",
+        "text": "We've also added a brand-new feature that's accessible to you when you submit to Notary: webhook notifications."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "This feature allows you to specify a URL for a server callback as soon as we finish processing your software."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "By specifying a webhook URL when you submit, you can seamlessly add notarization into your continuous integration workflows by automatically retrieving your result and your Notary log when you receive a notification."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "We can't wait for you to start using this powerful new tool, and we look forward to receiving your feedback about notarytool and this new developer experience."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "notarytool is the new client for interacting with the Notary service and is distributed with Xcode."
+      },
+      {
+        "timestamp": "5:38",
+        "text": "altool isn't going away, but is now deprecated for use with Notary."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "notarytool makes your workflow faster and simpler with a client that's dedicated to the Notary service."
+      },
+      {
+        "timestamp": "5:50",
+        "text": "You'll be able to find more details about the latest features and performance improvements in the documentation linked to this talk in the coming weeks."
+      },
+      {
+        "timestamp": "6:01",
+        "text": "Access to the tool is available with the latest Xcode build, with information to help you get started in the tool's man pages."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "So make the switch today to start distributing software more quickly and seamlessly than ever before."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "Thank you."
+      },
+      {
+        "timestamp": "6:18",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -55,5 +262,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/703"
     }
   ],
-  "extractedAt": "2026-10-11T16:42:32.052Z"
+  "extractedAt": "2026-10-17T18:52:32.692Z"
 }

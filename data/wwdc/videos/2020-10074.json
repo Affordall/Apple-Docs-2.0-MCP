@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10074/",
   "title": "Decipher and deal with common Siri errors",
-  "speakers": [],
   "duration": "",
   "topics": [
     "App Services",
@@ -12,8 +11,40 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nMy name is Roman, and I'm a Shortcuts engineer at Apple. Today, I'm going to share some tips on how to efficiently debug your Siri and Shortcuts support. Let's start by taking a look at how you can automate Siri queries using the scheme editor in Xcode.\n\nYou can provide the Siri intent query from the get-go, so you don't actually have to trigger Siri and speak to it when you debug your extension.\n\nWhen you're attaching to your Intents extension, you have an option to choose between Siri and the Shortcuts app as the host process. Sometimes you might wonder why you don't hit breakpoints in your Intents UI extension while you're being attached to an Intents extension in Xcode. This is because both of these extensions are separate processes. You can use the Xcode debug menu to attach to multiple processes at the same time. So, you implemented SiriKit support in your app but you're getting, \"Sorry there was a problem with the app\" when you execute your intent in Siri. Now what can you do about this? First, make sure that you call your completion handlers of your intent handling protocol methods before the 10-second time-out.\n\nYou also need to make sure that you call the completion handlers only once, otherwise an exception will be thrown in your process.\n\nYou should also verify that your process is not crashing in the middle of the request. Open Devices and Simulators in Xcode and click the \"View Device Logs\" button and scan it for crashes in your processes.\n\nUsing os_log statements and the Console.app can help you understand how multiple processes work together.\n\nWhen composing your os_log statements you can prefix them with an emoji or some other unique keyword and then use the Console.app to filter by your unique keyword to get an accurate timeline of events in all processes involved. Thanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "My name is Roman, and I'm a Shortcuts engineer at Apple. Today, I'm going to share some tips on how to efficiently debug your Siri and Shortcuts support. Let's start by taking a look at how you can automate Siri queries using the scheme editor in Xcode."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "You can provide the Siri intent query from the get-go, so you don't actually have to trigger Siri and speak to it when you debug your extension."
+      },
+      {
+        "timestamp": "0:33",
+        "text": "When you're attaching to your Intents extension, you have an option to choose between Siri and the Shortcuts app as the host process. Sometimes you might wonder why you don't hit breakpoints in your Intents UI extension while you're being attached to an Intents extension in Xcode. This is because both of these extensions are separate processes. You can use the Xcode debug menu to attach to multiple processes at the same time. So, you implemented SiriKit support in your app but you're getting, \"Sorry there was a problem with the app\" when you execute your intent in Siri. Now what can you do about this? First, make sure that you call your completion handlers of your intent handling protocol methods before the 10-second time-out."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "You also need to make sure that you call the completion handlers only once, otherwise an exception will be thrown in your process."
+      },
+      {
+        "timestamp": "1:23",
+        "text": "You should also verify that your process is not crashing in the middle of the request. Open Devices and Simulators in Xcode and click the \"View Device Logs\" button and scan it for crashes in your processes."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "Using os_log statements and the Console.app can help you understand how multiple processes work together."
+      },
+      {
+        "timestamp": "1:44",
+        "text": "When composing your os_log statements you can prefix them with an emoji or some other unique keyword and then use the Console.app to filter by your unique keyword to get an accurate timeline of events in all processes involved. Thanks for watching."
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [
@@ -93,5 +124,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10068"
     }
   ],
-  "extractedAt": "2026-10-11T16:46:04.605Z"
+  "extractedAt": "2026-10-17T18:55:59.339Z"
 }

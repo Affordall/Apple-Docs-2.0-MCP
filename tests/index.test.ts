@@ -2,27 +2,36 @@
  * The server as a client sees it, over the SDK's in-memory transport: the tools it lists, and each call routed to its
  * handler with its arguments checked against the tool's schema.
  */
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import AppleDeveloperDocsMCPServer from '../src/index.js';
-import { registerTools } from '../src/tools/handlers.js';
+import { fetchAppleDocJson } from '../src/tools/doc-fetcher.js';
+import { handleGetDocumentationUpdates } from '../src/tools/get-documentation-updates.js';
+import { handleListTechnologies } from '../src/tools/list-technologies.js';
+import { searchStream } from '../src/tools/search-api.js';
+import { searchFrameworkSymbols } from '../src/tools/search-framework-symbols.js';
+import { parseSearchResults } from '../src/tools/search-parser.js';
+import { connectClient } from './helpers/test-helpers.js';
+
+vi.mock('../src/tools/doc-fetcher.js', () => ({ fetchAppleDocJson: vi.fn() }));
+vi.mock('../src/tools/get-documentation-updates.js', () => ({ handleGetDocumentationUpdates: vi.fn() }));
+vi.mock('../src/tools/list-technologies.js', () => ({ handleListTechnologies: vi.fn() }));
+// The search schema reads the module's scopes
+vi.mock('../src/tools/search-api.js', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../src/tools/search-api.js')>(),
+  searchStream: vi.fn(),
+}));
+vi.mock('../src/tools/search-framework-symbols.js', () => ({ searchFrameworkSymbols: vi.fn() }));
+vi.mock('../src/tools/search-parser.js', () => ({ parseSearchResults: vi.fn() }));
 
 const answer = (text: string) => ({ content: [{ type: 'text' as const, text }] });
 
 describe('the server', () => {
-  let docs: AppleDeveloperDocsMCPServer;
   let client: Client;
 
   beforeEach(async () => {
-    docs = new AppleDeveloperDocsMCPServer();
-    const server = new McpServer({ name: 'apple-docs-mcp', version: 'test' });
-    registerTools(server, docs);
-    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-    client = new Client({ name: 'test', version: 'test' });
-    await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+    vi.clearAllMocks();
+    client = await connectClient();
   });
 
   afterEach(async () => {
@@ -33,11 +42,8 @@ describe('the server', () => {
     const { tools } = await client.listTools();
 
     expect(tools.map(tool => tool.name).sort()).toEqual([
-      'browse_wwdc_topics', 'find_related_wwdc_videos', 'find_similar_apis', 'get_apple_doc_content',
-      'get_documentation_updates', 'get_platform_compatibility', 'get_related_apis', 'get_sample_code',
-      'get_technology_overviews', 'get_wwdc_code_examples', 'get_wwdc_video', 'list_technologies', 'list_wwdc_videos',
-      'list_wwdc_years', 'resolve_references_batch', 'search_apple_docs', 'search_docs_map', 'search_framework_symbols',
-      'search_wwdc_content',
+      'get_apple_doc_content', 'get_wwdc_video', 'list_technologies', 'list_wwdc_videos', 'search_apple_docs',
+      'search_docs_map', 'search_wwdc_content',
     ]);
     for (const tool of tools) {
       expect(tool.description).toBeTruthy();
@@ -48,27 +54,28 @@ describe('the server', () => {
     }
   });
 
-  it('passes a search its query, the type defaulting to all, and returns its answer', async () => {
-    const search = vi.spyOn(docs, 'searchAppleDocs').mockResolvedValue(answer('Search results'));
+  it('passes a search its query, no type when none is given, and returns its answer', async () => {
+    vi.mocked(parseSearchResults).mockReturnValue(answer('Search results'));
+    const search = vi.mocked(searchStream);
 
     await expect(client.callTool({ name: 'search_apple_docs', arguments: { query: 'SwiftUI' } }))
       .resolves.toMatchObject(answer('Search results'));
-    expect(search).toHaveBeenCalledWith('SwiftUI', 'all');
+    expect(search).toHaveBeenCalledWith('SwiftUI', undefined);
   });
 
-  it('passes a page read its options, the ones left out false', async () => {
-    const read = vi.spyOn(docs, 'getAppleDocContent').mockResolvedValue(answer('Doc content'));
+  it('passes a page read its URL and the language Swift', async () => {
+    const read = vi.mocked(fetchAppleDocJson).mockResolvedValue(answer('Doc content'));
 
     await client.callTool({
       name: 'get_apple_doc_content',
-      arguments: { url: 'https://developer.apple.com/documentation/swiftui', includeRelatedApis: true },
+      arguments: { url: 'https://developer.apple.com/documentation/swiftui' },
     });
 
-    expect(read).toHaveBeenCalledWith('https://developer.apple.com/documentation/swiftui', true, false, false, false);
+    expect(read).toHaveBeenCalledWith('https://developer.apple.com/documentation/swiftui', 'swift');
   });
 
   it('fills the defaults a tool leaves to its schema', async () => {
-    const list = vi.spyOn(docs, 'listTechnologies').mockResolvedValue(answer('Technologies'));
+    const list = vi.mocked(handleListTechnologies).mockResolvedValue('Technologies');
 
     await client.callTool({ name: 'list_technologies', arguments: { category: 'games', language: 'swift', includeBeta: false } });
     await client.callTool({ name: 'list_technologies', arguments: { category: 'ui', limit: 10 } });
@@ -78,24 +85,24 @@ describe('the server', () => {
   });
 
   it('passes every argument it is given, in order', async () => {
-    const symbols = vi.spyOn(docs, 'searchFrameworkSymbols').mockResolvedValue(answer('Symbols'));
-    const updates = vi.spyOn(docs, 'getDocumentationUpdates').mockResolvedValue(answer('Updates'));
+    const symbols = vi.mocked(searchFrameworkSymbols).mockResolvedValue('Symbols');
+    const updates = vi.mocked(handleGetDocumentationUpdates).mockResolvedValue('Updates');
 
     await client.callTool({
-      name: 'search_framework_symbols',
-      arguments: { framework: 'swiftui', symbolType: 'struct', namePattern: '*View', language: 'swift', limit: 100 },
+      name: 'search_docs_map',
+      arguments: { source: 'index', technology: ['swiftui'], kind: 'struct', query: '*View', limit: 100 },
     });
     await client.callTool({
-      name: 'get_documentation_updates',
-      arguments: { category: 'wwdc', technology: 'SwiftUI', year: '2024', searchQuery: 'animation', includeBeta: true, limit: 50 },
+      name: 'list_technologies',
+      arguments: { catalog: 'updates', category: 'wwdc', technology: 'SwiftUI', searchQuery: 'animation', includeBeta: true, limit: 50 },
     });
 
-    expect(symbols).toHaveBeenCalledWith('swiftui', 'struct', '*View', 'swift', 100);
-    expect(updates).toHaveBeenCalledWith('wwdc', 'SwiftUI', '2024', 'animation', true, 50);
+    expect(symbols).toHaveBeenCalledWith('swiftui', 'struct', '*View', 100);
+    expect(updates).toHaveBeenCalledWith('wwdc', 'SwiftUI', undefined, 'animation', true, 50);
   });
 
   it('refuses arguments its schema rejects, without calling the tool', async () => {
-    const search = vi.spyOn(docs, 'searchAppleDocs');
+    const search = vi.mocked(searchStream);
 
     const result = await client.callTool({ name: 'search_apple_docs', arguments: {} });
 
@@ -104,7 +111,7 @@ describe('the server', () => {
   });
 
   it('answers an unknown tool, and a tool that throws, with an error result', async () => {
-    vi.spyOn(docs, 'listTechnologies').mockRejectedValue(new Error('Apple is down'));
+    vi.mocked(handleListTechnologies).mockRejectedValue(new Error('Apple is down'));
 
     await expect(client.callTool({ name: 'unknown_tool', arguments: {} }))
       .resolves.toMatchObject({ isError: true, content: [{ text: expect.stringContaining('unknown_tool not found') }] });

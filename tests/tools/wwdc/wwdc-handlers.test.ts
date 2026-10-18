@@ -1,8 +1,5 @@
 import type { MockedFunction } from 'vitest';
 import { vi, describe, test, expect, beforeEach } from 'vitest';
-/**
- * Tests for WWDC handlers
- */
 
 import {
   handleListWWDCVideos,
@@ -14,15 +11,11 @@ import {
   handleListWWDCYears,
 } from '../../../src/tools/wwdc/wwdc-handlers';
 
-// Mock the data source module
 vi.mock('../../../src/utils/wwdc-data-source', () => ({
   loadGlobalMetadata: vi.fn(),
   loadTopicIndex: vi.fn(),
   loadYearIndex: vi.fn(),
   loadVideoData: vi.fn(),
-  loadAllVideos: vi.fn(),
-  clearDataCache: vi.fn(),
-  isDataAvailable: vi.fn(),
 }));
 
 import {
@@ -30,16 +23,13 @@ import {
   loadTopicIndex,
   loadYearIndex,
   loadVideoData,
-  loadAllVideos,
 } from '../../../src/utils/wwdc-data-source';
 
 const mockLoadGlobalMetadata = loadGlobalMetadata as MockedFunction<typeof loadGlobalMetadata>;
 const mockLoadTopicIndex = loadTopicIndex as MockedFunction<typeof loadTopicIndex>;
 const mockLoadYearIndex = loadYearIndex as MockedFunction<typeof loadYearIndex>;
 const mockLoadVideoData = loadVideoData as MockedFunction<typeof loadVideoData>;
-const mockLoadAllVideos = loadAllVideos as MockedFunction<typeof loadAllVideos>;
 
-// Helper to convert video ID to file path
 const videoIdToPath = (id: string, year: string = '2025') => `videos/${year}-${id}.json`;
 
 describe('WWDC Handlers', () => {
@@ -138,7 +128,8 @@ describe('WWDC Handlers', () => {
         topicId: 'machine-learning-ai',
         name: 'Machine Learning & AI',
         videoCount: 1,
-        videos: [{ id: '10188', year: '2025', dataFile: 'videos/2025-10188.json' }],
+        // A topic index lists each session as the year indexes do
+        videos: [{ id: '10188', year: '2025', title: 'Meet the Translation API', topics: ['Machine Learning & AI'], duration: '', hasCode: true, hasTranscript: true, dataFile: 'videos/2025-10188.json', url: 'https://developer.apple.com/videos/play/wwdc2025/10188/' }],
       };
 
       mockLoadTopicIndex.mockResolvedValue(mockTopicIndex);
@@ -179,10 +170,7 @@ describe('WWDC Handlers', () => {
     test('should handle errors gracefully', async () => {
       mockLoadGlobalMetadata.mockRejectedValue(new Error('Failed to load metadata'));
 
-      const result = await handleListWWDCVideos();
-
-      expect(result).toContain('Error: Failed to list WWDC videos');
-      expect(result).toContain('Failed to load metadata');
+      await expect(handleListWWDCVideos()).rejects.toThrow('Failed to load metadata');
     });
   });
 
@@ -198,7 +186,6 @@ describe('WWDC Handlers', () => {
       hasCode: true,
       hasResources: true,
       transcript: {
-        fullText: 'Welcome to Meet the Translation API\nToday we will explore async await patterns',
         segments: [
           { timestamp: '00:00', text: 'Welcome to Meet the Translation API' },
           { timestamp: '00:30', text: 'Today we will explore async await patterns' },
@@ -290,13 +277,6 @@ describe('WWDC Handlers', () => {
       expect(mockLoadYearIndex).toHaveBeenCalledTimes(1);
     });
 
-    test('should filter by language', async () => {
-      const result = await handleSearchWWDCContent('translate', 'code', undefined, 'swift');
-
-      expect(result).toContain('Basic Translation');
-      expect(result).toContain('```swift');
-    });
-
     test('should handle no results', async () => {
       const result = await handleSearchWWDCContent('nonexistent', 'both');
 
@@ -306,10 +286,7 @@ describe('WWDC Handlers', () => {
     test('should handle errors gracefully', async () => {
       mockLoadGlobalMetadata.mockRejectedValue(new Error('Search failed'));
 
-      const result = await handleSearchWWDCContent('test');
-
-      expect(result).toContain('Error: Failed to search WWDC content');
-      expect(result).toContain('Search failed');
+      await expect(handleSearchWWDCContent('test')).rejects.toThrow('Search failed');
     });
   });
 
@@ -324,7 +301,6 @@ describe('WWDC Handlers', () => {
       hasCode: true,
       hasResources: true,
       transcript: {
-        fullText: 'Welcome to the session\nLet us begin',
         segments: [
           { timestamp: '00:00', text: 'Welcome to the session' },
           { timestamp: '00:30', text: 'Let us begin' },
@@ -383,10 +359,7 @@ describe('WWDC Handlers', () => {
     test('should handle missing video', async () => {
       mockLoadVideoData.mockRejectedValue(new Error('Video not found'));
 
-      const result = await handleGetWWDCVideo('2025', '99999');
-
-      expect(result).toContain('Error: Failed to get WWDC video');
-      expect(result).toContain('Video not found');
+      await expect(handleGetWWDCVideo('2025', '99999')).rejects.toThrow('Video not found');
     });
   });
 
@@ -482,13 +455,6 @@ describe('WWDC Handlers', () => {
 
       expect(result).toContain('Animation Example');
       expect(result).not.toContain('UIKit Example');
-    });
-
-    test('should filter by language', async () => {
-      const result = await handleGetWWDCCodeExamples(undefined, undefined, undefined, 'swift');
-
-      expect(result).toContain('Animation Example');
-      expect(result).toContain('Language: swift');
     });
 
     test('should handle no code examples', async () => {
@@ -610,8 +576,6 @@ describe('WWDC Handlers', () => {
     });
 
     test('should handle topic not found', async () => {
-      mockLoadTopicIndex.mockRejectedValue(new Error('Topic not found'));
-
       const result = await handleBrowseWWDCTopics('invalid-topic');
 
       expect(result).toContain('Topic "invalid-topic" not found');
@@ -668,6 +632,13 @@ describe('WWDC Handlers', () => {
         if (video) return Promise.resolve(video as any);
         return Promise.reject(new Error('Video not found'));
       });
+      // The years its sessions come from, each session in its year's index
+      mockLoadGlobalMetadata.mockResolvedValue({ version: '1.0', lastUpdated: '2025-01-01', totalVideos: 3, topics: [], years: ['2025', '2024'],
+        statistics: { byTopic: {}, byYear: {}, videosWithCode: 2, videosWithTranscript: 3 } });
+      mockLoadYearIndex.mockImplementation((year: string) => Promise.resolve({
+        year, videoCount: 0, topics: [],
+        videos: [mockSourceVideo, ...mockRelatedVideos].filter(v => v.year === year).map(v => ({ ...v, dataFile: `videos/${v.year}-${v.id}.json` })),
+      } as any));
     });
 
     test('should find explicitly related videos', async () => {
@@ -679,21 +650,10 @@ describe('WWDC Handlers', () => {
       expect(result).toContain('SwiftUI Performance');
     });
 
-    test('should exclude explicit related when requested', async () => {
-      const result = await handleFindRelatedWWDCVideos('10188', '2025', false, true, false);
-
-      expect(result).toContain('Related Videos for "SwiftUI Basics"');
-      // When no videos found
-      expect(result).toContain('No related videos found');
-    });
-
     test('should handle video not found', async () => {
       mockLoadVideoData.mockRejectedValue(new Error('Video not found'));
 
-      const result = await handleFindRelatedWWDCVideos('99999', '2025');
-
-      expect(result).toContain('Error: Failed to find related WWDC videos');
-      expect(result).toContain('Video not found');
+      await expect(handleFindRelatedWWDCVideos('99999', '2025')).rejects.toThrow('Video not found');
     });
   });
 

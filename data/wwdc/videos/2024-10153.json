@@ -3,8 +3,7 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10153/",
   "title": "Dive deep into volumes and immersive spaces",
-  "speakers": [],
-  "duration": "",
+  "duration": "32:17",
   "topics": [
     "Spatial Computing",
     "SwiftUI & UI Frameworks"
@@ -12,8 +11,484 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello! My name is Owen, and I’m a SwiftUI engineer. And I’m Troy. I’m also a SwiftUI engineer. In this video, we’ll be taking a deep dive into working with 3D content in volumes and immersive spaces on visionOS.\n\nvisionOS has three scene types: Windows, Volumes, and Immersive Spaces. All three can be used together to create unique and exciting experiences. Today, we’ll be focusing on Volumes and Immersive Spaces. These scene types are unique to visionOS, and used for rich, immersive 3D content. Volumetric apps using these scene types are one of the most exciting and unique features of Apple Vision Pro. They enable a new dimension for apps and games, letting people experience your app existing in the real world.\n\nThere are already many delightful spatial experiences available on visionOS. These apps take advantage of the third dimension, displaying information in clever ways and providing fun and playful interactions that can both mimic the real world and do entirely new things.\n\nThese apps take advantage of spatial API built for visionOS. And now in visionOS 2, we have added lots of new features to let you bring even more life to your volumetric apps. Troy and I will be going through building a new volumetric app, called Botanist. I’m going to start by adding a volume and building it out using new API to make it really shine. After that, Troy will expand the app to fill the room using an immersive space.\n\nSo let’s get started with a Volume! When I create a new volumetric app, or link an existing app against the visionOS 2 SDK, one of the first things to notice is the new baseplate.\n\nIt appears automatically when looked at, highlighting the bottom edges of the volume.\n\nHere’s the baseplate in action on my brand new volume. It gently guides me to the edges of the volume, so I know immediately how much space I’m working with.\n\nBaseplates are great for content that sits inside a volume, but doesn’t fill its bounds. It gives people a sense of the edges of the volume even when the content occupies a smaller amount of space inside it. However, for cases where your app’s content already pushes out to the bounds of the volume, or if you draw your own surface already, it’s better to disable the baseplate so that it doesn’t conflict with your app, and let the content itself guide people to the edges.\n\nOn visionOS 2 the baseplate is enabled by default, and can be controlled using the volume baseplate visibility modifier. The automatic behavior in visionOS 2 fades in the baseplate when it’s looked at. This is the equivalent of writing the modifier with visible. The baseplate can also be explicitly turned off by setting it to hidden.\n\nStarting with the baseplate gives me an immediate sense of the bounds of my volume, even without any additional content.\n\nAnd now as I add in the circular level for the Botanist app, the baseplate helps me to find the edges and corners of the volume, where the window controls are. This is especially important in visionOS 2, because volumes now have new resize handles at the corners, just like windows do.\n\nNotice how the baseplate guides me to the resize handle at the corner. But when I try to resize the scene it just springs back to its original size. What’s going on here? Volumes inherit their minimum and maximum sizes from the size of their content by default. In SwiftUI, this is the behavior provided by the windowResizability modifier with contentSize behavior. The automatic behavior for volumes is as if this modifier were written on them. And this means the volume’s minimum size and maximum size are both going to come from the size of its views.\n\nOn ExplorationView, I have written a frame with a specific width, height, and depth. Because of this, the volume’s size is fixed to match that view’s frame.\n\nIf I change this to instead specify minimum values for the frame, the view is saying it can resize larger. And because the volume inherits the size of its content, it will now also allow resizing.\n\nSpecifying a maximum size will also cap the size of the volume.\n\nNow when I drag on the resize handles, the volume smoothly resizes.\n\nThat’s pretty neat! This behavior means you can also drive the size of your volume in code. As your app updates its content, any changes to the frames of your views inform the volume about its size as well. This means it’s easy to accommodate changing content without worrying about clipping at the bounds of the scene. And because people look for the resize handles at the corners close to your content, this also ensures those controls are never too far away.\n\nTo change the size of my volume programmatically, I add a new state variable for the scale.\n\nWhen I change the value of my scale variable, it updates the frame values of my view, and the volume will automatically resize itself to fit that new size.\n\nI also scale the RealityKit entity for the circular exploration level by that amount. Now, I need a control to change the scale.\n\nI add a button to toggle the size, and for now I just put it into an overlay.\n\nNow, when I press the button, the level switches between its small and large size, and the volume adjusts its bounds to match. However, the button itself looks a little bit out of place here. It would fit perfectly in a toolbar.\n\nVolumes support toolbars that float below them in an ornament. This is a great and easy way to provide a collection of common app controls.\n\nThis toolbar automatically scales as the volume is moved so its content remains accessible regardless of the placement of the volume. A toolbar like this is the best way to group together common app controls, so I’ll go ahead and add one to the app.\n\nTo put controls into the toolbar, I write a toolbar modifier on a view of the app.\n\nInside the toolbar, I can create toolbar items and toolbar item groups.\n\nI specify a .bottomOrnament placement for each item. For visionOS 1 compatibility, this is required. But in visionOS 2 the automatic placement will also resolve to the bottom ornament. If your app only targets visionOS 2, you can leave the argument out.\n\nInside the toolbar items, I add my buttons to perform different actions in the game.\n\nAnd just like that, my controls appear in the toolbar! And new in visionOS 2, the toolbar will automatically move to the side of the volume I’m standing on, along with the window controls. This encourages people to get a new angle on the experience, while keeping all the tools exactly where they’re needed. Alongside the toolbar, you can now add additional ornaments to a volume. Ornaments are great for providing extra controls, or more detail about the current content.\n\nThey help to reduce clutter in the main window by floating auxiliary information above and around the window of an app. Windows can add ornaments anywhere. Not just as a toolbar, but at any position around the window as well. And now, volumes can do the exact same, including with control over how deeply the ornament is positioned on the volume. Ornaments also dynamically scale keeping them at a comfortable size when the volume is moved further away.\n\nOrnaments offer a lot of flexibility, but it’s important to not overdo it.\n\nPutting many ornaments around the volume can crowd out your incredible content, the real hero of your app. A single ornament makes a great container for a group of controls and information. Additionally, some system-provided controls, such as the toolbar and Tab View are also in ornaments, so make sure your custom ornaments don’t conflict with these.\n\nIn the app, I added this view that shows the player’s progress toward their planting goals. Right now, that view is inside the Volume’s main view.\n\nBecause of this it doesn’t update as I walk around the volume, and if I move the volume further away, this view gets smaller and harder to read. It would be great to pull this view out into an ornament, so I get those automatic behaviors. Here, the view is inside the body of the volume. To put it inside an ornament, I move the view into an ornament modifier.\n\nI provide a scene anchor with a UnitPoint3D, which will account for the width, height, and depth of the volume when placing the ornament. In my case, a topBack placement puts the ornament centered above and behind the main level. Let’s try it out in the app.\n\nHere it is, floating behind the main level. Just like the toolbar, all ornaments will also follow around the volume, making sure they’re always accessible from any direction. Its position in the scene is always determined relative to the side I’m viewing the volume from.\n\nEach side of the volume is a viewpoint. As you move around a volume, the window controls and ornaments automatically move to the viewpoint closest to you.\n\nThe system automatically updates the positions of my ornaments based on the current viewpoint, but now that I’ve added my little robot friend, it just faces the front. It doesn’t know where I am. It would bring a sense of life to the app if the robot could also face me as I move around.\n\nFirst, in order to get updates on the viewpoint, I add a new modifier, onVolumeViewpointChange. It gets called whenever the active viewpoint updates. Using this, I set the variable in the app state that tracks the active viewpoint. When the robot updates, it will use this value to move in the world and face the current viewpoint.\n\nI use the squareAzimuth value of the viewpoint. This type normalizes the position around a volume to one of four values, representing the four faces of the volume.\n\nThe four sides of the Square Azimuth provide semantic values for front, left, right, and back. These semantic values also include a specific Rotation3D, which can be applied directly as a rotation onto views and entities.\n\nIn the code that handles the robot’s movement, I’ve added a bit of code to turn the robot toward that position when it is in idle mode. Then I fire off a little waving animation.\n\nAnd now, the robot turns to face me.\n\nAnd it gives me a little wave! This makes the app really come alive and feel more vibrant.\n\nNot all apps want to support every viewpoint, however. I want to limit the viewpoints only to the front and sides.\n\nTo specify the supported viewpoints, I use another new View modifier, supportedVolumeViewpoints. By default all viewpoints are supported.\n\nIn my case, I only want to support the front and sides of the volume, and not the back. To do this, I pass in an option set containing the front, left, and right values.\n\nNow, the ornaments and window controls will not move to the back of the volume when I move there. Right now, the robot stops as well. Since the robot has been reactive to my movement up until now, I feel like it should let me know I’m on the wrong side.\n\nIn order to still have my volume viewpoint change block get called, even when the new value is not in the set of supported viewpoints, I add a new argument for viewpoint update strategy. By specifying all, I will get updates for all viewpoints, including unsupported ones. I check if the new value is in my supported set, and if it isn’t, I trigger a new animation on the robot, to give an indication that I should move back around to one of the supported viewpoints.\n\nNow as I walk to the back of the volume, my ornaments all stop on the last supported side and the robot gets upset with me, wanting me to move back around.\n\nThere we go, that’s better! There are also a couple new options options to control how volumes present themselves within the world. The first one of these is world alignment. This controls whether the volume remains gravity aligned, keeping its base parallel to the floor, or tilts itself down as the volume is raised. In most cases, the adaptive tilting behavior will be most comfortable. This is the default in visionOS 2. The volume begins parallel to the ground, but as it is lifted above the horizon, it begins to tilt itself. This keeps the contents of the volume usable usable even from a reclined position, which is much more comfortable for interactive content.\n\nHowever, some volumetric apps don’t require a lot of interaction, or are designed to provide more ambient content.\n\nIn these cases, the gravity-aligned behavior is better.\n\nThe volumeWorldAlignment modifier allows overriding the adaptive alignment, keeping the volume aligned with the floor.\n\nAlso, volumes can now be made dynamic scale. Windows in visionOS change their scale scale as they get moved around in the world. As the window gets moved further away, it scales up to maintain its size in your field of view. This is useful because windows often contain text and controls that would get difficult to use at further distances.\n\nThis is the same behavior as the toolbar and ornaments on volumes.\n\nVolumes themselves, on the other hand, default to fixed scale, which helps to increase their sense of presence in the world.\n\nThey remain a fixed size as they get moved further away, so their content appears smaller at a distance.\n\nFor a lot of volumetric apps, this looks great, because it lets you visualize the virtual content in your room, like it was right there with you.\n\nHowever, Volumetric experiences that rely on dense content with a large number of different interactive areas also benefit from dynamic scale.\n\nTo make a volume dynamic scale, use the new Scene modifier called default world scaling behavior. Because Botanist is an interactive game, it makes sense for the level to be dynamic scale, so I enable this behavior with the .dynamic option.\n\nThis is a great start. We have a very fun app in a volume. You've certainly spoken volumes about that. Alright, so what's next? I want to bring the robot out into the real world with an immersive space. That sounds out of this world.\n\nWith Immersive Spaces, developers are building rich experiences on Apple Vision Pro. I'm really enjoying the progress Owen made to allow the botanist to explore the volume in the shared space. Next, I'm going to go beyond the window and create a rich immersive experience that enables the greenhouse to fill the room.\n\nThe very first thing to do is create the immersive space itself. There are options to configure this in the New Project dialogue in Xcode, but in this case I add it myself.\n\nI have an immersive space, but it’s empty right now.\n\nWhen the immersive space is opened, I'll transplant all of the RealityKit content out of the volume and into the immersive space. This should happen seamlessly, giving surprise and delight when the botanist is able to start exploring around in the real world. There's a named coordinate space especially for this introduced in visionOS 1.1, called Immersive Space.\n\nCoordinate spaces are a tool to precisely specify position relative to a particular frame of reference.\n\nThe new immersive coordinate space fits in alongside SwiftUI's existing local and global coordinate spaces.\n\nLocal refers to the current view’s coordinate space, with the origin at the top left of the view.\n\nGlobal refers to the window’s coordinate space, with the origin at the top-left of the window.\n\nFor volumes, the origin is at the top-left-back.\n\nImmersive Space sits above Global and has its origin defined as the point on the ground below you while the immersive space is open. I'll use coordinate spaces with RealityView to build the transition to the immersive space. RealityView provides a host of convert functions that I'll use to go between RealityKit and SwiftUI coordinate spaces. First, I'll handle converting the robot's transform from RealityKit scene space for the volume to SwiftUI immersive space. In the update closure of my RealityView, I call out to my first convert function.\n\nHere I convert the robot's transform from local RealityKit scene space for the volume to SwiftUI's immersive space. Then I store the converted transform in the app model for later use.\n\nI then re-parent the robot from the volume to the root entity of the immersive space. With the robot reparented and the transform to take the robot from the volume calculated, I mark the conversions from the volume view as completed. I'll continue the conversions in the immersive space view.\n\nIn the immersive space view, I'll call another convert function.\n\nThere, I calculate a transform to go from SwiftUI immersive space to RealityKit scene space. Then I compose these two transforms. I do that by multiplying the one I just computed by the one I stored earlier on my app model. The result converts from the local coordinate space in the volume to the one in the immersive space. I update the robot's transform to place the robot in the immersive space to match where it appeared in the volume.\n\nWith the robot's transform converted, I start the jump.\n\nThe transition is now ready for action! With the power of coordinate conversion APIs the robot is able to jump out of the volume and into the world of the immersive experience. It stuck the landing! Next I'll pick an immersion style for the Botanist app. By default, the immersive experience starts with a mixed style, displaying the app in the context of your surroundings. The progressive style provides a bridge between passthrough and fully immersive, using a radial portal to display the app while allowing passthrough around it. In the full style, the immersive app completely replaces the surroundings. I'll pick the progressive style.\n\nIt's a great fit for enabling the botanist to explore the world.\n\nWhen adopting the progressive style in the Botanist app, by default the initial size of the portal covers around half of a person's field of view. The system also defines the supported immersion range by providing fixed fixed minimum and maximum immersion amounts.\n\nI need to make the Botanist app start out more immersive. New in visionOS 2, that can be achieved with custom immersion amounts. that let me dial down, or dial up the immersion, to really showcase the botanist leaping out of the volume into the immersive space. Let's dive in to this new API.\n\nI start by using a new initializer to create a progressive immersion style that takes in a custom immersion range as well as a value for the initial amount. When the progressive style is applied to an Immersive Space, the system will use the provided values to define the minimum, maximum and initial value of the progressive effect applied to the scene.\n\nI need the immersive experience for the Botanist app to start out more immersive so I pick an initial immersion amount of 80%. For the custom immersion range in the Botanist app, I specify a minimum of 20% with a maximum of 100% corresponding to full immersion.\n\nLet's check out custom immersion amounts in action. Starting out more immersive really helps highlight the botanist jumping out of the volume. This looks great through the whole range I specified. I can use the Digital Crown to dial in my experience.\n\nNext, I want to make the botanist react as the Digital Crown is used to dial through the supported immersion amounts. Use the onImmersionChange modifier to react to changes to the immersion amount. This provides a context value with the new immersion level.\n\nWhen the immersion changes, I read the value from the provided context. For Botanist, I store it so I can compare the before and after values.\n\nI use onChange to handle changes to the stored immersion amount, extracting the new and old values from the closure to pass along.\n\nTo make the robot react to changes in immersion amounts, I call a function that triggers the robot to move outward when the immersion amount increases. And I call a function that triggers the robot to move inward when the immersion amount decreases. Let's check it out! Now the botanist reacts as the immersion level changes. It moves toward me as I increase the immersion and away from me as I decrease it.\n\nLet's dial the immersion back up again. The botanist now reacts to move out and explore the expanding space as the immersion amount increases, but it feels like the environment is a little sparse at the moment.\n\nTo address that, I'll make the floor tappable to enable placing plants relative to the floor of the environment for the botanist to explore. To place plants at a specific location on the floor, I'll need to place the plants relative to a floor anchor and for that I'll need the 3D location of the anchor to be available.\n\nYou can provide your app access to the 3D location of anchors with the new Spatial Tracking Session API in RealityKit to enable people to authorize which anchor capabilities they want to track.\n\nTo use this API, first I create a spatial tracking session.\n\nThen I create a task that calls a function to run the spatial tracking session when the immersive space is opened.\n\nTo run the session, I first set up a configuration for plane anchor tracking.\n\nThen I run the session with the configuration to prompt for authorization to plane anchor transforms.\n\nNow that I’ve registered for plane tracking, I need to add an anchor to track.\n\nI specify a horizontal alignment for a target plane with floor classification to create a floor anchor entity to track.\n\nThen I add the floor anchor to the RealityView content in the immersive space. Finally, I need to use the 3D location of my new anchor to place plants in my room.\n\nI add a spatial tap gesture that can be used to detect taps on targeted entities in the immersive space.\n\nWhen the gesture ends, I pass the gesture value along to a function that handles the tap.\n\nTo handle the tap, I first use the convert function on the gesture value to get the location of the gesture relative to the floor anchor. This step requires the transform of the floor anchor to be available to the app.\n\nFinally, I can place the plant by adding the plant as a child of the floor anchor and using the converted location to set the plant entity's position.\n\nNow, I pick a plant from the list. The hover effect on the floor indicates where the plant will be placed. I just tap, and a plant is placed! I love how placing plants in the room makes the Botanist app feel more alive.\n\nFor a deeper dive on the Spatial Tracking Session API, check out the session titled \"Build a spatial drawing app with RealityKit\".\n\nThe immersive greenhouse experience is really starting to come together. Check out how the plants play a growth celebration animation as they're visited by the botanist.\n\nI'd like to add to the celebration. Currently, each plant in our environment is placed in a planter with an associated tint color. Tinting the passthrough to match the planter's tint color is a great way to add to the celebration.\n\nThe preferred Surroundings Effect API can be used to tint the surrounding passthrough. I'll update the immersive experience in the Botanist app to tint the passthrough using the tint color of the planter for the actively celebrating plant. First, I'll pick the tint colors to complement the planters.\n\nI add a tint color property to the custom Plant Component. Then I switch over the plant type to choose a tint color. For example, light blue for coffee berry.\n\nTo trigger the tint effect, I need to detect when the botanist is near a planter. Collision detection with RealityKit is the right tool for this job.\n\nWhen handling the robot's movement over time, I use the collision closure to process hit entities. I then pass the collision value to a helper function.\n\nTo learn more about collision detection with RealityKit, check out Develop your first immersive app.\n\nIn my helper function, I first check whether the botanist has collided with a plant, returning if not.\n\nThen I play the celebration animation.\n\nFinally, if I'm in an immersive space, I store the active tint color on the app model for later use.\n\nBack in the immersive view, I create a color multiply Surroundings Effect based on the stored active tint color. And tint the passthrough using that surroundings effect.\n\nLet's check out the updated celebration colors that now tint the passthrough as plants are visited by the botanist.\n\nMagenta for poppy.\n\nLight green for yucka.\n\nLight blue for coffee berry. Nice work botanist! In this session, we've covered a lot of new ways to build volumes and immersive spaces in your app. Try the new resizability behaviors to fine tune how volumes resize in your app. Use viewpoints to allow your app to respond to people moving around your volumes. Break out of the volume and into the immersive space the power of coordinate conversions. Respond to changes in immersion level in your immersive space. Spatial apps are an entirely new frontier for experiences people have never dreamed of. With the powerful, expressive tools of SwiftUI and RealityKit, the possibilities are limitless. And with a bit of whimsy and imagination, you can make something that astounds. Thanks!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hello! My name is Owen, and I’m a SwiftUI engineer. And I’m Troy. I’m also a SwiftUI engineer. In this video, we’ll be taking a deep dive into working with 3D content in volumes and immersive spaces on visionOS."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "visionOS has three scene types: Windows, Volumes, and Immersive Spaces. All three can be used together to create unique and exciting experiences. Today, we’ll be focusing on Volumes and Immersive Spaces. These scene types are unique to visionOS, and used for rich, immersive 3D content. Volumetric apps using these scene types are one of the most exciting and unique features of Apple Vision Pro. They enable a new dimension for apps and games, letting people experience your app existing in the real world."
+      },
+      {
+        "timestamp": "1:07",
+        "text": "There are already many delightful spatial experiences available on visionOS. These apps take advantage of the third dimension, displaying information in clever ways and providing fun and playful interactions that can both mimic the real world and do entirely new things."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "These apps take advantage of spatial API built for visionOS. And now in visionOS 2, we have added lots of new features to let you bring even more life to your volumetric apps. Troy and I will be going through building a new volumetric app, called Botanist. I’m going to start by adding a volume and building it out using new API to make it really shine. After that, Troy will expand the app to fill the room using an immersive space."
+      },
+      {
+        "timestamp": "2:04",
+        "text": "So let’s get started with a Volume! When I create a new volumetric app, or link an existing app against the visionOS 2 SDK, one of the first things to notice is the new baseplate."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "It appears automatically when looked at, highlighting the bottom edges of the volume."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "Here’s the baseplate in action on my brand new volume. It gently guides me to the edges of the volume, so I know immediately how much space I’m working with."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "Baseplates are great for content that sits inside a volume, but doesn’t fill its bounds. It gives people a sense of the edges of the volume even when the content occupies a smaller amount of space inside it. However, for cases where your app’s content already pushes out to the bounds of the volume, or if you draw your own surface already, it’s better to disable the baseplate so that it doesn’t conflict with your app, and let the content itself guide people to the edges."
+      },
+      {
+        "timestamp": "3:10",
+        "text": "On visionOS 2 the baseplate is enabled by default, and can be controlled using the volume baseplate visibility modifier. The automatic behavior in visionOS 2 fades in the baseplate when it’s looked at. This is the equivalent of writing the modifier with visible. The baseplate can also be explicitly turned off by setting it to hidden."
+      },
+      {
+        "timestamp": "3:37",
+        "text": "Starting with the baseplate gives me an immediate sense of the bounds of my volume, even without any additional content."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "And now as I add in the circular level for the Botanist app, the baseplate helps me to find the edges and corners of the volume, where the window controls are. This is especially important in visionOS 2, because volumes now have new resize handles at the corners, just like windows do."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "Notice how the baseplate guides me to the resize handle at the corner. But when I try to resize the scene it just springs back to its original size. What’s going on here? Volumes inherit their minimum and maximum sizes from the size of their content by default. In SwiftUI, this is the behavior provided by the windowResizability modifier with contentSize behavior. The automatic behavior for volumes is as if this modifier were written on them. And this means the volume’s minimum size and maximum size are both going to come from the size of its views."
+      },
+      {
+        "timestamp": "4:53",
+        "text": "On ExplorationView, I have written a frame with a specific width, height, and depth. Because of this, the volume’s size is fixed to match that view’s frame."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "If I change this to instead specify minimum values for the frame, the view is saying it can resize larger. And because the volume inherits the size of its content, it will now also allow resizing."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "Specifying a maximum size will also cap the size of the volume."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "Now when I drag on the resize handles, the volume smoothly resizes."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "That’s pretty neat! This behavior means you can also drive the size of your volume in code. As your app updates its content, any changes to the frames of your views inform the volume about its size as well. This means it’s easy to accommodate changing content without worrying about clipping at the bounds of the scene. And because people look for the resize handles at the corners close to your content, this also ensures those controls are never too far away."
+      },
+      {
+        "timestamp": "6:12",
+        "text": "To change the size of my volume programmatically, I add a new state variable for the scale."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "When I change the value of my scale variable, it updates the frame values of my view, and the volume will automatically resize itself to fit that new size."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "I also scale the RealityKit entity for the circular exploration level by that amount. Now, I need a control to change the scale."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "I add a button to toggle the size, and for now I just put it into an overlay."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "Now, when I press the button, the level switches between its small and large size, and the volume adjusts its bounds to match. However, the button itself looks a little bit out of place here. It would fit perfectly in a toolbar."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "Volumes support toolbars that float below them in an ornament. This is a great and easy way to provide a collection of common app controls."
+      },
+      {
+        "timestamp": "7:20",
+        "text": "This toolbar automatically scales as the volume is moved so its content remains accessible regardless of the placement of the volume. A toolbar like this is the best way to group together common app controls, so I’ll go ahead and add one to the app."
+      },
+      {
+        "timestamp": "7:40",
+        "text": "To put controls into the toolbar, I write a toolbar modifier on a view of the app."
+      },
+      {
+        "timestamp": "7:47",
+        "text": "Inside the toolbar, I can create toolbar items and toolbar item groups."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "I specify a .bottomOrnament placement for each item. For visionOS 1 compatibility, this is required. But in visionOS 2 the automatic placement will also resolve to the bottom ornament. If your app only targets visionOS 2, you can leave the argument out."
+      },
+      {
+        "timestamp": "8:18",
+        "text": "Inside the toolbar items, I add my buttons to perform different actions in the game."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "And just like that, my controls appear in the toolbar! And new in visionOS 2, the toolbar will automatically move to the side of the volume I’m standing on, along with the window controls. This encourages people to get a new angle on the experience, while keeping all the tools exactly where they’re needed. Alongside the toolbar, you can now add additional ornaments to a volume. Ornaments are great for providing extra controls, or more detail about the current content."
+      },
+      {
+        "timestamp": "9:02",
+        "text": "They help to reduce clutter in the main window by floating auxiliary information above and around the window of an app. Windows can add ornaments anywhere. Not just as a toolbar, but at any position around the window as well. And now, volumes can do the exact same, including with control over how deeply the ornament is positioned on the volume. Ornaments also dynamically scale keeping them at a comfortable size when the volume is moved further away."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "Ornaments offer a lot of flexibility, but it’s important to not overdo it."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "Putting many ornaments around the volume can crowd out your incredible content, the real hero of your app. A single ornament makes a great container for a group of controls and information. Additionally, some system-provided controls, such as the toolbar and Tab View are also in ornaments, so make sure your custom ornaments don’t conflict with these."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "In the app, I added this view that shows the player’s progress toward their planting goals. Right now, that view is inside the Volume’s main view."
+      },
+      {
+        "timestamp": "10:24",
+        "text": "Because of this it doesn’t update as I walk around the volume, and if I move the volume further away, this view gets smaller and harder to read. It would be great to pull this view out into an ornament, so I get those automatic behaviors. Here, the view is inside the body of the volume. To put it inside an ornament, I move the view into an ornament modifier."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "I provide a scene anchor with a UnitPoint3D, which will account for the width, height, and depth of the volume when placing the ornament. In my case, a topBack placement puts the ornament centered above and behind the main level. Let’s try it out in the app."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "Here it is, floating behind the main level. Just like the toolbar, all ornaments will also follow around the volume, making sure they’re always accessible from any direction. Its position in the scene is always determined relative to the side I’m viewing the volume from."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "Each side of the volume is a viewpoint. As you move around a volume, the window controls and ornaments automatically move to the viewpoint closest to you."
+      },
+      {
+        "timestamp": "11:49",
+        "text": "The system automatically updates the positions of my ornaments based on the current viewpoint, but now that I’ve added my little robot friend, it just faces the front. It doesn’t know where I am. It would bring a sense of life to the app if the robot could also face me as I move around."
+      },
+      {
+        "timestamp": "12:09",
+        "text": "First, in order to get updates on the viewpoint, I add a new modifier, onVolumeViewpointChange. It gets called whenever the active viewpoint updates. Using this, I set the variable in the app state that tracks the active viewpoint. When the robot updates, it will use this value to move in the world and face the current viewpoint."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "I use the squareAzimuth value of the viewpoint. This type normalizes the position around a volume to one of four values, representing the four faces of the volume."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "The four sides of the Square Azimuth provide semantic values for front, left, right, and back. These semantic values also include a specific Rotation3D, which can be applied directly as a rotation onto views and entities."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "In the code that handles the robot’s movement, I’ve added a bit of code to turn the robot toward that position when it is in idle mode. Then I fire off a little waving animation."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "And now, the robot turns to face me."
+      },
+      {
+        "timestamp": "13:26",
+        "text": "And it gives me a little wave! This makes the app really come alive and feel more vibrant."
+      },
+      {
+        "timestamp": "13:34",
+        "text": "Not all apps want to support every viewpoint, however. I want to limit the viewpoints only to the front and sides."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "To specify the supported viewpoints, I use another new View modifier, supportedVolumeViewpoints. By default all viewpoints are supported."
+      },
+      {
+        "timestamp": "13:56",
+        "text": "In my case, I only want to support the front and sides of the volume, and not the back. To do this, I pass in an option set containing the front, left, and right values."
+      },
+      {
+        "timestamp": "14:11",
+        "text": "Now, the ornaments and window controls will not move to the back of the volume when I move there. Right now, the robot stops as well. Since the robot has been reactive to my movement up until now, I feel like it should let me know I’m on the wrong side."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "In order to still have my volume viewpoint change block get called, even when the new value is not in the set of supported viewpoints, I add a new argument for viewpoint update strategy. By specifying all, I will get updates for all viewpoints, including unsupported ones. I check if the new value is in my supported set, and if it isn’t, I trigger a new animation on the robot, to give an indication that I should move back around to one of the supported viewpoints."
+      },
+      {
+        "timestamp": "15:08",
+        "text": "Now as I walk to the back of the volume, my ornaments all stop on the last supported side and the robot gets upset with me, wanting me to move back around."
+      },
+      {
+        "timestamp": "15:31",
+        "text": "There we go, that’s better! There are also a couple new options options to control how volumes present themselves within the world. The first one of these is world alignment. This controls whether the volume remains gravity aligned, keeping its base parallel to the floor, or tilts itself down as the volume is raised. In most cases, the adaptive tilting behavior will be most comfortable. This is the default in visionOS 2. The volume begins parallel to the ground, but as it is lifted above the horizon, it begins to tilt itself. This keeps the contents of the volume usable usable even from a reclined position, which is much more comfortable for interactive content."
+      },
+      {
+        "timestamp": "16:27",
+        "text": "However, some volumetric apps don’t require a lot of interaction, or are designed to provide more ambient content."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "In these cases, the gravity-aligned behavior is better."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "The volumeWorldAlignment modifier allows overriding the adaptive alignment, keeping the volume aligned with the floor."
+      },
+      {
+        "timestamp": "16:53",
+        "text": "Also, volumes can now be made dynamic scale. Windows in visionOS change their scale scale as they get moved around in the world. As the window gets moved further away, it scales up to maintain its size in your field of view. This is useful because windows often contain text and controls that would get difficult to use at further distances."
+      },
+      {
+        "timestamp": "17:21",
+        "text": "This is the same behavior as the toolbar and ornaments on volumes."
+      },
+      {
+        "timestamp": "17:27",
+        "text": "Volumes themselves, on the other hand, default to fixed scale, which helps to increase their sense of presence in the world."
+      },
+      {
+        "timestamp": "17:36",
+        "text": "They remain a fixed size as they get moved further away, so their content appears smaller at a distance."
+      },
+      {
+        "timestamp": "17:45",
+        "text": "For a lot of volumetric apps, this looks great, because it lets you visualize the virtual content in your room, like it was right there with you."
+      },
+      {
+        "timestamp": "17:55",
+        "text": "However, Volumetric experiences that rely on dense content with a large number of different interactive areas also benefit from dynamic scale."
+      },
+      {
+        "timestamp": "18:07",
+        "text": "To make a volume dynamic scale, use the new Scene modifier called default world scaling behavior. Because Botanist is an interactive game, it makes sense for the level to be dynamic scale, so I enable this behavior with the .dynamic option."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "This is a great start. We have a very fun app in a volume. You've certainly spoken volumes about that. Alright, so what's next? I want to bring the robot out into the real world with an immersive space. That sounds out of this world."
+      },
+      {
+        "timestamp": "18:43",
+        "text": "With Immersive Spaces, developers are building rich experiences on Apple Vision Pro. I'm really enjoying the progress Owen made to allow the botanist to explore the volume in the shared space. Next, I'm going to go beyond the window and create a rich immersive experience that enables the greenhouse to fill the room."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "The very first thing to do is create the immersive space itself. There are options to configure this in the New Project dialogue in Xcode, but in this case I add it myself."
+      },
+      {
+        "timestamp": "19:16",
+        "text": "I have an immersive space, but it’s empty right now."
+      },
+      {
+        "timestamp": "19:21",
+        "text": "When the immersive space is opened, I'll transplant all of the RealityKit content out of the volume and into the immersive space. This should happen seamlessly, giving surprise and delight when the botanist is able to start exploring around in the real world. There's a named coordinate space especially for this introduced in visionOS 1.1, called Immersive Space."
+      },
+      {
+        "timestamp": "19:48",
+        "text": "Coordinate spaces are a tool to precisely specify position relative to a particular frame of reference."
+      },
+      {
+        "timestamp": "19:57",
+        "text": "The new immersive coordinate space fits in alongside SwiftUI's existing local and global coordinate spaces."
+      },
+      {
+        "timestamp": "20:06",
+        "text": "Local refers to the current view’s coordinate space, with the origin at the top left of the view."
+      },
+      {
+        "timestamp": "20:14",
+        "text": "Global refers to the window’s coordinate space, with the origin at the top-left of the window."
+      },
+      {
+        "timestamp": "20:22",
+        "text": "For volumes, the origin is at the top-left-back."
+      },
+      {
+        "timestamp": "20:28",
+        "text": "Immersive Space sits above Global and has its origin defined as the point on the ground below you while the immersive space is open. I'll use coordinate spaces with RealityView to build the transition to the immersive space. RealityView provides a host of convert functions that I'll use to go between RealityKit and SwiftUI coordinate spaces. First, I'll handle converting the robot's transform from RealityKit scene space for the volume to SwiftUI immersive space. In the update closure of my RealityView, I call out to my first convert function."
+      },
+      {
+        "timestamp": "21:09",
+        "text": "Here I convert the robot's transform from local RealityKit scene space for the volume to SwiftUI's immersive space. Then I store the converted transform in the app model for later use."
+      },
+      {
+        "timestamp": "21:23",
+        "text": "I then re-parent the robot from the volume to the root entity of the immersive space. With the robot reparented and the transform to take the robot from the volume calculated, I mark the conversions from the volume view as completed. I'll continue the conversions in the immersive space view."
+      },
+      {
+        "timestamp": "21:43",
+        "text": "In the immersive space view, I'll call another convert function."
+      },
+      {
+        "timestamp": "21:49",
+        "text": "There, I calculate a transform to go from SwiftUI immersive space to RealityKit scene space. Then I compose these two transforms. I do that by multiplying the one I just computed by the one I stored earlier on my app model. The result converts from the local coordinate space in the volume to the one in the immersive space. I update the robot's transform to place the robot in the immersive space to match where it appeared in the volume."
+      },
+      {
+        "timestamp": "22:21",
+        "text": "With the robot's transform converted, I start the jump."
+      },
+      {
+        "timestamp": "22:26",
+        "text": "The transition is now ready for action! With the power of coordinate conversion APIs the robot is able to jump out of the volume and into the world of the immersive experience. It stuck the landing! Next I'll pick an immersion style for the Botanist app. By default, the immersive experience starts with a mixed style, displaying the app in the context of your surroundings. The progressive style provides a bridge between passthrough and fully immersive, using a radial portal to display the app while allowing passthrough around it. In the full style, the immersive app completely replaces the surroundings. I'll pick the progressive style."
+      },
+      {
+        "timestamp": "23:14",
+        "text": "It's a great fit for enabling the botanist to explore the world."
+      },
+      {
+        "timestamp": "23:18",
+        "text": "When adopting the progressive style in the Botanist app, by default the initial size of the portal covers around half of a person's field of view. The system also defines the supported immersion range by providing fixed fixed minimum and maximum immersion amounts."
+      },
+      {
+        "timestamp": "23:37",
+        "text": "I need to make the Botanist app start out more immersive. New in visionOS 2, that can be achieved with custom immersion amounts. that let me dial down, or dial up the immersion, to really showcase the botanist leaping out of the volume into the immersive space. Let's dive in to this new API."
+      },
+      {
+        "timestamp": "23:58",
+        "text": "I start by using a new initializer to create a progressive immersion style that takes in a custom immersion range as well as a value for the initial amount. When the progressive style is applied to an Immersive Space, the system will use the provided values to define the minimum, maximum and initial value of the progressive effect applied to the scene."
+      },
+      {
+        "timestamp": "24:22",
+        "text": "I need the immersive experience for the Botanist app to start out more immersive so I pick an initial immersion amount of 80%. For the custom immersion range in the Botanist app, I specify a minimum of 20% with a maximum of 100% corresponding to full immersion."
+      },
+      {
+        "timestamp": "24:41",
+        "text": "Let's check out custom immersion amounts in action. Starting out more immersive really helps highlight the botanist jumping out of the volume. This looks great through the whole range I specified. I can use the Digital Crown to dial in my experience."
+      },
+      {
+        "timestamp": "24:59",
+        "text": "Next, I want to make the botanist react as the Digital Crown is used to dial through the supported immersion amounts. Use the onImmersionChange modifier to react to changes to the immersion amount. This provides a context value with the new immersion level."
+      },
+      {
+        "timestamp": "25:18",
+        "text": "When the immersion changes, I read the value from the provided context. For Botanist, I store it so I can compare the before and after values."
+      },
+      {
+        "timestamp": "25:30",
+        "text": "I use onChange to handle changes to the stored immersion amount, extracting the new and old values from the closure to pass along."
+      },
+      {
+        "timestamp": "25:40",
+        "text": "To make the robot react to changes in immersion amounts, I call a function that triggers the robot to move outward when the immersion amount increases. And I call a function that triggers the robot to move inward when the immersion amount decreases. Let's check it out! Now the botanist reacts as the immersion level changes. It moves toward me as I increase the immersion and away from me as I decrease it."
+      },
+      {
+        "timestamp": "26:09",
+        "text": "Let's dial the immersion back up again. The botanist now reacts to move out and explore the expanding space as the immersion amount increases, but it feels like the environment is a little sparse at the moment."
+      },
+      {
+        "timestamp": "26:22",
+        "text": "To address that, I'll make the floor tappable to enable placing plants relative to the floor of the environment for the botanist to explore. To place plants at a specific location on the floor, I'll need to place the plants relative to a floor anchor and for that I'll need the 3D location of the anchor to be available."
+      },
+      {
+        "timestamp": "26:44",
+        "text": "You can provide your app access to the 3D location of anchors with the new Spatial Tracking Session API in RealityKit to enable people to authorize which anchor capabilities they want to track."
+      },
+      {
+        "timestamp": "26:58",
+        "text": "To use this API, first I create a spatial tracking session."
+      },
+      {
+        "timestamp": "27:04",
+        "text": "Then I create a task that calls a function to run the spatial tracking session when the immersive space is opened."
+      },
+      {
+        "timestamp": "27:12",
+        "text": "To run the session, I first set up a configuration for plane anchor tracking."
+      },
+      {
+        "timestamp": "27:19",
+        "text": "Then I run the session with the configuration to prompt for authorization to plane anchor transforms."
+      },
+      {
+        "timestamp": "27:27",
+        "text": "Now that I’ve registered for plane tracking, I need to add an anchor to track."
+      },
+      {
+        "timestamp": "27:33",
+        "text": "I specify a horizontal alignment for a target plane with floor classification to create a floor anchor entity to track."
+      },
+      {
+        "timestamp": "27:43",
+        "text": "Then I add the floor anchor to the RealityView content in the immersive space. Finally, I need to use the 3D location of my new anchor to place plants in my room."
+      },
+      {
+        "timestamp": "27:55",
+        "text": "I add a spatial tap gesture that can be used to detect taps on targeted entities in the immersive space."
+      },
+      {
+        "timestamp": "28:03",
+        "text": "When the gesture ends, I pass the gesture value along to a function that handles the tap."
+      },
+      {
+        "timestamp": "28:10",
+        "text": "To handle the tap, I first use the convert function on the gesture value to get the location of the gesture relative to the floor anchor. This step requires the transform of the floor anchor to be available to the app."
+      },
+      {
+        "timestamp": "28:26",
+        "text": "Finally, I can place the plant by adding the plant as a child of the floor anchor and using the converted location to set the plant entity's position."
+      },
+      {
+        "timestamp": "28:38",
+        "text": "Now, I pick a plant from the list. The hover effect on the floor indicates where the plant will be placed. I just tap, and a plant is placed! I love how placing plants in the room makes the Botanist app feel more alive."
+      },
+      {
+        "timestamp": "28:54",
+        "text": "For a deeper dive on the Spatial Tracking Session API, check out the session titled \"Build a spatial drawing app with RealityKit\"."
+      },
+      {
+        "timestamp": "29:04",
+        "text": "The immersive greenhouse experience is really starting to come together. Check out how the plants play a growth celebration animation as they're visited by the botanist."
+      },
+      {
+        "timestamp": "29:14",
+        "text": "I'd like to add to the celebration. Currently, each plant in our environment is placed in a planter with an associated tint color. Tinting the passthrough to match the planter's tint color is a great way to add to the celebration."
+      },
+      {
+        "timestamp": "29:29",
+        "text": "The preferred Surroundings Effect API can be used to tint the surrounding passthrough. I'll update the immersive experience in the Botanist app to tint the passthrough using the tint color of the planter for the actively celebrating plant. First, I'll pick the tint colors to complement the planters."
+      },
+      {
+        "timestamp": "29:48",
+        "text": "I add a tint color property to the custom Plant Component. Then I switch over the plant type to choose a tint color. For example, light blue for coffee berry."
+      },
+      {
+        "timestamp": "30:00",
+        "text": "To trigger the tint effect, I need to detect when the botanist is near a planter. Collision detection with RealityKit is the right tool for this job."
+      },
+      {
+        "timestamp": "30:10",
+        "text": "When handling the robot's movement over time, I use the collision closure to process hit entities. I then pass the collision value to a helper function."
+      },
+      {
+        "timestamp": "30:22",
+        "text": "To learn more about collision detection with RealityKit, check out Develop your first immersive app."
+      },
+      {
+        "timestamp": "30:30",
+        "text": "In my helper function, I first check whether the botanist has collided with a plant, returning if not."
+      },
+      {
+        "timestamp": "30:37",
+        "text": "Then I play the celebration animation."
+      },
+      {
+        "timestamp": "30:41",
+        "text": "Finally, if I'm in an immersive space, I store the active tint color on the app model for later use."
+      },
+      {
+        "timestamp": "30:49",
+        "text": "Back in the immersive view, I create a color multiply Surroundings Effect based on the stored active tint color. And tint the passthrough using that surroundings effect."
+      },
+      {
+        "timestamp": "31:02",
+        "text": "Let's check out the updated celebration colors that now tint the passthrough as plants are visited by the botanist."
+      },
+      {
+        "timestamp": "31:09",
+        "text": "Magenta for poppy."
+      },
+      {
+        "timestamp": "31:12",
+        "text": "Light green for yucka."
+      },
+      {
+        "timestamp": "31:16",
+        "text": "Light blue for coffee berry. Nice work botanist! In this session, we've covered a lot of new ways to build volumes and immersive spaces in your app. Try the new resizability behaviors to fine tune how volumes resize in your app. Use viewpoints to allow your app to respond to people moving around your volumes. Break out of the volume and into the immersive space the power of coordinate conversions. Respond to changes in immersion level in your immersive space. Spatial apps are an entirely new frontier for experiences people have never dreamed of. With the powerful, expressive tools of SwiftUI and RealityKit, the possibilities are limitless. And with a bit of whimsy and imagination, you can make something that astounds. Thanks!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -185,6 +660,88 @@
       "code": "// Apply effect to tint passthrough\nstruct ImmersiveExplorationView: View {\n    var body: some View {\n        RealityView { content in\n            // ...\n        }\n        .preferredSurroundingsEffect(surroundingsEffect)\n    }\n\n    // The resolved surroundings effect based on tint color\n    var surroundingsEffect: SurroundingsEffect? {\n        if let color = appModel.tintColor {\n            return SurroundingsEffect.colorMultiply(color)\n        } else {\n            return nil\n        }\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:04"
+    },
+    {
+      "timestamp": "2:04",
+      "title": "Volumes",
+      "duration": "0:02"
+    },
+    {
+      "timestamp": "2:06",
+      "title": "Volumes: Baseplate",
+      "duration": "2:02"
+    },
+    {
+      "timestamp": "4:08",
+      "title": "Volumes: Size",
+      "duration": "2:51"
+    },
+    {
+      "timestamp": "6:59",
+      "title": "Volumes: Toolbars",
+      "duration": "1:49"
+    },
+    {
+      "timestamp": "8:48",
+      "title": "Volumes: Ornaments",
+      "duration": "2:48"
+    },
+    {
+      "timestamp": "11:36",
+      "title": "Volumes: Viewpoints",
+      "duration": "3:58"
+    },
+    {
+      "timestamp": "15:34",
+      "title": "Volumes: World alignment",
+      "duration": "1:18"
+    },
+    {
+      "timestamp": "16:52",
+      "title": "Volumes: Dynamic scale",
+      "duration": "1:34"
+    },
+    {
+      "timestamp": "18:26",
+      "title": "Intermezzo",
+      "duration": "0:16"
+    },
+    {
+      "timestamp": "18:42",
+      "title": "Immersive spaces",
+      "duration": "0:56"
+    },
+    {
+      "timestamp": "19:38",
+      "title": "Immersive spaces: Coordinate conversions",
+      "duration": "3:02"
+    },
+    {
+      "timestamp": "22:40",
+      "title": "Immersive spaces: Immersion styles",
+      "duration": "3:28"
+    },
+    {
+      "timestamp": "26:08",
+      "title": "Immersive spaces: Anchored UI interactions",
+      "duration": "2:55"
+    },
+    {
+      "timestamp": "29:03",
+      "title": "Immersive spaces: Surroundings effects",
+      "duration": "2:18"
+    },
+    {
+      "timestamp": "31:21",
+      "title": "Next steps",
+      "duration": "0:56"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -213,5 +770,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10203"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:53.594Z"
+  "extractedAt": "2026-10-17T18:44:52.409Z"
 }

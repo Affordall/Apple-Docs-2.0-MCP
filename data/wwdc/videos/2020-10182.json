@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10182/",
   "title": "What's new in HealthKit",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Health & Fitness"
@@ -11,8 +10,148 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nHello, everyone, and welcome to \"What's New in HealthKit.\" My name is Netra, and I'm a software developer on the HealthKit team.\n\nWe have some exciting new developments in HealthKit to share with you, and we can't wait to see what you do with them.\n\nThe first thing I want to share with you is the ability to track symptoms in HealthKit.\n\nTracking symptoms is an important aspect of monitoring health data. Our users might want to track a wide range of symptoms. This could be shortness of breath, sleep or appetite changes, or simply a running nose. Symptoms offer valuable insights into your health. They can also help you or your doctor make informed decisions about diagnoses or treatment. This year, we are proud to introduce 30 symptom data types to HealthKit. We have attempted to cover a wide range of symptoms.\n\nDevelopers can now read and write symptom samples in order to build virtual health experiences in their apps. We can't wait to see the amazing apps you create using these symptom data types. We recently introduced the ECG App on Apple Watch. An ECG, or electrocardiogram, is a test that records the electrical pulses that make up a heartbeat.\n\nBy looking at an ECG, a doctor can gain critical insights about your heart rhythm, and also look for irregularities in it.\n\nThe ECG App on Apple Watch can recall heartbeat and heart rhythm using the electrical sensors on the Digital Crown.\n\nThese waveforms can be viewed in the Health app, and they can also be exported as PDFs to a doctor. This year, we're putting the power of ECG in the hands of all you developers. In the latest version of iOS and watchOS, ECG samples will be available for reading.\n\nAn ECG sample can be read as an HKElectrocardiogram.\n\nAn HKElectrocardiogram represents a waveform as a series of voltage values.\n\nNow, this sample has some important properties associated with it.\n\nWhen you take an ECG on Apple Watch, the recording is checked for atrial fibrillation.\n\nAtrial fibrillation is a form of irregular rhythm. It signifies that the upper and lower chambers of your heart are out of rhythm.\n\nAfter a successful recording, Apple Watch will give you the result of the recording.\n\nThe result is in the form of a classification.\n\nThe classification can be a sinus rhythm, which means that the heart is beating in a uniform pattern.\n\nOr it can be atrial fibrillation.\n\nAtrial fibrillation implies an irregular heart rhythm.\n\nIt is an indication that the user should probably go see their doctor. If Apple Watch is unable to determine the ECG result, either due to a low or a high heart rate, or due to any other reason, the result is considered inconclusive.\n\nThere are some more important properties that make up an HKElectrocardiogram sample. The next one is the symptomsStatus.\n\nIt tells us if the user associated a symptom with this ECG. We already saw the new symptom data types introduced this year. When a user takes an ECG, quite often it's because they have a symptom they are experiencing. This could be heartburn or tightness in their chest. The symptom experienced can be recorded along with the ECG. As mentioned earlier, the HKElectrocardiogram sample is a collection of voltage measurements. The sample is backed by more properties that describe the measurements. These include the average heart rate, the sampling frequency and the number of voltage measurements. The number of voltage measurements refers to the individual voltage measurements that make up an ECG sample.\n\nTo retrieve the individual measurements, you can run the HKElectrocardiogramQuery.\n\nYou can fetch the ECG samples via any of the HealthKit queries and then initialize the HKElectrocardiogramQuery with the fetched sample.\n\nWhen this query is executed on the health store, you get the individual voltage measurements backing the ECG in the data handler. Electrocardiograms are an important diagnostic tool for heart health. Another important metric of the user's health is their mobility. These are metrics that gauge a user's functional exercise capacity, or their ability to do aerobic work.\n\nMobility is strongly tied to respiratory diseases and heart health.\n\nMobility is especially important for patients recovering from an injury, or aging individuals. Mobility metrics are usually measured across a period where the user is walking without stopping on a flat surface. Your iPhone or Apple Watch can also record some of this data during bouts of walking. HealthKit is proud to introduce a new set of mobility types this year.\n\nThe first is the walking speed and step length.\n\nWalking takes strength, fitness, balance, and coordination. Changes in any of these areas could affect your walking speed and step length.\n\nThis may also decline with age, injury, pain, or illness.\n\nBalance and coordination are captured by the walking asymmetry and double support percentage.\n\nThe next one is the stair ascent and descent speed. They are an indication of your cardiovascular health, balance and coordination.\n\nFinally, the six-minute walk test distance is a frequent clinical test for mobility. The more mobile and fit you are, the higher this number will be.\n\nThese data types are available for reading and writing on the latest iOS and watchOS. We have introduced some major features in HealthKit this year. These include symptoms, the HKElectrocardiogram sample and the HKElectrocardiogramQuery, and the mobility data types. We are so excited to see how you take advantage of all these new types, and we look forward to seeing all the amazing apps that you create. Go build great health apps, and as always, let us know if you have any feedback for us.\n\nThank you for watching.\nHave a great a WWDC.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Hello, everyone, and welcome to \"What's New in HealthKit.\" My name is Netra, and I'm a software developer on the HealthKit team."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "We have some exciting new developments in HealthKit to share with you, and we can't wait to see what you do with them."
+      },
+      {
+        "timestamp": "0:23",
+        "text": "The first thing I want to share with you is the ability to track symptoms in HealthKit."
+      },
+      {
+        "timestamp": "0:28",
+        "text": "Tracking symptoms is an important aspect of monitoring health data. Our users might want to track a wide range of symptoms. This could be shortness of breath, sleep or appetite changes, or simply a running nose. Symptoms offer valuable insights into your health. They can also help you or your doctor make informed decisions about diagnoses or treatment. This year, we are proud to introduce 30 symptom data types to HealthKit. We have attempted to cover a wide range of symptoms."
+      },
+      {
+        "timestamp": "0:57",
+        "text": "Developers can now read and write symptom samples in order to build virtual health experiences in their apps. We can't wait to see the amazing apps you create using these symptom data types. We recently introduced the ECG App on Apple Watch. An ECG, or electrocardiogram, is a test that records the electrical pulses that make up a heartbeat."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "By looking at an ECG, a doctor can gain critical insights about your heart rhythm, and also look for irregularities in it."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "The ECG App on Apple Watch can recall heartbeat and heart rhythm using the electrical sensors on the Digital Crown."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "These waveforms can be viewed in the Health app, and they can also be exported as PDFs to a doctor. This year, we're putting the power of ECG in the hands of all you developers. In the latest version of iOS and watchOS, ECG samples will be available for reading."
+      },
+      {
+        "timestamp": "1:50",
+        "text": "An ECG sample can be read as an HKElectrocardiogram."
+      },
+      {
+        "timestamp": "1:55",
+        "text": "An HKElectrocardiogram represents a waveform as a series of voltage values."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "Now, this sample has some important properties associated with it."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "When you take an ECG on Apple Watch, the recording is checked for atrial fibrillation."
+      },
+      {
+        "timestamp": "2:11",
+        "text": "Atrial fibrillation is a form of irregular rhythm. It signifies that the upper and lower chambers of your heart are out of rhythm."
+      },
+      {
+        "timestamp": "2:19",
+        "text": "After a successful recording, Apple Watch will give you the result of the recording."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "The result is in the form of a classification."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "The classification can be a sinus rhythm, which means that the heart is beating in a uniform pattern."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "Or it can be atrial fibrillation."
+      },
+      {
+        "timestamp": "2:37",
+        "text": "Atrial fibrillation implies an irregular heart rhythm."
+      },
+      {
+        "timestamp": "2:41",
+        "text": "It is an indication that the user should probably go see their doctor. If Apple Watch is unable to determine the ECG result, either due to a low or a high heart rate, or due to any other reason, the result is considered inconclusive."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "There are some more important properties that make up an HKElectrocardiogram sample. The next one is the symptomsStatus."
+      },
+      {
+        "timestamp": "3:04",
+        "text": "It tells us if the user associated a symptom with this ECG. We already saw the new symptom data types introduced this year. When a user takes an ECG, quite often it's because they have a symptom they are experiencing. This could be heartburn or tightness in their chest. The symptom experienced can be recorded along with the ECG. As mentioned earlier, the HKElectrocardiogram sample is a collection of voltage measurements. The sample is backed by more properties that describe the measurements. These include the average heart rate, the sampling frequency and the number of voltage measurements. The number of voltage measurements refers to the individual voltage measurements that make up an ECG sample."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "To retrieve the individual measurements, you can run the HKElectrocardiogramQuery."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "You can fetch the ECG samples via any of the HealthKit queries and then initialize the HKElectrocardiogramQuery with the fetched sample."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "When this query is executed on the health store, you get the individual voltage measurements backing the ECG in the data handler. Electrocardiograms are an important diagnostic tool for heart health. Another important metric of the user's health is their mobility. These are metrics that gauge a user's functional exercise capacity, or their ability to do aerobic work."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "Mobility is strongly tied to respiratory diseases and heart health."
+      },
+      {
+        "timestamp": "4:25",
+        "text": "Mobility is especially important for patients recovering from an injury, or aging individuals. Mobility metrics are usually measured across a period where the user is walking without stopping on a flat surface. Your iPhone or Apple Watch can also record some of this data during bouts of walking. HealthKit is proud to introduce a new set of mobility types this year."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "The first is the walking speed and step length."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "Walking takes strength, fitness, balance, and coordination. Changes in any of these areas could affect your walking speed and step length."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "This may also decline with age, injury, pain, or illness."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "Balance and coordination are captured by the walking asymmetry and double support percentage."
+      },
+      {
+        "timestamp": "5:09",
+        "text": "The next one is the stair ascent and descent speed. They are an indication of your cardiovascular health, balance and coordination."
+      },
+      {
+        "timestamp": "5:18",
+        "text": "Finally, the six-minute walk test distance is a frequent clinical test for mobility. The more mobile and fit you are, the higher this number will be."
+      },
+      {
+        "timestamp": "5:28",
+        "text": "These data types are available for reading and writing on the latest iOS and watchOS. We have introduced some major features in HealthKit this year. These include symptoms, the HKElectrocardiogram sample and the HKElectrocardiogramQuery, and the mobility data types. We are so excited to see how you take advantage of all these new types, and we look forward to seeing all the amazing apps that you create. Go build great health apps, and as always, let us know if you have any feedback for us."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "Thank you for watching. Have a great a WWDC."
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -45,5 +184,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10184"
     }
   ],
-  "extractedAt": "2026-10-11T16:44:56.255Z"
+  "extractedAt": "2026-10-17T18:54:50.851Z"
 }

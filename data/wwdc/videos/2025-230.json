@@ -3,16 +3,347 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/230/",
   "title": "Wake up to the AlarmKit API",
-  "speakers": [],
-  "duration": "",
+  "duration": "18:27",
   "topics": [
     "App Services"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hey, I’m Anton, an engineer on the system experience team. In this session, you’ll meet AlarmKit, a framework that allows you to create alarms in your app. In this video, I will first walk you through the experience you can build with AlarmKit then I’ll discuss how you can get your app authorization for using this framework, how to create an alarm, and how you can manage its lifecycle. I’ll start with the experience. An alarm is a prominent alert for things that occur at a fixed, pre-determined time. It’s based on a schedule or a countdown. When it fires, the alert breaks through the silent mode and the current focus.\n\nIn the alert, people are presented with the custom alarm title, as well as the name of your app People have the option of stopping the alert or snoozing it with an optional snooze button.\n\nAlternatively, an alarm can have a custom button whose action is defined by an app intent.\n\nAlarms are also supported in other system experiences, such as in StandBy and right on Apple Watch, if it’s paired to iPhone when the alarm fires.\n\nAlarms support a custom countdown interface using Live Activities that your app provides. This can be viewed on the Lock Screen as well as in the dynamic island and in StandBy.\n\nPeople opt in to enable alarm functionality for each app on their device.\n\nNow that you know what an alarm is, let’s talk about what you need to do to allow people to authorize your app to schedule alarms.\n\nBefore your app can schedule alarms, people will need to consent by providing authorization.\n\nYou can request authorization manually, or it will be requested automatically when you create your first alarm. At any time, people can change their authorization status in the Settings app.\n\nSetting up authorization is simple, you just need to add NSAlarmKitUsageDescription to your app’s info plist explaining the use case for presenting alarms.\n\nProvide a short and descriptive explanation of how your app will be using alarms, to help people make the best decision. To request authorization manually, you can use the AlarmManager requestAuthorization API If a choice has not previously been made, a prompt will be shown containing the usage description.\n\nYou can check authorization status before scheduling an alarm by querying the authorizationState in the AlarmManager class.\n\nIn this case, if it’s not determined, I can request authorization manually. If authorized, I can proceed with scheduling the alarm. If denied, it’s important to make it clear in your app’s interface that the alarm will not be scheduled. Now that you are familiar with authorization setup for alarms, let’s talk about how to create an alarm. The main parts required for creating an alarm are countdown duration, A schedule with a specific date or recurrence pattern Appearance configuration, handling of custom actions And associated sound.\n\nLet’s start with countdown duration. An alarm can have a pre-alert and post-alert countdown interval. When an alarm is first scheduled it will display the countdown UI which will appear for the pre-alert countdown duration.\n\nWhen the pre-alert duration elapses, the alarm fires and displays the alert UI, customized with your configuration.\n\nIf the alarm is snoozed the countdown UI will appear again for the duration of the post-alert interval.\n\nOnce this interval elapses, the alarm will fire again and can be snoozed or dismissed.\n\nIn this example, I'm setting up a timer with a pre alert duration of 10 minutes. Once it fires and is repeated it will count down the 5 minute post alert duration and fire again. When creating an alarm you can also provide a schedule, which can be either fixed or relative.\n\nA fixed schedule specifies a single future date at which the alarm will alert. This schedule is absolute and does not change when device timezone changes. In this example, I set up an alarm to go off for the WWDC Keynote. I create the date components for June 9th at 9:41 am. I then use those components to create the date.\n\nNext, I pass the date to my alarm schedule using its fixed initializer.\n\nI can also specify a relative schedule for my alarm. This includes the time of day and optional weekly recurrence pattern. Relative schedule accounts for timezone changes.\n\nIn this example, I’m setting the alarm to go off at 7 am every Monday, Wednesday, and Friday. I set the hour and the minute for the time portion and specify the daily occurrence.\n\nNow that you’re familiar with how to schedule an alarm, let’s move onto customizing alarm appearance. There are a number of elements you can customize.\n\nI want to create a cooking timer in my app, and I want to customize how the alert appears when it goes off. I start off by creating the alert button, which is done using the AlarmButton struct. It allows me to specify the text, textColor, and the systemImage of the button.\n\nI use it to define the stop button, which will be titled “Dismiss”, and have a white text color.\n\nIt will also include an SF Symbol, which will be used when the alert is shown in the dynamic island.\n\nI can now create the alert presentation and set the alarm title, stating that food is done. I also include the stop button I just created.\n\nNext, I will create the alarm attributes. Think of this as the information required to render the presentations of your alarm. I will pass the alert presentation I just created in the presentation parameter.\n\nLastly, I will create alarm configuration. Think of this as all the pieces required to schedule an alarm, including a countdown duration, a schedule, and the attributes.\n\nI will pass the attributes to the alarm configuration.\n\nI have now set up my alarm alert presentation with a dismiss button.\n\nIf your alarm just needs to show an alert, this is all you need to do to set up its appearance.\n\nBut if you would like your alarm to show a countdown interface, there are a few more steps you need to take. I’ll go through those for my cooking alarm next.\n\nI will first add a repeat button to my alert to trigger a countdown.\n\nI create the repeat button using the AlarmButton struct and set its title to repeat. I will also specify a white text color, and a repeat icon, which will appear when the alarm alerts in the Dynami Island.\n\nWhen I create the alert presentation I now also include my repeat button.\n\nThe secondaryButton behavior parameter, specifies whether the secondary button transitions the alarm to the countdown state, like repeating a timer or snoozing an alarm, or whether it executes a custom action. When my repeat button is tapped, I want the alert to transition to a countdown in this case. I specify this by setting secondaryButtonBehavior to countdown.\n\nJust like before, I will create the alarm attributes with the alert presentation, and then the AlarmConfiguration including those attributes.\n\nI have now added a repeat button to my alert that will start a countdown. Next, I need to implement a Live Activity to show the UI for my countdown. If your alarm supports countdown functionality, your app is required to implement it using a Live Activity. I will do that next. I will create a countdown to inform me when the food is done cooking. It will appear on the Lock Screen, in the Dynamic Island, and in StandBy.\n\nIf you know how to build a Live Activity, you already know how to create a custom interface for your countdown. You will need to add your countdown Live Activity to your app’s widget extension.\n\nIf you don’t have one, do not get alarmed! You can get started by watching the WWDC23 video called “Meet ActivityKit”. You will then set up an ActivityConfiguration, and specify AlarmAttributes with your metadata type.\n\nIn this case, I can set up an ActivityConfiguration and specify that it will use alarm attributes and my CookingData metadata. I will first focus on the Lock Screen.\n\nMy alarm countdown can be in a countdown or paused state. I’ll provide a corresponding view for each of these states.\n\nTo do that, I check the current mode of the alarm in the context object and render the appropriate view.\n\nI first handle the countdown state and provide my countdown view.\n\nNext, I handle the paused state and provide my paused view.\n\nI will now set up the expanded regions of the Dynamic Island appearance. They contain my alarm title, countdown, and buttons. I then set up the compact and minimal Dynamic Island views. These will contain my alarm countdown and an icon. Now that I’ve set up my basic Live Activity countdown, I’d like to add an icon to indicate how the food is being cooked. I can provide this additional information in my alarm metadata.\n\nMy CookingData is a struct that conforms to the AlarmMetadata protocol. I define a string enum to specify the method of cooking and include frying and grilling as options. I then create a property to store my method of cooking.\n\nI am now ready to use my cooking data metadata. When scheduling the alarm in my app, I create the cooking data object and specify frying as the method of cooking.\n\nI then include this custom metadata when creating the alarm attributes.\n\nIn my Live Activity, I will access the method of cooking in my custom metadata using the context attributes.\n\nI can then use the method of cooking to create an icon. Now, when my countdown is rendered, it has the frying icon I generated using the method of cooking in my cooking metadata. I use it both on the Lock Screen and in the Dynamic Island.\n\nI have now successfully set up my alarm countdown using a Live Activity. I also created a custom icon for my alarm countdown using alarm metadata.\n\nIf your alarm supports countdown functionality, the system will guarantee that a countdown interface will be shown. In some cases, your Live Activity cannot be shown, for example, after device restarts and before it’s first unlocked. In that case, you can still customize the system's presentation of your countdown.\n\nI will now set up the system presentation for my cooking alarm countdown. I will start by defining the paused button using the AlarmButton struct. And set it to have a pause system icon.\n\nNext, I’ll create the countdown presentation and set the title to say that the food is cooking, and include my pause button.\n\nNow that I have defined the countdown presentation, I will include it as part of my alarm attributes. Because my alarm supports pause functionality, I will also set up the paused system presentation for my cooking countdown.\n\nWhen my countdown is paused, I want people to be able to resume it. I start by defining a resume button using the AlarmButton struct. And setting it to have a play icon.\n\nI then create the paused presentation and set the title to cooking being paused.\n\nI also pass in my resume button.\n\nI can now add my paused presentation to my alarm attributes.\n\nI have now handled the alert, countdown, and paused system presentations. Let’s take a moment to talk about the tint color. It is used throughout these presentations and helps people associate your alarm to your app. I pass it as part of my alarm attributes. In the alert presentation, it is used to set the fill color of the secondary button.\n\nOn the lock screen, it is used to tint the symbol in the secondary button as well as the alarm title and the countdown.\n\nSimilarly, it is used in the Dynamic Island. Now that you are familiar with setting up the alarm appearance, let’s move onto customizing its actions. AlarmKit gives you the ability to run your own code when someone taps an alarm button. You can do this using an app intent. You can provide a custom app intent for the stop button or for the secondary button.\n\nLet’s create a custom secondary button that will execute an app intent to open my app when tapped. To accomplish that, I will need to modify the alert appearance. I start off by creating an open button using the AlarmButton struct. It will be titled “Open”, have a white text color and an arrow icon in the Dynamic Island.\n\nWhen I create the alert presentation, I will include the open button as the secondary button.\n\nBecause I want this button to execute a custom action, I will change the secondary button behavior to custom.\n\nMy custom secondary button is now ready.\n\nLet’s set up an action using an app intent to open my app when the button is tapped.\n\nThis is the open app intent I’d like to use. It includes the alarm identifier for which the button was tapped. It also sets the openAppWhenRun flag to true to indicate that I want my app to be opened when the intent is executed.\n\nOnce my app is opened, I can do additional tasks like show a more detailed view for the alarm with that identifier.\n\nLet’s use the intent I just created.\n\nWhen scheduling the alarm, I create a unique identifier that allows me to track that alarm after creation.\n\nI create an instance of the OpenInApp intent, and pass in the unique identifier of the alarm.\n\nWhen I create my alarm configuration, I now include the secondary intent to indicate to the system that this is the intent I would like it to run when secondary button is tapped.\n\nI have now added a custom open button to my alert, defined an app intent to open my app, and indicated to the system to run that intent when the open button is tapped. Let’s now take a moment to talk about how to configure the sound of your alarm. If you don’t specify a sound parameter, your alarm will use a default system sound. You can also provide a custom sound for your alarm.\n\nBecause AlarmKit uses ActivityKit for alarm presentation, you can define a custom sound by using its AlertSound struct.\n\nYou will need to specify the name of the sound file, which should be either in your app’s main bundle or Library/Sounds folder of your app’s data container. Once you have finished setting up your alarm, you are now ready to manage it in the system. You can do so using the AlarmManager class. After I’ve configured my alarm, I can schedule it with the system. I can do so by using the alarm's unique identifier and the configuration I created earlier. This identifier should be used to track the alarm through its lifecycle.\n\nYou have full control over the lifecycle of the alarm. You can transition it to a countdown state, as well as cancel, stop, pause, or resume it.\n\nI'd like to leave you with a few best practices when using AlarmKit. Alarms are a great fit for countdowns with a specific interval, like a cooking timer, or recurring alerts with a schedule, like a wake-up alarm. They are not a replacement for other prominent notifications, like critical alerts or time-sensitive notifications.\n\nAim for clarity with your alert presentation. Alerts are prominently displayed, and you'll want to make it easy for someone to understand what the alarm is, and what actions they can take.\n\nIf your alarm supports a countdown, consider including the key elements of the countdown in your Live Activity. This includes the remaining duration, a dismiss button, and a pause or resume button. Today, you learned how to use AlarmKit to create alarms and manage their lifecycle in the system. You are now ready to try it in your app. Use AlarmKit to configure alarms for your app’s use cases. Create custom countdown experiences on the Lock Screen and in the Dynamic Island with Live Activities. Add custom actions to your alarms using App Intents.\n\nThat’s all there is time for. Thanks for joining!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hey, I’m Anton, an engineer on the system experience team. In this session, you’ll meet AlarmKit, a framework that allows you to create alarms in your app. In this video, I will first walk you through the experience you can build with AlarmKit then I’ll discuss how you can get your app authorization for using this framework, how to create an alarm, and how you can manage its lifecycle. I’ll start with the experience. An alarm is a prominent alert for things that occur at a fixed, pre-determined time. It’s based on a schedule or a countdown. When it fires, the alert breaks through the silent mode and the current focus."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "In the alert, people are presented with the custom alarm title, as well as the name of your app People have the option of stopping the alert or snoozing it with an optional snooze button."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Alternatively, an alarm can have a custom button whose action is defined by an app intent."
+      },
+      {
+        "timestamp": "1:09",
+        "text": "Alarms are also supported in other system experiences, such as in StandBy and right on Apple Watch, if it’s paired to iPhone when the alarm fires."
+      },
+      {
+        "timestamp": "1:20",
+        "text": "Alarms support a custom countdown interface using Live Activities that your app provides. This can be viewed on the Lock Screen as well as in the dynamic island and in StandBy."
+      },
+      {
+        "timestamp": "1:33",
+        "text": "People opt in to enable alarm functionality for each app on their device."
+      },
+      {
+        "timestamp": "1:38",
+        "text": "Now that you know what an alarm is, let’s talk about what you need to do to allow people to authorize your app to schedule alarms."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "Before your app can schedule alarms, people will need to consent by providing authorization."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "You can request authorization manually, or it will be requested automatically when you create your first alarm. At any time, people can change their authorization status in the Settings app."
+      },
+      {
+        "timestamp": "2:07",
+        "text": "Setting up authorization is simple, you just need to add NSAlarmKitUsageDescription to your app’s info plist explaining the use case for presenting alarms."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "Provide a short and descriptive explanation of how your app will be using alarms, to help people make the best decision. To request authorization manually, you can use the AlarmManager requestAuthorization API If a choice has not previously been made, a prompt will be shown containing the usage description."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "You can check authorization status before scheduling an alarm by querying the authorizationState in the AlarmManager class."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "In this case, if it’s not determined, I can request authorization manually. If authorized, I can proceed with scheduling the alarm. If denied, it’s important to make it clear in your app’s interface that the alarm will not be scheduled. Now that you are familiar with authorization setup for alarms, let’s talk about how to create an alarm. The main parts required for creating an alarm are countdown duration, A schedule with a specific date or recurrence pattern Appearance configuration, handling of custom actions And associated sound."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "Let’s start with countdown duration. An alarm can have a pre-alert and post-alert countdown interval. When an alarm is first scheduled it will display the countdown UI which will appear for the pre-alert countdown duration."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "When the pre-alert duration elapses, the alarm fires and displays the alert UI, customized with your configuration."
+      },
+      {
+        "timestamp": "3:51",
+        "text": "If the alarm is snoozed the countdown UI will appear again for the duration of the post-alert interval."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "Once this interval elapses, the alarm will fire again and can be snoozed or dismissed."
+      },
+      {
+        "timestamp": "4:08",
+        "text": "In this example, I'm setting up a timer with a pre alert duration of 10 minutes. Once it fires and is repeated it will count down the 5 minute post alert duration and fire again. When creating an alarm you can also provide a schedule, which can be either fixed or relative."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "A fixed schedule specifies a single future date at which the alarm will alert. This schedule is absolute and does not change when device timezone changes. In this example, I set up an alarm to go off for the WWDC Keynote. I create the date components for June 9th at 9:41 am. I then use those components to create the date."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "Next, I pass the date to my alarm schedule using its fixed initializer."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "I can also specify a relative schedule for my alarm. This includes the time of day and optional weekly recurrence pattern. Relative schedule accounts for timezone changes."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "In this example, I’m setting the alarm to go off at 7 am every Monday, Wednesday, and Friday. I set the hour and the minute for the time portion and specify the daily occurrence."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "Now that you’re familiar with how to schedule an alarm, let’s move onto customizing alarm appearance. There are a number of elements you can customize."
+      },
+      {
+        "timestamp": "5:36",
+        "text": "I want to create a cooking timer in my app, and I want to customize how the alert appears when it goes off. I start off by creating the alert button, which is done using the AlarmButton struct. It allows me to specify the text, textColor, and the systemImage of the button."
+      },
+      {
+        "timestamp": "5:55",
+        "text": "I use it to define the stop button, which will be titled “Dismiss”, and have a white text color."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "It will also include an SF Symbol, which will be used when the alert is shown in the dynamic island."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "I can now create the alert presentation and set the alarm title, stating that food is done. I also include the stop button I just created."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "Next, I will create the alarm attributes. Think of this as the information required to render the presentations of your alarm. I will pass the alert presentation I just created in the presentation parameter."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "Lastly, I will create alarm configuration. Think of this as all the pieces required to schedule an alarm, including a countdown duration, a schedule, and the attributes."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "I will pass the attributes to the alarm configuration."
+      },
+      {
+        "timestamp": "6:51",
+        "text": "I have now set up my alarm alert presentation with a dismiss button."
+      },
+      {
+        "timestamp": "6:56",
+        "text": "If your alarm just needs to show an alert, this is all you need to do to set up its appearance."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "But if you would like your alarm to show a countdown interface, there are a few more steps you need to take. I’ll go through those for my cooking alarm next."
+      },
+      {
+        "timestamp": "7:12",
+        "text": "I will first add a repeat button to my alert to trigger a countdown."
+      },
+      {
+        "timestamp": "7:18",
+        "text": "I create the repeat button using the AlarmButton struct and set its title to repeat. I will also specify a white text color, and a repeat icon, which will appear when the alarm alerts in the Dynami Island."
+      },
+      {
+        "timestamp": "7:34",
+        "text": "When I create the alert presentation I now also include my repeat button."
+      },
+      {
+        "timestamp": "7:41",
+        "text": "The secondaryButton behavior parameter, specifies whether the secondary button transitions the alarm to the countdown state, like repeating a timer or snoozing an alarm, or whether it executes a custom action. When my repeat button is tapped, I want the alert to transition to a countdown in this case. I specify this by setting secondaryButtonBehavior to countdown."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "Just like before, I will create the alarm attributes with the alert presentation, and then the AlarmConfiguration including those attributes."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "I have now added a repeat button to my alert that will start a countdown. Next, I need to implement a Live Activity to show the UI for my countdown. If your alarm supports countdown functionality, your app is required to implement it using a Live Activity. I will do that next. I will create a countdown to inform me when the food is done cooking. It will appear on the Lock Screen, in the Dynamic Island, and in StandBy."
+      },
+      {
+        "timestamp": "8:45",
+        "text": "If you know how to build a Live Activity, you already know how to create a custom interface for your countdown. You will need to add your countdown Live Activity to your app’s widget extension."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "If you don’t have one, do not get alarmed! You can get started by watching the WWDC23 video called “Meet ActivityKit”. You will then set up an ActivityConfiguration, and specify AlarmAttributes with your metadata type."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "In this case, I can set up an ActivityConfiguration and specify that it will use alarm attributes and my CookingData metadata. I will first focus on the Lock Screen."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "My alarm countdown can be in a countdown or paused state. I’ll provide a corresponding view for each of these states."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "To do that, I check the current mode of the alarm in the context object and render the appropriate view."
+      },
+      {
+        "timestamp": "9:45",
+        "text": "I first handle the countdown state and provide my countdown view."
+      },
+      {
+        "timestamp": "9:50",
+        "text": "Next, I handle the paused state and provide my paused view."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "I will now set up the expanded regions of the Dynamic Island appearance. They contain my alarm title, countdown, and buttons. I then set up the compact and minimal Dynamic Island views. These will contain my alarm countdown and an icon. Now that I’ve set up my basic Live Activity countdown, I’d like to add an icon to indicate how the food is being cooked. I can provide this additional information in my alarm metadata."
+      },
+      {
+        "timestamp": "10:26",
+        "text": "My CookingData is a struct that conforms to the AlarmMetadata protocol. I define a string enum to specify the method of cooking and include frying and grilling as options. I then create a property to store my method of cooking."
+      },
+      {
+        "timestamp": "10:43",
+        "text": "I am now ready to use my cooking data metadata. When scheduling the alarm in my app, I create the cooking data object and specify frying as the method of cooking."
+      },
+      {
+        "timestamp": "10:54",
+        "text": "I then include this custom metadata when creating the alarm attributes."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "In my Live Activity, I will access the method of cooking in my custom metadata using the context attributes."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "I can then use the method of cooking to create an icon. Now, when my countdown is rendered, it has the frying icon I generated using the method of cooking in my cooking metadata. I use it both on the Lock Screen and in the Dynamic Island."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "I have now successfully set up my alarm countdown using a Live Activity. I also created a custom icon for my alarm countdown using alarm metadata."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "If your alarm supports countdown functionality, the system will guarantee that a countdown interface will be shown. In some cases, your Live Activity cannot be shown, for example, after device restarts and before it’s first unlocked. In that case, you can still customize the system's presentation of your countdown."
+      },
+      {
+        "timestamp": "11:58",
+        "text": "I will now set up the system presentation for my cooking alarm countdown. I will start by defining the paused button using the AlarmButton struct. And set it to have a pause system icon."
+      },
+      {
+        "timestamp": "12:13",
+        "text": "Next, I’ll create the countdown presentation and set the title to say that the food is cooking, and include my pause button."
+      },
+      {
+        "timestamp": "12:23",
+        "text": "Now that I have defined the countdown presentation, I will include it as part of my alarm attributes. Because my alarm supports pause functionality, I will also set up the paused system presentation for my cooking countdown."
+      },
+      {
+        "timestamp": "12:38",
+        "text": "When my countdown is paused, I want people to be able to resume it. I start by defining a resume button using the AlarmButton struct. And setting it to have a play icon."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "I then create the paused presentation and set the title to cooking being paused."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "I also pass in my resume button."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "I can now add my paused presentation to my alarm attributes."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "I have now handled the alert, countdown, and paused system presentations. Let’s take a moment to talk about the tint color. It is used throughout these presentations and helps people associate your alarm to your app. I pass it as part of my alarm attributes. In the alert presentation, it is used to set the fill color of the secondary button."
+      },
+      {
+        "timestamp": "13:31",
+        "text": "On the lock screen, it is used to tint the symbol in the secondary button as well as the alarm title and the countdown."
+      },
+      {
+        "timestamp": "13:39",
+        "text": "Similarly, it is used in the Dynamic Island. Now that you are familiar with setting up the alarm appearance, let’s move onto customizing its actions. AlarmKit gives you the ability to run your own code when someone taps an alarm button. You can do this using an app intent. You can provide a custom app intent for the stop button or for the secondary button."
+      },
+      {
+        "timestamp": "14:03",
+        "text": "Let’s create a custom secondary button that will execute an app intent to open my app when tapped. To accomplish that, I will need to modify the alert appearance. I start off by creating an open button using the AlarmButton struct. It will be titled “Open”, have a white text color and an arrow icon in the Dynamic Island."
+      },
+      {
+        "timestamp": "14:25",
+        "text": "When I create the alert presentation, I will include the open button as the secondary button."
+      },
+      {
+        "timestamp": "14:32",
+        "text": "Because I want this button to execute a custom action, I will change the secondary button behavior to custom."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "My custom secondary button is now ready."
+      },
+      {
+        "timestamp": "14:43",
+        "text": "Let’s set up an action using an app intent to open my app when the button is tapped."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "This is the open app intent I’d like to use. It includes the alarm identifier for which the button was tapped. It also sets the openAppWhenRun flag to true to indicate that I want my app to be opened when the intent is executed."
+      },
+      {
+        "timestamp": "15:06",
+        "text": "Once my app is opened, I can do additional tasks like show a more detailed view for the alarm with that identifier."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "Let’s use the intent I just created."
+      },
+      {
+        "timestamp": "15:18",
+        "text": "When scheduling the alarm, I create a unique identifier that allows me to track that alarm after creation."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "I create an instance of the OpenInApp intent, and pass in the unique identifier of the alarm."
+      },
+      {
+        "timestamp": "15:33",
+        "text": "When I create my alarm configuration, I now include the secondary intent to indicate to the system that this is the intent I would like it to run when secondary button is tapped."
+      },
+      {
+        "timestamp": "15:44",
+        "text": "I have now added a custom open button to my alert, defined an app intent to open my app, and indicated to the system to run that intent when the open button is tapped. Let’s now take a moment to talk about how to configure the sound of your alarm. If you don’t specify a sound parameter, your alarm will use a default system sound. You can also provide a custom sound for your alarm."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "Because AlarmKit uses ActivityKit for alarm presentation, you can define a custom sound by using its AlertSound struct."
+      },
+      {
+        "timestamp": "16:20",
+        "text": "You will need to specify the name of the sound file, which should be either in your app’s main bundle or Library/Sounds folder of your app’s data container. Once you have finished setting up your alarm, you are now ready to manage it in the system. You can do so using the AlarmManager class. After I’ve configured my alarm, I can schedule it with the system. I can do so by using the alarm's unique identifier and the configuration I created earlier. This identifier should be used to track the alarm through its lifecycle."
+      },
+      {
+        "timestamp": "16:55",
+        "text": "You have full control over the lifecycle of the alarm. You can transition it to a countdown state, as well as cancel, stop, pause, or resume it."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "I'd like to leave you with a few best practices when using AlarmKit. Alarms are a great fit for countdowns with a specific interval, like a cooking timer, or recurring alerts with a schedule, like a wake-up alarm. They are not a replacement for other prominent notifications, like critical alerts or time-sensitive notifications."
+      },
+      {
+        "timestamp": "17:26",
+        "text": "Aim for clarity with your alert presentation. Alerts are prominently displayed, and you'll want to make it easy for someone to understand what the alarm is, and what actions they can take."
+      },
+      {
+        "timestamp": "17:38",
+        "text": "If your alarm supports a countdown, consider including the key elements of the countdown in your Live Activity. This includes the remaining duration, a dismiss button, and a pause or resume button. Today, you learned how to use AlarmKit to create alarms and manage their lifecycle in the system. You are now ready to try it in your app. Use AlarmKit to configure alarms for your app’s use cases. Create custom countdown experiences on the Lock Screen and in the Dynamic Island with Live Activities. Add custom actions to your alarms using App Intents."
+      },
+      {
+        "timestamp": "18:15",
+        "text": "That’s all there is time for. Thanks for joining!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -100,6 +431,33 @@
       "code": "// Add a custom sound\n\nimport AlarmKit\nimport AppIntents\n\nfunc scheduleAlarm() async throws {\n  typealias AlarmConfiguration = AlarmManager.AlarmConfiguration<CookingData>\n  \n  let id = UUID()\n  let duration = Alarm.CountdownDuration(preAlert: (10 * 60), postAlert: (5 * 60))\n  let customMetadata = CookingData(method: .frying)\n  let secondaryIntent = OpenInApp(alarmID: id.uuidString)\n\n  let stopButton = AlarmButton(\n    text: \"Dismiss\",\n    textColor: .white,\n    systemImageName: \"stop.circle\")\n\n  let openButton = AlarmButton(\n    text: \"Open\",\n    textColor: .white,\n    systemImageName: \"arrow.right.circle.fill\")\n\n  let alertPresentation = AlarmPresentation.Alert(\n    title: \"Food Ready!\",\n    stopButton: stopButton,\n    secondaryButton: openButton,\n    secondaryButtonBehavior: .custom)\n\n  let pauseButton = AlarmButton(\n    text: \"Pause\",\n    textColor: .green,\n    systemImageName: \"pause\")\n\n  let countdownPresentation = AlarmPresentation.Countdown(\n    title: \"Cooking\",\n    pauseButton: pauseButton)\n\n  let resumeButton = AlarmButton(\n    text: \"Resume\",\n    textColor: .green,\n    systemImageName: \"play\")\n\n  let pausedPresentation = AlarmPresentation.Paused(\n    title: \"Paused\",\n    resumeButton: resumeButton)\n\n  let attributes = AlarmAttributes<CookingData>(\n    presentation: AlarmPresentation(\n      alert: alertPresentation,\n      countdown: countdownPresentation,\n      paused: pausedPresentation),\n    metadata: customMetadata,\n    tintColor: Color.green)\n\n  let sound = AlertConfiguration.AlertSound.named(\"Chime\")\n\n  let alarmConfiguration = AlarmConfiguration(\n    countdownDuration: duration,\n    attributes: attributes,\n    secondaryIntent: secondaryIntent,\n    sound: sound)\n\n  try await AlarmManager.shared.schedule(id: id, configuration: alarmConfiguration)\n  \n}\n\npublic struct OpenInApp: LiveActivityIntent {\n    public func perform() async throws -> some IntentResult { .result() }\n    \n    public static var title: LocalizedStringResource = \"Open App\"\n    public static var description = IntentDescription(\"Opens the Sample app\")\n    public static var openAppWhenRun = true\n    \n    @Parameter(title: \"alarmID\")\n    public var alarmID: String\n    \n    public init(alarmID: String) {\n        self.alarmID = alarmID\n    }\n    \n    public init() {\n        self.alarmID = \"\"\n    }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Welcome",
+      "duration": "0:32"
+    },
+    {
+      "timestamp": "0:32",
+      "title": "Overview",
+      "duration": "1:07"
+    },
+    {
+      "timestamp": "1:39",
+      "title": "Authorization",
+      "duration": "1:27"
+    },
+    {
+      "timestamp": "3:06",
+      "title": "Creation",
+      "duration": "13:26"
+    },
+    {
+      "timestamp": "16:32",
+      "title": "Life cycle",
+      "duration": "1:55"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -144,5 +502,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10184"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:23.250Z"
+  "extractedAt": "2026-10-17T18:44:18.021Z"
 }

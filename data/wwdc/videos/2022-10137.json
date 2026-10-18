@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10137/",
   "title": "Swift Charts: Raise the bar",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Health & Fitness",
@@ -12,8 +11,936 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop music ♪ ♪ Hello, I'm Donghao.\n\nIn this session, we are going to learn more about how to build great data visualizations with Swift Charts.\n\nIn other words, we will raise the bar of what you can do with charts in your apps.\n\nA great data visualization makes your app more informative and more engaging.\n\nIn order to build a great chart in our apps, there are many things to consider.\n\nOf course, we would want our charts to faithfully communicate the underlying data and be accessible for everyone.\n\nBut charts in an app don't live in a vacuum.\n\nThey are part of the app's user interface.\n\nWe have to support localization and OS features like Dark Mode.\n\nA chart has to have a proper layout that fits seamlessly into the rest of the UI; it should support Dynamic Type and device screen sizes.\n\nWe'll also want charts to work in all platforms, and have great animation for the best look and feel.\n\nSwift Charts takes care of a lot of these basic features for you automatically, so you can focus more on building the best charts to communicate your unique data and make it accessible for everyone.\n\nSwift Charts achieves this by providing you with a declarative syntax that feels just like SwiftUI.\n\nYou specify what you want in a chart with a small amount of code, and Swift Charts will automatically produce a great chart out of the box.\n\nSwift Charts also provides a rich set of customization options, so you can style the chart to match your unique application.\n\nThis session is about giving you a deeper understanding of Swift Charts.\n\nWe will start by covering the basic building blocks of the declarative syntax: marks and the composition of marks.\n\nHere are some examples where we use charts in Apple products.\n\nAs you can see, there is a wide variety of data, chart types, and styles.\n\nInstead of providing a prebuilt component for each type of chart, Swift Charts is built on the idea of creating charts by composition.\n\nIt provides a small number of basic building blocks by combining them in different ways, you can create a wide range of charts.\n\nLet me show you how it works.\n\nTo do that, I'll need an example.\n\nAll of my teammates love pancakes, so we are having an app to track orders for a food truck selling various kinds of pancakes.\n\nHere is a chart showing the number of pancakes delivered over the last 30 days, broken down by style.\n\nThis is widely known as a bar chart.\n\nIn Swift Charts, we consider each of the six blue rectangles a mark.\n\nA mark is a graphical element that represents data.\n\nThis is a bar mark showing the number of cachapas sold over the last 30 days.\n\nIn this chart we have six bar marks, each showing a pancake style and the corresponding sales number.\n\nLet's see how this is written in code.\n\nHere we have a SwiftUI view that includes a descriptive title like \"Most Sold Style, Cachapa,\" and an empty chart.\n\nThe chart type here is the top-level view that defines a single chart.\n\nYou can add a chart in your SwiftUI application just like adding any other view.\n\nFor the rest of the talk, we'll focus on the chart part.\n\nYou can add marks to a chart.\n\nHere we have a single BarMark showing cachapa and its sales number.\n\nThis makes a chart with a single bar mark.\n\nAs shown in the screenshot, the chart fits nicely into the rest of the user interface and has a great default style.\n\nFor example, nicely rounded numbers in the X-axis.\n\nIf you add another bar mark with different name and sales, you'll get a second bar.\n\nYou can repeat this to add more bars.\n\nIn a real app, we'll probably generate these marks programmatically.\n\nYou can do so by providing an array of structs or tuples to the chart, and use a ForEach to create the bar marks with the values from each element.\n\nIf ForEach is the only content in the chart, like in this case, you can also put data in the chart directly.\n\nMany SwiftUI modifiers are available for marks.\n\nFor example, you could set the color of the bars with the .foregroundStyle modifier.\n\nHere we are setting it to a named color, which can be created in Xcode as a named asset.\n\nIt's very important that the chart is accessible for everyone.\n\nBy default, the chart will be exposed to VoiceOver users with automatically generated accessibility elements.\n\nYou can customize these with the .accessibilityLabel and .accessibilityValue modifiers.\n\nHere for example, we set the label to the name of the pancake, and the value to the sales with the suffix \"sold.\" As a result, we get a custom experience for VoiceOver users.\n\nVoiceOver: Cachapa, 916 sold. Injera, 850 sold.\n\nCrêpe, 802 sold.\n\nDonghao: Our app also tracks pancake deliveries over the days.\n\nHere, we have a view showing the number of pancakes sold in the last 30 days.\n\nThe chart gives a detailed view of each individual day.\n\nLet's see how to make this chart.\n\nHere, we have a data array with day and sales.\n\nThe day is represented by a Date value at the start of the day.\n\nWe visualize the data with bar marks, where x shows day, and the unit parameter here means that the Date values represent the duration of a calendar day, and y shows the sales of the day.\n\nAs you see on the right, we get a bar chart showing sales over the days.\n\nBar chart is not the only way to visualize this data.\n\nLet's try a line chart.\n\nThe only change we have to make is to replace BarMark with LineMark.\n\nWith a declarative syntax, it is very easy to switch between chart types in Swift Charts.\n\nThe previous chart shows total sales over time.\n\nBut the food truck service has been operating in two cities, and we would love to compare the sales between the two cities on each weekday, to help us decide where to go.\n\nThe lines in this chart show the sales from Monday to Sunday.\n\nEach line represents a city.\n\nLet's see how this is built.\n\nNow suppose we have two cities' data defined here with an array of tuples, each contains city name and the sales of the weekdays.\n\nThen, we can wrap the line chart we had before with a ForEach that loops over the series data.\n\nIn order to differentiate the two cities, we use the .foregroundStyle(by:) modifier to style the two lines by the city name.\n\nAs you can see, Swift Charts automatically picks two colors for the two cities, color the lines, and then add a legend to indicate what each color means.\n\nThe default colors are chosen to be system colors that are easy to differentiate.\n\nTo make the chart easier to read for people with color blindness, we can add symbols to the lines to further differentiate them.\n\nThis can be done by adding the .symbol(by:) modifier with city as the data.\n\nFinally, to make the lines look smoother, we can use a curve as the interpolation method for the lines.\n\nEven with the two series line chart, we can still go back to bar mark and see how it looks like.\n\nChanging the mark type to BarMark, and remove the modifiers that aren't relevant to bars, we get a stacked bar chart.\n\nThe bars are automatically stacked because we now have two bars for each month.\n\nWhile the stacked bar chart is great for showing the total sales value for the two cities, it's not very good for comparing between the two cities.\n\nTo make it easier to compare, we can turn this into a grouped bar chart with the .position(by:) modifier.\n\nSo far, we've seen bar marks and line marks.\n\nSwift Charts supports a couple of other mark types including point mark, area mark, rule mark, and rectangle mark.\n\nYou can combine these marks to build more complex charts.\n\nLet's see an example.\n\nLet's start with a line chart showing the average daily sales for each month.\n\nWhile the average is useful, we also want to see the minimum and maximum daily sales to get an idea of the more extreme values.\n\nLet's start by adding these values to the data.\n\nWe introduce daily min and daily max to each element in the data array.\n\nWe can then visualize the min and the max with an area mark, where x is showing month, and y starts at the daily min, and ends at the daily max.\n\nThis way, we have a chart showing daily average values with a line, and daily min and max values with the area around the line.\n\nA line plus area isn't the only way to visualize this kind of data.\n\nYou can easily switch to other mark types to explore more design options.\n\nFor example, here we are using a BarMark.\n\nHowever, the line doesn't seem to fit very well with the bars.\n\nLet's change the line mark to a RectangleMark, with a height of two points.\n\nThis way, the rectangle mark creates horizontal lines inside the bars showing the average value.\n\nYou can also adjust the width of these marks.\n\nHere, for example, we are setting width to be with a ratio of .6 This means the width of the bars and rectangles will be 60 percent of the width of a whole month, as you can see in the screenshot.\n\nFinally, we'd like to have an option to show the average daily sales among all the months.\n\nTo do so, we first set the foreground style to a fade gray color to deemphasize them.\n\nThen, we add a rule mark outside the ForEach, with y showing the average value.\n\nThis adds a horizontal rule.\n\nTo make it clear that the rule is showing the yearly average, we can add an annotation to the rule using the .annotation modifier.\n\nThis adds a text label at the top of the rule mark, with leading alignment.\n\nWe've discussed a couple of examples of building charts by composition.\n\nThere are many different ways to use and combine these basic marks.\n\nLike a box plot, multi-series line chart, population pyramid, range plot, stream graph, multi-series scatter plot, heat map, or even a plot of a vector field.\n\nThese are just some examples of the wide variety of charts you can build with Swift Charts.\n\nLet's dive into the next topic.\n\nPlotting data with mark properties.\n\nSwift Charts support three major types or data: quantitative, nominal, and temporal.\n\nQuantitative data is a numerical value, such as the number of products sold, the temperature of a room, or the price of a stock.\n\nSwift Charts treats Swift numerical types such as Int, Float, and Double as quantitative data.\n\nNominal data, or categorical data, represent discrete categories or groups.\n\nFor example, the name of a person, a continent, or the type of a product.\n\nYou can use a string or a custom string-valued enum as nominal data.\n\nTemporal data represents a point or interval in time.\n\nFor example, the duration of a particular day, or the exact time of a transaction.\n\nSwift Charts treats \"Date\" as temporal data.\n\nA chart works by transforming abstract data, like sales value, into the properties of marks.\n\nLet's take a look at BarMark, which can plot data with X, Y, and Foreground Style properties.\n\nIn this example, we plot sales value, which is quantitative, with the x property, and name, which is nominal, with the y property.\n\nThe resulting chart consists of horizontal bars, each showing Sales on X, and Name on Y.\n\nIf we swap Name and Sales, such that Name is on X and Sales is on Y, we get a vertical bar chart instead.\n\nAs you can see, the BarMark's behavior depends on the data type plotted with its X and Y properties.\n\nThe orientation of the bar depends on where the quantitative property is.\n\nNow, let's look at another chart with all three properties used to plot data.\n\nHere we plot Weekday, which is temporal, with X, Sales with Y, and City with Foreground Style.\n\nThe resulting chart is a stacked bar chart, where X-axis shows Weekday, Y-axis shows Sales, and the bars are colored by city.\n\nSwift Charts has six mark types, and six mark properties that you can plot data with.\n\nRemember that data can be of the three kinds, so there is a vast array of possible combinations.\n\nThis is what allows Swift Charts to support a wide range of chart designs with a small number of basic building blocks.\n\nWhen you plot data with a mark property, for example, sales with Y, Swift Charts creates a mapping that transforms the abstract data into a proper value of the property.\n\nIn this case, it will transform Sales value to Y coordinates in screen space.\n\nWe use the term \"scale\" to refer to the mapping from abstract data, like sales, to mark property, like Y position.\n\nYou can think of Scale as a function that takes data value and returns a property value.\n\nFor example, here is a yScale function that takes sales and returns the Y position of the bar.\n\nThe name \"scale\" comes from the fact that for position properties, we often scale the input value by some factor to convert it to a reasonable screen coordinate.\n\nWhen you plot data with mark properties, a scale is created to transform the data into the corresponding mark property.\n\nFor example, in this chart we have three scales, each transforming Weekday to X, Sales to Y, and City to Foreground Style, respectively.\n\nBy default, Swift Charts infers the scales automatically from the data, so you get a nice chart out of the box.\n\nYou can use the scale modifiers to configure the scales in a chart.\n\nLet's take a look at a few examples.\n\nIn this example, the Y scale is automatically inferred to be zero to 150.\n\nHowever, we'd like to fix the Y scale so that no matter what the current sales looks like, we always have a consistent Y scale.\n\nLet's change it such that the Y scale always starts at zero and ends at 200.\n\nTo do so, we can use the .chartYScale modifier, and set the domain of the scale to be zero to 200.\n\nNow, as you can see, the axis goes from zero to 200.\n\nSimilarly, we can change how the two cities map to foreground style using the .chartForegroundStyleScale modifier.\n\nNow we have new colors for the two cities.\n\nNow we know how to compose marks and plot data with mark properties.\n\nLet's dive into more customization options that Swift Charts provides.\n\nA chart consists of axes, possibly a legend, and a plot area.\n\nAxes and legends help us interpret the chart.\n\nThe plot area is the area between the two axes.\n\nThis is where we plot data with marks.\n\nAll of these elements are customizable in Swift Charts.\n\nLet's first see a few examples on how to customize axes and legends.\n\nHere is a chart showing total monthly sales.\n\nWithout customization, Swift Charts generates a default axis that features nicely rounded values.\n\nRight now, the X-axis shows a label for every quarter.\n\nLet's change it to show a label every month, and use a single-letter month label.\n\nWe'll start by adding a .chartXAxis modifier to customize the X-axis, with AxisMarks as the content.\n\nAxisMarks with no parameter recreates the default axis.\n\nLet's start by changing the axis values.\n\nSince we want to have regular calendar intervals, we can use stride(by:), similar to the stride function from the standard library.\n\nNow we have a label for each month.\n\nHowever, the default labels feel too crowded, as you see in the screenshot.\n\nSome labels get truncated because we don't have enough space for them.\n\nLet's change the labels to use a single-letter format.\n\nTo do so, let's build up the axis marks from the individual components, including AxisGridLine, AxisTick, and AxisValueLabel.\n\nLet's set the format of the label to use narrow month names.\n\nNow we have one letter for each month.\n\nThe value parameter passed into the result builder provides information about the current axis value.\n\nYou can use this to conditionally determine the existence and style of axis marks.\n\nFor example, here we have a condition that tests whether the value as a date is the first quarter of a month.\n\nIf yes, we can highlight the first month of each quarter with a different foreground style.\n\nIf not, we only display a grid line, without tick and label.\n\nSince we are now showing quarters, we can change the format to quarter style.\n\nWith the customizations we just did, we get a more unique X-axis showing quarter data, with subgrid lines showing every month.\n\nIn addition to values, axis marks have other properties that allows you to configure the general appearance and style.\n\nSuppose we'd like to have the Y-axis appear at the leading edge of the chart instead of the default trailing edge, we can set the position parameter to leading to move them to the leading edge.\n\nSwift Charts provides a default preset for the axis marks based on the axis and the type of data being visualized.\n\nYou can override the default using the preset parameter.\n\nFor example, here we are using the .extended preset for the Y-axis to help with visual alignment with the rest of the user interface.\n\nIn some charts, you may not want the axis to be visible.\n\nFor example, the purpose of the top sales chart here is to give people a brief overview, so the axes aren't really necessary.\n\nYou can pass in .hidden to the chart axis modifiers to hide an axis.\n\nLegend configuration is similar to axis.\n\nFor example, in this chart that highlights the best day and location, we already use opacity to highlight the best city, so we can hide the automatically generated legend.\n\nTo do so, we can add the .chartLegend modifier with .hidden as parameter.\n\nNow let's talk about the plot area.\n\nYou can use the .chartPlotStyle modifier to configure the plot area of a chart.\n\nIn the trailing closure, we will write a function that takes original plot area, and returns a modified plot area.\n\nLet's see a few examples.\n\nIn some cases, we might want the plot area to have an exact size or aspect ratio.\n\nFor example, in this case, we want the plot area's height to be driven by the number of categories in the chart.\n\nTo achieve this, we can apply a .frame modifier to the plot area, and return the modified plot area.\n\nThis will set the height of the plot area.\n\nWe can also use modifiers to achieve a special visual effect.\n\nFor example, in this Dark Mode chart, we use the .background modifier to add a pink background with opacity of .2 to make the chart stand out a little bit.\n\nAnd then add a 1-pt border with the same pink color.\n\nThis creates a unique visual effect for the chart.\n\nEarlier in the session we mentioned scales, which are functions that map data values to mark properties such as X and Y.\n\nSwift Charts provides a ChartProxy that allows you to access the X and Y scales in a chart.\n\nYou can use the ChartProxy's position(for:) method to get the position for a given data value, or use the value(at:) method to get the data value at a given position.\n\nThis allows you to coordinate other views with the chart.\n\nLet's look at an example.\n\nWe are going to build this interactive brushing view.\n\nHere you can select an interval from the chart with a drag gesture, and that interval will then be used to filter the rows in the details view.\n\nWe can get a chart proxy object from the .chartOverlay or .chartBackground modifiers.\n\nThese two modifiers are similar to SwiftUI's overlay and background modifiers, but they provide you with a chart proxy.\n\nTo build this example, we'll start by defining the base chart just like before.\n\nWe then add a .chartOverlay modifier that provides us with the chart proxy.\n\nInside, we have a geometry reader that gives us access to the geometry of the overlay view.\n\nThen, we have a Rectangle view that is configured to respond to SwiftUI's DragGesture.\n\nWhen the drag gesture happens, we first find the x coordinates of the start and the current locations inside the chart's plot area.\n\nThis is done by subtracting the plot area's origin from the locations provided by the gestures.\n\nOnce we have these coordinates, we can then use the chart proxy to find the corresponding Date values, and finally set it to a SwiftUI state that keeps track of the current date interval.\n\nWith the range state, we can then define a rectangle mark in the chart to visualize the currently selected date range.\n\nThis state can also be used to control other parts of your application for example, to filter the contents of the details view below the chart.\n\nThis is a simple example to illustrate how chart proxy works.\n\nYou can use it to build many interesting features, for example, this interactive chart that shows the selected day and sales value with an overlay that looks like a lollipop.\n\nIn this session, we have discussed how to create charts by composing marks; how to plot data with mark properties, and how to customize a chart.\n\nYou can go to the design sessions to learn more about how to design great app experiences with charts and how to design an effective chart.\n\nWe think you will love building data visualizations with Swift Charts.\n\nThanks for watching.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop music ♪ ♪ Hello, I'm Donghao."
+      },
+      {
+        "timestamp": "0:11",
+        "text": "In this session, we are going to learn more about how to build great data visualizations with Swift Charts."
+      },
+      {
+        "timestamp": "0:16",
+        "text": "In other words, we will raise the bar of what you can do with charts in your apps."
+      },
+      {
+        "timestamp": "0:21",
+        "text": "A great data visualization makes your app more informative and more engaging."
+      },
+      {
+        "timestamp": "0:26",
+        "text": "In order to build a great chart in our apps, there are many things to consider."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "Of course, we would want our charts to faithfully communicate the underlying data and be accessible for everyone."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "But charts in an app don't live in a vacuum."
+      },
+      {
+        "timestamp": "0:41",
+        "text": "They are part of the app's user interface."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "We have to support localization and OS features like Dark Mode."
+      },
+      {
+        "timestamp": "0:47",
+        "text": "A chart has to have a proper layout that fits seamlessly into the rest of the UI; it should support Dynamic Type and device screen sizes."
+      },
+      {
+        "timestamp": "0:57",
+        "text": "We'll also want charts to work in all platforms, and have great animation for the best look and feel."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "Swift Charts takes care of a lot of these basic features for you automatically, so you can focus more on building the best charts to communicate your unique data and make it accessible for everyone."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "Swift Charts achieves this by providing you with a declarative syntax that feels just like SwiftUI."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "You specify what you want in a chart with a small amount of code, and Swift Charts will automatically produce a great chart out of the box."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "Swift Charts also provides a rich set of customization options, so you can style the chart to match your unique application."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "This session is about giving you a deeper understanding of Swift Charts."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "We will start by covering the basic building blocks of the declarative syntax: marks and the composition of marks."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "Here are some examples where we use charts in Apple products."
+      },
+      {
+        "timestamp": "1:51",
+        "text": "As you can see, there is a wide variety of data, chart types, and styles."
+      },
+      {
+        "timestamp": "1:56",
+        "text": "Instead of providing a prebuilt component for each type of chart, Swift Charts is built on the idea of creating charts by composition."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "It provides a small number of basic building blocks by combining them in different ways, you can create a wide range of charts."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "Let me show you how it works."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "To do that, I'll need an example."
+      },
+      {
+        "timestamp": "2:17",
+        "text": "All of my teammates love pancakes, so we are having an app to track orders for a food truck selling various kinds of pancakes."
+      },
+      {
+        "timestamp": "2:24",
+        "text": "Here is a chart showing the number of pancakes delivered over the last 30 days, broken down by style."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "This is widely known as a bar chart."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "In Swift Charts, we consider each of the six blue rectangles a mark."
+      },
+      {
+        "timestamp": "2:38",
+        "text": "A mark is a graphical element that represents data."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "This is a bar mark showing the number of cachapas sold over the last 30 days."
+      },
+      {
+        "timestamp": "2:48",
+        "text": "In this chart we have six bar marks, each showing a pancake style and the corresponding sales number."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "Let's see how this is written in code."
+      },
+      {
+        "timestamp": "2:59",
+        "text": "Here we have a SwiftUI view that includes a descriptive title like \"Most Sold Style, Cachapa,\" and an empty chart."
+      },
+      {
+        "timestamp": "3:06",
+        "text": "The chart type here is the top-level view that defines a single chart."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "You can add a chart in your SwiftUI application just like adding any other view."
+      },
+      {
+        "timestamp": "3:16",
+        "text": "For the rest of the talk, we'll focus on the chart part."
+      },
+      {
+        "timestamp": "3:19",
+        "text": "You can add marks to a chart."
+      },
+      {
+        "timestamp": "3:22",
+        "text": "Here we have a single BarMark showing cachapa and its sales number."
+      },
+      {
+        "timestamp": "3:26",
+        "text": "This makes a chart with a single bar mark."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "As shown in the screenshot, the chart fits nicely into the rest of the user interface and has a great default style."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "For example, nicely rounded numbers in the X-axis."
+      },
+      {
+        "timestamp": "3:40",
+        "text": "If you add another bar mark with different name and sales, you'll get a second bar."
+      },
+      {
+        "timestamp": "3:45",
+        "text": "You can repeat this to add more bars."
+      },
+      {
+        "timestamp": "3:48",
+        "text": "In a real app, we'll probably generate these marks programmatically."
+      },
+      {
+        "timestamp": "3:51",
+        "text": "You can do so by providing an array of structs or tuples to the chart, and use a ForEach to create the bar marks with the values from each element."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "If ForEach is the only content in the chart, like in this case, you can also put data in the chart directly."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "Many SwiftUI modifiers are available for marks."
+      },
+      {
+        "timestamp": "4:10",
+        "text": "For example, you could set the color of the bars with the .foregroundStyle modifier."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "Here we are setting it to a named color, which can be created in Xcode as a named asset."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "It's very important that the chart is accessible for everyone."
+      },
+      {
+        "timestamp": "4:25",
+        "text": "By default, the chart will be exposed to VoiceOver users with automatically generated accessibility elements."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "You can customize these with the .accessibilityLabel and .accessibilityValue modifiers."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "Here for example, we set the label to the name of the pancake, and the value to the sales with the suffix \"sold.\" As a result, we get a custom experience for VoiceOver users."
+      },
+      {
+        "timestamp": "4:50",
+        "text": "VoiceOver: Cachapa, 916 sold. Injera, 850 sold."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "Crêpe, 802 sold."
+      },
+      {
+        "timestamp": "4:59",
+        "text": "Donghao: Our app also tracks pancake deliveries over the days."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "Here, we have a view showing the number of pancakes sold in the last 30 days."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "The chart gives a detailed view of each individual day."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "Let's see how to make this chart."
+      },
+      {
+        "timestamp": "5:14",
+        "text": "Here, we have a data array with day and sales."
+      },
+      {
+        "timestamp": "5:17",
+        "text": "The day is represented by a Date value at the start of the day."
+      },
+      {
+        "timestamp": "5:21",
+        "text": "We visualize the data with bar marks, where x shows day, and the unit parameter here means that the Date values represent the duration of a calendar day, and y shows the sales of the day."
+      },
+      {
+        "timestamp": "5:33",
+        "text": "As you see on the right, we get a bar chart showing sales over the days."
+      },
+      {
+        "timestamp": "5:38",
+        "text": "Bar chart is not the only way to visualize this data."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "Let's try a line chart."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "The only change we have to make is to replace BarMark with LineMark."
+      },
+      {
+        "timestamp": "5:48",
+        "text": "With a declarative syntax, it is very easy to switch between chart types in Swift Charts."
+      },
+      {
+        "timestamp": "5:54",
+        "text": "The previous chart shows total sales over time."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "But the food truck service has been operating in two cities, and we would love to compare the sales between the two cities on each weekday, to help us decide where to go."
+      },
+      {
+        "timestamp": "6:07",
+        "text": "The lines in this chart show the sales from Monday to Sunday."
+      },
+      {
+        "timestamp": "6:11",
+        "text": "Each line represents a city."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "Let's see how this is built."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "Now suppose we have two cities' data defined here with an array of tuples, each contains city name and the sales of the weekdays."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "Then, we can wrap the line chart we had before with a ForEach that loops over the series data."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "In order to differentiate the two cities, we use the .foregroundStyle(by:) modifier to style the two lines by the city name."
+      },
+      {
+        "timestamp": "6:39",
+        "text": "As you can see, Swift Charts automatically picks two colors for the two cities, color the lines, and then add a legend to indicate what each color means."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "The default colors are chosen to be system colors that are easy to differentiate."
+      },
+      {
+        "timestamp": "6:54",
+        "text": "To make the chart easier to read for people with color blindness, we can add symbols to the lines to further differentiate them."
+      },
+      {
+        "timestamp": "7:01",
+        "text": "This can be done by adding the .symbol(by:) modifier with city as the data."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "Finally, to make the lines look smoother, we can use a curve as the interpolation method for the lines."
+      },
+      {
+        "timestamp": "7:13",
+        "text": "Even with the two series line chart, we can still go back to bar mark and see how it looks like."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "Changing the mark type to BarMark, and remove the modifiers that aren't relevant to bars, we get a stacked bar chart."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "The bars are automatically stacked because we now have two bars for each month."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "While the stacked bar chart is great for showing the total sales value for the two cities, it's not very good for comparing between the two cities."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "To make it easier to compare, we can turn this into a grouped bar chart with the .position(by:) modifier."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "So far, we've seen bar marks and line marks."
+      },
+      {
+        "timestamp": "7:49",
+        "text": "Swift Charts supports a couple of other mark types including point mark, area mark, rule mark, and rectangle mark."
+      },
+      {
+        "timestamp": "7:57",
+        "text": "You can combine these marks to build more complex charts."
+      },
+      {
+        "timestamp": "8:00",
+        "text": "Let's see an example."
+      },
+      {
+        "timestamp": "8:03",
+        "text": "Let's start with a line chart showing the average daily sales for each month."
+      },
+      {
+        "timestamp": "8:07",
+        "text": "While the average is useful, we also want to see the minimum and maximum daily sales to get an idea of the more extreme values."
+      },
+      {
+        "timestamp": "8:15",
+        "text": "Let's start by adding these values to the data."
+      },
+      {
+        "timestamp": "8:18",
+        "text": "We introduce daily min and daily max to each element in the data array."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "We can then visualize the min and the max with an area mark, where x is showing month, and y starts at the daily min, and ends at the daily max."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "This way, we have a chart showing daily average values with a line, and daily min and max values with the area around the line."
+      },
+      {
+        "timestamp": "8:39",
+        "text": "A line plus area isn't the only way to visualize this kind of data."
+      },
+      {
+        "timestamp": "8:43",
+        "text": "You can easily switch to other mark types to explore more design options."
+      },
+      {
+        "timestamp": "8:47",
+        "text": "For example, here we are using a BarMark."
+      },
+      {
+        "timestamp": "8:49",
+        "text": "However, the line doesn't seem to fit very well with the bars."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "Let's change the line mark to a RectangleMark, with a height of two points."
+      },
+      {
+        "timestamp": "8:58",
+        "text": "This way, the rectangle mark creates horizontal lines inside the bars showing the average value."
+      },
+      {
+        "timestamp": "9:05",
+        "text": "You can also adjust the width of these marks."
+      },
+      {
+        "timestamp": "9:08",
+        "text": "Here, for example, we are setting width to be with a ratio of .6 This means the width of the bars and rectangles will be 60 percent of the width of a whole month, as you can see in the screenshot."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "Finally, we'd like to have an option to show the average daily sales among all the months."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "To do so, we first set the foreground style to a fade gray color to deemphasize them."
+      },
+      {
+        "timestamp": "9:31",
+        "text": "Then, we add a rule mark outside the ForEach, with y showing the average value."
+      },
+      {
+        "timestamp": "9:35",
+        "text": "This adds a horizontal rule."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "To make it clear that the rule is showing the yearly average, we can add an annotation to the rule using the .annotation modifier."
+      },
+      {
+        "timestamp": "9:45",
+        "text": "This adds a text label at the top of the rule mark, with leading alignment."
+      },
+      {
+        "timestamp": "9:50",
+        "text": "We've discussed a couple of examples of building charts by composition."
+      },
+      {
+        "timestamp": "9:54",
+        "text": "There are many different ways to use and combine these basic marks."
+      },
+      {
+        "timestamp": "9:58",
+        "text": "Like a box plot, multi-series line chart, population pyramid, range plot, stream graph, multi-series scatter plot, heat map, or even a plot of a vector field."
+      },
+      {
+        "timestamp": "10:12",
+        "text": "These are just some examples of the wide variety of charts you can build with Swift Charts."
+      },
+      {
+        "timestamp": "10:17",
+        "text": "Let's dive into the next topic."
+      },
+      {
+        "timestamp": "10:18",
+        "text": "Plotting data with mark properties."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "Swift Charts support three major types or data: quantitative, nominal, and temporal."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "Quantitative data is a numerical value, such as the number of products sold, the temperature of a room, or the price of a stock."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "Swift Charts treats Swift numerical types such as Int, Float, and Double as quantitative data."
+      },
+      {
+        "timestamp": "10:44",
+        "text": "Nominal data, or categorical data, represent discrete categories or groups."
+      },
+      {
+        "timestamp": "10:49",
+        "text": "For example, the name of a person, a continent, or the type of a product."
+      },
+      {
+        "timestamp": "10:55",
+        "text": "You can use a string or a custom string-valued enum as nominal data."
+      },
+      {
+        "timestamp": "10:59",
+        "text": "Temporal data represents a point or interval in time."
+      },
+      {
+        "timestamp": "11:03",
+        "text": "For example, the duration of a particular day, or the exact time of a transaction."
+      },
+      {
+        "timestamp": "11:09",
+        "text": "Swift Charts treats \"Date\" as temporal data."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "A chart works by transforming abstract data, like sales value, into the properties of marks."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "Let's take a look at BarMark, which can plot data with X, Y, and Foreground Style properties."
+      },
+      {
+        "timestamp": "11:25",
+        "text": "In this example, we plot sales value, which is quantitative, with the x property, and name, which is nominal, with the y property."
+      },
+      {
+        "timestamp": "11:35",
+        "text": "The resulting chart consists of horizontal bars, each showing Sales on X, and Name on Y."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "If we swap Name and Sales, such that Name is on X and Sales is on Y, we get a vertical bar chart instead."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "As you can see, the BarMark's behavior depends on the data type plotted with its X and Y properties."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "The orientation of the bar depends on where the quantitative property is."
+      },
+      {
+        "timestamp": "12:01",
+        "text": "Now, let's look at another chart with all three properties used to plot data."
+      },
+      {
+        "timestamp": "12:05",
+        "text": "Here we plot Weekday, which is temporal, with X, Sales with Y, and City with Foreground Style."
+      },
+      {
+        "timestamp": "12:12",
+        "text": "The resulting chart is a stacked bar chart, where X-axis shows Weekday, Y-axis shows Sales, and the bars are colored by city."
+      },
+      {
+        "timestamp": "12:21",
+        "text": "Swift Charts has six mark types, and six mark properties that you can plot data with."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "Remember that data can be of the three kinds, so there is a vast array of possible combinations."
+      },
+      {
+        "timestamp": "12:33",
+        "text": "This is what allows Swift Charts to support a wide range of chart designs with a small number of basic building blocks."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "When you plot data with a mark property, for example, sales with Y, Swift Charts creates a mapping that transforms the abstract data into a proper value of the property."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "In this case, it will transform Sales value to Y coordinates in screen space."
+      },
+      {
+        "timestamp": "12:55",
+        "text": "We use the term \"scale\" to refer to the mapping from abstract data, like sales, to mark property, like Y position."
+      },
+      {
+        "timestamp": "13:02",
+        "text": "You can think of Scale as a function that takes data value and returns a property value."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "For example, here is a yScale function that takes sales and returns the Y position of the bar."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "The name \"scale\" comes from the fact that for position properties, we often scale the input value by some factor to convert it to a reasonable screen coordinate."
+      },
+      {
+        "timestamp": "13:24",
+        "text": "When you plot data with mark properties, a scale is created to transform the data into the corresponding mark property."
+      },
+      {
+        "timestamp": "13:31",
+        "text": "For example, in this chart we have three scales, each transforming Weekday to X, Sales to Y, and City to Foreground Style, respectively."
+      },
+      {
+        "timestamp": "13:41",
+        "text": "By default, Swift Charts infers the scales automatically from the data, so you get a nice chart out of the box."
+      },
+      {
+        "timestamp": "13:48",
+        "text": "You can use the scale modifiers to configure the scales in a chart."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "Let's take a look at a few examples."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "In this example, the Y scale is automatically inferred to be zero to 150."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "However, we'd like to fix the Y scale so that no matter what the current sales looks like, we always have a consistent Y scale."
+      },
+      {
+        "timestamp": "14:08",
+        "text": "Let's change it such that the Y scale always starts at zero and ends at 200."
+      },
+      {
+        "timestamp": "14:13",
+        "text": "To do so, we can use the .chartYScale modifier, and set the domain of the scale to be zero to 200."
+      },
+      {
+        "timestamp": "14:21",
+        "text": "Now, as you can see, the axis goes from zero to 200."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "Similarly, we can change how the two cities map to foreground style using the .chartForegroundStyleScale modifier."
+      },
+      {
+        "timestamp": "14:33",
+        "text": "Now we have new colors for the two cities."
+      },
+      {
+        "timestamp": "14:36",
+        "text": "Now we know how to compose marks and plot data with mark properties."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "Let's dive into more customization options that Swift Charts provides."
+      },
+      {
+        "timestamp": "14:44",
+        "text": "A chart consists of axes, possibly a legend, and a plot area."
+      },
+      {
+        "timestamp": "14:50",
+        "text": "Axes and legends help us interpret the chart."
+      },
+      {
+        "timestamp": "14:53",
+        "text": "The plot area is the area between the two axes."
+      },
+      {
+        "timestamp": "14:56",
+        "text": "This is where we plot data with marks."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "All of these elements are customizable in Swift Charts."
+      },
+      {
+        "timestamp": "15:02",
+        "text": "Let's first see a few examples on how to customize axes and legends."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "Here is a chart showing total monthly sales."
+      },
+      {
+        "timestamp": "15:10",
+        "text": "Without customization, Swift Charts generates a default axis that features nicely rounded values."
+      },
+      {
+        "timestamp": "15:16",
+        "text": "Right now, the X-axis shows a label for every quarter."
+      },
+      {
+        "timestamp": "15:20",
+        "text": "Let's change it to show a label every month, and use a single-letter month label."
+      },
+      {
+        "timestamp": "15:24",
+        "text": "We'll start by adding a .chartXAxis modifier to customize the X-axis, with AxisMarks as the content."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "AxisMarks with no parameter recreates the default axis."
+      },
+      {
+        "timestamp": "15:37",
+        "text": "Let's start by changing the axis values."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "Since we want to have regular calendar intervals, we can use stride(by:), similar to the stride function from the standard library."
+      },
+      {
+        "timestamp": "15:48",
+        "text": "Now we have a label for each month."
+      },
+      {
+        "timestamp": "15:50",
+        "text": "However, the default labels feel too crowded, as you see in the screenshot."
+      },
+      {
+        "timestamp": "15:54",
+        "text": "Some labels get truncated because we don't have enough space for them."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "Let's change the labels to use a single-letter format."
+      },
+      {
+        "timestamp": "16:02",
+        "text": "To do so, let's build up the axis marks from the individual components, including AxisGridLine, AxisTick, and AxisValueLabel."
+      },
+      {
+        "timestamp": "16:10",
+        "text": "Let's set the format of the label to use narrow month names."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "Now we have one letter for each month."
+      },
+      {
+        "timestamp": "16:17",
+        "text": "The value parameter passed into the result builder provides information about the current axis value."
+      },
+      {
+        "timestamp": "16:23",
+        "text": "You can use this to conditionally determine the existence and style of axis marks."
+      },
+      {
+        "timestamp": "16:28",
+        "text": "For example, here we have a condition that tests whether the value as a date is the first quarter of a month."
+      },
+      {
+        "timestamp": "16:35",
+        "text": "If yes, we can highlight the first month of each quarter with a different foreground style."
+      },
+      {
+        "timestamp": "16:40",
+        "text": "If not, we only display a grid line, without tick and label."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "Since we are now showing quarters, we can change the format to quarter style."
+      },
+      {
+        "timestamp": "16:49",
+        "text": "With the customizations we just did, we get a more unique X-axis showing quarter data, with subgrid lines showing every month."
+      },
+      {
+        "timestamp": "16:59",
+        "text": "In addition to values, axis marks have other properties that allows you to configure the general appearance and style."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "Suppose we'd like to have the Y-axis appear at the leading edge of the chart instead of the default trailing edge, we can set the position parameter to leading to move them to the leading edge."
+      },
+      {
+        "timestamp": "17:17",
+        "text": "Swift Charts provides a default preset for the axis marks based on the axis and the type of data being visualized."
+      },
+      {
+        "timestamp": "17:24",
+        "text": "You can override the default using the preset parameter."
+      },
+      {
+        "timestamp": "17:27",
+        "text": "For example, here we are using the .extended preset for the Y-axis to help with visual alignment with the rest of the user interface."
+      },
+      {
+        "timestamp": "17:35",
+        "text": "In some charts, you may not want the axis to be visible."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "For example, the purpose of the top sales chart here is to give people a brief overview, so the axes aren't really necessary."
+      },
+      {
+        "timestamp": "17:47",
+        "text": "You can pass in .hidden to the chart axis modifiers to hide an axis."
+      },
+      {
+        "timestamp": "17:51",
+        "text": "Legend configuration is similar to axis."
+      },
+      {
+        "timestamp": "17:54",
+        "text": "For example, in this chart that highlights the best day and location, we already use opacity to highlight the best city, so we can hide the automatically generated legend."
+      },
+      {
+        "timestamp": "18:04",
+        "text": "To do so, we can add the .chartLegend modifier with .hidden as parameter."
+      },
+      {
+        "timestamp": "18:09",
+        "text": "Now let's talk about the plot area."
+      },
+      {
+        "timestamp": "18:12",
+        "text": "You can use the .chartPlotStyle modifier to configure the plot area of a chart."
+      },
+      {
+        "timestamp": "18:17",
+        "text": "In the trailing closure, we will write a function that takes original plot area, and returns a modified plot area."
+      },
+      {
+        "timestamp": "18:24",
+        "text": "Let's see a few examples."
+      },
+      {
+        "timestamp": "18:27",
+        "text": "In some cases, we might want the plot area to have an exact size or aspect ratio."
+      },
+      {
+        "timestamp": "18:32",
+        "text": "For example, in this case, we want the plot area's height to be driven by the number of categories in the chart."
+      },
+      {
+        "timestamp": "18:38",
+        "text": "To achieve this, we can apply a .frame modifier to the plot area, and return the modified plot area."
+      },
+      {
+        "timestamp": "18:45",
+        "text": "This will set the height of the plot area."
+      },
+      {
+        "timestamp": "18:48",
+        "text": "We can also use modifiers to achieve a special visual effect."
+      },
+      {
+        "timestamp": "18:52",
+        "text": "For example, in this Dark Mode chart, we use the .background modifier to add a pink background with opacity of .2 to make the chart stand out a little bit."
+      },
+      {
+        "timestamp": "19:02",
+        "text": "And then add a 1-pt border with the same pink color."
+      },
+      {
+        "timestamp": "19:05",
+        "text": "This creates a unique visual effect for the chart."
+      },
+      {
+        "timestamp": "19:09",
+        "text": "Earlier in the session we mentioned scales, which are functions that map data values to mark properties such as X and Y."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "Swift Charts provides a ChartProxy that allows you to access the X and Y scales in a chart."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "You can use the ChartProxy's position(for:) method to get the position for a given data value, or use the value(at:) method to get the data value at a given position."
+      },
+      {
+        "timestamp": "19:34",
+        "text": "This allows you to coordinate other views with the chart."
+      },
+      {
+        "timestamp": "19:38",
+        "text": "Let's look at an example."
+      },
+      {
+        "timestamp": "19:41",
+        "text": "We are going to build this interactive brushing view."
+      },
+      {
+        "timestamp": "19:43",
+        "text": "Here you can select an interval from the chart with a drag gesture, and that interval will then be used to filter the rows in the details view."
+      },
+      {
+        "timestamp": "19:52",
+        "text": "We can get a chart proxy object from the .chartOverlay or .chartBackground modifiers."
+      },
+      {
+        "timestamp": "19:56",
+        "text": "These two modifiers are similar to SwiftUI's overlay and background modifiers, but they provide you with a chart proxy."
+      },
+      {
+        "timestamp": "20:04",
+        "text": "To build this example, we'll start by defining the base chart just like before."
+      },
+      {
+        "timestamp": "20:09",
+        "text": "We then add a .chartOverlay modifier that provides us with the chart proxy."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "Inside, we have a geometry reader that gives us access to the geometry of the overlay view."
+      },
+      {
+        "timestamp": "20:19",
+        "text": "Then, we have a Rectangle view that is configured to respond to SwiftUI's DragGesture."
+      },
+      {
+        "timestamp": "20:25",
+        "text": "When the drag gesture happens, we first find the x coordinates of the start and the current locations inside the chart's plot area."
+      },
+      {
+        "timestamp": "20:32",
+        "text": "This is done by subtracting the plot area's origin from the locations provided by the gestures."
+      },
+      {
+        "timestamp": "20:39",
+        "text": "Once we have these coordinates, we can then use the chart proxy to find the corresponding Date values, and finally set it to a SwiftUI state that keeps track of the current date interval."
+      },
+      {
+        "timestamp": "20:51",
+        "text": "With the range state, we can then define a rectangle mark in the chart to visualize the currently selected date range."
+      },
+      {
+        "timestamp": "20:58",
+        "text": "This state can also be used to control other parts of your application for example, to filter the contents of the details view below the chart."
+      },
+      {
+        "timestamp": "21:05",
+        "text": "This is a simple example to illustrate how chart proxy works."
+      },
+      {
+        "timestamp": "21:09",
+        "text": "You can use it to build many interesting features, for example, this interactive chart that shows the selected day and sales value with an overlay that looks like a lollipop."
+      },
+      {
+        "timestamp": "21:19",
+        "text": "In this session, we have discussed how to create charts by composing marks; how to plot data with mark properties, and how to customize a chart."
+      },
+      {
+        "timestamp": "21:27",
+        "text": "You can go to the design sessions to learn more about how to design great app experiences with charts and how to design an effective chart."
+      },
+      {
+        "timestamp": "21:35",
+        "text": "We think you will love building data visualizations with Swift Charts."
+      },
+      {
+        "timestamp": "21:38",
+        "text": "Thanks for watching."
+      },
+      {
+        "timestamp": "21:39",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -163,5 +1090,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110929"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:23.697Z"
+  "extractedAt": "2026-10-17T18:50:23.978Z"
 }

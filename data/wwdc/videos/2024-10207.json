@@ -3,8 +3,7 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10207/",
   "title": "Migrate your TVML app to SwiftUI",
-  "speakers": [],
-  "duration": "",
+  "duration": "17:30",
   "topics": [
     "Audio & Video",
     "SwiftUI & UI Frameworks"
@@ -12,8 +11,272 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello, and welcome to “Migrate your TVML app to SwiftUI.” I’m Jim, an engineer working on SwiftUI for tvOS, and I’m excited to show you the great features for tvOS apps in SwiftUI, and explain how you can use it to build apps just like those you’ve built using TVML.\n\nIn tvOS 18, SwiftUI has everything you need to build rich, fully-featured media catalog and streaming apps for your favorite set-top platform. With that in mind, Apple is officially deprecating TVMLKit. It’ll remain available as part of tvOS, but won’t be growing with the platform any more. Back in 2015, when Apple launched tvOS, the world of streaming media was quite different from the form it has today. Streaming apps were most often implemented as web pages, and content providers development resources were focused on the web. Apple provided TVMLKit as a way for these same resources and expertise to create great apps for Apple TV.\n\nToday we consume content on our devices, like our iPhones or iPads, on our TVs through set-top boxes, from our computers and devices like the Apple Vision Pro. Streaming media catalogs are accessed through native apps built using tools tailored to those platforms. These apps provide a more personal and familiar experience for your customers and allow you to bring forth your own unique style while keeping the natural interaction and presentation styles of these devices.\n\nSwiftUI provides a toolkit that produces native code and UI tailored for each of these platforms, all in the same language, all built using the same components. Development resources and expertise used on any one of these translates cleanly to any of the others.\n\nOn the Apple TV, it produces native tvOS UI, with design cues aimed specifically at producing great tvOS apps. Everything that TVMLKit could do is now possible in SwiftUI, with even more flexibility and great new features year-on-year. Your apps are written in Swift, the same language you use for building apps for iOS, iPadOS, macOS, watchOS and now visionOS.\n\nIt thus makes use of your existing native development resources: the same tools and techniques that build apps for iPad can be used to build those apps for the Apple TV. And more than ever before, tvOS apps can be built from the exact same code you use to make those other apps.\n\nI’ll going to walk through the basics of assembling a content catalog app in SwiftUI. You’ll learn how the same components you use to build apps for any of Apple’s platforms can be used to create an interface and behavior that will be instantly familiar to anyone using Apple TV. Let’s start by examining the typical design language of a tvOS media app.\n\nUpon first opening, a media catalog will likely show a home page targeted to their viewer. The upper part of the page is usually given over to some promoted content, flowing to the edges of the screen.\n\nThis promoted content will likely provide some quick actions to allow the user fast access. Further content is displayed in shelves below the promoted content area.\n\nEach item is shown with a vibrant and colorful lockup that showcases its artwork.\n\nLastly, a tab bar across the top of the screen provides direct access to different sections of the app, including a search function.\n\nIn this talk, I’ll teach you how you can build the familiar lockups used by Apple apps like Music and TV. I’ll introduce some great techniques to assemble flowing shelves of these content lockups. I’ll provide an easy way to put together an impressive layout for your app’s landing page, and reveal how to create a smooth search experience in just a few lines of code.\n\nLet’s start by investigating how to build that lockup design we described a moment ago.\n\nThe most common type of lockup on tvOS consists of an image floating above some text. The image has gently rounded corners, and when focused this lifts and tilts with a specular lighting effect, and any nearby text slides to avoid being occluded by the raised image. We can do all of this using SwiftUI.\n\nThe basic layout is simple to achieve, it’s an image above some text. This is already quite close to our design. However, we want this to be interactive, so we’ll put it in a button.\n\nBy default, buttons on tvOS use the bordered buttonStyle. They’re given a background platter that lifts and changes color when focused. To achieve the appearance we want, we’ll use the borderless buttonStyle.\n\nNow the image and title are in the right orientation, and the image has rounded corners and a slight drop shadow. And when it’s focused, the image lifts, the text moves down, and a specular highlight appears. The whole image tilts as you move your finger across the remote’s touch surface. This code also works as-is on other platforms, with the appropriate platform-specific interaction mechanics.\n\nNow that we have our basic content lockup, we can move on to create our shelves. Let’s revisit the standard appearance of a content shelf to determine what we want to implement.\n\nOur content should flow horizontally, and should align itself with the safe area bounds of the screen. This will keep it nicely in-line with its surroundings.\n\nIt should also allow offscreen content to peek in from the edge of the screen, to indicate that more content is available in that direction.\n\nWe’ll start building this using a horizontally-scrolling stack, ideally this will be a LazyHStack embedded in a ScrollView. We’ll use the borderless buttonStyle to get our lockups, and make sure to disable scroll clipping on the ScrollView so that our focused lockups can grow and cast their drop shadows outside the bounds of the ScrollView itself.\n\nEach item within the shelf is going to be represented by a Button.\n\nWhile you can directly specify an exact size for an item’s poster image, you may be better served using just an aspectRatio derived from that size. This way, SwiftUI can make adjustments to help provide you with an ideal layout. In this case, my aspectRatio provides the shape of a movie poster, while the actual point dimensions will be determined by the number of items on the screen.\n\nThe layout magic happens here, in the containerRelativeFrame modifier. This tells SwiftUI that it should determine the frame of this item for us, and provides some helpful information. This will automatically adjust the content so that it aligns with the leading and trailing safe area insets, and will provide enough room for additional items beyond the current scroll bounds to peek into view on either side of the screen.\n\nFirstly, the item’s frame should be determined relative to the horizontal bounds of the closest ancestor container view, in this case, that’s the ScrollView. Alone, it would make this button’s image stretch to the width of the ScrollView’s bounds, but two more attributes change this behavior.\n\nHere we ask to have six items layout within the container’s width, and we provide a little assistance by telling it how much spacing is being placed between the items. This matches the spacing provided to the horizontal stack, and it’s important that these two values do match. Once again, you can use this exact same code to create a similar experience on other platforms, adjusting things like spacing and item count as appropriate.\n\nWith just a few short lines of code, you’ve now replicated the look and feel of Apple’s own media apps, just as you would have using TVML back in tvOS 9. This is a flexible component that can be put to work in a variety of ways with just some very small changes.\n\nRemove the buttons titles and make a small adjustment to the containerRelativeFrame modifier for instance, and you have a carousel of hero-sized lockups.\n\nChange the aspect ratio of your artwork and the number of items per containerRelativeFrame, and you have the perfect size for album artwork.\n\nFor cases where you need greater information density, you can use the .card buttonStyle to build the same type of lockups that you’ll find in the TV app’s search results.\n\nThe card buttonStyle provides a rounded platter to back your content, which lifts and moves in a more subtle manner than the borderless buttonStyle. Once again, all you need to do is attach the .card buttonStyle to get this behavior.\n\nNow that we have our shelves, we’re ready to assemble our starting page.\n\nA section view will provide each shelf with a title, and that title will automatically move out of the way as your lockups gain focus to avoid being occluded, just like the titles on the buttons themselves.\n\nTo properly introduce the home view we’d like that wide background image, expanding to fill the very edges of the screen with gorgeous imagery. We can start by adding a simple view containing a title and a couple of buttons, separated by some space to allow imagery to show through.\n\nNow we can add a background to this, attaching it to the outer ScrollView. We’ll make sure the image is resizable so it’ll fit, but it’s not extending to the edges of the screen. This can be quickly remedied by ignoring the safe area.\n\nThis looks much better already. The content is flowing all the way out to the edges of the display, exactly as we want. It’s a little distracting to have it appear behind the shelf below though.\n\nA simple gradient mask will fade it out behind our buttons. A plain linear gradient applied with the mask modifier is all you need here. Now the image is fading out to reveal the background behind it.\n\nThis is much better, and we have something a lot closer to our final application. Ideally we’d like the image to fade away completely when it’s not the center of attention.\n\nNew in tvOS 18.0 are a number of view modifiers specific to ScrollView. We can make use of these to remove the background image when the header section scrolls off screen.\n\nWhen the content moves belowFold.\n\nHere I’ve attached the new onScrollVisibilityChange modifier to the header view, and I’m changing some state when it moves offscreen.\n\nI then choose to display the background based on that state.\n\nI also set the scrollTargetBehavior to be viewAligned, just to help make that transition more definite.\n\nPut it all together and voilà, here’s our landing page. You can download the sample code for this session to find some other examples of how you might implement this style of view with some more advanced techniques.\n\nTo learn more about the new ScrollView modifiers in tvOS 18 and aligned releases, see \"Demystify SwiftUI containers\".\n\nThis is going great so far, but there’s one must-have feature for any good content delivery service, and that’s search. Let’s find out how to quickly use what we’ve already built to provide a great search interface. Before anything else, you’ll need provide some means to access your search pane.\n\nThe typical approach is to use a TabView, and there’s a new expressive and type-safe syntax for assembling TabViews in tvOS 18. Here I’ve put the existing content stack into a new view called StackView, and I’ve added a SearchView to a new tab. Let’s figure out what we ought to have in our SearchView.\n\nA search view typically allows for searching through a large amount of content at once, so here the shelf layout doesn’t really seem appropriate. Instead, we’ll use a grid layout to display our results.\n\nWe’ll start with the same basic structure as our other views, but inside we’ll place a LazyVGrid.\n\nHere I’ve set it to create four columns, with 40-point spacing and flexible size. Once again, I’m going to let the aspect-ratio modifier and SwiftUI's layout machinery do the work of figuring out the actual sizes for my items.\n\nThe lockup itself is the by-now-familiar Button, though now that it’s scrolling vertically I’ve used an image with landscape orientation, to fit more content along that axis. To make this content searchable, I’m doing to add two things. First I’ll add a state property to the view. This will update to contain any search term as it’s being entered, and we can use it to filter the content passed to the for-each view to narrow down what we show in the results.\n\nNext, I’ll add the .searchable modifier, passing it a binding to our searchTerm state property.\n\nThis one modifier is all you need to present a search view. From here your app’s consumers can start typing and you can use the value of the search-term state property to filter out any non-matching items.\n\nThey can search for videos containing their favorite robotic botanist, or they could indulge their own botanical aspirations directly.\n\nYou might have a lot of content for them to search through, and some of the potential search terms and keywords on your content items may be quite long. It would be helpful to suggest some likely completions. That’s also easy to do: just add a .searchSuggestions modifier. Here I’ve taken a list of keywords that contain the current search term, and I’m creating a series of text views from them. And here are the results. Selecting any of these completions will place their value into the search field automatically.\n\nFocusing on a suggestion provides an onscreen preview within the search field, indicating both the action the suggestion will perform, as well as how this term matches the current input. Once again, this is all the same code that you’d use on other platforms, you’d add a search field to an app for iPad, Mac, or Apple Vision Pro in the exact same way.\n\nIt should now be clear just how easy it is to put together a great-looking app for the Apple TV using SwiftUI, and how everything we’ve built also runs on Apple’s other platforms practically unchanged. It’s never been easier to take your native SwiftUI apps and bring them into the living room.\n\nWe’re dedicated to providing you with clean and easy ways to adopt the latest platform features from SwiftUI. In fact, I’d like to show you, just one more.\n\nThe floating sidebar from the TV app is now available system-wide in tvOS 18 through SwiftUI. It has the same gorgeous translucent appearance, and shrinks down to reveal the same compact indicator from the TV app. If you’ve been building out your own sidebar, consider adopting this new appearance in your app. You can build it using the existing navigation split view APIs. If your app is currently using a tab bar however, you can try out this appearance today with just one line of code. Just set a tabViewStyle of sidebarAdaptable, and your tab bar will instead appear as a sidebar. This is the same modifier you would use on iPad to get the new tab bar appearance in iPadOS 18, where it will also allow the user to switch between tab bar and sidebar representations. On tvOS, it simply gives you a sidebar, with all its associated behavior, in a single line of code.\n\nThe new TabView APIs allow for all sorts of different types of content, allowing you to build a fully featured sidebar while maintaining a minimal tab bar appearance. This means your iPad app can take a simple and sparse tab bar representation and expand it to a detailed and functional sidebar, and that same sidebar content looks just great on tvOS. To learn more, see \"Improve your tab and sidebar experience on iPad\", where you can learn all about the new tab bar APIs.\n\nIf you’re considering bringing your app to Apple TV, this is the perfect time. SwiftUI makes it easy to build apps for tvOS that look great and share lots of their code with your apps for the iPhone, iPad, Mac, and Apple Vision Pro.\n\nAnd if you currently have a TVML app, now’s the time to think about making the change.\n\nYou’ve learned how easy it is to create great apps for the Apple TV with SwiftUI. The borderless buttonStyle provides everything you need to obtain the platform’s standard content lockup appearance and interaction, and using container relative frames will take all the guesswork out of building content shelves.\n\nFor more information, see \"What’s new in SwiftUI\" to learn about the great new features arriving in tvOS 18 and aligned releases, find out more about new container APIs in \"Demystify SwiftUI containers\", and learn how to build great cross-platform top-level app navigation UI with \"Improve your tab and sidebar experience on iPad\".\n\nCheck out the sample project from this session to see this talk’s example code fully fleshed out with a few extra examples and suggestions, and for an example of a full-featured cross-platform app that runs great on Apple TV, look no further than the Destination Video sample project.\n\nWe on the SwiftUI for tvOS team are all eager to see what you build for the Apple TV with tvOS 18.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hello, and welcome to “Migrate your TVML app to SwiftUI.” I’m Jim, an engineer working on SwiftUI for tvOS, and I’m excited to show you the great features for tvOS apps in SwiftUI, and explain how you can use it to build apps just like those you’ve built using TVML."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "In tvOS 18, SwiftUI has everything you need to build rich, fully-featured media catalog and streaming apps for your favorite set-top platform. With that in mind, Apple is officially deprecating TVMLKit. It’ll remain available as part of tvOS, but won’t be growing with the platform any more. Back in 2015, when Apple launched tvOS, the world of streaming media was quite different from the form it has today. Streaming apps were most often implemented as web pages, and content providers development resources were focused on the web. Apple provided TVMLKit as a way for these same resources and expertise to create great apps for Apple TV."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "Today we consume content on our devices, like our iPhones or iPads, on our TVs through set-top boxes, from our computers and devices like the Apple Vision Pro. Streaming media catalogs are accessed through native apps built using tools tailored to those platforms. These apps provide a more personal and familiar experience for your customers and allow you to bring forth your own unique style while keeping the natural interaction and presentation styles of these devices."
+      },
+      {
+        "timestamp": "1:33",
+        "text": "SwiftUI provides a toolkit that produces native code and UI tailored for each of these platforms, all in the same language, all built using the same components. Development resources and expertise used on any one of these translates cleanly to any of the others."
+      },
+      {
+        "timestamp": "1:51",
+        "text": "On the Apple TV, it produces native tvOS UI, with design cues aimed specifically at producing great tvOS apps. Everything that TVMLKit could do is now possible in SwiftUI, with even more flexibility and great new features year-on-year. Your apps are written in Swift, the same language you use for building apps for iOS, iPadOS, macOS, watchOS and now visionOS."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "It thus makes use of your existing native development resources: the same tools and techniques that build apps for iPad can be used to build those apps for the Apple TV. And more than ever before, tvOS apps can be built from the exact same code you use to make those other apps."
+      },
+      {
+        "timestamp": "2:33",
+        "text": "I’ll going to walk through the basics of assembling a content catalog app in SwiftUI. You’ll learn how the same components you use to build apps for any of Apple’s platforms can be used to create an interface and behavior that will be instantly familiar to anyone using Apple TV. Let’s start by examining the typical design language of a tvOS media app."
+      },
+      {
+        "timestamp": "2:55",
+        "text": "Upon first opening, a media catalog will likely show a home page targeted to their viewer. The upper part of the page is usually given over to some promoted content, flowing to the edges of the screen."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "This promoted content will likely provide some quick actions to allow the user fast access. Further content is displayed in shelves below the promoted content area."
+      },
+      {
+        "timestamp": "3:18",
+        "text": "Each item is shown with a vibrant and colorful lockup that showcases its artwork."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "Lastly, a tab bar across the top of the screen provides direct access to different sections of the app, including a search function."
+      },
+      {
+        "timestamp": "3:32",
+        "text": "In this talk, I’ll teach you how you can build the familiar lockups used by Apple apps like Music and TV. I’ll introduce some great techniques to assemble flowing shelves of these content lockups. I’ll provide an easy way to put together an impressive layout for your app’s landing page, and reveal how to create a smooth search experience in just a few lines of code."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "Let’s start by investigating how to build that lockup design we described a moment ago."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "The most common type of lockup on tvOS consists of an image floating above some text. The image has gently rounded corners, and when focused this lifts and tilts with a specular lighting effect, and any nearby text slides to avoid being occluded by the raised image. We can do all of this using SwiftUI."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "The basic layout is simple to achieve, it’s an image above some text. This is already quite close to our design. However, we want this to be interactive, so we’ll put it in a button."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "By default, buttons on tvOS use the bordered buttonStyle. They’re given a background platter that lifts and changes color when focused. To achieve the appearance we want, we’ll use the borderless buttonStyle."
+      },
+      {
+        "timestamp": "4:43",
+        "text": "Now the image and title are in the right orientation, and the image has rounded corners and a slight drop shadow. And when it’s focused, the image lifts, the text moves down, and a specular highlight appears. The whole image tilts as you move your finger across the remote’s touch surface. This code also works as-is on other platforms, with the appropriate platform-specific interaction mechanics."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "Now that we have our basic content lockup, we can move on to create our shelves. Let’s revisit the standard appearance of a content shelf to determine what we want to implement."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "Our content should flow horizontally, and should align itself with the safe area bounds of the screen. This will keep it nicely in-line with its surroundings."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "It should also allow offscreen content to peek in from the edge of the screen, to indicate that more content is available in that direction."
+      },
+      {
+        "timestamp": "5:38",
+        "text": "We’ll start building this using a horizontally-scrolling stack, ideally this will be a LazyHStack embedded in a ScrollView. We’ll use the borderless buttonStyle to get our lockups, and make sure to disable scroll clipping on the ScrollView so that our focused lockups can grow and cast their drop shadows outside the bounds of the ScrollView itself."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "Each item within the shelf is going to be represented by a Button."
+      },
+      {
+        "timestamp": "6:02",
+        "text": "While you can directly specify an exact size for an item’s poster image, you may be better served using just an aspectRatio derived from that size. This way, SwiftUI can make adjustments to help provide you with an ideal layout. In this case, my aspectRatio provides the shape of a movie poster, while the actual point dimensions will be determined by the number of items on the screen."
+      },
+      {
+        "timestamp": "6:25",
+        "text": "The layout magic happens here, in the containerRelativeFrame modifier. This tells SwiftUI that it should determine the frame of this item for us, and provides some helpful information. This will automatically adjust the content so that it aligns with the leading and trailing safe area insets, and will provide enough room for additional items beyond the current scroll bounds to peek into view on either side of the screen."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "Firstly, the item’s frame should be determined relative to the horizontal bounds of the closest ancestor container view, in this case, that’s the ScrollView. Alone, it would make this button’s image stretch to the width of the ScrollView’s bounds, but two more attributes change this behavior."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "Here we ask to have six items layout within the container’s width, and we provide a little assistance by telling it how much spacing is being placed between the items. This matches the spacing provided to the horizontal stack, and it’s important that these two values do match. Once again, you can use this exact same code to create a similar experience on other platforms, adjusting things like spacing and item count as appropriate."
+      },
+      {
+        "timestamp": "7:35",
+        "text": "With just a few short lines of code, you’ve now replicated the look and feel of Apple’s own media apps, just as you would have using TVML back in tvOS 9. This is a flexible component that can be put to work in a variety of ways with just some very small changes."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "Remove the buttons titles and make a small adjustment to the containerRelativeFrame modifier for instance, and you have a carousel of hero-sized lockups."
+      },
+      {
+        "timestamp": "8:01",
+        "text": "Change the aspect ratio of your artwork and the number of items per containerRelativeFrame, and you have the perfect size for album artwork."
+      },
+      {
+        "timestamp": "8:10",
+        "text": "For cases where you need greater information density, you can use the .card buttonStyle to build the same type of lockups that you’ll find in the TV app’s search results."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "The card buttonStyle provides a rounded platter to back your content, which lifts and moves in a more subtle manner than the borderless buttonStyle. Once again, all you need to do is attach the .card buttonStyle to get this behavior."
+      },
+      {
+        "timestamp": "8:35",
+        "text": "Now that we have our shelves, we’re ready to assemble our starting page."
+      },
+      {
+        "timestamp": "8:40",
+        "text": "A section view will provide each shelf with a title, and that title will automatically move out of the way as your lockups gain focus to avoid being occluded, just like the titles on the buttons themselves."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "To properly introduce the home view we’d like that wide background image, expanding to fill the very edges of the screen with gorgeous imagery. We can start by adding a simple view containing a title and a couple of buttons, separated by some space to allow imagery to show through."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "Now we can add a background to this, attaching it to the outer ScrollView. We’ll make sure the image is resizable so it’ll fit, but it’s not extending to the edges of the screen. This can be quickly remedied by ignoring the safe area."
+      },
+      {
+        "timestamp": "9:26",
+        "text": "This looks much better already. The content is flowing all the way out to the edges of the display, exactly as we want. It’s a little distracting to have it appear behind the shelf below though."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "A simple gradient mask will fade it out behind our buttons. A plain linear gradient applied with the mask modifier is all you need here. Now the image is fading out to reveal the background behind it."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "This is much better, and we have something a lot closer to our final application. Ideally we’d like the image to fade away completely when it’s not the center of attention."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "New in tvOS 18.0 are a number of view modifiers specific to ScrollView. We can make use of these to remove the background image when the header section scrolls off screen."
+      },
+      {
+        "timestamp": "10:13",
+        "text": "When the content moves belowFold."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "Here I’ve attached the new onScrollVisibilityChange modifier to the header view, and I’m changing some state when it moves offscreen."
+      },
+      {
+        "timestamp": "10:25",
+        "text": "I then choose to display the background based on that state."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "I also set the scrollTargetBehavior to be viewAligned, just to help make that transition more definite."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "Put it all together and voilà, here’s our landing page. You can download the sample code for this session to find some other examples of how you might implement this style of view with some more advanced techniques."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "To learn more about the new ScrollView modifiers in tvOS 18 and aligned releases, see \"Demystify SwiftUI containers\"."
+      },
+      {
+        "timestamp": "10:59",
+        "text": "This is going great so far, but there’s one must-have feature for any good content delivery service, and that’s search. Let’s find out how to quickly use what we’ve already built to provide a great search interface. Before anything else, you’ll need provide some means to access your search pane."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "The typical approach is to use a TabView, and there’s a new expressive and type-safe syntax for assembling TabViews in tvOS 18. Here I’ve put the existing content stack into a new view called StackView, and I’ve added a SearchView to a new tab. Let’s figure out what we ought to have in our SearchView."
+      },
+      {
+        "timestamp": "11:39",
+        "text": "A search view typically allows for searching through a large amount of content at once, so here the shelf layout doesn’t really seem appropriate. Instead, we’ll use a grid layout to display our results."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "We’ll start with the same basic structure as our other views, but inside we’ll place a LazyVGrid."
+      },
+      {
+        "timestamp": "11:57",
+        "text": "Here I’ve set it to create four columns, with 40-point spacing and flexible size. Once again, I’m going to let the aspect-ratio modifier and SwiftUI's layout machinery do the work of figuring out the actual sizes for my items."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "The lockup itself is the by-now-familiar Button, though now that it’s scrolling vertically I’ve used an image with landscape orientation, to fit more content along that axis. To make this content searchable, I’m doing to add two things. First I’ll add a state property to the view. This will update to contain any search term as it’s being entered, and we can use it to filter the content passed to the for-each view to narrow down what we show in the results."
+      },
+      {
+        "timestamp": "12:39",
+        "text": "Next, I’ll add the .searchable modifier, passing it a binding to our searchTerm state property."
+      },
+      {
+        "timestamp": "12:47",
+        "text": "This one modifier is all you need to present a search view. From here your app’s consumers can start typing and you can use the value of the search-term state property to filter out any non-matching items."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "They can search for videos containing their favorite robotic botanist, or they could indulge their own botanical aspirations directly."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "You might have a lot of content for them to search through, and some of the potential search terms and keywords on your content items may be quite long. It would be helpful to suggest some likely completions. That’s also easy to do: just add a .searchSuggestions modifier. Here I’ve taken a list of keywords that contain the current search term, and I’m creating a series of text views from them. And here are the results. Selecting any of these completions will place their value into the search field automatically."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "Focusing on a suggestion provides an onscreen preview within the search field, indicating both the action the suggestion will perform, as well as how this term matches the current input. Once again, this is all the same code that you’d use on other platforms, you’d add a search field to an app for iPad, Mac, or Apple Vision Pro in the exact same way."
+      },
+      {
+        "timestamp": "13:59",
+        "text": "It should now be clear just how easy it is to put together a great-looking app for the Apple TV using SwiftUI, and how everything we’ve built also runs on Apple’s other platforms practically unchanged. It’s never been easier to take your native SwiftUI apps and bring them into the living room."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "We’re dedicated to providing you with clean and easy ways to adopt the latest platform features from SwiftUI. In fact, I’d like to show you, just one more."
+      },
+      {
+        "timestamp": "14:28",
+        "text": "The floating sidebar from the TV app is now available system-wide in tvOS 18 through SwiftUI. It has the same gorgeous translucent appearance, and shrinks down to reveal the same compact indicator from the TV app. If you’ve been building out your own sidebar, consider adopting this new appearance in your app. You can build it using the existing navigation split view APIs. If your app is currently using a tab bar however, you can try out this appearance today with just one line of code. Just set a tabViewStyle of sidebarAdaptable, and your tab bar will instead appear as a sidebar. This is the same modifier you would use on iPad to get the new tab bar appearance in iPadOS 18, where it will also allow the user to switch between tab bar and sidebar representations. On tvOS, it simply gives you a sidebar, with all its associated behavior, in a single line of code."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "The new TabView APIs allow for all sorts of different types of content, allowing you to build a fully featured sidebar while maintaining a minimal tab bar appearance. This means your iPad app can take a simple and sparse tab bar representation and expand it to a detailed and functional sidebar, and that same sidebar content looks just great on tvOS. To learn more, see \"Improve your tab and sidebar experience on iPad\", where you can learn all about the new tab bar APIs."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "If you’re considering bringing your app to Apple TV, this is the perfect time. SwiftUI makes it easy to build apps for tvOS that look great and share lots of their code with your apps for the iPhone, iPad, Mac, and Apple Vision Pro."
+      },
+      {
+        "timestamp": "16:11",
+        "text": "And if you currently have a TVML app, now’s the time to think about making the change."
+      },
+      {
+        "timestamp": "16:17",
+        "text": "You’ve learned how easy it is to create great apps for the Apple TV with SwiftUI. The borderless buttonStyle provides everything you need to obtain the platform’s standard content lockup appearance and interaction, and using container relative frames will take all the guesswork out of building content shelves."
+      },
+      {
+        "timestamp": "16:36",
+        "text": "For more information, see \"What’s new in SwiftUI\" to learn about the great new features arriving in tvOS 18 and aligned releases, find out more about new container APIs in \"Demystify SwiftUI containers\", and learn how to build great cross-platform top-level app navigation UI with \"Improve your tab and sidebar experience on iPad\"."
+      },
+      {
+        "timestamp": "16:57",
+        "text": "Check out the sample project from this session to see this talk’s example code fully fleshed out with a few extra examples and suggestions, and for an example of a full-featured cross-platform app that runs great on Apple TV, look no further than the Destination Video sample project."
+      },
+      {
+        "timestamp": "17:14",
+        "text": "We on the SwiftUI for tvOS team are all eager to see what you build for the Apple TV with tvOS 18."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -59,6 +322,33 @@
       "code": "TabView {\n    Tab(\"Stack\", systemImage: \"line.3.horizontal\") {\n        StackView()\n    }\n\n    // Other Tabs...\n\n    Tab(\"Search\", systemImage: \"magnifyingglass\") {\n        SearchView()\n    }\n}\n.tabViewStyle(.sidebarAdaptable)"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "3:54"
+    },
+    {
+      "timestamp": "3:54",
+      "title": "Lockups",
+      "duration": "1:18"
+    },
+    {
+      "timestamp": "5:12",
+      "title": "Shelves",
+      "duration": "2:23"
+    },
+    {
+      "timestamp": "7:35",
+      "title": "Catalogs",
+      "duration": "3:32"
+    },
+    {
+      "timestamp": "11:07",
+      "title": "Search",
+      "duration": "6:23"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -93,5 +383,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10118"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:58.043Z"
+  "extractedAt": "2026-10-17T18:44:57.135Z"
 }

@@ -1,178 +1,90 @@
 import type { Result } from '../types/captured/search-document.js';
+import { APPLE_PATHS, WWDC_URLS } from '../utils/constants.js';
+import { convertToJsonApiUrl } from '../utils/url-converter.js';
 
 /**
- * Search result parsing utilities
+ * One result of a search, in Apple's words: Apple's own kind for it, its summary and its place
  */
-
-
 export interface SearchResult {
   title: string;
   url: string;
-  type: string;
+  /** Apple's kind ("symbol", "article", "sampleCode", "project") or a video's type ("Video", "Session"); a Help page has none */
+  kind?: string;
   description: string;
   framework?: string;
-  beta?: boolean;
   /** A WWDC session's year and number in the bundled WWDC data, which `get_wwdc_video` reads */
   wwdc?: { year: string; videoId: string };
 }
 
-/**
- * Type mapping for search filters
- */
-export const typeMapping: Record<string, string[]> = {
-  all: ['documentation', 'documentation-article', 'documentation-tutorial', 'sample-code', 'design-guideline', 'wwdc-session', 'help'],
-  documentation: ['documentation', 'documentation-article'],
-  design: ['design-guideline'],
-  sample: ['sample-code'],
-  help: ['help'],
-};
-
-/**
- * Where the Human Interface Guidelines live on developer.apple.com
- */
-export const DESIGN_GUIDELINES_PATH = '/design/human-interface-guidelines/';
-
-/**
- * Where App Store Connect Help lives: web pages, which Apple's search reports by `sourceURL`
- */
-export const HELP_PATH = '/help/app-store-connect/';
-
-/**
- * Unsupported document types
- */
-const UNSUPPORTED_TYPES = ['general', 'video', 'forums', 'news'];
-
-/**
- * Check if result type is supported
- */
-export function isResultTypeSupported(resultType: string, filterType: string): boolean {
-  // Apply type filter
-  const allowedTypes = typeMapping[filterType] ?? typeMapping['all'];
-  if (!allowedTypes.includes(resultType)) {
-    return false;
-  }
-
-  // Exclude known unsupported types
-  if (UNSUPPORTED_TYPES.includes(resultType)) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Check if URL is supported
- */
-export function isUrlSupported(url: string): boolean {
-  if (!url) {
-    return false;
-  }
-
-  // Skip everything but the documentation, the design guidelines and App Store Connect Help
-  if (!url.includes('/documentation/') && !url.includes(DESIGN_GUIDELINES_PATH) && !url.includes(HELP_PATH)) {
-    return false;
-  }
-
-  // Skip download links and zip files
-  if (url.includes('download.apple.com') || url.includes('.zip')) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * A result as Apple's search API streams it
- */
-/** One result of Apple's search API, typed by quicktype from captured responses (`npm run types:search`) */
+/** One result of Apple's search API, typed by quicktype from captured responses (`npm run types:captured`) */
 export type ApiSearchResult = Result;
 
-/**
- * Result types by the API's `kind`; every other kind (a symbol, an overview) is API reference
- */
-const KIND_TYPES: Record<string, string> = {
-  article: 'documentation-article',
-  tutorial: 'documentation-tutorial',
-  sampleCode: 'sample-code',
-};
+type Metadata = NonNullable<NonNullable<ApiSearchResult['value']>['metadata']>;
 
 /**
- * Parse a single search result
+ * A result the tools can read: a WWDC session, which the bundled data holds; an App Store Connect Help page; or a page
+ * get_apple_doc_content reads as JSON. Anything else (a forum thread, a news post) is left out. Which kinds a search
+ * returns is the search's scope, which Apple applies.
  */
-export function parseSearchResult(result: ApiSearchResult, filterType: string): SearchResult | null {
+export function parseSearchResult(result: ApiSearchResult): SearchResult | null {
   const metadata = result.value?.metadata ?? {};
-  if (metadata.itemTypes?.includes('Video')) {
-    return parseWWDCSession(metadata, filterType);
+  // Apple tags most sessions "Video", some "Session" or "Special Event"; the link is a session's either way
+  const link = metadata.permalinks?.[0] ?? metadata.permalink ?? '';
+  if (WWDC_URLS.SESSION_LINK.test(link)) {
+    return parseWWDCSession(metadata, link);
   }
-  if (metadata.sourceURL?.includes(HELP_PATH)) {
-    return parseHelpPage(metadata, filterType);
+  if (metadata.sourceURL?.includes(APPLE_PATHS.HELP)) {
+    return parseHelpPage(metadata);
   }
-  return parseDocumentationPage(metadata, filterType);
+  return parseDocumentationPage(metadata);
 }
 
 /**
- * A documentation, guideline or sample-code page
+ * A documentation, guideline, tutorial or sample-code page
  */
-function parseDocumentationPage(
-  metadata: NonNullable<NonNullable<ApiSearchResult['value']>['metadata']>,
-  filterType: string,
-): SearchResult | null {
+function parseDocumentationPage(metadata: Metadata): SearchResult | null {
   const { title, permalink, kind, description, hierarchy } = metadata;
-  // A guideline page reports itself as an article, so its place on the site is what tells it apart
-  const type = permalink?.includes(DESIGN_GUIDELINES_PATH) ? 'design-guideline' : KIND_TYPES[kind ?? ''] ?? 'documentation';
-
-  if (!title || !permalink || !isResultTypeSupported(type, filterType) || !isUrlSupported(permalink)) {
+  // A download (a sample's zip) isn't a page
+  if (!title || !permalink || convertToJsonApiUrl(permalink) === null || permalink.includes('.zip')) {
     return null;
   }
-
-  return {
-    title,
-    url: permalink,
-    type,
-    description: description ?? '',
-    framework: hierarchy?.split(' > ')[0],
-  };
+  return { title, url: permalink, kind, description: description ?? '', framework: hierarchy?.split(' > ')[0] };
 }
 
 /**
- * An App Store Connect Help page, whose title carries its place: "Platform version information - App information -
- * Reference - App Store Connect - Help"
+ * An App Store Connect Help page, whose title carries its place and the product: "Platform version information - App
+ * information - Reference - App Store Connect - Help". Apple lists each page twice, with and without a final slash.
  */
-function parseHelpPage(
-  metadata: NonNullable<NonNullable<ApiSearchResult['value']>['metadata']>,
-  filterType: string,
-): SearchResult | null {
-  const [title, section] = (metadata.title ?? '').split(' - ');
-  if (!title || !metadata.sourceURL || !isResultTypeSupported('help', filterType)) {
+function parseHelpPage(metadata: Metadata): SearchResult | null {
+  const parts = (metadata.title ?? '').split(' - ');
+  const product = parts.slice(-2).join(' ');
+  const [section] = parts.slice(1, -2);
+  if (!product || !metadata.sourceURL) {
     return null;
   }
   return {
-    title,
+    // The help's own front page is titled with the product alone
+    title: parts.length > 2 ? parts[0] ?? '' : product,
     url: metadata.sourceURL.replace(/\/$/, ''),
-    type: 'help',
     description: metadata.description ?? '',
-    framework: section ? `App Store Connect Help › ${section}` : 'App Store Connect Help',
+    framework: section ? `${product} › ${section}` : product,
   };
 }
 
 /**
- * A video result, kept when it is a WWDC session: those the bundled WWDC data holds, transcript and code
+ * A WWDC session, which the bundled WWDC data holds, transcript and code
  */
-function parseWWDCSession(
-  metadata: NonNullable<NonNullable<ApiSearchResult['value']>['metadata']>,
-  filterType: string,
-): SearchResult | null {
-  const session = /^wwdc(\d{4})-(\d+)$/.exec(metadata.ids?.[0] ?? '');
-  const title = metadata.titles?.[0];
-  const url = metadata.permalinks?.[0];
-  if (!session || !title || !url || !isResultTypeSupported('wwdc-session', filterType)) {
+function parseWWDCSession(metadata: Metadata, link: string): SearchResult | null {
+  const [, year, videoId] = WWDC_URLS.SESSION_LINK.exec(link) ?? [];
+  const title = metadata.titles?.[0] ?? metadata.title;
+  if (!year || !videoId || !title) {
     return null;
   }
   return {
     title,
-    url,
-    type: 'wwdc-session',
-    description: metadata.descriptions?.[0] ?? '',
-    wwdc: { year: session[1], videoId: session[2] },
+    url: link,
+    kind: metadata.itemTypes?.[0],
+    description: metadata.descriptions?.[0] ?? metadata.description ?? '',
+    wwdc: { year, videoId },
   };
 }

@@ -3,7 +3,6 @@
   "year": "2021",
   "url": "https://developer.apple.com/videos/play/wwdc2021/10076/",
   "title": "Create 3D models with Object Capture",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Graphics & Games",
@@ -12,8 +11,1012 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Bass music playing ♪  ♪ Michael Patrick Johnson: Hi! My name is Michael Patrick Johnson, and I am an engineer on the Object Capture team.\n\nToday, my colleague Dave McKinnon and I will be showing you how to turn real-world objects into 3D models using our new photogrammetry API on macOS.\n\nYou may already be familiar with creating augmented reality apps using our ARKit and RealityKit frameworks.\n\nYou may have also used Reality Composer and Reality Converter to produce 3D models for AR.\n\nAnd now, with the Object Capture API, you can easily turn images of real-world objects into detailed 3D models.\n\nLet's say you have some freshly baked pizza in front of you on the kitchen table.\n\nLooks delicious, right? Suppose we want to capture the pizza in the foreground as a 3D model.\n\nNormally, you'd need to hire a professional artist for many hours to model the shape and texture.\n\nBut, wait, it took you only minutes to bake in your own oven! With Object Capture, you start by taking photos of your object from every angle.\n\nNext, you copy the images to a Mac which supports the new Object Capture API.\n\nUsing a computer vision technique called \"photogrammetry\", the stack of 2D images is turned into a 3D model in just minutes.\n\nThe output model includes both a geometric mesh as well as various material maps, and is ready to be dropped right into your app or viewed in AR Quick Look.\n\nNow let's look at each of these steps in slightly more detail.\n\nFirst, you capture photos of your object from all sides.\n\nImages can be taken on your iPhone or iPad, DSLR, or even a drone.\n\nYou just need to make sure you get clear photos from all angles around the object.\n\nWe will provide best practices for capture later in the session.\n\nIf you capture on iPhone or iPad, we can use stereo depth data from supported devices to allow the recovery of the actual object size, as well as the gravity vector so your model is automatically created right-side up.\n\nOnce you have captured a folder of images, you need to copy them to your Mac where you can use the Object Capture API to turn them into a 3D model in just minutes.\n\nThe API is supported on recent Intel-based Macs, but will run fastest on all the newest Apple silicon Macs since we can utilize the Apple Neural Engine to speed up our computer vision algorithms.\n\nWe also provide HelloPhotogrammetry, a sample command-line app to help you get started.\n\nYou can also use it directly on your folder of images to try building a model for yourself before writing any code.\n\nFinally, you can preview the USDZ output models right on your Mac.\n\nWe can provide models at four detail levels optimized for your different use cases, which we discuss in more detail later.\n\nReduced, Medium, and Full details are ready to use right out of the box, like the pizza shown here.\n\nRaw is intended for custom workflows.\n\nBy selecting USDZ output at the Medium detail level, you can view the new model in AR Quick Look right on your iPhone or iPad.\n\nAnd that's all there is to getting lifelike objects that are optimized for AR! Oh wait, remember the pizzas from before? We have to come clean.\n\nThis image wasn't really a photo, but was actually created using Object Capture on several pizzas.\n\nThese models were then combined into this scene in a post-production tool and rendered using a ray tracer with the advanced material maps.\n\nSo you see, Object Capture can support a variety of target use cases, from AR apps on an iPhone or iPad to film-ready production assets.\n\nIn the remainder of this session, we'll show you how to get started using the Object Capture API and then offer our best practices to achieve the highest-quality results.\n\nIn the getting started section, we'll go into more details about the Object Capture API and introduce the essential code concepts for creating an app.\n\nNext we will discuss best practices for image capture, object selection, and detail-level selection.\n\nLet's begin by working through the essential steps in using the API on macOS.\n\nIn this section, you will learn the basic components of the Object Capture API and how to put them together.\n\nLet's say we have this cool new sneaker we want to turn into a 3D model to view in AR.\n\nHere we see a graphical diagram of the basic workflow we will explore in this section.\n\nThere are two main steps in the process: Setup, where we point to our set of images of an object; and then Process, where we request generation of the models we want to be constructed.\n\nFirst, we will focus on the Setup block, which consists of two substeps: creating a session and then connecting up its associated output stream.\n\nOnce we have a valid session, we can use it to generate our models.\n\nThe first thing we need to do is to create a PhotogrammetrySession.\n\nTo create a session, we will assume you already have a folder of images of an object.\n\nWe have provided some sample image capture folders in the API documentation for you to get started quickly.\n\nA PhotogrammetrySession is the primary top-level class in the API and is the main point of control.\n\nA session can be thought of as a container for a fixed set of images to which photogrammetry algorithms will be applied to produce the resulting 3D model.\n\nHere we have 123 HEIC images of the sneaker taken using an iPhone 12 Pro Max.\n\nCurrently there are several ways to specify the set of images to use.\n\nThe simplest is just a file URL to a directory of images.\n\nThe session will ingest these one by one and report on any problems encountered.\n\nIf there is embedded depth data in HEIC images, it will automatically be used to recover the actual scale of the object.\n\nAlthough we expect most people will prefer folder inputs, we also offer an interface for advanced workflows to provide a sequence of custom samples.\n\nA PhotogrammetrySample includes the image plus other optional data such as a depth map, gravity vector, or custom segmentation mask.\n\nOnce you have created a session from an input source, you will make requests on it for model reconstruction.\n\nThe session will output the resulting models as well as status messages on its output message stream.\n\nNow that we've seen what a session is, let's see how to create one using the API.\n\nHere we see the code to perform the initial setup of a session from a folder of images.\n\nThe PhotogrammetrySession lives within the RealityKit framework.\n\nFirst, we specify the input folder as a file URL.\n\nHere, we assume that we already have a folder on the local disk containing the images of our sneaker.\n\nFinally, we create the session by passing the URL as our input source.\n\nThe initializer will throw an error if the path doesn't exist or can't be read.\n\nYou can optionally provide advanced configuration parameters, but here we'll just use the defaults.\n\nThat's all it takes to create a session! Now that we've successfully created a session object, we need to connect the session's output stream so that we can handle messages as they arrive.\n\nAfter the message stream is connected, we will see how to request models that will then arrive on that stream.\n\nWe use an AsyncSequence -- a new Swift feature this year -- to provide the stream of outputs.\n\nOutput messages include the results of requests, as well as status messages such as progress updates.\n\nOnce we make the first process call, messages will begin to flow on the output message stream.\n\nThe output message sequence will not end while the session is alive.\n\nIt will keep producing messages until either the session is deinitialized or in the case of a fatal error.\n\nNow, let's take a closer look at the types of messages we will receive.\n\nAfter a request is made, we expect to receive periodic requestProgress messages with the fraction completed estimate for each request.\n\nIf you're building an app that calls the Object Capture API, you can use these to drive a progress bar for each request to indicate status.\n\nOnce the request is done processing, we receive a requestComplete message containing the resulting payload, such as a model or a bounding box.\n\nIf something went wrong during processing, a requestError will be output for that request instead.\n\nFor convenience, a processingComplete message is output when all queued requests have finished processing.\n\nNow that we've been introduced to the concept of the session output stream and seen the primary output messages, let's take a look at some example code that processes the message stream.\n\nOnce we have this, we'll see how to request a model.\n\nHere is some code that creates an async task that handles messages as they arrive.\n\nIt may seem like a lot of code, but most of it is simply message dispatching as we will see.\n\nWe use a \"for try await\" loop to asynchronously iterate over the messages in session.outputs as they arrive.\n\nThe bulk of the code is a message dispatcher which switches on the output message.\n\nOutput is an enum with different message types and payloads.\n\nEach case statement will handle a different message.\n\nLet's walk through them.\n\nFirst, if we get a progress message, we'll just print out the value.\n\nNotice that we get progress messages for each request.\n\nFor our example, when the request is complete, we expect the result payload to be a modelFile with the URL to where the model was saved.\n\nWe will see how to make such a request momentarily.\n\nIf the request failed due to a photogrammetry error, we will instead get an error message for it.\n\nAfter the entire set of requests from a process call has finished, a processingComplete message is generated.\n\nFor a command-line app, you might exit the app here.\n\nFinally there are other status messages that you can read about in the documentation, such as warnings about images in a folder that couldn't be loaded.\n\nAnd that's it for the message handling! This message-handling task will keep iterating and handling messages asynchronously for as long as the session is alive.\n\nOK, let's see where we are in our workflow.\n\nWe've fully completed the Setup phase and have a session ready to go.\n\nWe're now ready to make requests to process the models.\n\nBefore we jump into the code, let's take a closer look at the various types of requests we can make.\n\nThere are three different data types you can receive from a session: a ModelFile, a ModelEntity, and a BoundingBox.\n\nThese types have an associated case in the Request enum: modelFile, modelEntity, and bounds; each with different parameters.\n\nThe modelFile request is the most common and the one we will use in our basic workflow.\n\nYou simply create a modelFile request specifying a file URL with a USDZ extension, as well as a detail level.\n\nThere is an optional geometry parameter for use in the interactive workflow, but we won't use that here.\n\nFor more involved postprocessing pipelines where you may need USDA or OBJ output formats, you can provide an output directory URL instead, along with a detail level.\n\nThe session will then write USDA and OBJ files into that folder, along with all the referenced assets such as textures and materials.\n\nA GUI app is also able to request a RealityKit ModelEntity and BoundingBox for interactive preview and refinement.\n\nA modelEntity request also takes a detail level and optional geometry.\n\nA bounds request will return an estimated capture volume BoundingBox for the object.\n\nThis box can be adjusted in a UI and then passed in the geometry argument of a subsequent request to adjust the reconstruction volume.\n\nWe'll see how this works a bit later in the session.\n\nMost requests also take a detail level.\n\nThe preview level is intended only for interactive workflows.\n\nIt is very low visual quality but is created the fastest.\n\nThe primary detail levels in order of increasing quality and size are Reduced, Medium, and Full.\n\nThese levels are all ready to use out of the box.\n\nAdditionally, the Raw level is provided for professional use and will need a post-production workflow to be used properly.\n\nWe will discuss these in more detail in the best practices section.\n\nOK, now that we've seen what kinds of requests we can make, let's see how to do this in code.\n\nWe will now see how to generate two models simultaneously in one call, each with a different output filename and detail level.\n\nHere we see the first call to process on the session.\n\nNotice that it takes an array of requests.\n\nThis is how we can request two models at once.\n\nWe will request one model at Reduced detail level and one at Medium, each saving to a different USDZ file.\n\nRequesting all desired detail levels for an object capture simultaneously in one call allows the engine to share computation and will produce all the models faster than requesting them sequentially.\n\nYou can even ask for all details levels at once.\n\nProcess may immediately throw an error if a request is invalid, such as if the output location can't be written.\n\nThis call returns immediately and soon messages will begin to appear on the output stream.\n\nAnd that's the end of the basic workflow! You create the session with your images, connect the output stream, and then request models.\n\nThe processing time for each of your models will depend on the number of images and quality level.\n\nOnce the processing is complete, you will receive the output message that the model is available.\n\nYou can open the resulting USDZ file of the sneaker you created right on your Mac and inspect the results in 3D from any angle, including the bottom.\n\nLater in this session, we'll show you how to achieve coverage for all sides of your object in one capture session, avoiding the need to combine multiple captures together.\n\nIt's looking great! Now that you've seen the basic workflow, we will give a high-level overview of a more advanced interactive workflow that the Object Capture API also supports.\n\nThe interactive workflow is designed to allow several adjustments to be made on a preview model before the final reconstruction, which can eliminate the need for post-production model edits and optimize the use of memory.\n\nFirst, note that the Setup step and the Process step on both ends of this workflow are the same as before.\n\nYou will still create a session and connect the output stream.\n\nYou will also request final models as before.\n\nHowever, notice that we've added a block in the middle where a 3D UI is presented for interactive editing of a preview model.\n\nThis process is iterated until you are happy with the preview.\n\nYou can then continue to make the final model requests as before.\n\nYou first request a preview model by specifying a model request with detail level of preview.\n\nA preview model is of low visual quality and is generated as quickly as possible.\n\nYou can ask for a model file and load it yourself or directly request a RealityKit ModelEntity to display.\n\nTypically, a bounds request is also made at the same time to preview and edit the capture volume as well.\n\nYou can adjust the capture volume to remove any unwanted geometry in the capture, such as a pedestal needed to hold the object upright during capture.\n\nYou can also adjust the root transform to scale, translate, and rotate the model.\n\nThe geometry property of the request we saw earlier allows a capture volume and relative root transform to be provided before the model is generated.\n\nThis outputs a 3D model that's ready to use.\n\nLet's look at this process in action.\n\nHere we see an example interactive Object Capture app we created using the API to demonstrate this interactive workflow.\n\nFirst, we select the Images folder containing images of a decorative rock, as well as an output folder where the final USDZ will be written.\n\nThen we hit Preview to request the preview model and estimated capture volume.\n\nAfter some time has passed, the preview model of our rock and its capture volume appear.\n\nBut let's say that we only want the top part of the rock in the output as if the bottom were underground.\n\nWe can adjust the bounding box to avoid reconstructing the bottom of the model.\n\nOnce we are happy, we hit Refine Model to produce a new preview restricted to this modified capture volume.\n\nThis also optimizes the output model for just this portion.\n\nOnce the refined model is ready, the new preview appears.\n\nYou can see the new model's geometry has been clipped to stay inside the box.\n\nThis is useful for removing unwanted items in a capture such as a pedestal holding up an object.\n\nOnce we are happy with the cropped preview, we can select a Full detail final render which starts the creation process.\n\nAfter some time, the Full detail model is complete and replaces the preview model.\n\nNow we can see the Full detail of the actual model, which looks great.\n\nThe model is saved in the output directory and ready to use without the need for any additional post-processing.\n\nAnd that's all there is to getting started with the new Object Capture API.\n\nWe saw how to create a session from an input source such as a folder of images.\n\nWe saw how to connect the async output stream to dispatch messages.\n\nWe then saw how to request two different level of detail models simultaneously.\n\nFinally, we described the interactive workflow with an example RealityKit GUI app for ObjectCapture.\n\nNow I will hand it off to my colleague Dave McKinnon, who will discuss best practices with Object Capture.\n\nDave McKinnon: Thanks, Michael.\n\nHi, I'm Dave McKinnon, and I am an engineer working on the Object Capture team.\n\nIn the next section we’ll be covering best practices to help you achieve the highest-quality results.\n\nFirst, we'll look into tips and tricks for selecting an object that has the right characteristics.\n\nFollowed by a discussion of how to control the environmental conditions and camera to get the best results.\n\nNext, we'll walk through how to use the CaptureSample App.\n\nThis app allows you to capture images in addition to depth data and gravity information to recover true scale and orientation of your object.\n\nWe illustrate the use of this app for both in-hand as well as turntable capture.\n\nFinally, we will discuss how to select the right output detail level for your use case as well as providing some links for further reading.\n\nThe first thing to consider when doing a scan is picking an object that has the right characteristics.\n\nFor the best results, pick an object that has adequate texture detail.\n\nIf the object contains textureless or transparent regions, the resulting scan may lack detail.\n\nAdditionally, try to avoid objects that contain highly reflective regions.\n\nIf the object is reflective, you will get the best results by diffusing the lighting when you scan.\n\nIf you plan to flip the object throughout the capture, make sure it is rigid so that it doesn't change shape.\n\nLastly, if you want to scan an object that contains fine surface detail, you'll need to use a high-resolution camera in addition to having many close-up photos of the surface to recover the detail.\n\nWe will now demonstrate the typical scanning process.\n\nFirstly, for best results, place your object on an uncluttered background so the object clearly stands out.\n\nThe basic process involves moving slowly around the object being sure to capture it uniformly from all sides.\n\nIf you would like to reconstruct the bottom of the object, flip it and continue to capture images.\n\nWhen taking the images, try to maximize the portion of the field of view capturing the object.\n\nThis helps the API to recover as much detail as possible.\n\nOne way to do this is to use portrait or landscape mode depending on the object's dimensions and orientation.\n\nAlso, try to maintain a high degree of overlap between the images.\n\nDepending on the object, 20 to 200 close-up images should be enough to get good results.\n\nTo help you get started capturing high-quality photos with depth and gravity on iOS, we provide the CaptureSample App.\n\nThis can be used as a starting point for your own apps.\n\nIt is written in SwiftUI and is part of the developer documentation.\n\nThis app demonstrates how to take high-quality photos for Object Capture.\n\nIt has a manual and timed shutter mode.\n\nYou could also modify the app to sync with your turntable.\n\nIt demonstrates how to use the iPhone and iPads with dual camera to capture depth data and embed it right into the output HEIC files.\n\nThe app also shows you how to save gravity data.\n\nYou can view your gallery to quickly verify that you have all good-quality photos with depth and gravity and delete bad shots.\n\nCapture folders are saved in the app's Documents folder where it is easy to copy to your Mac using iCloud or AirDrop.\n\nThere are also help screens that summarize some of the best practice guidelines to get a good capture that we discuss in this section.\n\nYou can also find this information in developer documentation.\n\nWe recommend turntable capture to get the best results possible.\n\nIn order to get started, you'll need a setup like we have here.\n\nThis contains an iOS device for capture, but you can also use a digital SLR; mechanical turntable to rotate the object; some lighting panels in addition to a light tent.\n\nThe goal is to have uniform lighting and avoid any hard shadows.\n\nA light tent is a good way to achieve this.\n\nIn this case, the CaptureSample App captures images using the timed shutter mode synced with the motion of the turntable.\n\nWe can also flip the object and do multiple turntable passes to capture the object from all sides.\n\nHere is the resulting USDZ file from the turntable capture shown in Preview on macOS.\n\nNow that we've covered tips and tricks for capturing images, let's move to our last section on how to select the right output.\n\nThere's a variety of different output detail settings available for a scan.\n\nLet's take a look.\n\nHere is the table showing the detail levels.\n\nThe supported levels are shown along the leftd side.\n\nReduced and Medium are optimized for use in web-based and mobile experiences, such as viewing 3D content in AR Quick Look.\n\nThey have fewer triangles and material channels and consequently consume less memory.\n\nThe Full and Raw are intended for high-end interactive use such as computer games or post-production workflows.\n\nThey contain the highest geometric detail and give you the flexibility to choose between baked and unbaked materials.\n\nReduced and Medium detail levels are best for content that you wish to display on the internet or mobile device.\n\nIn this instance, Object Capture will compress the geometric and material information from the Raw result down to a level that will be appropriate for display in AR apps or through AR Quick Look.\n\nBoth detail levels, Reduced and Medium, contain the diffuse, normal, and ambient occlusion PBR material channels.\n\nIf you would like to display a single scan in high detail, Medium will maximize the quality against the file size to give you both more geometric and material detail.\n\nHowever, if you would like to display multiple scans in the same scene, you should use the Reduced detail setting.\n\nIf you want to learn more about how to use Object Capture to create mobile or web AR experiences, please see the \"AR Quick Look, meet Object Capture\" session.\n\nExporting with Full output level is a great choice for pro workflows.\n\nIn this instance, you are getting the maximum detail available for your scan.\n\nFull will optimize the geometry of the scan and bake the detail into a PBR material containing Diffuse, Normal, Ambient Occlusion, Roughness, and Displacement information.\n\nWe think that this output level will give you everything you need for the most challenging renders.\n\nLastly, if you don't need material baking or you have your own pipeline for this, the Raw level will return the maximum poly count along with the maximum diffuse texture detail for further processing.\n\nIf you want to learn more about how to use Object Capture for pro workflows on macOS, please see the \"Create 3D Workflows with USD\" session.\n\nFinally, and most importantly, if you plan to use your scan on both iOS, as well as macOS, you can select multiple detail levels to make sure you have all the right outputs for current and future use cases.\n\nAnd that's a wrap.\n\nLet's recap what have we have learned.\n\nFirst, we covered, through example, the main concepts behind the Object Capture API.\n\nWe showed you how to create an Object Capture session and to use this session to process your collection of images to produce a 3D model.\n\nWe showed you an example of how the API can support an interactive preview application to let you adjust the capture volume and model transform.\n\nNext, we covered best practices for scanning.\n\nWe discussed what type of objects to use as well the environment, lighting, and camera settings that give best results.\n\nLastly, we discussed how to choose the right output detail settings for your application.\n\nIf you want to learn how to bring Object Capture to your own app, check out both the iOS capture and macOS CLI processing apps to get started.\n\nAlong with these apps comes a variety of sample data that embodies best practice and can help when planning on how to capture your own scans.\n\nAdditionally, please check out the detailed documentation on best practice online at developer.apple.com, as well these related WWDC sessions.\n\nThe only thing that remains is for you to go out and use Object Capture for your own scans.\n\nWe are excited to see what objects you will scan and share.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass music playing ♪ ♪ Michael Patrick Johnson: Hi! My name is Michael Patrick Johnson, and I am an engineer on the Object Capture team."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "Today, my colleague Dave McKinnon and I will be showing you how to turn real-world objects into 3D models using our new photogrammetry API on macOS."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "You may already be familiar with creating augmented reality apps using our ARKit and RealityKit frameworks."
+      },
+      {
+        "timestamp": "0:31",
+        "text": "You may have also used Reality Composer and Reality Converter to produce 3D models for AR."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "And now, with the Object Capture API, you can easily turn images of real-world objects into detailed 3D models."
+      },
+      {
+        "timestamp": "0:46",
+        "text": "Let's say you have some freshly baked pizza in front of you on the kitchen table."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "Looks delicious, right? Suppose we want to capture the pizza in the foreground as a 3D model."
+      },
+      {
+        "timestamp": "0:57",
+        "text": "Normally, you'd need to hire a professional artist for many hours to model the shape and texture."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "But, wait, it took you only minutes to bake in your own oven! With Object Capture, you start by taking photos of your object from every angle."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "Next, you copy the images to a Mac which supports the new Object Capture API."
+      },
+      {
+        "timestamp": "1:18",
+        "text": "Using a computer vision technique called \"photogrammetry\", the stack of 2D images is turned into a 3D model in just minutes."
+      },
+      {
+        "timestamp": "1:26",
+        "text": "The output model includes both a geometric mesh as well as various material maps, and is ready to be dropped right into your app or viewed in AR Quick Look."
+      },
+      {
+        "timestamp": "1:35",
+        "text": "Now let's look at each of these steps in slightly more detail."
+      },
+      {
+        "timestamp": "1:39",
+        "text": "First, you capture photos of your object from all sides."
+      },
+      {
+        "timestamp": "1:43",
+        "text": "Images can be taken on your iPhone or iPad, DSLR, or even a drone."
+      },
+      {
+        "timestamp": "1:49",
+        "text": "You just need to make sure you get clear photos from all angles around the object."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "We will provide best practices for capture later in the session."
+      },
+      {
+        "timestamp": "1:58",
+        "text": "If you capture on iPhone or iPad, we can use stereo depth data from supported devices to allow the recovery of the actual object size, as well as the gravity vector so your model is automatically created right-side up."
+      },
+      {
+        "timestamp": "2:13",
+        "text": "Once you have captured a folder of images, you need to copy them to your Mac where you can use the Object Capture API to turn them into a 3D model in just minutes."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "The API is supported on recent Intel-based Macs, but will run fastest on all the newest Apple silicon Macs since we can utilize the Apple Neural Engine to speed up our computer vision algorithms."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "We also provide HelloPhotogrammetry, a sample command-line app to help you get started."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "You can also use it directly on your folder of images to try building a model for yourself before writing any code."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "Finally, you can preview the USDZ output models right on your Mac."
+      },
+      {
+        "timestamp": "2:52",
+        "text": "We can provide models at four detail levels optimized for your different use cases, which we discuss in more detail later."
+      },
+      {
+        "timestamp": "3:00",
+        "text": "Reduced, Medium, and Full details are ready to use right out of the box, like the pizza shown here."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "Raw is intended for custom workflows."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "By selecting USDZ output at the Medium detail level, you can view the new model in AR Quick Look right on your iPhone or iPad."
+      },
+      {
+        "timestamp": "3:20",
+        "text": "And that's all there is to getting lifelike objects that are optimized for AR! Oh wait, remember the pizzas from before? We have to come clean."
+      },
+      {
+        "timestamp": "3:29",
+        "text": "This image wasn't really a photo, but was actually created using Object Capture on several pizzas."
+      },
+      {
+        "timestamp": "3:35",
+        "text": "These models were then combined into this scene in a post-production tool and rendered using a ray tracer with the advanced material maps."
+      },
+      {
+        "timestamp": "3:43",
+        "text": "So you see, Object Capture can support a variety of target use cases, from AR apps on an iPhone or iPad to film-ready production assets."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "In the remainder of this session, we'll show you how to get started using the Object Capture API and then offer our best practices to achieve the highest-quality results."
+      },
+      {
+        "timestamp": "4:03",
+        "text": "In the getting started section, we'll go into more details about the Object Capture API and introduce the essential code concepts for creating an app."
+      },
+      {
+        "timestamp": "4:14",
+        "text": "Next we will discuss best practices for image capture, object selection, and detail-level selection."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "Let's begin by working through the essential steps in using the API on macOS."
+      },
+      {
+        "timestamp": "4:28",
+        "text": "In this section, you will learn the basic components of the Object Capture API and how to put them together."
+      },
+      {
+        "timestamp": "4:35",
+        "text": "Let's say we have this cool new sneaker we want to turn into a 3D model to view in AR."
+      },
+      {
+        "timestamp": "4:40",
+        "text": "Here we see a graphical diagram of the basic workflow we will explore in this section."
+      },
+      {
+        "timestamp": "4:46",
+        "text": "There are two main steps in the process: Setup, where we point to our set of images of an object; and then Process, where we request generation of the models we want to be constructed."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "First, we will focus on the Setup block, which consists of two substeps: creating a session and then connecting up its associated output stream."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "Once we have a valid session, we can use it to generate our models."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "The first thing we need to do is to create a PhotogrammetrySession."
+      },
+      {
+        "timestamp": "5:17",
+        "text": "To create a session, we will assume you already have a folder of images of an object."
+      },
+      {
+        "timestamp": "5:22",
+        "text": "We have provided some sample image capture folders in the API documentation for you to get started quickly."
+      },
+      {
+        "timestamp": "5:29",
+        "text": "A PhotogrammetrySession is the primary top-level class in the API and is the main point of control."
+      },
+      {
+        "timestamp": "5:35",
+        "text": "A session can be thought of as a container for a fixed set of images to which photogrammetry algorithms will be applied to produce the resulting 3D model."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "Here we have 123 HEIC images of the sneaker taken using an iPhone 12 Pro Max."
+      },
+      {
+        "timestamp": "5:54",
+        "text": "Currently there are several ways to specify the set of images to use."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "The simplest is just a file URL to a directory of images."
+      },
+      {
+        "timestamp": "6:03",
+        "text": "The session will ingest these one by one and report on any problems encountered."
+      },
+      {
+        "timestamp": "6:08",
+        "text": "If there is embedded depth data in HEIC images, it will automatically be used to recover the actual scale of the object."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "Although we expect most people will prefer folder inputs, we also offer an interface for advanced workflows to provide a sequence of custom samples."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "A PhotogrammetrySample includes the image plus other optional data such as a depth map, gravity vector, or custom segmentation mask."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "Once you have created a session from an input source, you will make requests on it for model reconstruction."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "The session will output the resulting models as well as status messages on its output message stream."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "Now that we've seen what a session is, let's see how to create one using the API."
+      },
+      {
+        "timestamp": "6:54",
+        "text": "Here we see the code to perform the initial setup of a session from a folder of images."
+      },
+      {
+        "timestamp": "7:00",
+        "text": "The PhotogrammetrySession lives within the RealityKit framework."
+      },
+      {
+        "timestamp": "7:05",
+        "text": "First, we specify the input folder as a file URL."
+      },
+      {
+        "timestamp": "7:10",
+        "text": "Here, we assume that we already have a folder on the local disk containing the images of our sneaker."
+      },
+      {
+        "timestamp": "7:16",
+        "text": "Finally, we create the session by passing the URL as our input source."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "The initializer will throw an error if the path doesn't exist or can't be read."
+      },
+      {
+        "timestamp": "7:26",
+        "text": "You can optionally provide advanced configuration parameters, but here we'll just use the defaults."
+      },
+      {
+        "timestamp": "7:33",
+        "text": "That's all it takes to create a session! Now that we've successfully created a session object, we need to connect the session's output stream so that we can handle messages as they arrive."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "After the message stream is connected, we will see how to request models that will then arrive on that stream."
+      },
+      {
+        "timestamp": "7:52",
+        "text": "We use an AsyncSequence -- a new Swift feature this year -- to provide the stream of outputs."
+      },
+      {
+        "timestamp": "7:59",
+        "text": "Output messages include the results of requests, as well as status messages such as progress updates."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "Once we make the first process call, messages will begin to flow on the output message stream."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "The output message sequence will not end while the session is alive."
+      },
+      {
+        "timestamp": "8:16",
+        "text": "It will keep producing messages until either the session is deinitialized or in the case of a fatal error."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "Now, let's take a closer look at the types of messages we will receive."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "After a request is made, we expect to receive periodic requestProgress messages with the fraction completed estimate for each request."
+      },
+      {
+        "timestamp": "8:37",
+        "text": "If you're building an app that calls the Object Capture API, you can use these to drive a progress bar for each request to indicate status."
+      },
+      {
+        "timestamp": "8:46",
+        "text": "Once the request is done processing, we receive a requestComplete message containing the resulting payload, such as a model or a bounding box."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "If something went wrong during processing, a requestError will be output for that request instead."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "For convenience, a processingComplete message is output when all queued requests have finished processing."
+      },
+      {
+        "timestamp": "9:10",
+        "text": "Now that we've been introduced to the concept of the session output stream and seen the primary output messages, let's take a look at some example code that processes the message stream."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "Once we have this, we'll see how to request a model."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "Here is some code that creates an async task that handles messages as they arrive."
+      },
+      {
+        "timestamp": "9:30",
+        "text": "It may seem like a lot of code, but most of it is simply message dispatching as we will see."
+      },
+      {
+        "timestamp": "9:37",
+        "text": "We use a \"for try await\" loop to asynchronously iterate over the messages in session.outputs as they arrive."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "The bulk of the code is a message dispatcher which switches on the output message."
+      },
+      {
+        "timestamp": "9:52",
+        "text": "Output is an enum with different message types and payloads."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "Each case statement will handle a different message."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "Let's walk through them."
+      },
+      {
+        "timestamp": "10:02",
+        "text": "First, if we get a progress message, we'll just print out the value."
+      },
+      {
+        "timestamp": "10:07",
+        "text": "Notice that we get progress messages for each request."
+      },
+      {
+        "timestamp": "10:11",
+        "text": "For our example, when the request is complete, we expect the result payload to be a modelFile with the URL to where the model was saved."
+      },
+      {
+        "timestamp": "10:21",
+        "text": "We will see how to make such a request momentarily."
+      },
+      {
+        "timestamp": "10:24",
+        "text": "If the request failed due to a photogrammetry error, we will instead get an error message for it."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "After the entire set of requests from a process call has finished, a processingComplete message is generated."
+      },
+      {
+        "timestamp": "10:38",
+        "text": "For a command-line app, you might exit the app here."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "Finally there are other status messages that you can read about in the documentation, such as warnings about images in a folder that couldn't be loaded."
+      },
+      {
+        "timestamp": "10:50",
+        "text": "And that's it for the message handling! This message-handling task will keep iterating and handling messages asynchronously for as long as the session is alive."
+      },
+      {
+        "timestamp": "11:00",
+        "text": "OK, let's see where we are in our workflow."
+      },
+      {
+        "timestamp": "11:04",
+        "text": "We've fully completed the Setup phase and have a session ready to go."
+      },
+      {
+        "timestamp": "11:08",
+        "text": "We're now ready to make requests to process the models."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "Before we jump into the code, let's take a closer look at the various types of requests we can make."
+      },
+      {
+        "timestamp": "11:18",
+        "text": "There are three different data types you can receive from a session: a ModelFile, a ModelEntity, and a BoundingBox."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "These types have an associated case in the Request enum: modelFile, modelEntity, and bounds; each with different parameters."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "The modelFile request is the most common and the one we will use in our basic workflow."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "You simply create a modelFile request specifying a file URL with a USDZ extension, as well as a detail level."
+      },
+      {
+        "timestamp": "11:51",
+        "text": "There is an optional geometry parameter for use in the interactive workflow, but we won't use that here."
+      },
+      {
+        "timestamp": "11:58",
+        "text": "For more involved postprocessing pipelines where you may need USDA or OBJ output formats, you can provide an output directory URL instead, along with a detail level."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "The session will then write USDA and OBJ files into that folder, along with all the referenced assets such as textures and materials."
+      },
+      {
+        "timestamp": "12:21",
+        "text": "A GUI app is also able to request a RealityKit ModelEntity and BoundingBox for interactive preview and refinement."
+      },
+      {
+        "timestamp": "12:29",
+        "text": "A modelEntity request also takes a detail level and optional geometry."
+      },
+      {
+        "timestamp": "12:35",
+        "text": "A bounds request will return an estimated capture volume BoundingBox for the object."
+      },
+      {
+        "timestamp": "12:41",
+        "text": "This box can be adjusted in a UI and then passed in the geometry argument of a subsequent request to adjust the reconstruction volume."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "We'll see how this works a bit later in the session."
+      },
+      {
+        "timestamp": "12:54",
+        "text": "Most requests also take a detail level."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "The preview level is intended only for interactive workflows."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "It is very low visual quality but is created the fastest."
+      },
+      {
+        "timestamp": "13:06",
+        "text": "The primary detail levels in order of increasing quality and size are Reduced, Medium, and Full."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "These levels are all ready to use out of the box."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "Additionally, the Raw level is provided for professional use and will need a post-production workflow to be used properly."
+      },
+      {
+        "timestamp": "13:26",
+        "text": "We will discuss these in more detail in the best practices section."
+      },
+      {
+        "timestamp": "13:30",
+        "text": "OK, now that we've seen what kinds of requests we can make, let's see how to do this in code."
+      },
+      {
+        "timestamp": "13:36",
+        "text": "We will now see how to generate two models simultaneously in one call, each with a different output filename and detail level."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "Here we see the first call to process on the session."
+      },
+      {
+        "timestamp": "13:48",
+        "text": "Notice that it takes an array of requests."
+      },
+      {
+        "timestamp": "13:51",
+        "text": "This is how we can request two models at once."
+      },
+      {
+        "timestamp": "13:55",
+        "text": "We will request one model at Reduced detail level and one at Medium, each saving to a different USDZ file."
+      },
+      {
+        "timestamp": "14:04",
+        "text": "Requesting all desired detail levels for an object capture simultaneously in one call allows the engine to share computation and will produce all the models faster than requesting them sequentially."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "You can even ask for all details levels at once."
+      },
+      {
+        "timestamp": "14:20",
+        "text": "Process may immediately throw an error if a request is invalid, such as if the output location can't be written."
+      },
+      {
+        "timestamp": "14:27",
+        "text": "This call returns immediately and soon messages will begin to appear on the output stream."
+      },
+      {
+        "timestamp": "14:34",
+        "text": "And that's the end of the basic workflow! You create the session with your images, connect the output stream, and then request models."
+      },
+      {
+        "timestamp": "14:43",
+        "text": "The processing time for each of your models will depend on the number of images and quality level."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "Once the processing is complete, you will receive the output message that the model is available."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "You can open the resulting USDZ file of the sneaker you created right on your Mac and inspect the results in 3D from any angle, including the bottom."
+      },
+      {
+        "timestamp": "15:06",
+        "text": "Later in this session, we'll show you how to achieve coverage for all sides of your object in one capture session, avoiding the need to combine multiple captures together."
+      },
+      {
+        "timestamp": "15:16",
+        "text": "It's looking great! Now that you've seen the basic workflow, we will give a high-level overview of a more advanced interactive workflow that the Object Capture API also supports."
+      },
+      {
+        "timestamp": "15:28",
+        "text": "The interactive workflow is designed to allow several adjustments to be made on a preview model before the final reconstruction, which can eliminate the need for post-production model edits and optimize the use of memory."
+      },
+      {
+        "timestamp": "15:42",
+        "text": "First, note that the Setup step and the Process step on both ends of this workflow are the same as before."
+      },
+      {
+        "timestamp": "15:49",
+        "text": "You will still create a session and connect the output stream."
+      },
+      {
+        "timestamp": "15:52",
+        "text": "You will also request final models as before."
+      },
+      {
+        "timestamp": "15:55",
+        "text": "However, notice that we've added a block in the middle where a 3D UI is presented for interactive editing of a preview model."
+      },
+      {
+        "timestamp": "16:04",
+        "text": "This process is iterated until you are happy with the preview."
+      },
+      {
+        "timestamp": "16:09",
+        "text": "You can then continue to make the final model requests as before."
+      },
+      {
+        "timestamp": "16:13",
+        "text": "You first request a preview model by specifying a model request with detail level of preview."
+      },
+      {
+        "timestamp": "16:20",
+        "text": "A preview model is of low visual quality and is generated as quickly as possible."
+      },
+      {
+        "timestamp": "16:25",
+        "text": "You can ask for a model file and load it yourself or directly request a RealityKit ModelEntity to display."
+      },
+      {
+        "timestamp": "16:32",
+        "text": "Typically, a bounds request is also made at the same time to preview and edit the capture volume as well."
+      },
+      {
+        "timestamp": "16:39",
+        "text": "You can adjust the capture volume to remove any unwanted geometry in the capture, such as a pedestal needed to hold the object upright during capture."
+      },
+      {
+        "timestamp": "16:49",
+        "text": "You can also adjust the root transform to scale, translate, and rotate the model."
+      },
+      {
+        "timestamp": "16:55",
+        "text": "The geometry property of the request we saw earlier allows a capture volume and relative root transform to be provided before the model is generated."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "This outputs a 3D model that's ready to use."
+      },
+      {
+        "timestamp": "17:08",
+        "text": "Let's look at this process in action."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "Here we see an example interactive Object Capture app we created using the API to demonstrate this interactive workflow."
+      },
+      {
+        "timestamp": "17:18",
+        "text": "First, we select the Images folder containing images of a decorative rock, as well as an output folder where the final USDZ will be written."
+      },
+      {
+        "timestamp": "17:29",
+        "text": "Then we hit Preview to request the preview model and estimated capture volume."
+      },
+      {
+        "timestamp": "17:35",
+        "text": "After some time has passed, the preview model of our rock and its capture volume appear."
+      },
+      {
+        "timestamp": "17:41",
+        "text": "But let's say that we only want the top part of the rock in the output as if the bottom were underground."
+      },
+      {
+        "timestamp": "17:47",
+        "text": "We can adjust the bounding box to avoid reconstructing the bottom of the model."
+      },
+      {
+        "timestamp": "17:51",
+        "text": "Once we are happy, we hit Refine Model to produce a new preview restricted to this modified capture volume."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "This also optimizes the output model for just this portion."
+      },
+      {
+        "timestamp": "18:03",
+        "text": "Once the refined model is ready, the new preview appears."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "You can see the new model's geometry has been clipped to stay inside the box."
+      },
+      {
+        "timestamp": "18:13",
+        "text": "This is useful for removing unwanted items in a capture such as a pedestal holding up an object."
+      },
+      {
+        "timestamp": "18:19",
+        "text": "Once we are happy with the cropped preview, we can select a Full detail final render which starts the creation process."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "After some time, the Full detail model is complete and replaces the preview model."
+      },
+      {
+        "timestamp": "18:32",
+        "text": "Now we can see the Full detail of the actual model, which looks great."
+      },
+      {
+        "timestamp": "18:37",
+        "text": "The model is saved in the output directory and ready to use without the need for any additional post-processing."
+      },
+      {
+        "timestamp": "18:43",
+        "text": "And that's all there is to getting started with the new Object Capture API."
+      },
+      {
+        "timestamp": "18:48",
+        "text": "We saw how to create a session from an input source such as a folder of images."
+      },
+      {
+        "timestamp": "18:53",
+        "text": "We saw how to connect the async output stream to dispatch messages."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "We then saw how to request two different level of detail models simultaneously."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "Finally, we described the interactive workflow with an example RealityKit GUI app for ObjectCapture."
+      },
+      {
+        "timestamp": "19:10",
+        "text": "Now I will hand it off to my colleague Dave McKinnon, who will discuss best practices with Object Capture."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "Dave McKinnon: Thanks, Michael."
+      },
+      {
+        "timestamp": "19:19",
+        "text": "Hi, I'm Dave McKinnon, and I am an engineer working on the Object Capture team."
+      },
+      {
+        "timestamp": "19:23",
+        "text": "In the next section we’ll be covering best practices to help you achieve the highest-quality results."
+      },
+      {
+        "timestamp": "19:30",
+        "text": "First, we'll look into tips and tricks for selecting an object that has the right characteristics."
+      },
+      {
+        "timestamp": "19:35",
+        "text": "Followed by a discussion of how to control the environmental conditions and camera to get the best results."
+      },
+      {
+        "timestamp": "19:42",
+        "text": "Next, we'll walk through how to use the CaptureSample App."
+      },
+      {
+        "timestamp": "19:45",
+        "text": "This app allows you to capture images in addition to depth data and gravity information to recover true scale and orientation of your object."
+      },
+      {
+        "timestamp": "19:54",
+        "text": "We illustrate the use of this app for both in-hand as well as turntable capture."
+      },
+      {
+        "timestamp": "20:00",
+        "text": "Finally, we will discuss how to select the right output detail level for your use case as well as providing some links for further reading."
+      },
+      {
+        "timestamp": "20:08",
+        "text": "The first thing to consider when doing a scan is picking an object that has the right characteristics."
+      },
+      {
+        "timestamp": "20:13",
+        "text": "For the best results, pick an object that has adequate texture detail."
+      },
+      {
+        "timestamp": "20:17",
+        "text": "If the object contains textureless or transparent regions, the resulting scan may lack detail."
+      },
+      {
+        "timestamp": "20:24",
+        "text": "Additionally, try to avoid objects that contain highly reflective regions."
+      },
+      {
+        "timestamp": "20:28",
+        "text": "If the object is reflective, you will get the best results by diffusing the lighting when you scan."
+      },
+      {
+        "timestamp": "20:34",
+        "text": "If you plan to flip the object throughout the capture, make sure it is rigid so that it doesn't change shape."
+      },
+      {
+        "timestamp": "20:40",
+        "text": "Lastly, if you want to scan an object that contains fine surface detail, you'll need to use a high-resolution camera in addition to having many close-up photos of the surface to recover the detail."
+      },
+      {
+        "timestamp": "20:52",
+        "text": "We will now demonstrate the typical scanning process."
+      },
+      {
+        "timestamp": "20:56",
+        "text": "Firstly, for best results, place your object on an uncluttered background so the object clearly stands out."
+      },
+      {
+        "timestamp": "21:03",
+        "text": "The basic process involves moving slowly around the object being sure to capture it uniformly from all sides."
+      },
+      {
+        "timestamp": "21:10",
+        "text": "If you would like to reconstruct the bottom of the object, flip it and continue to capture images."
+      },
+      {
+        "timestamp": "21:16",
+        "text": "When taking the images, try to maximize the portion of the field of view capturing the object."
+      },
+      {
+        "timestamp": "21:21",
+        "text": "This helps the API to recover as much detail as possible."
+      },
+      {
+        "timestamp": "21:26",
+        "text": "One way to do this is to use portrait or landscape mode depending on the object's dimensions and orientation."
+      },
+      {
+        "timestamp": "21:33",
+        "text": "Also, try to maintain a high degree of overlap between the images."
+      },
+      {
+        "timestamp": "21:38",
+        "text": "Depending on the object, 20 to 200 close-up images should be enough to get good results."
+      },
+      {
+        "timestamp": "21:44",
+        "text": "To help you get started capturing high-quality photos with depth and gravity on iOS, we provide the CaptureSample App."
+      },
+      {
+        "timestamp": "21:51",
+        "text": "This can be used as a starting point for your own apps."
+      },
+      {
+        "timestamp": "21:54",
+        "text": "It is written in SwiftUI and is part of the developer documentation."
+      },
+      {
+        "timestamp": "21:59",
+        "text": "This app demonstrates how to take high-quality photos for Object Capture."
+      },
+      {
+        "timestamp": "22:03",
+        "text": "It has a manual and timed shutter mode."
+      },
+      {
+        "timestamp": "22:06",
+        "text": "You could also modify the app to sync with your turntable."
+      },
+      {
+        "timestamp": "22:09",
+        "text": "It demonstrates how to use the iPhone and iPads with dual camera to capture depth data and embed it right into the output HEIC files."
+      },
+      {
+        "timestamp": "22:18",
+        "text": "The app also shows you how to save gravity data."
+      },
+      {
+        "timestamp": "22:22",
+        "text": "You can view your gallery to quickly verify that you have all good-quality photos with depth and gravity and delete bad shots."
+      },
+      {
+        "timestamp": "22:29",
+        "text": "Capture folders are saved in the app's Documents folder where it is easy to copy to your Mac using iCloud or AirDrop."
+      },
+      {
+        "timestamp": "22:37",
+        "text": "There are also help screens that summarize some of the best practice guidelines to get a good capture that we discuss in this section."
+      },
+      {
+        "timestamp": "22:45",
+        "text": "You can also find this information in developer documentation."
+      },
+      {
+        "timestamp": "22:49",
+        "text": "We recommend turntable capture to get the best results possible."
+      },
+      {
+        "timestamp": "22:53",
+        "text": "In order to get started, you'll need a setup like we have here."
+      },
+      {
+        "timestamp": "22:57",
+        "text": "This contains an iOS device for capture, but you can also use a digital SLR; mechanical turntable to rotate the object; some lighting panels in addition to a light tent."
+      },
+      {
+        "timestamp": "23:10",
+        "text": "The goal is to have uniform lighting and avoid any hard shadows."
+      },
+      {
+        "timestamp": "23:14",
+        "text": "A light tent is a good way to achieve this."
+      },
+      {
+        "timestamp": "23:17",
+        "text": "In this case, the CaptureSample App captures images using the timed shutter mode synced with the motion of the turntable."
+      },
+      {
+        "timestamp": "23:24",
+        "text": "We can also flip the object and do multiple turntable passes to capture the object from all sides."
+      },
+      {
+        "timestamp": "23:31",
+        "text": "Here is the resulting USDZ file from the turntable capture shown in Preview on macOS."
+      },
+      {
+        "timestamp": "23:37",
+        "text": "Now that we've covered tips and tricks for capturing images, let's move to our last section on how to select the right output."
+      },
+      {
+        "timestamp": "23:45",
+        "text": "There's a variety of different output detail settings available for a scan."
+      },
+      {
+        "timestamp": "23:49",
+        "text": "Let's take a look."
+      },
+      {
+        "timestamp": "23:51",
+        "text": "Here is the table showing the detail levels."
+      },
+      {
+        "timestamp": "23:54",
+        "text": "The supported levels are shown along the leftd side."
+      },
+      {
+        "timestamp": "23:58",
+        "text": "Reduced and Medium are optimized for use in web-based and mobile experiences, such as viewing 3D content in AR Quick Look."
+      },
+      {
+        "timestamp": "24:06",
+        "text": "They have fewer triangles and material channels and consequently consume less memory."
+      },
+      {
+        "timestamp": "24:12",
+        "text": "The Full and Raw are intended for high-end interactive use such as computer games or post-production workflows."
+      },
+      {
+        "timestamp": "24:20",
+        "text": "They contain the highest geometric detail and give you the flexibility to choose between baked and unbaked materials."
+      },
+      {
+        "timestamp": "24:28",
+        "text": "Reduced and Medium detail levels are best for content that you wish to display on the internet or mobile device."
+      },
+      {
+        "timestamp": "24:35",
+        "text": "In this instance, Object Capture will compress the geometric and material information from the Raw result down to a level that will be appropriate for display in AR apps or through AR Quick Look."
+      },
+      {
+        "timestamp": "24:48",
+        "text": "Both detail levels, Reduced and Medium, contain the diffuse, normal, and ambient occlusion PBR material channels."
+      },
+      {
+        "timestamp": "24:56",
+        "text": "If you would like to display a single scan in high detail, Medium will maximize the quality against the file size to give you both more geometric and material detail."
+      },
+      {
+        "timestamp": "25:08",
+        "text": "However, if you would like to display multiple scans in the same scene, you should use the Reduced detail setting."
+      },
+      {
+        "timestamp": "25:15",
+        "text": "If you want to learn more about how to use Object Capture to create mobile or web AR experiences, please see the \"AR Quick Look, meet Object Capture\" session."
+      },
+      {
+        "timestamp": "25:25",
+        "text": "Exporting with Full output level is a great choice for pro workflows."
+      },
+      {
+        "timestamp": "25:30",
+        "text": "In this instance, you are getting the maximum detail available for your scan."
+      },
+      {
+        "timestamp": "25:35",
+        "text": "Full will optimize the geometry of the scan and bake the detail into a PBR material containing Diffuse, Normal, Ambient Occlusion, Roughness, and Displacement information."
+      },
+      {
+        "timestamp": "25:47",
+        "text": "We think that this output level will give you everything you need for the most challenging renders."
+      },
+      {
+        "timestamp": "25:53",
+        "text": "Lastly, if you don't need material baking or you have your own pipeline for this, the Raw level will return the maximum poly count along with the maximum diffuse texture detail for further processing."
+      },
+      {
+        "timestamp": "26:06",
+        "text": "If you want to learn more about how to use Object Capture for pro workflows on macOS, please see the \"Create 3D Workflows with USD\" session."
+      },
+      {
+        "timestamp": "26:15",
+        "text": "Finally, and most importantly, if you plan to use your scan on both iOS, as well as macOS, you can select multiple detail levels to make sure you have all the right outputs for current and future use cases."
+      },
+      {
+        "timestamp": "26:29",
+        "text": "And that's a wrap."
+      },
+      {
+        "timestamp": "26:30",
+        "text": "Let's recap what have we have learned."
+      },
+      {
+        "timestamp": "26:32",
+        "text": "First, we covered, through example, the main concepts behind the Object Capture API."
+      },
+      {
+        "timestamp": "26:38",
+        "text": "We showed you how to create an Object Capture session and to use this session to process your collection of images to produce a 3D model."
+      },
+      {
+        "timestamp": "26:47",
+        "text": "We showed you an example of how the API can support an interactive preview application to let you adjust the capture volume and model transform."
+      },
+      {
+        "timestamp": "26:56",
+        "text": "Next, we covered best practices for scanning."
+      },
+      {
+        "timestamp": "26:59",
+        "text": "We discussed what type of objects to use as well the environment, lighting, and camera settings that give best results."
+      },
+      {
+        "timestamp": "27:06",
+        "text": "Lastly, we discussed how to choose the right output detail settings for your application."
+      },
+      {
+        "timestamp": "27:11",
+        "text": "If you want to learn how to bring Object Capture to your own app, check out both the iOS capture and macOS CLI processing apps to get started."
+      },
+      {
+        "timestamp": "27:20",
+        "text": "Along with these apps comes a variety of sample data that embodies best practice and can help when planning on how to capture your own scans."
+      },
+      {
+        "timestamp": "27:29",
+        "text": "Additionally, please check out the detailed documentation on best practice online at developer.apple.com, as well these related WWDC sessions."
+      },
+      {
+        "timestamp": "27:41",
+        "text": "The only thing that remains is for you to go out and use Object Capture for your own scans."
+      },
+      {
+        "timestamp": "27:45",
+        "text": "We are excited to see what objects you will scan and share."
+      },
+      {
+        "timestamp": "27:49",
+        "text": "♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -91,5 +1094,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2021/10077"
     }
   ],
-  "extractedAt": "2026-10-11T16:42:27.105Z"
+  "extractedAt": "2026-10-17T18:52:27.683Z"
 }

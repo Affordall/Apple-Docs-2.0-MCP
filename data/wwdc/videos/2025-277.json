@@ -3,16 +3,219 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/277/",
   "title": "Bring advanced speech-to-text to your app with SpeechAnalyzer",
-  "speakers": [],
-  "duration": "",
+  "duration": "19:07",
   "topics": [
     "Machine Learning & AI"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello! I’m Donovan, an engineer on the Speech framework team and I’m Shantini, an engineer on the Notes team. This year, we’re excited to bring you the next evolution of our speech-to-text API and technology: SpeechAnalyzer. In this session, we’ll discuss the SpeechAnalyzer API and its most important concepts. We’ll also briefly discuss some of the new capabilities of the model behind the API. And finally, we’ll show a live-coding demo of how to use the API. SpeechAnalyzer is already powering features across many system apps, such as Notes, Voice Memos, Journal, and more.\n\nAnd when we combine SpeechAnalyzer with Apple Intelligence, we create incredibly powerful features such as Call Summarization. Later, I’ll show you how to use the API to build your own live transcription feature. But first, Donovan will give you an overview of the new SpeechAnalyzer API. Speech-to-text, also known as automatic speech recognition or ASR, is a versatile technology that allows you to create great user experiences using live or recorded speech by converting it to a textual form that a device can easily display or interpret. Apps can store, search, or transmit that text in real time or pass it on to a text-based large language model.\n\nIn iOS 10, we introduced SFSpeechRecognizer. That class gave you access to the speech-to-text model powering Siri. It worked well for short-form dictation and it could use Apple servers on resource-constrained devices but it didn’t address some use cases as well as we, or you, would have liked and relied on the user to add languages. So now, in iOS 26, we’re introducing a new API for all our platforms called SpeechAnalyzer that supports more use cases and supports them better. The new API leverages the power of Swift to perform speech-to-text processing and manage model assets on the user’s device with very little code. Along with the API, we’re providing a new speech-to-text model that is already powering application features across our platforms. The new model is both faster and more flexible than the one previously available through SFSpeechRecognizer. It’s good for long-form and distant audio, such as lectures, meetings, and conversations. Because of these improvements, Apple is using this new model (and the new API) in Notes and the other applications we mentioned earlier. You can use these new capabilities to build your own application with the same sort of speech to-text features that Notes and our other applications provide but first, let’s check out the design of the API. The API consists of the SpeechAnalyzer class along with several other classes. The SpeechAnalyzer class manages an analysis session. You can add a module class to the session to perform a specific type of analysis. Adding a transcriber module to the session makes it a transcription session that performs speech-to-text processing. You pass audio buffers to the analyzer instance, which then routes them through the transcriber and its speech-to-text model. The model predicts the text that corresponds to the spoken audio and returns that text, along with some metadata, to your application.\n\nThis all works asynchronously. Your application can add audio as it becomes available in one task and display or further process the results independently in another task. Swift’s async sequences buffer and decouple the input and results.\n\nThe “Meet AsyncSequence” session from WWDC21 covers how to provide an input sequence and how to read the results sequence.\n\nTo correlate the input with the results, the API uses the timecode of the corresponding audio. In fact, all API operations are scheduled using timecodes on the audio timeline, which makes their order predictable and independent of when they’re called. The timecodes are precise down to an individual audio sample. Note how the transcriber delivers results in sequence, each of which covers its own range of audio without overlapping. This is normally how it works but, as an optional feature, you can make transcription iterative within a range of audio. You may want to do this to provide more immediate feedback in your application’s UI. You can show a rough result immediately and then show better iterations of that result over the next few seconds. We call the immediate rough results \"volatile results\". They’re delivered almost as soon as they’re spoken but they are less accurate guesses. However, the model improves its transcription as it gets more audio with more context. Eventually, the result will be as good as it can be, and the transcriber delivers one last finalized result. Once it does that, the transcriber won’t deliver any more results for this range of audio, and it moves on to the next range. Note how the timecodes show that later, improved results replace earlier results. This only happens when you enable volatile results. Normally, the transcriber only delivers finalized results, and none of them replace earlier results. You can build a transcription feature in just one function if all you need to do is read the file and return the transcription. That’s a job that doesn’t need volatile result handling or much concurrency. Here’s the function. Here, we create the transcriber module. We tell it the locale that we want to transcribe into. It doesn’t have any results yet but we’ll read them as they come in and use the AsyncSequence version of reduce to concatenate them. We’ll do this in the background using async let. Here, we create the analyzer and add the transcriber module, then we start analyzing the file. The analyzeSequence method reads from the file and adds its audio to an input sequence. When the file has been read, we tell the analyzer to finish up because we aren’t planning to work on any additional audio. Finally, we return the transcription that we’ve been assembling in the background. That’ll be the spoken words in the file, in the form of a single attributed string, and we’re done.\n\nSo now I’ve covered the concepts and basic usage of the API. You add modules to an analysis session to perform, say, transcription. It works concurrently and asynchronously, decoupling audio input from results. You correlate audio, results, and operations using the session’s audio timeline. Some of those results are volatile, if you want them to be, and the rest are final and won’t change. And I showed how the pieces fit together in a one-function use case. Later, Shantini will demonstrate how you can expand that one function’s work across different views, models, and view models. She’ll show you several methods and properties of the SpeechAnalyzer and Transcriber classes that you can use to handle some common needs, and you can read about these in the documentation as well. But now, we’d like to describe some of the advantages of the SpeechTranscriber class’s new speech-to-text model. SpeechTranscriber is powered by a brand new model engineered by Apple to support a broad spectrum of use cases. We wanted to create a model that could support long-form and conversational use cases where some speakers might not be close to the mic, such as recording a meeting. We also wanted to enable live transcription experiences that demand low latency without sacrificing accuracy or readability, and we wanted to keep speech private. Our new, on-device model achieves all of that. We worked closely with internal partners to design a great developer experience for you, and now you can support the same use cases in your own applications. With SpeechTranscriber, you gain a powerful speech-to-text model that you don’t have to procure and manage yourself. Simply install the relevant model assets via the new AssetInventory API. You can download them when needed. The model is retained in system storage and does not increase the download or storage size of your application, nor does it increase the run-time memory size. It operates outside of your application’s memory space, so you don’t have to worry about exceeding the size limit. And we constantly improve the model, so the system will automatically install updates as they become available. SpeechTranscriber can currently transcribe these languages, with more to come, and is available for all platforms but watchOS with certain hardware requirements. If you need an unsupported language or device, we also offer a second transcriber class: DictationTranscriber. It supports the same languages, speech-to-text model, and devices as iOS 10’s on-device SFSpeechRecognizer but improving on SFSpeechRecognizer, you will NOT need to tell your users to go into Settings and turn on Siri or keyboard dictation for any particular language. So that’s your introduction to the new API and model. It was pretty abstract, but we’ll get concrete now. Let’s go to Shantini, who will show you how to integrate SpeechAnalyzer into your app. Thanks for that great overview, Donovan! You may have seen the amazing features that we added to Notes in iOS 18 to record and transcribe phone calls, live audio, and recorded audio. Additionally, we integrated these features with Apple Intelligence, resulting in useful and time-saving summaries. We worked closely with the Speech team to ensure that SpeechAnalyzer and SpeechTranscriber would enable us to deliver a high-quality Notes feature. SpeechTranscriber is a great fit because it’s fast, accurate even at longer distances, and on device. One of our additional goals was to enable you, the developer, to build features just like the ones we added to Notes and customize them to meet the needs of your users. I’d love to get you started with that. Let’s check out an app I’m building with a live transcription feature. My app is meant for kids and records and transcribes bedtime stories, allowing you to play them back. Here are the transcription results in real time.\n\nAnd, when you play the audio back, the corresponding segment of text is highlighted, so that they can follow along with the story. Let’s check out the project setup.\n\nIn my sample app code, I have a Recorder class, and a SpokenWordTranscriber class. I’ve made them both observable.\n\nI also made this Story model to encapsulate our transcript information and other relevant details for display. Finally, I have our transcript view, with live transcription and playback views, and recording and playback buttons. It also handles recording and playback state. Let’s first check out transcription. We can set up live transcription in 3 easy steps: configure the SpeechTranscriber; ensure the model is present; and handle the results. We set up our SpeechTranscriber by initializing it with a locale object and options that we need. The locale’s language code corresponds to the language in which we want to receive transcription. As Donovan highlighted before, volatile results are realtime guesses, and finalized results are the best guesses. Here, both of those are used, with the volatile results in a lighter opacity, replaced by the finalized results when they come in. To configure this in our SpeechTranscriber, we’re going to set these option types. I'm adding the audioTimeRange option so that we get timing information.\n\nThat will allow us to sync the playback of the text to the audio.\n\nThere are also pre-configured presets that offer different options.\n\nWe’re now going to set up the SpeechAnalyzer object with our SpeechTranscriber module.\n\nThis unlocks the ability for us to get the audio format that we need to use.\n\nWe're also now able to ensure our speech-to-text model is in place.\n\nTo finish up our SpeechTranscriber setup, we want to save references to the AsyncStream input and start the analyzer.\n\nNow that we’re done setting up the SpeechTranscriber, let’s check out how we get the models. In our ensure model method, we're going to add checks for whether SpeechTranscriber supports transcription for the language we want.\n\nWe’ll also check whether the language is downloaded and installed.\n\nIf the language is supported but not downloaded, we can go ahead and make a request to AssetInventory to download support.\n\nRemember that transcription is entirely on device but the models need to be fetched. The download request includes a progress object that you can use to let your user know what’s happening.\n\nYour app can have language support for a limited number of languages at a time. If you exceed the limit, you can ask AssetInventory to deallocate one or more of them to free up a spot.\n\nNow that we’ve gotten our models, let’s get to the fun part - the results.\n\nNext to our SpeechTranscriber setup code, I'm creating a task and saving a reference to it.\n\nI'm also creating two variables to track our volatile and finalized results.\n\nThe SpeechTranscriber returns results via AsyncStream. Each result object has a few different fields.\n\nThe first one we want to get is text, which is represented by an AttributedString. This is your transcription result for a segment of audio. Each time we get a result back in the stream, we'll want to check whether it’s volatile or finalized by using the isFinal property.\n\nIf it’s volatile, we’ll save it to volatileTranscript.\n\nWhenever we get a finalized result, we clear out the volatileTranscript and add the result to finalizedTranscript.\n\nIf we don’t clear out our volatile results, we could end up with duplicates.\n\nWhenever we get a finalized result, I'm also going to write that out to our Story model to be used later.\n\nI'm also setting some conditional formatting using the SwiftUI AttributedString APIs.\n\nThis will allow us to visualize the transcription results as they transition from volatile to finalized.\n\nIf you’re wondering how I’ll get the timing data of the transcript, it’s conveniently part of the attributed string.\n\nEach run has an audioTimeRange attribute represented as CMTimeRange. I’ll use that in my view code to highlight the correct segment. Let’s next check out how to set up our audio input.\n\nIn my record function, which I call as the user presses Record, I'm going to request audio permission and start the AVAudioSession. We should also ensure that the app is configured to use the microphone in the project settings.\n\nI am then going to call my setUpTranscriber function that we created before.\n\nFinally, I'm going to handle input from my audio stream. Let’s check out how I set that up. A few things are happening here. We’re configuring the AVAudioEngine to return an AsyncStream and passing the incoming buffers to the stream.\n\nWe’re also writing the audio to disk.\n\nFinally, we’re starting the audioEngine.\n\nBack in my Record function, I am passing that AsyncStream input to the transcriber.\n\nAudio sources have different output formats and sample rates. SpeechTranscriber gave us a bestAvailableAudioFormat that we can use.\n\nI'm passing our audio buffers through a conversion step to ensure that the format matches bestAvailableAudioFormat.\n\nI'll then route the AsyncStream to the inputBuilder object from the SpeechTranscriber. When we stop recording, we want to do a few things. I stopped the audio engine and the transcriber. It’s important to cancel your tasks and also to call finalize on your analyzer stream. This will ensure that any volatile results get finalized. Let's check out how we can connect all of this to our view.\n\nMy TranscriptView has a binding to the current story, and one to our SpokenWordTranscriber. If we’re recording, we show a concatenation of the finalized transcript with the volatile transcript that we’re observing from our SpokenWordTranscriber class. For playback, we show the final transcript from the data model. I’ve added a method to break up the sentences to make it visually less cluttered.\n\nA key feature I mentioned was highlighting each word as it’s played back. I’m using some helper methods to calculate whether each run should be highlighted, based on its audioTimeRange attribute and the current playback time.\n\nSpeechTranscriber’s accuracy is great for so many reasons, not least of which is the ability to use Apple Intelligence to do useful transformations on the output.\n\nHere, I’m using the new FoundationModels API to generate a title for my story when it’s done. The API makes it super simple to create a clever title, so I don’t have to think of one! To learn more about the FoundationModels APIs, check out the session titled ‘Meet the Foundation Models Framework’ .\n\nLet's see our feature in action! I'm going to tap the Plus button to create a new story.\n\nThen, I’ll start recording. \"Once upon a time in the mystical land of Magenta, there was a little girl named Delilah who lived in a castle on the hill. Delilah spent her days exploring the forest and tending to the animals there.\" When the user is done, they can play it back and each word is highlighted in time with the audio.\n\n\"Once upon a time, in the mystical land of Magenta, there was a little girl named Delilah who lived in a castle on the hill.\n\nDelilah spent her days exploring the forest and tending to the animals there.\" SpeechAnalyzer and SpeechTranscriber enabled us to build a whole app with very little startup time. To learn more, check out the Speech Framework documentation, which includes the sample app that we just created. And that’s SpeechAnalyzer! We know you’ll build amazing features with it. Thanks so much for joining us!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:06",
+        "text": "Hello! I’m Donovan, an engineer on the Speech framework team and I’m Shantini, an engineer on the Notes team. This year, we’re excited to bring you the next evolution of our speech-to-text API and technology: SpeechAnalyzer. In this session, we’ll discuss the SpeechAnalyzer API and its most important concepts. We’ll also briefly discuss some of the new capabilities of the model behind the API. And finally, we’ll show a live-coding demo of how to use the API. SpeechAnalyzer is already powering features across many system apps, such as Notes, Voice Memos, Journal, and more."
+      },
+      {
+        "timestamp": "0:44",
+        "text": "And when we combine SpeechAnalyzer with Apple Intelligence, we create incredibly powerful features such as Call Summarization. Later, I’ll show you how to use the API to build your own live transcription feature. But first, Donovan will give you an overview of the new SpeechAnalyzer API. Speech-to-text, also known as automatic speech recognition or ASR, is a versatile technology that allows you to create great user experiences using live or recorded speech by converting it to a textual form that a device can easily display or interpret. Apps can store, search, or transmit that text in real time or pass it on to a text-based large language model."
+      },
+      {
+        "timestamp": "1:28",
+        "text": "In iOS 10, we introduced SFSpeechRecognizer. That class gave you access to the speech-to-text model powering Siri. It worked well for short-form dictation and it could use Apple servers on resource-constrained devices but it didn’t address some use cases as well as we, or you, would have liked and relied on the user to add languages. So now, in iOS 26, we’re introducing a new API for all our platforms called SpeechAnalyzer that supports more use cases and supports them better. The new API leverages the power of Swift to perform speech-to-text processing and manage model assets on the user’s device with very little code. Along with the API, we’re providing a new speech-to-text model that is already powering application features across our platforms. The new model is both faster and more flexible than the one previously available through SFSpeechRecognizer. It’s good for long-form and distant audio, such as lectures, meetings, and conversations. Because of these improvements, Apple is using this new model (and the new API) in Notes and the other applications we mentioned earlier. You can use these new capabilities to build your own application with the same sort of speech to-text features that Notes and our other applications provide but first, let’s check out the design of the API. The API consists of the SpeechAnalyzer class along with several other classes. The SpeechAnalyzer class manages an analysis session. You can add a module class to the session to perform a specific type of analysis. Adding a transcriber module to the session makes it a transcription session that performs speech-to-text processing. You pass audio buffers to the analyzer instance, which then routes them through the transcriber and its speech-to-text model. The model predicts the text that corresponds to the spoken audio and returns that text, along with some metadata, to your application."
+      },
+      {
+        "timestamp": "3:24",
+        "text": "This all works asynchronously. Your application can add audio as it becomes available in one task and display or further process the results independently in another task. Swift’s async sequences buffer and decouple the input and results."
+      },
+      {
+        "timestamp": "3:40",
+        "text": "The “Meet AsyncSequence” session from WWDC21 covers how to provide an input sequence and how to read the results sequence."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "To correlate the input with the results, the API uses the timecode of the corresponding audio. In fact, all API operations are scheduled using timecodes on the audio timeline, which makes their order predictable and independent of when they’re called. The timecodes are precise down to an individual audio sample. Note how the transcriber delivers results in sequence, each of which covers its own range of audio without overlapping. This is normally how it works but, as an optional feature, you can make transcription iterative within a range of audio. You may want to do this to provide more immediate feedback in your application’s UI. You can show a rough result immediately and then show better iterations of that result over the next few seconds. We call the immediate rough results \"volatile results\". They’re delivered almost as soon as they’re spoken but they are less accurate guesses. However, the model improves its transcription as it gets more audio with more context. Eventually, the result will be as good as it can be, and the transcriber delivers one last finalized result. Once it does that, the transcriber won’t deliver any more results for this range of audio, and it moves on to the next range. Note how the timecodes show that later, improved results replace earlier results. This only happens when you enable volatile results. Normally, the transcriber only delivers finalized results, and none of them replace earlier results. You can build a transcription feature in just one function if all you need to do is read the file and return the transcription. That’s a job that doesn’t need volatile result handling or much concurrency. Here’s the function. Here, we create the transcriber module. We tell it the locale that we want to transcribe into. It doesn’t have any results yet but we’ll read them as they come in and use the AsyncSequence version of reduce to concatenate them. We’ll do this in the background using async let. Here, we create the analyzer and add the transcriber module, then we start analyzing the file. The analyzeSequence method reads from the file and adds its audio to an input sequence. When the file has been read, we tell the analyzer to finish up because we aren’t planning to work on any additional audio. Finally, we return the transcription that we’ve been assembling in the background. That’ll be the spoken words in the file, in the form of a single attributed string, and we’re done."
+      },
+      {
+        "timestamp": "6:14",
+        "text": "So now I’ve covered the concepts and basic usage of the API. You add modules to an analysis session to perform, say, transcription. It works concurrently and asynchronously, decoupling audio input from results. You correlate audio, results, and operations using the session’s audio timeline. Some of those results are volatile, if you want them to be, and the rest are final and won’t change. And I showed how the pieces fit together in a one-function use case. Later, Shantini will demonstrate how you can expand that one function’s work across different views, models, and view models. She’ll show you several methods and properties of the SpeechAnalyzer and Transcriber classes that you can use to handle some common needs, and you can read about these in the documentation as well. But now, we’d like to describe some of the advantages of the SpeechTranscriber class’s new speech-to-text model. SpeechTranscriber is powered by a brand new model engineered by Apple to support a broad spectrum of use cases. We wanted to create a model that could support long-form and conversational use cases where some speakers might not be close to the mic, such as recording a meeting. We also wanted to enable live transcription experiences that demand low latency without sacrificing accuracy or readability, and we wanted to keep speech private. Our new, on-device model achieves all of that. We worked closely with internal partners to design a great developer experience for you, and now you can support the same use cases in your own applications. With SpeechTranscriber, you gain a powerful speech-to-text model that you don’t have to procure and manage yourself. Simply install the relevant model assets via the new AssetInventory API. You can download them when needed. The model is retained in system storage and does not increase the download or storage size of your application, nor does it increase the run-time memory size. It operates outside of your application’s memory space, so you don’t have to worry about exceeding the size limit. And we constantly improve the model, so the system will automatically install updates as they become available. SpeechTranscriber can currently transcribe these languages, with more to come, and is available for all platforms but watchOS with certain hardware requirements. If you need an unsupported language or device, we also offer a second transcriber class: DictationTranscriber. It supports the same languages, speech-to-text model, and devices as iOS 10’s on-device SFSpeechRecognizer but improving on SFSpeechRecognizer, you will NOT need to tell your users to go into Settings and turn on Siri or keyboard dictation for any particular language. So that’s your introduction to the new API and model. It was pretty abstract, but we’ll get concrete now. Let’s go to Shantini, who will show you how to integrate SpeechAnalyzer into your app. Thanks for that great overview, Donovan! You may have seen the amazing features that we added to Notes in iOS 18 to record and transcribe phone calls, live audio, and recorded audio. Additionally, we integrated these features with Apple Intelligence, resulting in useful and time-saving summaries. We worked closely with the Speech team to ensure that SpeechAnalyzer and SpeechTranscriber would enable us to deliver a high-quality Notes feature. SpeechTranscriber is a great fit because it’s fast, accurate even at longer distances, and on device. One of our additional goals was to enable you, the developer, to build features just like the ones we added to Notes and customize them to meet the needs of your users. I’d love to get you started with that. Let’s check out an app I’m building with a live transcription feature. My app is meant for kids and records and transcribes bedtime stories, allowing you to play them back. Here are the transcription results in real time."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "And, when you play the audio back, the corresponding segment of text is highlighted, so that they can follow along with the story. Let’s check out the project setup."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "In my sample app code, I have a Recorder class, and a SpokenWordTranscriber class. I’ve made them both observable."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "I also made this Story model to encapsulate our transcript information and other relevant details for display. Finally, I have our transcript view, with live transcription and playback views, and recording and playback buttons. It also handles recording and playback state. Let’s first check out transcription. We can set up live transcription in 3 easy steps: configure the SpeechTranscriber; ensure the model is present; and handle the results. We set up our SpeechTranscriber by initializing it with a locale object and options that we need. The locale’s language code corresponds to the language in which we want to receive transcription. As Donovan highlighted before, volatile results are realtime guesses, and finalized results are the best guesses. Here, both of those are used, with the volatile results in a lighter opacity, replaced by the finalized results when they come in. To configure this in our SpeechTranscriber, we’re going to set these option types. I'm adding the audioTimeRange option so that we get timing information."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "That will allow us to sync the playback of the text to the audio."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "There are also pre-configured presets that offer different options."
+      },
+      {
+        "timestamp": "11:47",
+        "text": "We’re now going to set up the SpeechAnalyzer object with our SpeechTranscriber module."
+      },
+      {
+        "timestamp": "11:54",
+        "text": "This unlocks the ability for us to get the audio format that we need to use."
+      },
+      {
+        "timestamp": "12:00",
+        "text": "We're also now able to ensure our speech-to-text model is in place."
+      },
+      {
+        "timestamp": "12:07",
+        "text": "To finish up our SpeechTranscriber setup, we want to save references to the AsyncStream input and start the analyzer."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Now that we’re done setting up the SpeechTranscriber, let’s check out how we get the models. In our ensure model method, we're going to add checks for whether SpeechTranscriber supports transcription for the language we want."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "We’ll also check whether the language is downloaded and installed."
+      },
+      {
+        "timestamp": "12:41",
+        "text": "If the language is supported but not downloaded, we can go ahead and make a request to AssetInventory to download support."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "Remember that transcription is entirely on device but the models need to be fetched. The download request includes a progress object that you can use to let your user know what’s happening."
+      },
+      {
+        "timestamp": "13:05",
+        "text": "Your app can have language support for a limited number of languages at a time. If you exceed the limit, you can ask AssetInventory to deallocate one or more of them to free up a spot."
+      },
+      {
+        "timestamp": "13:23",
+        "text": "Now that we’ve gotten our models, let’s get to the fun part - the results."
+      },
+      {
+        "timestamp": "13:29",
+        "text": "Next to our SpeechTranscriber setup code, I'm creating a task and saving a reference to it."
+      },
+      {
+        "timestamp": "13:36",
+        "text": "I'm also creating two variables to track our volatile and finalized results."
+      },
+      {
+        "timestamp": "13:45",
+        "text": "The SpeechTranscriber returns results via AsyncStream. Each result object has a few different fields."
+      },
+      {
+        "timestamp": "13:55",
+        "text": "The first one we want to get is text, which is represented by an AttributedString. This is your transcription result for a segment of audio. Each time we get a result back in the stream, we'll want to check whether it’s volatile or finalized by using the isFinal property."
+      },
+      {
+        "timestamp": "14:13",
+        "text": "If it’s volatile, we’ll save it to volatileTranscript."
+      },
+      {
+        "timestamp": "14:18",
+        "text": "Whenever we get a finalized result, we clear out the volatileTranscript and add the result to finalizedTranscript."
+      },
+      {
+        "timestamp": "14:26",
+        "text": "If we don’t clear out our volatile results, we could end up with duplicates."
+      },
+      {
+        "timestamp": "14:31",
+        "text": "Whenever we get a finalized result, I'm also going to write that out to our Story model to be used later."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "I'm also setting some conditional formatting using the SwiftUI AttributedString APIs."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "This will allow us to visualize the transcription results as they transition from volatile to finalized."
+      },
+      {
+        "timestamp": "14:55",
+        "text": "If you’re wondering how I’ll get the timing data of the transcript, it’s conveniently part of the attributed string."
+      },
+      {
+        "timestamp": "15:02",
+        "text": "Each run has an audioTimeRange attribute represented as CMTimeRange. I’ll use that in my view code to highlight the correct segment. Let’s next check out how to set up our audio input."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "In my record function, which I call as the user presses Record, I'm going to request audio permission and start the AVAudioSession. We should also ensure that the app is configured to use the microphone in the project settings."
+      },
+      {
+        "timestamp": "15:29",
+        "text": "I am then going to call my setUpTranscriber function that we created before."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "Finally, I'm going to handle input from my audio stream. Let’s check out how I set that up. A few things are happening here. We’re configuring the AVAudioEngine to return an AsyncStream and passing the incoming buffers to the stream."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "We’re also writing the audio to disk."
+      },
+      {
+        "timestamp": "15:55",
+        "text": "Finally, we’re starting the audioEngine."
+      },
+      {
+        "timestamp": "15:59",
+        "text": "Back in my Record function, I am passing that AsyncStream input to the transcriber."
+      },
+      {
+        "timestamp": "16:05",
+        "text": "Audio sources have different output formats and sample rates. SpeechTranscriber gave us a bestAvailableAudioFormat that we can use."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "I'm passing our audio buffers through a conversion step to ensure that the format matches bestAvailableAudioFormat."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "I'll then route the AsyncStream to the inputBuilder object from the SpeechTranscriber. When we stop recording, we want to do a few things. I stopped the audio engine and the transcriber. It’s important to cancel your tasks and also to call finalize on your analyzer stream. This will ensure that any volatile results get finalized. Let's check out how we can connect all of this to our view."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "My TranscriptView has a binding to the current story, and one to our SpokenWordTranscriber. If we’re recording, we show a concatenation of the finalized transcript with the volatile transcript that we’re observing from our SpokenWordTranscriber class. For playback, we show the final transcript from the data model. I’ve added a method to break up the sentences to make it visually less cluttered."
+      },
+      {
+        "timestamp": "17:11",
+        "text": "A key feature I mentioned was highlighting each word as it’s played back. I’m using some helper methods to calculate whether each run should be highlighted, based on its audioTimeRange attribute and the current playback time."
+      },
+      {
+        "timestamp": "17:25",
+        "text": "SpeechTranscriber’s accuracy is great for so many reasons, not least of which is the ability to use Apple Intelligence to do useful transformations on the output."
+      },
+      {
+        "timestamp": "17:35",
+        "text": "Here, I’m using the new FoundationModels API to generate a title for my story when it’s done. The API makes it super simple to create a clever title, so I don’t have to think of one! To learn more about the FoundationModels APIs, check out the session titled ‘Meet the Foundation Models Framework’ ."
+      },
+      {
+        "timestamp": "17:54",
+        "text": "Let's see our feature in action! I'm going to tap the Plus button to create a new story."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "Then, I’ll start recording. \"Once upon a time in the mystical land of Magenta, there was a little girl named Delilah who lived in a castle on the hill. Delilah spent her days exploring the forest and tending to the animals there.\" When the user is done, they can play it back and each word is highlighted in time with the audio."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "\"Once upon a time, in the mystical land of Magenta, there was a little girl named Delilah who lived in a castle on the hill."
+      },
+      {
+        "timestamp": "18:35",
+        "text": "Delilah spent her days exploring the forest and tending to the animals there.\" SpeechAnalyzer and SpeechTranscriber enabled us to build a whole app with very little startup time. To learn more, check out the Speech Framework documentation, which includes the sample app that we just created. And that’s SpeechAnalyzer! We know you’ll build amazing features with it. Thanks so much for joining us!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -112,6 +315,28 @@
       "code": "try await analyzer?.finalizeAndFinishThroughEndOfInput()"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "2:41"
+    },
+    {
+      "timestamp": "2:41",
+      "title": "SpeechAnalyzer API",
+      "duration": "4:22"
+    },
+    {
+      "timestamp": "7:03",
+      "title": "SpeechTranscriber model",
+      "duration": "2:03"
+    },
+    {
+      "timestamp": "9:06",
+      "title": "Build a speech-to-text feature",
+      "duration": "10:01"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -134,5 +359,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10033"
     }
   ],
-  "extractedAt": "2026-10-11T16:33:21.882Z"
+  "extractedAt": "2026-10-17T18:43:18.460Z"
 }

@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110930/",
   "title": "WWDC22 Day 2 recap",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials"
@@ -11,8 +10,72 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Bass-heavy electronic music ♪ Ready for your day two briefing? Let's jump right in, shall we? First, we cooked up new ways to navigate within your SwiftUI apps.\n\n- This recipe is our pièce de résistance.\n\nThen we learned more about the new features in Xcode 14.\n\n- You can choose the level of detail that's right for you.\n\nAnd Jared showed us new plug-ins for adding Apple frameworks to your Unity game projects.\n\n- The Core Haptics Unity plug-in gives you the tools you need to add an entirely new level of immersion into your games.\n\n- And there's a brand-new way to do 3D scans with RoomPlan.\n\n- Apple has enabled powerful new ways for people to bring the world into their apps.\n\nAnd then Paul showed developers how they can use color to make SF Symbols even more expressive.\n\nAnd we introduced the new Push to Talk framework for iOS.\n\n- Hey Trevor.\n\nAre you ready to cover your WWDC slides? - Hey Kevin.\n\nI'll be ready in a few minutes. Can you hear me? Over.\n\nHere's some intel for tomorrow.\n\n♪ Developers, we'll be in contact.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Bass-heavy electronic music ♪ Ready for your day two briefing? Let's jump right in, shall we? First, we cooked up new ways to navigate within your SwiftUI apps."
+      },
+      {
+        "timestamp": "0:13",
+        "text": "- This recipe is our pièce de résistance."
+      },
+      {
+        "timestamp": "0:15",
+        "text": "Then we learned more about the new features in Xcode 14."
+      },
+      {
+        "timestamp": "0:19",
+        "text": "- You can choose the level of detail that's right for you."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "And Jared showed us new plug-ins for adding Apple frameworks to your Unity game projects."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "- The Core Haptics Unity plug-in gives you the tools you need to add an entirely new level of immersion into your games."
+      },
+      {
+        "timestamp": "0:34",
+        "text": "- And there's a brand-new way to do 3D scans with RoomPlan."
+      },
+      {
+        "timestamp": "0:38",
+        "text": "- Apple has enabled powerful new ways for people to bring the world into their apps."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "And then Paul showed developers how they can use color to make SF Symbols even more expressive."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "And we introduced the new Push to Talk framework for iOS."
+      },
+      {
+        "timestamp": "0:51",
+        "text": "- Hey Trevor."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "Are you ready to cover your WWDC slides? - Hey Kevin."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "I'll be ready in a few minutes. Can you hear me? Over."
+      },
+      {
+        "timestamp": "1:00",
+        "text": "Here's some intel for tomorrow."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "♪ Developers, we'll be in contact."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -105,5 +168,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/110933"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:08.835Z"
+  "extractedAt": "2026-10-17T18:50:06.409Z"
 }

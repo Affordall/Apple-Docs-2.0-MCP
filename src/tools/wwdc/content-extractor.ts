@@ -1,10 +1,6 @@
-/**
- * WWDC video content extractor
- */
-
+import { siteUrl } from '../../utils/url-converter.js';
 import { JSDOM } from 'jsdom';
 import { httpClient } from '../../utils/http-client.js';
-import { logger } from '../../utils/logger.js';
 import { WWDC_URLS, WWDC_CONFIG } from '../../utils/constants.js';
 import type {
   WWDCVideo,
@@ -17,10 +13,13 @@ import type {
 } from '../../types/wwdc.js';
 
 /** A videos page Apple answered with another page: it redirects retired URLs (a session's /code) to /videos/ */
-export class PageMovedError extends Error {}
+class PageMovedError extends Error {}
 
 /** A session's code section whose examples no longer hold code where the extractor reads it */
 class CodeSectionChangedError extends Error {}
+
+/** A session page without the element the extractor reads */
+class PageChangedError extends Error {}
 
 /**
  * A page of developer.apple.com/videos as a document; a redirect is an error, as the page it lands on is another one
@@ -42,163 +41,74 @@ export async function extractVideoContent(
   year: string,
   topics: string[],
 ): Promise<WWDCVideo> {
-  try {
-    logger.info('Extracting WWDC session', { year, videoId });
+  const document = await fetchVideosPage(videoUrl);
 
-    const document = await fetchVideosPage(videoUrl);
+  const title = extractTitle(document);
 
-    // Extract basic information
-    const title = extractTitle(document);
-    const speakers = extractSpeakers(document);
-    const duration = extractDuration(document);
+  const transcript = extractTranscript(document);
+  const hasTranscript = transcript !== undefined;
 
-    const transcript = extractTranscript(document);
-    const hasTranscript = transcript !== undefined;
+  // Sessions before WWDC22 have no code section; their code sits in the transcript
+  const sessionCode = extractCodeExamples(document, videoUrl);
+  const codeExamples = sessionCode.length === 0 && parseInt(year) < WWDC_CONFIG.CODE_TAB_INTRODUCED_YEAR
+    ? extractCodeFromTranscript(document)
+    : sessionCode;
+  const hasCode = codeExamples.length > 0;
 
-    // Sessions before WWDC22 have no code section; their code sits in the transcript
-    const sessionCode = extractCodeExamples(document, videoUrl);
-    const codeExamples = sessionCode.length === 0 && parseInt(year) < WWDC_CONFIG.CODE_TAB_INTRODUCED_YEAR
-      ? extractCodeFromTranscript(document)
-      : sessionCode;
-    const hasCode = codeExamples.length > 0;
+  const chapters = extractChapters(document);
 
-    // Extract chapter information
-    const chapters = extractChapters(document);
+  const resources = extractResources(document);
 
-    const resources = extractResources(document);
+  const relatedVideos = await extractRelatedVideos(document, videoUrl);
 
-    // Extract related videos
-    const relatedVideos = await extractRelatedVideos(document, videoUrl);
+  const video: WWDCVideo = {
+    id: videoId,
+    year,
+    url: videoUrl,
+    title,
+    duration: sessionLength(document),
+    topics,
+    hasTranscript,
+    hasCode,
+    transcript: hasTranscript ? transcript : undefined,
+    codeExamples: hasCode ? codeExamples : undefined,
+    chapters: chapters.length > 0 ? chapters : undefined,
+    resources,
+    relatedVideos: relatedVideos.length > 0 ? relatedVideos : undefined,
+    extractedAt: new Date().toISOString(),
+  };
 
-    const video: WWDCVideo = {
-      id: videoId,
-      year,
-      url: videoUrl,
-      title,
-      speakers,
-      duration,
-      topics,
-      hasTranscript,
-      hasCode,
-      transcript: hasTranscript ? transcript : undefined,
-      codeExamples: hasCode ? codeExamples : undefined,
-      chapters: chapters.length > 0 ? chapters : undefined,
-      resources,
-      relatedVideos: relatedVideos.length > 0 ? relatedVideos : undefined,
-      extractedAt: new Date().toISOString(),
-    };
+  return video;
 
-    return video;
-
-  } catch (error) {
-    logger.error(`Failed to extract video ${videoId}:`, error);
-    throw error;
-  }
 }
 
-/**
- * Extract title
- */
+/** The session page's title: its one h1 */
 function extractTitle(document: Document): string {
-  // Try multiple selectors
-  const selectors = [
-    'h1.video-title',
-    'h1[itemprop="name"]',
-    '.hero-title',
-    'h1',
-  ];
-
-  for (const selector of selectors) {
-    const element = document.querySelector(selector);
-    if (element?.textContent) {
-      return element.textContent.trim();
-    }
+  const title = document.querySelector('h1')?.textContent.trim();
+  if (!title) {
+    throw new PageChangedError('The session page has no h1 naming the session');
   }
+  return title;
+}
 
-  return 'Untitled Video';
+/** Seconds as a clock, the way Apple's chapter list writes times: "1:29", "1:02:05" */
+function clock(seconds: number): string {
+  const pad = (part: number): string => String(part).padStart(2, '0');
+  const [hours, minutes, rest] = [Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), Math.floor(seconds % 60)];
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${minutes}:${pad(rest)}`;
 }
 
 /**
- * Extract speakers
- */
-function extractSpeakers(document: Document): string[] {
-  const speakers: string[] = [];
-
-  // Try to extract from description
-  const description = document.querySelector('.video-description, .description');
-  if (description) {
-    const text = description.textContent || '';
-    // Match "with [Speaker]" or "by [Speaker]" patterns
-    const speakerMatch = text.match(/(?:with|by)\s+([^.]+?)(?:\.|$)/i);
-    if (speakerMatch) {
-      const speakerText = speakerMatch[1];
-      // Split multiple speakers
-      speakers.push(...speakerText.split(/,\s*and\s*|,\s*|\s+and\s+/).map((s: string) => s.trim()));
-    }
-  }
-
-  return speakers.filter(s => s.length > 0);
-}
-
-/**
- * Extract duration
- */
-function extractDuration(document: Document): string {
-  const selectors = [
-    '.video-duration',
-    '[itemprop="duration"]',
-    '.duration',
-  ];
-
-  for (const selector of selectors) {
-    const element = document.querySelector(selector);
-    if (element?.textContent) {
-      return element.textContent.trim();
-    }
-  }
-
-  return '';
-}
-
-
-/**
- * The transcript on the session page, if it has one; a community or Q&A video's page has an empty transcript section
+ * The transcript on the session page, if it has one: its paragraphs, each timed by its first sentence's start, where
+ * Apple's player seeks; a community or Q&A video's page has an empty transcript section
  */
 function extractTranscript(document: Document): TranscriptData | undefined {
-  const transcriptContainer = document.querySelector('.transcript, [data-supplement="transcript"], #transcript');
-  const transcript = transcriptContainer ? extractTranscriptFromDocument(document) : undefined;
-  return transcript?.fullText ? transcript : undefined;
-}
-
-/**
- * Extract transcript data from document
- */
-function extractTranscriptFromDocument(document: Document): TranscriptData {
-  const segments: TranscriptSegment[] = [];
-  let fullText = '';
-
-  // Find all transcript paragraphs
-  const paragraphs = document.querySelectorAll(
-    '.transcript p, .transcript-line, [data-timestamp]',
-  );
-
-  paragraphs.forEach((p: Element) => {
-    const timestamp = p.getAttribute('data-timestamp') ||
-                     p.querySelector('.timestamp')?.textContent || '';
-    const text = p.textContent?.replace(/^\d+:\d+\s*/, '').trim() || '';
-
-    if (text) {
-      if (timestamp) {
-        segments.push({ timestamp, text });
-      }
-      fullText += text + '\n\n';
-    }
+  const segments = [...document.querySelectorAll('#transcript-content p')].flatMap((paragraph): TranscriptSegment[] => {
+    const text = (paragraph.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const start = paragraph.querySelector('[data-start]')?.getAttribute('data-start');
+    return text ? [{ timestamp: start ? clock(Number(start)) : '', text }] : [];
   });
-
-  return {
-    fullText: fullText.trim(),
-    segments,
-  };
+  return segments.length > 0 ? { segments } : undefined;
 }
 
 /**
@@ -213,7 +123,6 @@ function extractCodeExamples(document: Document, videoUrl: string): CodeExample[
 
   const examples = codeBlocks.map((block): CodeExample => {
     const code = cleanCodeIndentation((block.querySelector('code') ?? block).textContent ?? '');
-    // Extract timestamp format like "11:02 - Speech Transcriber setup"
     const heading = block.previousElementSibling?.textContent?.trim() ?? '';
     const match = heading.match(/^(\d+:\d+)\s*-\s*(.+)$/);
     return {
@@ -224,17 +133,12 @@ function extractCodeExamples(document: Document, videoUrl: string): CodeExample[
     };
   });
 
-  // Remove duplicates - sometimes same code block appears multiple times
-  return removeDuplicateCodeExamples(examples.filter((example) => example.code.length >= 10));
+  return removeDuplicateCodeExamples(examples.filter((example) => example.code.length >= WWDC_CONFIG.MIN_CODE_LENGTH));
 }
 
-/**
- * Extract code from transcript (legacy pages)
- */
 function extractCodeFromTranscript(document: Document): CodeExample[] {
   const examples: CodeExample[] = [];
 
-  // Find code blocks in transcript
   const codeBlocks = document.querySelectorAll(
     '.transcript pre code, .transcript .code-voice',
   );
@@ -242,7 +146,7 @@ function extractCodeFromTranscript(document: Document): CodeExample[] {
   codeBlocks.forEach((block: Element) => {
     let code = block.textContent || '';
     code = cleanCodeIndentation(code);
-    if (code && code.length > 20) { // Filter out too short code snippets
+    if (code && code.length > 20) {
       examples.push({
         language: detectLanguage(block),
         code,
@@ -253,11 +157,7 @@ function extractCodeFromTranscript(document: Document): CodeExample[] {
   return examples;
 }
 
-/**
- * Detect code language
- */
 function detectLanguage(element: Element): string {
-  // Detect from class attribute
   const className = element.className;
   if (className.includes('swift')) {
     return 'swift';
@@ -269,39 +169,31 @@ function detectLanguage(element: Element): string {
     return 'javascript';
   }
 
-  // Detect from data attributes
   const dataLang = element.getAttribute('data-language') ||
                   element.getAttribute('data-lang');
   if (dataLang) {
     return dataLang.toLowerCase();
   }
 
-  // Default to Swift (most WWDC code is Swift)
   return 'swift';
 }
 
-/**
- * Extract chapter information
- */
+/** The chapters Apple's player lists, each at the time Apple writes beside it ("1:29 - Dynamics") and its length */
 function extractChapters(document: Document): Chapter[] {
-  const chapters: Chapter[] = [];
-
-  const chapterElements = document.querySelectorAll(
-    '.chapter, .timeline-chapter, [data-chapter]',
-  );
-
-  chapterElements.forEach((element: Element) => {
-    const title = element.querySelector('.chapter-title')?.textContent ||
-                 element.textContent?.trim() || '';
-    const timestamp = element.getAttribute('data-timestamp') ||
-                     element.querySelector('.timestamp')?.textContent || '';
-
-    if (title && timestamp) {
-      chapters.push({ title, timestamp });
-    }
+  return [...document.querySelectorAll('.chapter-item')].flatMap((item): Chapter[] => {
+    const [timestamp = '', ...title] = (item.textContent ?? '').split(' - ');
+    // Apple's own spelling
+    const length = item.querySelector('[data-chapter-lenght]')?.getAttribute('data-chapter-lenght');
+    return title.length > 0
+      ? [{ timestamp: timestamp.trim(), title: title.join(' - ').trim(), ...(length ? { duration: clock(Number(length)) } : {}) }]
+      : [];
   });
+}
 
-  return chapters;
+/** The session's length: the page names none, but its last chapter ends where the session does */
+function sessionLength(document: Document): string {
+  const ends = [...document.querySelectorAll('[data-chapter-end-time]')].map((link) => Number(link.getAttribute('data-chapter-end-time')));
+  return ends.length > 0 ? clock(Math.max(...ends)) : '';
 }
 
 /**
@@ -317,16 +209,15 @@ function extractResources(document: Document): VideoResources {
     resourceLinks: [],
   };
 
-  // Fallback: at least try to extract video download links
   const downloadLinks = document.querySelectorAll('a[href*=".mp4"], a[download]');
   downloadLinks.forEach((link: Element) => {
     const href = link.getAttribute('href') || '';
     const text = link.textContent?.toLowerCase() || '';
 
     if (href.includes('_hd.mp4') || text.includes('hd')) {
-      resources.hdVideo = href.startsWith('http') ? href : `${WWDC_URLS.BASE.replace('/videos', '')}${href}`;
+      resources.hdVideo = siteUrl(href);
     } else if (href.includes('_sd.mp4') || text.includes('sd')) {
-      resources.sdVideo = href.startsWith('http') ? href : `${WWDC_URLS.BASE.replace('/videos', '')}${href}`;
+      resources.sdVideo = siteUrl(href);
     }
   });
 
@@ -341,7 +232,6 @@ function extractResourcesFromDocument(root: ParentNode): VideoResources {
     resourceLinks: [],
   };
 
-  // Extract all resource links
   const resourceLinks = root.querySelectorAll('a[href]');
   const processedUrls = new Set<string>();
 
@@ -353,16 +243,13 @@ function extractResourcesFromDocument(root: ParentNode): VideoResources {
       return;
     }
 
-    // Build complete URL
-    const fullUrl = href.startsWith('http') ? href : `${WWDC_URLS.BASE.replace('/videos', '')}${href}`;
+    const fullUrl = siteUrl(href);
 
-    // Avoid duplicates
     if (processedUrls.has(fullUrl)) {
       return;
     }
     processedUrls.add(fullUrl);
 
-    // Identify different types of resources
     if (href.includes('_hd.mp4') || text.toLowerCase().includes('hd video')) {
       resources.hdVideo = fullUrl;
     } else if (href.includes('_sd.mp4') || text.toLowerCase().includes('sd video')) {
@@ -378,7 +265,6 @@ function extractResourcesFromDocument(root: ParentNode): VideoResources {
       text.includes('Documentation') ||
       text.includes('Forum')
     ) {
-      // Add to resource links list
       resources.resourceLinks!.push({
         title: text,
         url: fullUrl,
@@ -389,56 +275,42 @@ function extractResourcesFromDocument(root: ParentNode): VideoResources {
   return resources;
 }
 
-/**
- * Extract related videos
- */
 async function extractRelatedVideos(document: Document, videoUrl: string): Promise<RelatedVideo[]> {
   const relatedVideos: RelatedVideo[] = [];
 
-  try {
-    // Find related videos section
-    const relatedSection = document.querySelector('.related-videos, [data-related], #related');
+  const relatedSection = document.querySelector('.related-videos, [data-related], #related');
 
-    if (!relatedSection) {
-      // Try to find related video links from page bottom
-      const videoLinks = document.querySelectorAll('a[href*="/videos/play/wwdc"]');
-      const currentVideoId = videoUrl.match(/\/(\d+)\/?$/)?.[1];
+  if (!relatedSection) {
+    const videoLinks = document.querySelectorAll('a[href*="/videos/play/wwdc"]');
+    const currentVideoId = videoUrl.match(/\/(\d+)\/?$/)?.[1];
 
-      videoLinks.forEach((link: Element) => {
-        const href = link.getAttribute('href') || '';
-        const match = href.match(/\/videos\/play\/wwdc(\d{4})\/(\d+)\/?/);
+    videoLinks.forEach((link: Element) => {
+      const href = link.getAttribute('href') || '';
+      const match = href.match(WWDC_URLS.SESSION_LINK);
 
-        if (match && match[2] !== currentVideoId) {
-          const year = match[1];
-          const id = match[2];
-          const title = link.textContent?.trim() || '';
+      if (match && match[2] !== currentVideoId) {
+        const year = match[1];
+        const id = match[2];
+        const title = link.textContent?.trim() || '';
 
-          // Filter out current video and already added videos
-          if (title && !relatedVideos.find(v => v.id === id)) {
-            relatedVideos.push({
-              id,
-              year,
-              title,
-              url: href.startsWith('http') ? href : `${WWDC_URLS.BASE.replace('/videos', '')}${href}`,
-            });
-          }
+        if (title && !relatedVideos.find(v => v.id === id)) {
+          relatedVideos.push({
+            id,
+            year,
+            title,
+            url: siteUrl(href),
+          });
         }
-      });
-    }
-  } catch (error) {
-    logger.warn('Failed to extract related videos:', error);
+      }
+    });
   }
 
   return relatedVideos;
 }
 
-/**
- * Clean up code indentation
- */
 function cleanCodeIndentation(code: string): string {
   const lines = code.split('\n');
 
-  // Remove empty lines at start and end
   while (lines.length > 0 && lines[0].trim() === '') {
     lines.shift();
   }
@@ -450,7 +322,6 @@ function cleanCodeIndentation(code: string): string {
     return '';
   }
 
-  // Find minimum indentation (excluding empty lines)
   const minIndent = lines
     .filter(line => line.trim().length > 0)
     .reduce((min, line) => {
@@ -458,7 +329,6 @@ function cleanCodeIndentation(code: string): string {
       return Math.min(min, indent);
     }, Infinity);
 
-  // Remove common indentation
   if (minIndent > 0 && minIndent !== Infinity) {
     return lines
       .map(line => line.substring(minIndent))
@@ -469,17 +339,12 @@ function cleanCodeIndentation(code: string): string {
   return lines.join('\n').trim();
 }
 
-/**
- * Remove duplicate code examples
- */
 function removeDuplicateCodeExamples(examples: CodeExample[]): CodeExample[] {
   const seen = new Map<string, CodeExample>();
 
   for (const example of examples) {
-    // Use code content as key
     const key = example.code.trim();
 
-    // If haven't seen this code, or current one has better metadata (title or timestamp)
     const existing = seen.get(key);
     if (!existing ||
         (example.title && !existing.title) ||

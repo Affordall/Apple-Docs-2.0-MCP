@@ -1,10 +1,9 @@
+import { siteUrl } from '../utils/url-converter.js';
 import { formatInlineContent } from './doc-formatter.js';
 import type { RenderIndex, RenderIndexNode, RenderNode } from '../types/docc.js';
 import { isTopicReference } from '../types/docc.js';
-import { technologyOverviewsCache, generateUrlCacheKey } from '../utils/cache.js';
+import { cachedJson, indexCache, pageCache } from '../utils/cache.js';
 import { APPLE_URLS } from '../utils/constants.js';
-import { httpClient } from '../utils/http-client.js';
-import { logger } from '../utils/logger.js';
 
 /** One collection or article, in the tree's order, with what encloses it */
 interface OverviewEntry {
@@ -26,55 +25,19 @@ interface OverviewFilters {
   limit: number;
 }
 
-const TYPE_LABELS: Record<string, string> = { collection: 'Collection', article: 'Article' };
 const NOTHING_FOUND = 'No technology overviews found matching the specified criteria.';
 
-/**
- * Handle get technology overviews
- */
 export async function handleGetTechnologyOverviews(
   category?: string,
   searchQuery?: string,
   includeSubcategories: boolean = true,
   limit: number = 50,
 ): Promise<string> {
-  try {
-    logger.info('Fetching technology overviews...');
-
-    const cacheKey = generateUrlCacheKey('technology-overviews', {
-      category,
-      searchQuery,
-      includeSubcategories,
-      limit,
-    });
-
-    const cachedResult = technologyOverviewsCache.get(cacheKey);
-    if (cachedResult) {
-      logger.debug('Technology overviews cache hit');
-      return cachedResult;
-    }
-
-    const [overviewsData, overviewsIndex] = await Promise.all([
-      httpClient.getJson<RenderNode>(APPLE_URLS.TECHNOLOGY_OVERVIEWS_JSON),
-      httpClient.getJson<RenderIndex>(APPLE_URLS.TECHNOLOGY_OVERVIEWS_INDEX_JSON),
-    ]);
-
-    const result = formatOverviews(entriesOf(overviewsData, overviewsIndex), {
-      category,
-      searchQuery,
-      includeSubcategories,
-      limit,
-    });
-
-    technologyOverviewsCache.set(cacheKey, result);
-
-    return result;
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
-    logger.error('Error fetching technology overviews:', error);
-    return `Error: Failed to fetch technology overviews: ${errorMessage}`;
-  }
+  const [overviewsData, overviewsIndex] = await Promise.all([
+    cachedJson<RenderNode>(pageCache, APPLE_URLS.TECHNOLOGY_OVERVIEWS_JSON),
+    cachedJson<RenderIndex>(indexCache, APPLE_URLS.TECHNOLOGY_OVERVIEWS_INDEX_JSON),
+  ]);
+  return formatOverviews(entriesOf(overviewsData, overviewsIndex), { category, searchQuery, includeSubcategories, limit });
 }
 
 /**
@@ -162,7 +125,7 @@ function tree(entries: OverviewEntry[], base: number): string {
         heading = entry.group;
         lines.push(`## ${heading}`, '');
       }
-      lines.push(`### [${entry.title}](${urlOf(entry)})`, `*${typeOf(entry)}*${entry.abstract ? ` — ${entry.abstract}` : ''}`, '');
+      lines.push(`### [${entry.title}](${siteUrl(entry.path)})`, `*${entry.type}*${entry.abstract ? ` — ${entry.abstract}` : ''}`, '');
       label = '';
       continue;
     }
@@ -172,20 +135,12 @@ function tree(entries: OverviewEntry[], base: number): string {
       lines.push(`${indent}**${entry.group}**`);
     }
     label = place;
-    lines.push(`${indent}- [${entry.title}](${urlOf(entry)}) *(${typeOf(entry)})*${entry.abstract ? ` — ${entry.abstract}` : ''}`);
+    lines.push(`${indent}- [${entry.title}](${siteUrl(entry.path)}) *(${entry.type})*${entry.abstract ? ` — ${entry.abstract}` : ''}`);
   }
   return lines.join('\n').trim();
 }
 
 function flatList(entries: OverviewEntry[]): string {
-  return entries.map(entry => `- [${entry.title}](${urlOf(entry)}) *(${typeOf(entry)})*` +
+  return entries.map(entry => `- [${entry.title}](${siteUrl(entry.path)}) *(${entry.type})*` +
     `${entry.parentTitle ? ` — in ${entry.parentTitle}` : ''}${entry.abstract ? `: ${entry.abstract}` : ''}`).join('\n');
-}
-
-function urlOf(entry: OverviewEntry): string {
-  return `https://developer.apple.com${entry.path}`;
-}
-
-function typeOf(entry: OverviewEntry): string {
-  return TYPE_LABELS[entry.type] ?? entry.type;
 }

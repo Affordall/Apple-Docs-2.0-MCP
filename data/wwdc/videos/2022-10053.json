@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10053/",
   "title": "Discover Sign in with Apple at Work & School",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Business & Education"
@@ -11,8 +10,660 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ instrumental hip hop music ♪ ♪ Hello. My name is Ashwath and I am an engineer with the Education team.\n\nToday I am excited to talk to you about Sign in with Apple at Work & School.\n\nIn this presentation, I will be covering the key features that we are introducing this fall.\n\nI will first walk you through what Sign in with Apple at Work & School is and how it works.\n\nThen I will talk about the Roster API and specifics about how you can make use of it.\n\nAnd finally, I will be talking about access management, where I discuss how IT admins can manage access to Sign in with Apple at Work & School and the Roster API on behalf of their organization.\n\nLet me begin by covering two concepts you may be familiar with but are important to review for this session.\n\nThe first is Sign in with Apple.\n\nSign in with Apple is a fast and easy way for users to sign in to apps with their Apple ID.\n\nUsers are able to create an account within your app with a simple tap.\n\nThe second concept is Managed Apple IDs.\n\nLike Apple IDs, Managed Apple IDs are used to personalize a device.\n\nThey're also used to access Apple apps and services.\n\nUnlike Apple IDs, Managed Apple IDs are owned by an organization and managed through Apple School Manager or Apple Business Manager.\n\nWith those definitions in mind, I am excited to share that Sign in with Apple has now been extended to support Managed Apple IDs.\n\nNow you can get the benefits of a fast and easy sign-in experience of Sign in with Apple, but with the management capabilities of Managed Apple IDs.\n\nTo showcase the user experience of Sign in with Apple at Work & School, let us take a look at an example.\n\nHere is the login screen for Slack.\n\nTo use Sign in with Apple, a user can just tap Continue with Apple.\n\nWhen using an Apple ID, they will then see this welcome screen for Sign in with Apple.\n\nOn the other hand, if they are using a Managed Apple ID, they will see the welcome screen for Sign in with Apple at Work & School.\n\nYou will notice a difference in the welcome screen.\n\nWhat do we mean when we say we make it easy for apps to provide access control? Let's take a look at an example.\n\nWhen using their personal Apple ID with Sign in with Apple, the user sees the account creation screen where they may edit their name and choose whether to share or hide their email.\n\nBut in an organizational context, it is important for the app to understand who is logging in and what level of access to provide them.\n\nIn the example shown on this screen, the user is signing in to Slack at work.\n\nIn order to know which Slack channels this employee should be allowed to join, Slack needs to know which user is signing in.\n\nSo this is an example of Slack providing access control using the name and email shared with their app when using Sign in with Apple at Work & School.\n\nSo this is what the user sees, but what does this mean for you? It means when a user uses Sign in with Apple at Work & School, the name and email fields will always be accessible.\n\nIf you are a developer working on a client-side app, here's a look at some example code showing the authorization controller.\n\nOn a successful authorization, the highlighted statements indicate the full name and email received by your app.\n\nThis assumes that the request for authorization included the scopes for the full name and email.\n\nIf you are a developer supporting Sign in with Apple on the web, here's a look at some example code that uses the signIn method to start the authorization process.\n\nUpon successful authorization, the server returns the response to the data object.\n\nThat data object looks like this.\n\nThe highlighted fields contain the email and full name of the user signing in.\n\nIt is important to note a few points here.\n\nIn this release, Sign in with Apple at Work & School uses the primary Managed Apple ID that is signed in on the device.\n\nEven though the example screens that we showed you were for the login flow on the device, the web flow is supported as well.\n\nSome accounts may not have email addresses provided.\n\nFor example, schools may not assign email addresses to younger students.\n\nLet's see what the account creation screen looks like in this scenario where an email address is not present.\n\nThis user, Fatima Silva, does not have an email address, so only their full name is present on the account creation screen.\n\nIf you have already implemented Sign in with Apple, there is no work needed from your end to add support for Managed Apple IDs.\n\nIf you haven't implemented support yet, I would highly suggest taking a look at the \"Get the most out of Sign in with Apple\" session from WWDC2020 and the \"Enhance your Sign in with Apple experience\" session from this year.\n\nThat was Sign in with Apple at Work & School, which brings the fast and easy sign-in experience of Sign in with Apple to Managed Apple IDs.\n\nNow let's dive into the Roster API.\n\nBut before jumping into any specifics, let's consider the following scenario.\n\nYou're a developer in the education space.\n\nYour app is being used by school districts.\n\nYou have implemented support for Sign in with Apple in your app.\n\nThat's great! Students, teachers, and staff can use their Managed Apple IDs to log in to your app.\n\nIn this scenario, your app allows teachers to share assignments and announcements with their students.\n\nTo support this, IT administrators need to enter students, teachers, and classes into your app prior to the start of the school year.\n\nFor a school with hundreds or thousands of students, creating these records by hand would quickly become a time-consuming and tedious process.\n\nWe've created the Roster API to address this problem.\n\nThe Roster API provides programmatic access to resources like users and classes in Apple School Manager.\n\nThis allows an IT admin to automate the process of importing this information to your app.\n\nThese resources are defined in the form of REST endpoints.\n\nThis data can be accessed by your app after the IT admin has granted permission through a successful OAuth 2.0 authorization.\n\nThe Administrator and Site Manager accounts in Apple School Manager can manage which apps are able to access the data.\n\nAs part of this release, we have created a standardized way for apps to request access to organizational data.\n\nWe call this Organizational Data Sharing.\n\nWe wanted to follow industry standards when it comes to UI design patterns and choice of technology so developer adoption is easy.\n\nSo we created an authorization flow using OAuth 2.0, which includes using scopes and asking the IT admin to consent to sharing their organizational data.\n\nHere is what it looks like.\n\nThe consent screen provides information on which app is requesting access to the organization's data and what data the app is requesting access to.\n\nLooking more closely, the consent screen contains information on the requestor -- which represents the app requesting access to the data made available by Apple School Manager; in this case, the requesting app is Quizzler -- and the scopes, which represent the data that the app will have access to.\n\nIn this case, once the IT admin consents, Quizzler will be able to access all user and class information for this organization.\n\nWhat does your implementation journey look like? The first step is to register in the developer portal, which involves requesting scopes.\n\nThe next step is to request consent from the IT admin to share the data with your app through the OAuth 2.0 authorization flow.\n\nFinally, your app queries the Roster API endpoints to fetch the data.\n\nLet us take a look at each of these steps.\n\nTo request scopes, visit the Developer portal.\n\nUnder the Certificates, Identifiers & Profiles page, click on Configure under Account & Organizational Data Sharing.\n\nIn the next step, click on \"Set up a configuration.\" Choose the primary app ID from the drop-down and hit Continue.\n\nIn the additional configuration details page, under Organizational Data Sharing Scopes, choose the scopes desired.\n\nRight now, we offer two: user access and class access.\n\nEnsure return URLs are configured for your app.\n\nThis step is important as the return URLs will be used in the OAuth 2.0 authorization flow.\n\nHit Continue.\n\nFinally, confirm your configuration.\n\nNow we're ready for the next step.\n\nThe second step in the implementation journey is getting the access token through the OAuth 2.0 authorization flow.\n\nLet us look at this in detail.\n\nThe IT admin first logs in to your app.\n\nThe IT admin then interacts with your app to initiate the authorization flow -- for example, by clicking a button named \"Connect to Apple School Manager.\" This starts a sequence of events following the OAuth 2.0 standard.\n\nThe first step is to execute a GET API call to the authorize endpoint.\n\nLet us take a look at the details of this request.\n\nThe request takes in a few query parameters: the client_id, the redirect_uri, the state, response_type, and scopes.\n\nThe response will be a redirect to the Apple OAuth consent screen to request access from the IT admin.\n\nIn this diagram, we assume that the IT admin has authenticated with their Managed Apple ID.\n\nIf they have not, they would be prompted to authenticate first.\n\nThe IT admin is presented with the consent screen to confirm that they would like to share their organizational data with your app.\n\nThis is the same consent screen that we saw earlier.\n\nAs a reminder, it looks like this.\n\nOnce they click Allow, your app is provided with an authorization code at your return URL that you registered in the developer portal.\n\nThe final step involves a POST request to the token endpoint to retrieve your app's access token.\n\nLet us see what this request looks like.\n\nThe request body is composed of standard OAuth parameters including the authorization code received on your return URL.\n\nThe response would have the access token, its expiration, and the refresh token that is used to create a new access token when it expires.\n\nLet us take a look at the request details to generate a new access token using a refresh token.\n\nThe request body is composed of the standard OAuth parameters, including the refresh token, and the response would have the access token and its expiration.\n\nAfter successfully completing the OAuth 2.0 authorization flow, your app now has the access token, which can be used to fetch user and class information from the Roster API.\n\nAs part of our current release, we are introducing five endpoints that the apps can query.\n\nThese include fetching a list of classes, a list of users, a specific class, a specific user, users in a class.\n\nLet's walk through a simple example flow to demonstrate how you can fetch users and classes.\n\nYour app server can first retrieve the list of students, teachers, and staff by querying the users endpoint.\n\nLet us take a look at the request and response in detail.\n\nThe users endpoint takes in three query parameters.\n\nThe pageToken and limit are pagination parameters, and an optional role parameter lets you query for students, instructors, or staff.\n\nThe request requires the authorization header with the access token generated from the authorization flow.\n\nThe response is a JSON payload that includes a \"users\" key, which has the list of users; the \"nextPageToken\" key that is used to fetch the next set of records, and a \"moreToFollow\" Boolean key that indicates if there are any more records to query.\n\nLet's take a look at an example request.\n\nThe API call here is retrieving a list of students with a maximum of 10 students in the response.\n\nThis is the first API request, so the pageToken query parameter is not specified.\n\nThe response has standard user information such as givenName, familyName, etcetera, but I would like to draw your attention to the stable unique identifier for the user.\n\nThis is the same identifier your app receives when the user authenticates with Sign in with Apple.\n\nThe email address of the user and their roles in the organization are also included.\n\nThe nextPageToken needs to be used in the subsequent API request as a query parameter to fetch the next set of students, since the moreToFollow key is set to true.\n\nAfter querying the users endpoint, your app server can now query the classes endpoint, which gives you the list of classes for that particular school district and the relationship between the class and the students and teachers associated with that class.\n\nLet us take a look at the request and response in detail.\n\nAs part of the get classes request, the request takes in two query parameters: the pageToken and the limit parameter, both of which we saw before.\n\nThe headers are the same as when querying users.\n\nThe response is a JSON payload in which the \"classes\" key holds the list of classes.\n\nLet us take a look at an example request.\n\nThis request retrieves a list of classes with a maximum of 200 to be included in the response.\n\nThe API request also has the pageToken parameter, which means it is in the middle of fetching all classes.\n\nThe response has standard class information such as the name, the class identifier, etcetera, but I would like to draw your attention to the list of instructor IDs and student IDs that belong to the class.\n\nThat was the Roster API.\n\nWith these endpoints, your app can now programmatically query users and classes from Apple School Manager.\n\nFinally, I would like to talk to you about access management.\n\nIt is vital to provide management capabilities to organizations using Organizational Data Sharing and Sign in with Apple at Work & School.\n\nLet me explain what this means in more detail.\n\nWhen using Sign in with Apple, users manage their own account and it's solely up to them to decide which apps they choose to sign in to.\n\nBut when using Sign in with Apple at Work & School, the IT admin at the organization centrally manages access on behalf of all the users at that organization.\n\nThis is because the IT admin is responsible for ensuring the safety and security of the organization's data.\n\nSo, they must be empowered to manage which apps users are allowed to use Sign in with Apple at Work & School, and which apps are allowed to use Organizational Data Sharing.\n\nThese access management capabilities can be configured in Apple School Manager and Apple Business Manager.\n\nFor Sign in with Apple at Work & School, we offer two modes.\n\nThe first mode is \"Allow all apps.\" Let us see what this mode looks like.\n\nHere, the IT admin is logged in to Apple Business Manager.\n\nOn selecting Access Management from the sidebar and choosing Sign in with Apple, they are presented with the two modes.\n\nThe \"Allow all apps\" mode lets all users of the organization log in to all apps that support Sign in with Apple.\n\nThe second mode is \"Allow only certain apps.\" Let us see what this mode looks like.\n\nThe \"Allow only certain apps\" mode lets the IT admin search for apps that support Sign in with Apple to add to the list.\n\nUsers will only be able to use Sign in with Apple with the apps that have been added to the list.\n\nIf a user tries to log in to an app that is not on the list, they will see an error message.\n\nIt is important to note that this functionality is the same for Apple School Manager, Apple Business Manager, and Business Essentials customers.\n\nSimilar to Sign in with Apple at Work & School, Organizational Data Sharing also has the same two modes.\n\nLet's take a look.\n\nThe \"Allow only certain apps\" mode lets the IT admin search for supported apps to add to the list.\n\nIt is these apps that can access user and class information using the Roster API.\n\nIn addition to the consent screen, this is a second layer of control for the IT admin to manage which apps can access organizational data.\n\nWith the release of Sign in with Apple at Work & School, now users in any environment can use an Apple ID or a Managed Apple ID to log in to your app.\n\nIf you haven't already implemented Sign in with Apple, I encourage you to do so.\n\nI would also highly encourage you to adopt the Roster API if you are in the education space.\n\nImplementing support for Roster API will provide a seamless onboarding experience for IT administrators, staff, teachers, and students.\n\nAs always, we love hearing from you.\n\nSo please submit any feedback you may have.\n\nIf you'd like to learn more, I would highly suggest the \"Get the most out of Sign in with Apple\" session from 2020 and the \"Enhance your Sign in with Apple experience\" session this year.\n\nThank you so much for watching and we hope you enjoy this year's WWDC.\n\n♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ instrumental hip hop music ♪ ♪ Hello. My name is Ashwath and I am an engineer with the Education team."
+      },
+      {
+        "timestamp": "0:14",
+        "text": "Today I am excited to talk to you about Sign in with Apple at Work & School."
+      },
+      {
+        "timestamp": "0:19",
+        "text": "In this presentation, I will be covering the key features that we are introducing this fall."
+      },
+      {
+        "timestamp": "0:24",
+        "text": "I will first walk you through what Sign in with Apple at Work & School is and how it works."
+      },
+      {
+        "timestamp": "0:30",
+        "text": "Then I will talk about the Roster API and specifics about how you can make use of it."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "And finally, I will be talking about access management, where I discuss how IT admins can manage access to Sign in with Apple at Work & School and the Roster API on behalf of their organization."
+      },
+      {
+        "timestamp": "0:49",
+        "text": "Let me begin by covering two concepts you may be familiar with but are important to review for this session."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "The first is Sign in with Apple."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "Sign in with Apple is a fast and easy way for users to sign in to apps with their Apple ID."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "Users are able to create an account within your app with a simple tap."
+      },
+      {
+        "timestamp": "1:10",
+        "text": "The second concept is Managed Apple IDs."
+      },
+      {
+        "timestamp": "1:12",
+        "text": "Like Apple IDs, Managed Apple IDs are used to personalize a device."
+      },
+      {
+        "timestamp": "1:16",
+        "text": "They're also used to access Apple apps and services."
+      },
+      {
+        "timestamp": "1:20",
+        "text": "Unlike Apple IDs, Managed Apple IDs are owned by an organization and managed through Apple School Manager or Apple Business Manager."
+      },
+      {
+        "timestamp": "1:30",
+        "text": "With those definitions in mind, I am excited to share that Sign in with Apple has now been extended to support Managed Apple IDs."
+      },
+      {
+        "timestamp": "1:37",
+        "text": "Now you can get the benefits of a fast and easy sign-in experience of Sign in with Apple, but with the management capabilities of Managed Apple IDs."
+      },
+      {
+        "timestamp": "1:46",
+        "text": "To showcase the user experience of Sign in with Apple at Work & School, let us take a look at an example."
+      },
+      {
+        "timestamp": "1:52",
+        "text": "Here is the login screen for Slack."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "To use Sign in with Apple, a user can just tap Continue with Apple."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "When using an Apple ID, they will then see this welcome screen for Sign in with Apple."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "On the other hand, if they are using a Managed Apple ID, they will see the welcome screen for Sign in with Apple at Work & School."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "You will notice a difference in the welcome screen."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "What do we mean when we say we make it easy for apps to provide access control? Let's take a look at an example."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "When using their personal Apple ID with Sign in with Apple, the user sees the account creation screen where they may edit their name and choose whether to share or hide their email."
+      },
+      {
+        "timestamp": "2:38",
+        "text": "But in an organizational context, it is important for the app to understand who is logging in and what level of access to provide them."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "In the example shown on this screen, the user is signing in to Slack at work."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "In order to know which Slack channels this employee should be allowed to join, Slack needs to know which user is signing in."
+      },
+      {
+        "timestamp": "3:01",
+        "text": "So this is an example of Slack providing access control using the name and email shared with their app when using Sign in with Apple at Work & School."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "So this is what the user sees, but what does this mean for you? It means when a user uses Sign in with Apple at Work & School, the name and email fields will always be accessible."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "If you are a developer working on a client-side app, here's a look at some example code showing the authorization controller."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "On a successful authorization, the highlighted statements indicate the full name and email received by your app."
+      },
+      {
+        "timestamp": "3:42",
+        "text": "This assumes that the request for authorization included the scopes for the full name and email."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "If you are a developer supporting Sign in with Apple on the web, here's a look at some example code that uses the signIn method to start the authorization process."
+      },
+      {
+        "timestamp": "4:01",
+        "text": "Upon successful authorization, the server returns the response to the data object."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "That data object looks like this."
+      },
+      {
+        "timestamp": "4:11",
+        "text": "The highlighted fields contain the email and full name of the user signing in."
+      },
+      {
+        "timestamp": "4:18",
+        "text": "It is important to note a few points here."
+      },
+      {
+        "timestamp": "4:21",
+        "text": "In this release, Sign in with Apple at Work & School uses the primary Managed Apple ID that is signed in on the device."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "Even though the example screens that we showed you were for the login flow on the device, the web flow is supported as well."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "Some accounts may not have email addresses provided."
+      },
+      {
+        "timestamp": "4:42",
+        "text": "For example, schools may not assign email addresses to younger students."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "Let's see what the account creation screen looks like in this scenario where an email address is not present."
+      },
+      {
+        "timestamp": "4:54",
+        "text": "This user, Fatima Silva, does not have an email address, so only their full name is present on the account creation screen."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "If you have already implemented Sign in with Apple, there is no work needed from your end to add support for Managed Apple IDs."
+      },
+      {
+        "timestamp": "5:11",
+        "text": "If you haven't implemented support yet, I would highly suggest taking a look at the \"Get the most out of Sign in with Apple\" session from WWDC2020 and the \"Enhance your Sign in with Apple experience\" session from this year."
+      },
+      {
+        "timestamp": "5:26",
+        "text": "That was Sign in with Apple at Work & School, which brings the fast and easy sign-in experience of Sign in with Apple to Managed Apple IDs."
+      },
+      {
+        "timestamp": "5:35",
+        "text": "Now let's dive into the Roster API."
+      },
+      {
+        "timestamp": "5:37",
+        "text": "But before jumping into any specifics, let's consider the following scenario."
+      },
+      {
+        "timestamp": "5:42",
+        "text": "You're a developer in the education space."
+      },
+      {
+        "timestamp": "5:45",
+        "text": "Your app is being used by school districts."
+      },
+      {
+        "timestamp": "5:48",
+        "text": "You have implemented support for Sign in with Apple in your app."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "That's great! Students, teachers, and staff can use their Managed Apple IDs to log in to your app."
+      },
+      {
+        "timestamp": "5:58",
+        "text": "In this scenario, your app allows teachers to share assignments and announcements with their students."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "To support this, IT administrators need to enter students, teachers, and classes into your app prior to the start of the school year."
+      },
+      {
+        "timestamp": "6:14",
+        "text": "For a school with hundreds or thousands of students, creating these records by hand would quickly become a time-consuming and tedious process."
+      },
+      {
+        "timestamp": "6:24",
+        "text": "We've created the Roster API to address this problem."
+      },
+      {
+        "timestamp": "6:28",
+        "text": "The Roster API provides programmatic access to resources like users and classes in Apple School Manager."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "This allows an IT admin to automate the process of importing this information to your app."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "These resources are defined in the form of REST endpoints."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "This data can be accessed by your app after the IT admin has granted permission through a successful OAuth 2.0 authorization."
+      },
+      {
+        "timestamp": "6:57",
+        "text": "The Administrator and Site Manager accounts in Apple School Manager can manage which apps are able to access the data."
+      },
+      {
+        "timestamp": "7:06",
+        "text": "As part of this release, we have created a standardized way for apps to request access to organizational data."
+      },
+      {
+        "timestamp": "7:14",
+        "text": "We call this Organizational Data Sharing."
+      },
+      {
+        "timestamp": "7:18",
+        "text": "We wanted to follow industry standards when it comes to UI design patterns and choice of technology so developer adoption is easy."
+      },
+      {
+        "timestamp": "7:28",
+        "text": "So we created an authorization flow using OAuth 2.0, which includes using scopes and asking the IT admin to consent to sharing their organizational data."
+      },
+      {
+        "timestamp": "7:40",
+        "text": "Here is what it looks like."
+      },
+      {
+        "timestamp": "7:43",
+        "text": "The consent screen provides information on which app is requesting access to the organization's data and what data the app is requesting access to."
+      },
+      {
+        "timestamp": "7:54",
+        "text": "Looking more closely, the consent screen contains information on the requestor -- which represents the app requesting access to the data made available by Apple School Manager; in this case, the requesting app is Quizzler -- and the scopes, which represent the data that the app will have access to."
+      },
+      {
+        "timestamp": "8:14",
+        "text": "In this case, once the IT admin consents, Quizzler will be able to access all user and class information for this organization."
+      },
+      {
+        "timestamp": "8:24",
+        "text": "What does your implementation journey look like? The first step is to register in the developer portal, which involves requesting scopes."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "The next step is to request consent from the IT admin to share the data with your app through the OAuth 2.0 authorization flow."
+      },
+      {
+        "timestamp": "8:42",
+        "text": "Finally, your app queries the Roster API endpoints to fetch the data."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "Let us take a look at each of these steps."
+      },
+      {
+        "timestamp": "8:51",
+        "text": "To request scopes, visit the Developer portal."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "Under the Certificates, Identifiers & Profiles page, click on Configure under Account & Organizational Data Sharing."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "In the next step, click on \"Set up a configuration.\" Choose the primary app ID from the drop-down and hit Continue."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "In the additional configuration details page, under Organizational Data Sharing Scopes, choose the scopes desired."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "Right now, we offer two: user access and class access."
+      },
+      {
+        "timestamp": "9:28",
+        "text": "Ensure return URLs are configured for your app."
+      },
+      {
+        "timestamp": "9:32",
+        "text": "This step is important as the return URLs will be used in the OAuth 2.0 authorization flow."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "Hit Continue."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "Finally, confirm your configuration."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "Now we're ready for the next step."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "The second step in the implementation journey is getting the access token through the OAuth 2.0 authorization flow."
+      },
+      {
+        "timestamp": "9:55",
+        "text": "Let us look at this in detail."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "The IT admin first logs in to your app."
+      },
+      {
+        "timestamp": "10:00",
+        "text": "The IT admin then interacts with your app to initiate the authorization flow -- for example, by clicking a button named \"Connect to Apple School Manager.\" This starts a sequence of events following the OAuth 2.0 standard."
+      },
+      {
+        "timestamp": "10:16",
+        "text": "The first step is to execute a GET API call to the authorize endpoint."
+      },
+      {
+        "timestamp": "10:20",
+        "text": "Let us take a look at the details of this request."
+      },
+      {
+        "timestamp": "10:24",
+        "text": "The request takes in a few query parameters: the client_id, the redirect_uri, the state, response_type, and scopes."
+      },
+      {
+        "timestamp": "10:34",
+        "text": "The response will be a redirect to the Apple OAuth consent screen to request access from the IT admin."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "In this diagram, we assume that the IT admin has authenticated with their Managed Apple ID."
+      },
+      {
+        "timestamp": "10:48",
+        "text": "If they have not, they would be prompted to authenticate first."
+      },
+      {
+        "timestamp": "10:52",
+        "text": "The IT admin is presented with the consent screen to confirm that they would like to share their organizational data with your app."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "This is the same consent screen that we saw earlier."
+      },
+      {
+        "timestamp": "11:04",
+        "text": "As a reminder, it looks like this."
+      },
+      {
+        "timestamp": "11:08",
+        "text": "Once they click Allow, your app is provided with an authorization code at your return URL that you registered in the developer portal."
+      },
+      {
+        "timestamp": "11:19",
+        "text": "The final step involves a POST request to the token endpoint to retrieve your app's access token."
+      },
+      {
+        "timestamp": "11:26",
+        "text": "Let us see what this request looks like."
+      },
+      {
+        "timestamp": "11:29",
+        "text": "The request body is composed of standard OAuth parameters including the authorization code received on your return URL."
+      },
+      {
+        "timestamp": "11:38",
+        "text": "The response would have the access token, its expiration, and the refresh token that is used to create a new access token when it expires."
+      },
+      {
+        "timestamp": "11:49",
+        "text": "Let us take a look at the request details to generate a new access token using a refresh token."
+      },
+      {
+        "timestamp": "11:55",
+        "text": "The request body is composed of the standard OAuth parameters, including the refresh token, and the response would have the access token and its expiration."
+      },
+      {
+        "timestamp": "12:06",
+        "text": "After successfully completing the OAuth 2.0 authorization flow, your app now has the access token, which can be used to fetch user and class information from the Roster API."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "As part of our current release, we are introducing five endpoints that the apps can query."
+      },
+      {
+        "timestamp": "12:24",
+        "text": "These include fetching a list of classes, a list of users, a specific class, a specific user, users in a class."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "Let's walk through a simple example flow to demonstrate how you can fetch users and classes."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "Your app server can first retrieve the list of students, teachers, and staff by querying the users endpoint."
+      },
+      {
+        "timestamp": "12:49",
+        "text": "Let us take a look at the request and response in detail."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "The users endpoint takes in three query parameters."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "The pageToken and limit are pagination parameters, and an optional role parameter lets you query for students, instructors, or staff."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "The request requires the authorization header with the access token generated from the authorization flow."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "The response is a JSON payload that includes a \"users\" key, which has the list of users; the \"nextPageToken\" key that is used to fetch the next set of records, and a \"moreToFollow\" Boolean key that indicates if there are any more records to query."
+      },
+      {
+        "timestamp": "13:32",
+        "text": "Let's take a look at an example request."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "The API call here is retrieving a list of students with a maximum of 10 students in the response."
+      },
+      {
+        "timestamp": "13:42",
+        "text": "This is the first API request, so the pageToken query parameter is not specified."
+      },
+      {
+        "timestamp": "13:49",
+        "text": "The response has standard user information such as givenName, familyName, etcetera, but I would like to draw your attention to the stable unique identifier for the user."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "This is the same identifier your app receives when the user authenticates with Sign in with Apple."
+      },
+      {
+        "timestamp": "14:06",
+        "text": "The email address of the user and their roles in the organization are also included."
+      },
+      {
+        "timestamp": "14:12",
+        "text": "The nextPageToken needs to be used in the subsequent API request as a query parameter to fetch the next set of students, since the moreToFollow key is set to true."
+      },
+      {
+        "timestamp": "14:24",
+        "text": "After querying the users endpoint, your app server can now query the classes endpoint, which gives you the list of classes for that particular school district and the relationship between the class and the students and teachers associated with that class."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "Let us take a look at the request and response in detail."
+      },
+      {
+        "timestamp": "14:45",
+        "text": "As part of the get classes request, the request takes in two query parameters: the pageToken and the limit parameter, both of which we saw before."
+      },
+      {
+        "timestamp": "14:56",
+        "text": "The headers are the same as when querying users."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "The response is a JSON payload in which the \"classes\" key holds the list of classes."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "Let us take a look at an example request."
+      },
+      {
+        "timestamp": "15:10",
+        "text": "This request retrieves a list of classes with a maximum of 200 to be included in the response."
+      },
+      {
+        "timestamp": "15:17",
+        "text": "The API request also has the pageToken parameter, which means it is in the middle of fetching all classes."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "The response has standard class information such as the name, the class identifier, etcetera, but I would like to draw your attention to the list of instructor IDs and student IDs that belong to the class."
+      },
+      {
+        "timestamp": "15:38",
+        "text": "That was the Roster API."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "With these endpoints, your app can now programmatically query users and classes from Apple School Manager."
+      },
+      {
+        "timestamp": "15:47",
+        "text": "Finally, I would like to talk to you about access management."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "It is vital to provide management capabilities to organizations using Organizational Data Sharing and Sign in with Apple at Work & School."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "Let me explain what this means in more detail."
+      },
+      {
+        "timestamp": "16:04",
+        "text": "When using Sign in with Apple, users manage their own account and it's solely up to them to decide which apps they choose to sign in to."
+      },
+      {
+        "timestamp": "16:12",
+        "text": "But when using Sign in with Apple at Work & School, the IT admin at the organization centrally manages access on behalf of all the users at that organization."
+      },
+      {
+        "timestamp": "16:24",
+        "text": "This is because the IT admin is responsible for ensuring the safety and security of the organization's data."
+      },
+      {
+        "timestamp": "16:31",
+        "text": "So, they must be empowered to manage which apps users are allowed to use Sign in with Apple at Work & School, and which apps are allowed to use Organizational Data Sharing."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "These access management capabilities can be configured in Apple School Manager and Apple Business Manager."
+      },
+      {
+        "timestamp": "16:50",
+        "text": "For Sign in with Apple at Work & School, we offer two modes."
+      },
+      {
+        "timestamp": "16:54",
+        "text": "The first mode is \"Allow all apps.\" Let us see what this mode looks like."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "Here, the IT admin is logged in to Apple Business Manager."
+      },
+      {
+        "timestamp": "17:05",
+        "text": "On selecting Access Management from the sidebar and choosing Sign in with Apple, they are presented with the two modes."
+      },
+      {
+        "timestamp": "17:13",
+        "text": "The \"Allow all apps\" mode lets all users of the organization log in to all apps that support Sign in with Apple."
+      },
+      {
+        "timestamp": "17:21",
+        "text": "The second mode is \"Allow only certain apps.\" Let us see what this mode looks like."
+      },
+      {
+        "timestamp": "17:28",
+        "text": "The \"Allow only certain apps\" mode lets the IT admin search for apps that support Sign in with Apple to add to the list."
+      },
+      {
+        "timestamp": "17:36",
+        "text": "Users will only be able to use Sign in with Apple with the apps that have been added to the list."
+      },
+      {
+        "timestamp": "17:42",
+        "text": "If a user tries to log in to an app that is not on the list, they will see an error message."
+      },
+      {
+        "timestamp": "17:48",
+        "text": "It is important to note that this functionality is the same for Apple School Manager, Apple Business Manager, and Business Essentials customers."
+      },
+      {
+        "timestamp": "17:56",
+        "text": "Similar to Sign in with Apple at Work & School, Organizational Data Sharing also has the same two modes."
+      },
+      {
+        "timestamp": "18:02",
+        "text": "Let's take a look."
+      },
+      {
+        "timestamp": "18:04",
+        "text": "The \"Allow only certain apps\" mode lets the IT admin search for supported apps to add to the list."
+      },
+      {
+        "timestamp": "18:11",
+        "text": "It is these apps that can access user and class information using the Roster API."
+      },
+      {
+        "timestamp": "18:17",
+        "text": "In addition to the consent screen, this is a second layer of control for the IT admin to manage which apps can access organizational data."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "With the release of Sign in with Apple at Work & School, now users in any environment can use an Apple ID or a Managed Apple ID to log in to your app."
+      },
+      {
+        "timestamp": "18:36",
+        "text": "If you haven't already implemented Sign in with Apple, I encourage you to do so."
+      },
+      {
+        "timestamp": "18:42",
+        "text": "I would also highly encourage you to adopt the Roster API if you are in the education space."
+      },
+      {
+        "timestamp": "18:47",
+        "text": "Implementing support for Roster API will provide a seamless onboarding experience for IT administrators, staff, teachers, and students."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "As always, we love hearing from you."
+      },
+      {
+        "timestamp": "19:00",
+        "text": "So please submit any feedback you may have."
+      },
+      {
+        "timestamp": "19:03",
+        "text": "If you'd like to learn more, I would highly suggest the \"Get the most out of Sign in with Apple\" session from 2020 and the \"Enhance your Sign in with Apple experience\" session this year."
+      },
+      {
+        "timestamp": "19:14",
+        "text": "Thank you so much for watching and we hope you enjoy this year's WWDC."
+      },
+      {
+        "timestamp": "19:17",
+        "text": "♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [
@@ -64,5 +715,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10173"
     }
   ],
-  "extractedAt": "2026-10-11T16:41:12.749Z"
+  "extractedAt": "2026-10-17T18:51:10.399Z"
 }

@@ -3,16 +3,431 @@
   "year": "2024",
   "url": "https://developer.apple.com/videos/play/wwdc2024/10170/",
   "title": "Consume noncopyable types in Swift",
-  "speakers": [],
-  "duration": "",
+  "duration": "22:21",
   "topics": [
     "Swift"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi I'm Kavon from the Swift team! Welcome to \"Consume noncopyable types in Swift\"! You and I are unique but values in Swift are not. That's because values can be copied. Having a guarantee that values are unique, can be a powerful concept when programming. So, I'm happy to tell you that we've recently introduced noncopyable types to Swift! We have a lot of exciting things to cover today. First I'm going to review how copying works. Then we'll cover ownership and noncopyable types and finally I'll go over more advanced topics like using noncopyable types generically and writing extensions of those types. So, let's get copying! I'm working on a new game, so I've defined a Player type, where an emoji represents their icon.\n\nLet's create two players. So far, they're the same.\n\nIntuitively, I know changing one player's icon won't affect the other. Let's examine what's behind that intuition, step-by-step. Starting at the first line, player1 is a frog.\n\nThe contents of that variable is the actual data that makes up a Player. That's because it's a struct; which is a value type. Moving on to player2, I'm making it the same as player1. But, what does that really mean? It means I'm making a copy of player1. When you copy a variable, you're copying its contents.\n\nSo, when I change the icon for player2, I'm changing a Player that is independent of player1.\n\nI didn't even have to think about copying or destroying values. Swift takes care of it.\n\nOK, but what if Player was a reference type. All that means is that I've changed it from a struct to a class.\n\nWith the same code as before, what happens? Let's break down this first statement.\n\nWhen constructing a PlayerClass, an object is allocated separately to store its data.\n\nThe contents of player1 becomes an automatically-managed reference to that object.\n\nThat's what it means to be a reference type.\n\nIn the next statement, player2 is the same as player1, so that means the reference is copied. Not the object itself! This is sometimes called a shallow copy, which is very quick.\n\nSince both players refer to the same object, changing the icon will change it for both.\n\nSo, this assertion does not hold.\n\nNotice how copying worked the same in both cases. The only difference is whether you're copying a value, or a reference. You can make a reference type behave like a value type, by defining an initializer to do a deep copy.\n\nThis initializer is an example. It recreates an object, and everything the object points to, recursively.\n\nIt does that by calling Icon's initializer, to recreate it using the other Player's icon. That helps ensure the new player doesn't share references with the other one.\n\nLet's go back to our program state from earlier, after we've made player2 the same as player1, to see how deep copying changes the behavior.\n\nRight now, both players are references to the same object.\n\nBefore I write to the player's field, I'm now making a deep copy of it, by calling the initializer on itself.\n\nThat allocates a separate, but identical, object which ensures no other variables will be affected by the mutation.\n\nIn fact, that's the essence of copy-on-write.\n\nIt gives you independence under mutation, so you get the same the behavior as a value type.\n\nWhen designing a new type, you already have control over whether someone can deeply copy its values. What you have not had control over, is whether Swift is able to make automatic copies of it. Copyable is a new protocol that describes the ability for a type to be automatically copied. Like Sendable, it does not have member requirements.\n\nEverything is inferred to be Copyable in Swift by default. And I mean everything.\n\nEvery type, tries to automatically conform to Copyable.\n\nEvery generic parameter, automatically requires the type you put in it, to be Copyable.\n\nEvery protocol and associated type, automatically requires the concrete type, to conform to Copyable.\n\nand, every boxed protocol type, is automatically composed, with Copyable.\n\nYou don't have to write Copyable yourself, like I've done. It's already there, even if you can't see it.\n\nSwift assumes you want the ability to copy, because it's much easier to work with Copyable types.\n\nBut, there are situations where copying makes your code error-prone. Suppose I'm working on a type to model a bank transfer for my backend. In real life, the transfer is either pending, cancelled, or complete.\n\nWe'll give the type a run method that completes the transfer. I need to schedule the transfers, so here's a function to do that. Obviously, my users would not be happy if I accidentally ran a transfer twice, so let's double-check it. If the delay is less than a second, I'd rather run it immediately, but I forgot to return. So I would fall through and run it again. A simple mistake like this can be costly, so how can I defend against it? Well, I can add a variable to track the state of the transfer. So that an assertion will catch attempts to run it again. But, an assertion won't uncover a bug unless if I wrote a test that hits it. So, I might still have a bug like this, which could take down my backend service. In fact, there is another bug in this schedule function! Think about what happens if the sleeping task is cancelled. If callers are not careful to check for the thrown error, they may forget to cancel the transfer.\n\nI can introduce a deinit in my BankTransfer that remembers to cancel. But this is pretty useless in practice.\n\nTake a closer look at the startPayment function. It retains a copy of the transfer, in order to track that it's been scheduled. That's a problem, because a transfer's deinit won't run unless if all copies of it are destroyed. That's the root of my problem: I have no control over how many copies of this transfer are floating around in my program.\n\nSo, while the ability to copy values is often the right default for your types, in some situations, it's better if the type were noncopyable.\n\nPutting aside our BankTransfer issue for a moment, let's learn about noncopyable types.\n\nSay I want to model a FloppyDisk. Written like this, the type has a default Copyable conformance.\n\nBut, if, in the spot where you declare conformances, I wrote a tilde before the word Copyable, then I'm suppressing that default conformance to Copyable. Now, FloppyDisk has no Copyable conformance at all! Think of tilde-Copyable as declaring the absence of Copyable for the type you've marked. So, what happens when you try to copy that floppy? Well, copying is not supported, so Swift will consume it instead.\n\nI can make that explicit by writing consume, but it happens regardless.\n\nConsuming a variable takes its value, leaving that variable uninitialized.\n\nSo, before the consume, only the system disk is initialized.\n\nThe consume moves the contents of the system disk out, and into the backup disk.\n\nReading the system disk afterwards is an error; it's got nothing in it.\n\nNow, consider this function that creates new disks.\n\nWhen it calls format, what happens to the variable result? It's hard to tell, since the function's signature doesn't declare what ownership it needs over the disk. With copyable parameters, you didn't have to think about this: format would effectively receive a copy of the disk. But, for noncopyable parameters, you must declare what ownership the function has over the value, since we can't copy.\n\nThe first kind of ownership is called consuming. It means the function will take the argument away from its caller. It will belong to you, so you can even mutate it.\n\nBut, using consuming here would be a problem, since format won't give the disk back; it returns nothing.\n\nIf you think about it, though, formatting a disk only requires temporary access to it.\n\nWhen you have temporary access to something, you're borrowing it. Borrowing gives you read-access to the argument; like a let binding.\n\nUnder the hood, that's how nearly all parameters and methods work for Copyable types.\n\nThe difference is that you cannot consume or mutate an explicitly borrowed argument. You can only copy it. Since our format function will eventually need to mutate the disk, we can't use borrowing for it, either.\n\nThe last kind of ownership, you're already familiar with, it's inout! Or equivalently for methods, it's written mutating.\n\nInout provides temporary write-access to a variable in the caller. Because you have write access, you're allowed to consume the parameter. But, you have to reinitialize the inout parameter at some point before the function ends. Because the caller expects a value there when you return. OK, let's revisit our BankTransfer example, because now we can model it as a consumable resource. First, I've made BankTransfer a noncopyable struct, and marked its run method as consuming, which takes the value for self away from callers. With those two changes alone, I don't need assertions anymore. Swift guarantees that I cannot call the run method twice on the same transfer. In fact, its ownership is so precisely tracked, that I can add a deinit to this struct that triggers an action if it is destroyed, instead of being 'run'. Since the end of my 'run' method will also automatically destroy self, I'll write discard self there. That will destroy it, but without calling the deinit. Let's see what happens to those bugs in my schedule function. First, I have to add ownership for the transfer parameter. Since 'schedule' is meant to be the last use, consuming it makes sense. Now, when I try compiling this, I'll see that Swift has zero'ed in on my bug. Because the if-statement falls-through, it's possible to consume the transfer twice.\n\nAnd adding the return prevents that. Now, what about that other bug? It's been defined away, too. Schedule is the last owner of the transfer, so its deinit will run if Sleep throws, and that'll cancel the transfer.\n\nNoncopyable types are a great tool to improve the correctness of your programs. You might want to use them everywhere, including generic code. Well, in Swift 6, now you can, with noncopyable generics! This is not some sort of new generics system. It's built on Swift's existing generics model. So, let's refresh our understanding of generics.\n\nTo set the stage, consider the universe of types in Swift.\n\nEvery type has happily co-existed here, whether it's a String, or my own type called Command.\n\nMy protocol Runnable defines a subspace in this universe, containing the types that conform to it. Right now, nothing conforms, so it's empty. But, if I extend Command with a Runnable conformance, then its point moves into the Runnable space.\n\nA core idea behind generics is that conformance constraints describe generic types. Let's think about that with this generic function called execute.\n\nNotice the T here in the angle brackets. It declares a new generic type parameter, which represents some type in this universe, but we don't know which one. Remember when I said Copyable is everywhere? Well, there's a default constraint on this T. It requires the input type to conform to Copyable.\n\nCommand has a default conformance to Copyable; and Runnable inherits from Copyable too. In fact, until recently, the whole universe of types in Swift has really just been Copyable, in disguise.\n\nThis means all the types in this space can be passed into my execute function. Because the only constraint is that T conforms to Copyable.\n\nSo, even though Command also conforms to Runnable, It still exists in this broader space Copyable, in which any particular type might be Runnable, but it also might not. My generic parameter T does not exclude types that have an additional conformance. As written, the execute function promises to get by without needing any other conformances besides Copyable.\n\nTo implement my execute function though, I actually do want T to be Runnable, because I need to call a run method. So, I'll add a Runnable constraint on T, using a where clause.\n\nIn doing so, I've further constrained the space of types permitted for T. it's now the narrower space, Runnable & Copyable. That includes Command, but now excludes String, because a Runnable conformance is absent for String.\n\nWell, since Swift 5.9, our universe has expanded. Because, there are types without a conformance to Copyable.\n\nFor example, our shiny new BankTransfer type does not conform, so its point is outside.\n\nSince we can only suppress Copyable conformances by writing tilde Copyable, that's what I'll call this broader space.\n\nMost types in Swift that you're familiar with do conform to Copyable.\n\nSo, how are they contained within tilde Copyable? As before, within this broader space, you cannot assume any particular type conforms to Copyable. It might be Copyable, but it also might not. That's how you should read tilde Copyable.\n\nWhat about the Any type? Well, it's always been Copyable; and that's how it should be. When you think of any type in almost every programming language, it's Copyable.\n\nNow, we're ready to talk about noncopyable generics.\n\nLet's start with our Runnable protocol from earlier.\n\nOur universe of types currently looks like this. All Runnable values are Copyable.\n\nBankTransfer is not Copyable, so it cannot be Runnable, either. But, I want BankTransfer to conform, so I can use it generically. The ability to copy a Runnable type is not fundamental to the protocol, so, I'll remove the Copyable constraint from Runnable, by adding tilda Copyable.\n\nThis changes the hierarchy, so the Copyable space only overlaps Runnable, rather than containing it. Command is Runnable & Copyable, so it sits within that overlap.\n\nNext, if I extend BankTransfer with a Runnable conformance, its point moves within Runnable, without being Copyable.\n\nLet's revisit our generic function, execute.\n\nThere's still a default constraint on generic parameter T. So, only types like Command, that are both Runnable and Copyable, are permitted in execute.\n\nLet's remove the Copyable constraint from T, using tilde Copyable.\n\nRemoving the constraint broadens the types permitted, to all types that are Runnable. The execute function is saying that T might not be Copyable. That's the key point: a regular constraint narrows the types permitted, by being more specific. Whereas a tilde constraint broadens by being less specific.\n\nOK. Now, let's put all of that theory into practice. I've got Runnable types, and I want to wrap them inside a new struct called Job. I've defined Job with a generic parameter Action, that is Runnable, and might not be Copyable. But with what I've written so far, I'll get an error. The struct Job defaults to conforming to Copyable, so it can only contain Copyable data. There are two ways you can store noncopyable values inside another. It either must be inside of a class, since copying a class only copies a reference; or you have to suppress Copyable on the containing type itself. I'll go with the second one and make Job noncopyable.\n\nI can still put the type Command in for the Action, because the Action does not prevent Copyable types from appearing. Job is promising that it does not need to copy an Action, so that noncopyable types work too. But, what if I know the type I put in for Action is Copyable. Then Job could be copied since it's just a container for an action.\n\nAs the API author, I can allow that by declaring Job is conditionally Copyable. This extension says that a Job is Copyable when its Action is Copyable.\n\nHow does that look in our universe? We don't know whether a Job is Copyable, until we put in a concrete type for the Action. So, let's put in Command.\n\nWe know a Command is Copyable, so a Command-Job is Copyable too.\n\nBut, if I make the Action a BankTransfer, the conditional conformance is not satisfied, so a BankTransfer-Job is not Copyable.\n\nSo, the whole idea behind noncopyable generics, is that you're removing default Copyable constraints.\n\nYou've seen how to define a type with a noncopyable generic parameter. Let's take a closer look at extensions of that type.\n\nSay I want to define a getter method for the Action.\n\nI'll add it using an ordinary extension of Job.\n\nCalling it works just fine... but isn't it giving me a copy of the Action? Yeah. Returning the action does copy it. And that's not an error in the extension.\n\nBecause this plain extension defaults to being constrained to Jobs where the Action is Copyable.\n\nSo, this getter is correct, because it simply is not callable, on, say, a BankTransfer job.\n\nThat's how all extensions work: any generic parameters in scope of the extended type are constrained to Copyable. That includes Self in a protocol.\n\nThere's a really nice advantage to having extensions work this way. Let's say that Job is actually part of some JobKit module I didn't write.\n\nI have my protocol here to describe Cancellable types. And let's pretend I have no idea what a noncopyable type is, but I want Job to conform anyway.\n\nThat's OK, because I can write this extension and it'll just work.\n\nThat's because the conformance defaults to being conditional on Action being Copyable, because in general, Action might NOT be. And when Action is Copyable, so is the Job, meaning it conforms to Cancellable.\n\nSo, you can publish this Job type, and programmers who only work with Copyable types can use it. Now, what if I did want this extension to apply to all jobs, Copyable or not.\n\nWell, I just take the Copyable constraint off of the Action in this extension. Now, Job conforms to Cancellable, without assuming Action is Copyable.\n\nToday, we've seen how copying works in Swift, and where it can create challenges. Noncopyable types are a useful tool to improve program correctness, with the trade-off of thinking about ownership. We've taken our first steps towards adopting noncopyable generics in the standard library, with Optional, UnsafePointer, and Result. You can learn more by reading the Swift Evolution proposals on: noncopyable generics, borrowing and consuming pattern matching, and noncopyable standard library primitives. You can also learn more in The Swift Programming Language book. More generally, if you want to learn about copy-on-write, and best-practices for designing generic types, check out Modern Swift API Design, from WWDC 2019.\n\nThank you and have a great WWDC!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi I'm Kavon from the Swift team! Welcome to \"Consume noncopyable types in Swift\"! You and I are unique but values in Swift are not. That's because values can be copied. Having a guarantee that values are unique, can be a powerful concept when programming. So, I'm happy to tell you that we've recently introduced noncopyable types to Swift! We have a lot of exciting things to cover today. First I'm going to review how copying works. Then we'll cover ownership and noncopyable types and finally I'll go over more advanced topics like using noncopyable types generically and writing extensions of those types. So, let's get copying! I'm working on a new game, so I've defined a Player type, where an emoji represents their icon."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "Let's create two players. So far, they're the same."
+      },
+      {
+        "timestamp": "1:03",
+        "text": "Intuitively, I know changing one player's icon won't affect the other. Let's examine what's behind that intuition, step-by-step. Starting at the first line, player1 is a frog."
+      },
+      {
+        "timestamp": "1:15",
+        "text": "The contents of that variable is the actual data that makes up a Player. That's because it's a struct; which is a value type. Moving on to player2, I'm making it the same as player1. But, what does that really mean? It means I'm making a copy of player1. When you copy a variable, you're copying its contents."
+      },
+      {
+        "timestamp": "1:39",
+        "text": "So, when I change the icon for player2, I'm changing a Player that is independent of player1."
+      },
+      {
+        "timestamp": "1:47",
+        "text": "I didn't even have to think about copying or destroying values. Swift takes care of it."
+      },
+      {
+        "timestamp": "1:54",
+        "text": "OK, but what if Player was a reference type. All that means is that I've changed it from a struct to a class."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "With the same code as before, what happens? Let's break down this first statement."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "When constructing a PlayerClass, an object is allocated separately to store its data."
+      },
+      {
+        "timestamp": "2:16",
+        "text": "The contents of player1 becomes an automatically-managed reference to that object."
+      },
+      {
+        "timestamp": "2:22",
+        "text": "That's what it means to be a reference type."
+      },
+      {
+        "timestamp": "2:25",
+        "text": "In the next statement, player2 is the same as player1, so that means the reference is copied. Not the object itself! This is sometimes called a shallow copy, which is very quick."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "Since both players refer to the same object, changing the icon will change it for both."
+      },
+      {
+        "timestamp": "2:45",
+        "text": "So, this assertion does not hold."
+      },
+      {
+        "timestamp": "2:49",
+        "text": "Notice how copying worked the same in both cases. The only difference is whether you're copying a value, or a reference. You can make a reference type behave like a value type, by defining an initializer to do a deep copy."
+      },
+      {
+        "timestamp": "3:05",
+        "text": "This initializer is an example. It recreates an object, and everything the object points to, recursively."
+      },
+      {
+        "timestamp": "3:13",
+        "text": "It does that by calling Icon's initializer, to recreate it using the other Player's icon. That helps ensure the new player doesn't share references with the other one."
+      },
+      {
+        "timestamp": "3:25",
+        "text": "Let's go back to our program state from earlier, after we've made player2 the same as player1, to see how deep copying changes the behavior."
+      },
+      {
+        "timestamp": "3:36",
+        "text": "Right now, both players are references to the same object."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "Before I write to the player's field, I'm now making a deep copy of it, by calling the initializer on itself."
+      },
+      {
+        "timestamp": "3:49",
+        "text": "That allocates a separate, but identical, object which ensures no other variables will be affected by the mutation."
+      },
+      {
+        "timestamp": "3:58",
+        "text": "In fact, that's the essence of copy-on-write."
+      },
+      {
+        "timestamp": "4:02",
+        "text": "It gives you independence under mutation, so you get the same the behavior as a value type."
+      },
+      {
+        "timestamp": "4:09",
+        "text": "When designing a new type, you already have control over whether someone can deeply copy its values. What you have not had control over, is whether Swift is able to make automatic copies of it. Copyable is a new protocol that describes the ability for a type to be automatically copied. Like Sendable, it does not have member requirements."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "Everything is inferred to be Copyable in Swift by default. And I mean everything."
+      },
+      {
+        "timestamp": "4:37",
+        "text": "Every type, tries to automatically conform to Copyable."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "Every generic parameter, automatically requires the type you put in it, to be Copyable."
+      },
+      {
+        "timestamp": "4:47",
+        "text": "Every protocol and associated type, automatically requires the concrete type, to conform to Copyable."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "and, every boxed protocol type, is automatically composed, with Copyable."
+      },
+      {
+        "timestamp": "5:01",
+        "text": "You don't have to write Copyable yourself, like I've done. It's already there, even if you can't see it."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "Swift assumes you want the ability to copy, because it's much easier to work with Copyable types."
+      },
+      {
+        "timestamp": "5:16",
+        "text": "But, there are situations where copying makes your code error-prone. Suppose I'm working on a type to model a bank transfer for my backend. In real life, the transfer is either pending, cancelled, or complete."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "We'll give the type a run method that completes the transfer. I need to schedule the transfers, so here's a function to do that. Obviously, my users would not be happy if I accidentally ran a transfer twice, so let's double-check it. If the delay is less than a second, I'd rather run it immediately, but I forgot to return. So I would fall through and run it again. A simple mistake like this can be costly, so how can I defend against it? Well, I can add a variable to track the state of the transfer. So that an assertion will catch attempts to run it again. But, an assertion won't uncover a bug unless if I wrote a test that hits it. So, I might still have a bug like this, which could take down my backend service. In fact, there is another bug in this schedule function! Think about what happens if the sleeping task is cancelled. If callers are not careful to check for the thrown error, they may forget to cancel the transfer."
+      },
+      {
+        "timestamp": "6:34",
+        "text": "I can introduce a deinit in my BankTransfer that remembers to cancel. But this is pretty useless in practice."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "Take a closer look at the startPayment function. It retains a copy of the transfer, in order to track that it's been scheduled. That's a problem, because a transfer's deinit won't run unless if all copies of it are destroyed. That's the root of my problem: I have no control over how many copies of this transfer are floating around in my program."
+      },
+      {
+        "timestamp": "7:04",
+        "text": "So, while the ability to copy values is often the right default for your types, in some situations, it's better if the type were noncopyable."
+      },
+      {
+        "timestamp": "7:13",
+        "text": "Putting aside our BankTransfer issue for a moment, let's learn about noncopyable types."
+      },
+      {
+        "timestamp": "7:19",
+        "text": "Say I want to model a FloppyDisk. Written like this, the type has a default Copyable conformance."
+      },
+      {
+        "timestamp": "7:27",
+        "text": "But, if, in the spot where you declare conformances, I wrote a tilde before the word Copyable, then I'm suppressing that default conformance to Copyable. Now, FloppyDisk has no Copyable conformance at all! Think of tilde-Copyable as declaring the absence of Copyable for the type you've marked. So, what happens when you try to copy that floppy? Well, copying is not supported, so Swift will consume it instead."
+      },
+      {
+        "timestamp": "7:57",
+        "text": "I can make that explicit by writing consume, but it happens regardless."
+      },
+      {
+        "timestamp": "8:03",
+        "text": "Consuming a variable takes its value, leaving that variable uninitialized."
+      },
+      {
+        "timestamp": "8:09",
+        "text": "So, before the consume, only the system disk is initialized."
+      },
+      {
+        "timestamp": "8:15",
+        "text": "The consume moves the contents of the system disk out, and into the backup disk."
+      },
+      {
+        "timestamp": "8:22",
+        "text": "Reading the system disk afterwards is an error; it's got nothing in it."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "Now, consider this function that creates new disks."
+      },
+      {
+        "timestamp": "8:32",
+        "text": "When it calls format, what happens to the variable result? It's hard to tell, since the function's signature doesn't declare what ownership it needs over the disk. With copyable parameters, you didn't have to think about this: format would effectively receive a copy of the disk. But, for noncopyable parameters, you must declare what ownership the function has over the value, since we can't copy."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "The first kind of ownership is called consuming. It means the function will take the argument away from its caller. It will belong to you, so you can even mutate it."
+      },
+      {
+        "timestamp": "9:12",
+        "text": "But, using consuming here would be a problem, since format won't give the disk back; it returns nothing."
+      },
+      {
+        "timestamp": "9:20",
+        "text": "If you think about it, though, formatting a disk only requires temporary access to it."
+      },
+      {
+        "timestamp": "9:27",
+        "text": "When you have temporary access to something, you're borrowing it. Borrowing gives you read-access to the argument; like a let binding."
+      },
+      {
+        "timestamp": "9:36",
+        "text": "Under the hood, that's how nearly all parameters and methods work for Copyable types."
+      },
+      {
+        "timestamp": "9:41",
+        "text": "The difference is that you cannot consume or mutate an explicitly borrowed argument. You can only copy it. Since our format function will eventually need to mutate the disk, we can't use borrowing for it, either."
+      },
+      {
+        "timestamp": "9:56",
+        "text": "The last kind of ownership, you're already familiar with, it's inout! Or equivalently for methods, it's written mutating."
+      },
+      {
+        "timestamp": "10:04",
+        "text": "Inout provides temporary write-access to a variable in the caller. Because you have write access, you're allowed to consume the parameter. But, you have to reinitialize the inout parameter at some point before the function ends. Because the caller expects a value there when you return. OK, let's revisit our BankTransfer example, because now we can model it as a consumable resource. First, I've made BankTransfer a noncopyable struct, and marked its run method as consuming, which takes the value for self away from callers. With those two changes alone, I don't need assertions anymore. Swift guarantees that I cannot call the run method twice on the same transfer. In fact, its ownership is so precisely tracked, that I can add a deinit to this struct that triggers an action if it is destroyed, instead of being 'run'. Since the end of my 'run' method will also automatically destroy self, I'll write discard self there. That will destroy it, but without calling the deinit. Let's see what happens to those bugs in my schedule function. First, I have to add ownership for the transfer parameter. Since 'schedule' is meant to be the last use, consuming it makes sense. Now, when I try compiling this, I'll see that Swift has zero'ed in on my bug. Because the if-statement falls-through, it's possible to consume the transfer twice."
+      },
+      {
+        "timestamp": "11:34",
+        "text": "And adding the return prevents that. Now, what about that other bug? It's been defined away, too. Schedule is the last owner of the transfer, so its deinit will run if Sleep throws, and that'll cancel the transfer."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "Noncopyable types are a great tool to improve the correctness of your programs. You might want to use them everywhere, including generic code. Well, in Swift 6, now you can, with noncopyable generics! This is not some sort of new generics system. It's built on Swift's existing generics model. So, let's refresh our understanding of generics."
+      },
+      {
+        "timestamp": "12:14",
+        "text": "To set the stage, consider the universe of types in Swift."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Every type has happily co-existed here, whether it's a String, or my own type called Command."
+      },
+      {
+        "timestamp": "12:25",
+        "text": "My protocol Runnable defines a subspace in this universe, containing the types that conform to it. Right now, nothing conforms, so it's empty. But, if I extend Command with a Runnable conformance, then its point moves into the Runnable space."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "A core idea behind generics is that conformance constraints describe generic types. Let's think about that with this generic function called execute."
+      },
+      {
+        "timestamp": "12:55",
+        "text": "Notice the T here in the angle brackets. It declares a new generic type parameter, which represents some type in this universe, but we don't know which one. Remember when I said Copyable is everywhere? Well, there's a default constraint on this T. It requires the input type to conform to Copyable."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "Command has a default conformance to Copyable; and Runnable inherits from Copyable too. In fact, until recently, the whole universe of types in Swift has really just been Copyable, in disguise."
+      },
+      {
+        "timestamp": "13:32",
+        "text": "This means all the types in this space can be passed into my execute function. Because the only constraint is that T conforms to Copyable."
+      },
+      {
+        "timestamp": "13:44",
+        "text": "So, even though Command also conforms to Runnable, It still exists in this broader space Copyable, in which any particular type might be Runnable, but it also might not. My generic parameter T does not exclude types that have an additional conformance. As written, the execute function promises to get by without needing any other conformances besides Copyable."
+      },
+      {
+        "timestamp": "14:13",
+        "text": "To implement my execute function though, I actually do want T to be Runnable, because I need to call a run method. So, I'll add a Runnable constraint on T, using a where clause."
+      },
+      {
+        "timestamp": "14:25",
+        "text": "In doing so, I've further constrained the space of types permitted for T. it's now the narrower space, Runnable & Copyable. That includes Command, but now excludes String, because a Runnable conformance is absent for String."
+      },
+      {
+        "timestamp": "14:44",
+        "text": "Well, since Swift 5.9, our universe has expanded. Because, there are types without a conformance to Copyable."
+      },
+      {
+        "timestamp": "14:52",
+        "text": "For example, our shiny new BankTransfer type does not conform, so its point is outside."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "Since we can only suppress Copyable conformances by writing tilde Copyable, that's what I'll call this broader space."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "Most types in Swift that you're familiar with do conform to Copyable."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "So, how are they contained within tilde Copyable? As before, within this broader space, you cannot assume any particular type conforms to Copyable. It might be Copyable, but it also might not. That's how you should read tilde Copyable."
+      },
+      {
+        "timestamp": "15:31",
+        "text": "What about the Any type? Well, it's always been Copyable; and that's how it should be. When you think of any type in almost every programming language, it's Copyable."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "Now, we're ready to talk about noncopyable generics."
+      },
+      {
+        "timestamp": "15:47",
+        "text": "Let's start with our Runnable protocol from earlier."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "Our universe of types currently looks like this. All Runnable values are Copyable."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "BankTransfer is not Copyable, so it cannot be Runnable, either. But, I want BankTransfer to conform, so I can use it generically. The ability to copy a Runnable type is not fundamental to the protocol, so, I'll remove the Copyable constraint from Runnable, by adding tilda Copyable."
+      },
+      {
+        "timestamp": "16:18",
+        "text": "This changes the hierarchy, so the Copyable space only overlaps Runnable, rather than containing it. Command is Runnable & Copyable, so it sits within that overlap."
+      },
+      {
+        "timestamp": "16:30",
+        "text": "Next, if I extend BankTransfer with a Runnable conformance, its point moves within Runnable, without being Copyable."
+      },
+      {
+        "timestamp": "16:40",
+        "text": "Let's revisit our generic function, execute."
+      },
+      {
+        "timestamp": "16:44",
+        "text": "There's still a default constraint on generic parameter T. So, only types like Command, that are both Runnable and Copyable, are permitted in execute."
+      },
+      {
+        "timestamp": "16:56",
+        "text": "Let's remove the Copyable constraint from T, using tilde Copyable."
+      },
+      {
+        "timestamp": "17:02",
+        "text": "Removing the constraint broadens the types permitted, to all types that are Runnable. The execute function is saying that T might not be Copyable. That's the key point: a regular constraint narrows the types permitted, by being more specific. Whereas a tilde constraint broadens by being less specific."
+      },
+      {
+        "timestamp": "17:24",
+        "text": "OK. Now, let's put all of that theory into practice. I've got Runnable types, and I want to wrap them inside a new struct called Job. I've defined Job with a generic parameter Action, that is Runnable, and might not be Copyable. But with what I've written so far, I'll get an error. The struct Job defaults to conforming to Copyable, so it can only contain Copyable data. There are two ways you can store noncopyable values inside another. It either must be inside of a class, since copying a class only copies a reference; or you have to suppress Copyable on the containing type itself. I'll go with the second one and make Job noncopyable."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "I can still put the type Command in for the Action, because the Action does not prevent Copyable types from appearing. Job is promising that it does not need to copy an Action, so that noncopyable types work too. But, what if I know the type I put in for Action is Copyable. Then Job could be copied since it's just a container for an action."
+      },
+      {
+        "timestamp": "18:32",
+        "text": "As the API author, I can allow that by declaring Job is conditionally Copyable. This extension says that a Job is Copyable when its Action is Copyable."
+      },
+      {
+        "timestamp": "18:44",
+        "text": "How does that look in our universe? We don't know whether a Job is Copyable, until we put in a concrete type for the Action. So, let's put in Command."
+      },
+      {
+        "timestamp": "18:57",
+        "text": "We know a Command is Copyable, so a Command-Job is Copyable too."
+      },
+      {
+        "timestamp": "19:02",
+        "text": "But, if I make the Action a BankTransfer, the conditional conformance is not satisfied, so a BankTransfer-Job is not Copyable."
+      },
+      {
+        "timestamp": "19:12",
+        "text": "So, the whole idea behind noncopyable generics, is that you're removing default Copyable constraints."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "You've seen how to define a type with a noncopyable generic parameter. Let's take a closer look at extensions of that type."
+      },
+      {
+        "timestamp": "19:29",
+        "text": "Say I want to define a getter method for the Action."
+      },
+      {
+        "timestamp": "19:33",
+        "text": "I'll add it using an ordinary extension of Job."
+      },
+      {
+        "timestamp": "19:37",
+        "text": "Calling it works just fine... but isn't it giving me a copy of the Action? Yeah. Returning the action does copy it. And that's not an error in the extension."
+      },
+      {
+        "timestamp": "19:49",
+        "text": "Because this plain extension defaults to being constrained to Jobs where the Action is Copyable."
+      },
+      {
+        "timestamp": "19:57",
+        "text": "So, this getter is correct, because it simply is not callable, on, say, a BankTransfer job."
+      },
+      {
+        "timestamp": "20:05",
+        "text": "That's how all extensions work: any generic parameters in scope of the extended type are constrained to Copyable. That includes Self in a protocol."
+      },
+      {
+        "timestamp": "20:16",
+        "text": "There's a really nice advantage to having extensions work this way. Let's say that Job is actually part of some JobKit module I didn't write."
+      },
+      {
+        "timestamp": "20:26",
+        "text": "I have my protocol here to describe Cancellable types. And let's pretend I have no idea what a noncopyable type is, but I want Job to conform anyway."
+      },
+      {
+        "timestamp": "20:37",
+        "text": "That's OK, because I can write this extension and it'll just work."
+      },
+      {
+        "timestamp": "20:42",
+        "text": "That's because the conformance defaults to being conditional on Action being Copyable, because in general, Action might NOT be. And when Action is Copyable, so is the Job, meaning it conforms to Cancellable."
+      },
+      {
+        "timestamp": "20:58",
+        "text": "So, you can publish this Job type, and programmers who only work with Copyable types can use it. Now, what if I did want this extension to apply to all jobs, Copyable or not."
+      },
+      {
+        "timestamp": "21:12",
+        "text": "Well, I just take the Copyable constraint off of the Action in this extension. Now, Job conforms to Cancellable, without assuming Action is Copyable."
+      },
+      {
+        "timestamp": "21:24",
+        "text": "Today, we've seen how copying works in Swift, and where it can create challenges. Noncopyable types are a useful tool to improve program correctness, with the trade-off of thinking about ownership. We've taken our first steps towards adopting noncopyable generics in the standard library, with Optional, UnsafePointer, and Result. You can learn more by reading the Swift Evolution proposals on: noncopyable generics, borrowing and consuming pattern matching, and noncopyable standard library primitives. You can also learn more in The Swift Programming Language book. More generally, if you want to learn about copy-on-write, and best-practices for designing generic types, check out Modern Swift API Design, from WWDC 2019."
+      },
+      {
+        "timestamp": "22:10",
+        "text": "Thank you and have a great WWDC!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -118,6 +533,43 @@
       "code": "protocol Cancellable: ~Copyable {\n  mutating func cancel()\n}\n\nextension Job: Cancellable where Action: ~Copyable {\n  mutating func cancel() {\n    action = nil\n  }\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "0:30"
+    },
+    {
+      "timestamp": "0:30",
+      "title": "Agenda",
+      "duration": "0:20"
+    },
+    {
+      "timestamp": "0:50",
+      "title": "Copying",
+      "duration": "6:15"
+    },
+    {
+      "timestamp": "7:05",
+      "title": "Noncopyable Types",
+      "duration": "4:45"
+    },
+    {
+      "timestamp": "11:50",
+      "title": "Generics",
+      "duration": "7:22"
+    },
+    {
+      "timestamp": "19:12",
+      "title": "Extensions",
+      "duration": "2:12"
+    },
+    {
+      "timestamp": "21:24",
+      "title": "Wrap up",
+      "duration": "0:57"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -140,5 +592,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2019/415"
     }
   ],
-  "extractedAt": "2026-10-11T16:35:42.199Z"
+  "extractedAt": "2026-10-17T18:45:38.363Z"
 }

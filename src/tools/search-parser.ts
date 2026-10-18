@@ -1,133 +1,44 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+
 import type { SearchDocument } from '../types/captured/search-document.js';
 import type { SearchStream } from '../types/captured/search-stream.js';
 import type { ApiSearchResult, SearchResult } from './search-result-parser.js';
 import { parseSearchResult } from './search-result-parser.js';
 import { API_LIMITS } from '../utils/constants.js';
-import { logger } from '../utils/logger.js';
 
 /**
- * Formats search results for display
+ * The results as one list in Apple's order, each with its type
  */
-export function formatSearchResults(
+function formatSearchResults(
   results: SearchResult[],
   query: string,
-  filterType: string,
+  filterType: string | undefined,
   searchUrl: string,
 ): string {
-  let content = '';
-
-  // Add header
-  content += '# Apple Documentation Search Results\n\n';
-  content += `**Query:** "${query}"\n`;
-  content += `**Filter:** ${filterType}\n`;
-  content += `**Results found:** ${results.length}\n\n`;
-
+  const header = [
+    '# Apple Documentation Search Results',
+    '',
+    `**Query:** "${query}"`,
+    ...(filterType ? [`**Filter:** ${filterType}`] : []),
+    `**Results found:** ${results.length}`,
+    '',
+  ].join('\n');
   if (results.length === 0) {
-    content += formatNoResultsMessage(query, filterType, searchUrl);
-    return content;
+    return `${header}\nNo ${filterType ? `${filterType} ` : ''}results found for "${query}".\n\n[View search on Apple Developer](${searchUrl})`;
   }
-
-  // Group results by type
-  const groupedResults = groupResultsByType(results);
-
-  // Format each group
-  Object.entries(groupedResults).forEach(([type, typeResults]) => {
-    content += formatResultGroup(type, typeResults);
-  });
-
-  // Add footer
-  content += formatSearchFooter(searchUrl);
-
-  return content;
+  return `${header}\n${results.map((result, index) => formatSingleResult(result, index + 1)).join('')}${formatSearchFooter(searchUrl)}`;
 }
 
-/**
- * Format no results message
- */
-function formatNoResultsMessage(query: string, filterType: string, searchUrl: string): string {
-  let content = '## No Results Found\n\n';
-  content += `No ${filterType === 'all' ? '' : filterType + ' '}results found for "${query}".\n\n`;
-  content += '### Suggestions:\n';
-  content += '- Try using different keywords\n';
-  content += '- Check spelling\n';
-  content += '- Use more general terms\n';
-  content += '- Try searching for framework names (e.g., "SwiftUI", "UIKit")\n';
-  content += `\n[View search on Apple Developer](${searchUrl})`;
-  return content;
-}
-
-/**
- * Group results by type
- */
-function groupResultsByType(results: SearchResult[]): Record<string, SearchResult[]> {
-  const groups: Record<string, SearchResult[]> = {};
-
-  results.forEach(result => {
-    const displayType = getDisplayType(result.type);
-    if (!groups[displayType]) {
-      groups[displayType] = [];
-    }
-    groups[displayType].push(result);
-  });
-
-  return groups;
-}
-
-/**
- * Get display type for result
- */
-function getDisplayType(type: string): string {
-  const typeDisplayNames: Record<string, string> = {
-    'documentation': '📚 API Documentation',
-    'documentation-article': '📄 Articles',
-    'documentation-tutorial': '📖 Tutorials',
-    'sample-code': '💻 Sample Code',
-    'design-guideline': '🎨 Design Guidelines',
-    'wwdc-session': '🎥 WWDC Sessions',
-    'help': '🧭 App Store Connect Help',
-    'guide': '📋 Guides',
-  };
-
-  return typeDisplayNames[type] || '📝 Other';
-}
-
-/**
- * Format a group of results
- */
-function formatResultGroup(type: string, results: SearchResult[]): string {
-  let content = `## ${type}\n\n`;
-
-  results.forEach((result, index) => {
-    content += formatSingleResult(result, index + 1);
-  });
-
-  return content;
-}
-
-/**
- * Format a single search result
- */
 function formatSingleResult(result: SearchResult, index: number): string {
-  let content = `### ${index}. ${result.title}`;
+  let content = `### ${index}. ${result.title}\n\n`;
 
-  // Add badges
-  const badges = [];
-  if (result.beta) {
-    badges.push('🧪 Beta');
-  }
-  if (badges.length > 0) {
-    content += ` ${badges.join(' ')}`;
-  }
-
-  content += '\n\n';
-
-  // Add metadata
   if (result.framework) {
     content += `**Framework:** ${result.framework}\n`;
   }
-  content += `**Type:** ${result.type.replace(/-/g, ' ')}\n`;
+  if (result.kind) {
+    content += `**Kind:** ${result.kind}\n`;
+  }
 
-  // Add description
   if (result.description) {
     content += `**Description:** ${result.description}\n`;
   }
@@ -136,15 +47,11 @@ function formatSingleResult(result: SearchResult, index: number): string {
     content += `**Read:** get_wwdc_video (year: "${result.wwdc.year}", videoId: "${result.wwdc.videoId}"): transcript and code\n`;
   }
 
-  // Add URL
   content += `**URL:** ${result.url}\n\n`;
 
   return content;
 }
 
-/**
- * Format search footer
- */
 function formatSearchFooter(searchUrl: string): string {
   return `---\n\n[View all results on Apple Developer](${searchUrl})`;
 }
@@ -174,38 +81,25 @@ function streamedResults(jsonl: string): ApiSearchResult[] {
 }
 
 /**
- * The results of one or more searches (`all` sends two), in order and each page once, WWDC sessions capped at
- * `MAX_WWDC_RESULTS`
+ * The results of a search, in Apple's order. Mixed in with other results, WWDC sessions are capped at
+ * `MAX_WWDC_RESULTS`; a search for sessions alone (`type: "video"`) shows as many as any other.
  */
 export function parseSearchResults(
-  streams: string[],
+  stream: string,
   query: string,
   searchUrl: string,
-  filterType: string = 'all',
-): { content: Array<{ type: 'text'; text: string }> } {
-  try {
-    const found = streams.flatMap(streamedResults)
-      .map(result => parseSearchResult(result, filterType))
-      .filter((result): result is SearchResult => result !== null);
-    const parsed = found.filter((result, index) => found.findIndex(other => other.url === result.url) === index);
-    const sessions = parsed.filter(result => result.type === 'wwdc-session').slice(0, API_LIMITS.MAX_WWDC_RESULTS);
-    const results = parsed
-      .filter(result => result.type !== 'wwdc-session' || sessions.includes(result))
-      .slice(0, API_LIMITS.MAX_SEARCH_RESULTS);
+  filterType: string | undefined,
+): CallToolResult {
+  const found = streamedResults(stream)
+    .map(parseSearchResult)
+    .filter((result): result is SearchResult => result !== null);
+  // Apple lists a Help page twice, with and without a final slash; the parser drops the slash
+  const parsed = found.filter((result, index) => found.findIndex((other) => other.url === result.url) === index);
+  const sessionCap = filterType === 'video' ? API_LIMITS.MAX_SEARCH_RESULTS : API_LIMITS.MAX_WWDC_RESULTS;
+  const sessions = parsed.filter(result => result.wwdc !== undefined).slice(0, sessionCap);
+  const results = parsed
+    .filter(result => result.wwdc === undefined || sessions.includes(result))
+    .slice(0, API_LIMITS.MAX_SEARCH_RESULTS);
 
-    return {
-      content: [{
-        type: 'text',
-        text: formatSearchResults(results, query, filterType, searchUrl),
-      }],
-    };
-  } catch (error) {
-    logger.error('Error parsing search results:', error);
-    return {
-      content: [{
-        type: 'text',
-        text: `Error parsing search results: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      }],
-    };
-  }
+  return { content: [{ type: 'text', text: formatSearchResults(results, query, filterType, searchUrl) }] };
 }

@@ -3,8 +3,7 @@
   "year": "2026",
   "url": "https://developer.apple.com/videos/play/wwdc2026/274/",
   "title": "What’s new in SwiftData",
-  "speakers": [],
-  "duration": "",
+  "duration": "12:53",
   "topics": [
     "App Services",
     "Swift",
@@ -13,8 +12,248 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi I'm Thomas, an Engineer on the SwiftData team. In this session, I'm going to show you some of the new SwiftData features in Apple's 2027 releases.\n\nIf you're just starting on your SwiftData journey, make sure to watch the code-along \"Add persistence with SwiftData\" and learn how to adopt SwiftData in a new app.\n\nApple's 2027 releases bring exciting new features to SwiftData. First, I'm going to show how to use Query to fetch your data in sections in SwiftUI views. Next, I'm going to cover enhancements on how you can store custom types in your model.\n\nAnd finally, I'll cover some great new APIs for observing model and history changes in your SwiftData store. Let's have a look at sectioning.\n\nOver the last years, we've been working on an App \"SampleTrips\" to let me track all the adventures I have planned.\n\nSampleTrips uses SwiftData for Persistence and SwiftUI for the User Interface. SwiftUI and SwiftData work great together.\n\nReading from SwiftData in SwiftUI is as easy as adding a Query to the view. Here Query fetches all trips from SwiftData, sorted by the start date.\n\nThe results of this query can then be used in the view body to create a list of trips.\n\nIn SampleTrips I want to add the option to group trips by destination. So when I have several trips planned to the same place, I can see them next to each other.\n\nIn Apple's 2027 releases, Query adds support for sectioning.\n\nTo create a sectioned query, I can pass a KeyPath that starts from the root of the Trip model and leads to a string to the new sectionBy parameter of Query. Here I'm using a KeyPath to the Trips destination property to create a section for each destination.\n\nThe wrapped value of Query is still an array of Trip. So right now the list looks like before. To section the list, I'll wrap the current ForEach in a section and add a second ForEach.\n\nTo get to the sections, I access the query from the property wrapper, using the underscore-prefixed name \"_trips\". The query has a sections property that returns a list of sections. Then I can use SwiftUI's ForEach to iterate through all sections.\n\nEach section has an ID property. The ID is the value of my model from the KeyPath I passed to the SectionBy parameter of Query.\n\nSo here in my TripListView the ID will be the destination of all trips in the section.\n\nI use ID as the Section's header label.\n\nThe section itself is a collection of trips - so I change the inner ForEach to iterate though them and create a TripListItem for each trip in the section.\n\nNow, that I can see all my trips grouped by their destination, let's move to the next section.\n\nAnd have a closer look at some enhancements on storing custom types in your model.\n\nAt the center of the SampleTrips app is the Trip model. It stores information like name, destination, and the start and end dates. Right now the destination is stored as a String in the Trip Model. I want add the ability to find locations from MapKit. I've already built a picker in the App that lets me search for destinations using MapKits search API.\n\nFor each location, the MapKit API provides a lot of metadata, such as the name, geographic coordinates and a MKMapItem.Identifier. This MKMapItem.Identifier uniquely identifies the location in MapKit and can be used to look up more metadata about the location and open the location in the Maps app.\n\nI want to store the coordinates and the MKMapItem.Identifier in the trip model. So I'm adding them to the Trip class.\n\nBut now, when I launch the app, SwiftData raises a Fatal Error - \"Class property within Persisted Struct/Enum is not supported\" - pointing at MKMapItem.Identifier as the cause. When SwiftData loads, it automatically generates a schema for the models. The schema defines a mapping between the Model classes and the entities and properties a DataStore can persist. For most types this works automatically. But classes that are not annotated with the Model macro can't be automatically inspected and SwiftData fails to generate a schema.\n\nSince MKMapItem.Identifier comes from MapKit, I don't have access to its implementation. I can't modify it and mark it as @Model, and SwiftData can't inspect it because it's a class. But it does conform to Codable. Codable types know how to serialize themselves into data and instantiate themselves back from it.\n\nIn Apple's 2027 releases, you can mark a model attribute as .codable to tell SwiftData to delegate serialization to the type and store the serialized representation.\n\nLet's mark the mapItemIdentifier attribute as codable. Now, SampleTrips launches without any error. Great.\n\nThe codable attribute tells SwiftData to persist the encoded representation instead of inferring a schema for the type. Like transformable attributes, codable comes with a few things to keep in mind. The contents of codable attributes are opaque to SwiftData. This means they can't be used in Predicates to filter results or for sorting - using Sort Descriptors. Also, if the shape of the codable type changes, like adding or removing properties, they will not trigger a migration. The Codable implementation of the type must be able to encode and decode in a forward- and backward-compatible way.\n\nUsing Codable attributes can be thought of as an \"escape hatch\" to persist types that SwiftData does not support natively.\n\nYou should avoid using codable for Types that you define. Modeling them as SwiftData models or supported values types, allows you to harness the full power of SwiftData, like Sorting, Filtering, and Indexing. But for types that you don't own, codable lets you store them alongside your other attributes. Now I can pick locations from MapKit in SampleTrips and persist the destination's MKMapItem.Identifier alongside the other properties in the trip model. Now, let's look at how you can monitor your store and be notified when data changes.\n\nEarlier we used the query macro in the TripListView to make trips from the SwiftData store available to SwiftUI.\n\n@Query is a powerful tool. When the view appears, it fetches models from the SwiftData store so they can be used in the view body.\n\nThen, it continuously monitors the store for changes that would affect its results. For example, when a trip is removed from the store, Query will notice the change and the view re-renders to reflect the new results of the query.\n\nQuery is great and should be your first choice in a SwiftUI view. But what about parts of your app that are not SwiftUI? Maybe you have a state object that derives values from your SwiftData store and needs to recompute when the data changes. Or your app doesn't use SwiftUI at all like a game written in SceneKit? In Apple's 2027 releases, we're introducing ResultsObserver.\n\nLike Query in SwiftUI views, ResultsObserver fetches data from your SwiftData store and then observes your store for changes. But it works anywhere in your app - independent of SwiftUI views - using Swift Observation.\n\nIt supports the same query primitives that you already know - filtering, sorting, and the sectioning we covered earlier.\n\nHere's the data flow diagram I shared earlier, but with the Query replaced with ResultsObserver and the View replaced with any code you like. The ResultsObserver fetches data and observes your store for changes. Your code can use Swift Observation to react to these changes.\n\nEarlier I've added location information in the SampleTrips app. I want to add a map to see all the places I have trips planned to. I am using SwiftUIs MapKit integration. But I want to customize what area of the map is shown. To do this, I've added a new MapCameraController, which calculates a fitting MapCameraBounds for the map. It uses ResultsObserver to know when to recalculate the MapCameraBounds.\n\nTo do this, I create a ResultsObserver for trips. For the map, I always want to show all trips, so I'm not going to pass in a predicate to filter or a sectioning key path.\n\nThen, I'm using withContinuousObservation with the didSet option to get a callback every time a trip changes.\n\nAnd when the results are changing, I'm re-calculating the bounds of the map.\n\nwithContinuousObservation returns an ObservationTracking token. This token defines the lifetime of the observation. I'll store this token on my class to receive updates for the entire lifetime of my MapCameraController.\n\nHere it is in action. When I launch SampleTrips, MapCameraController picked the map camera bounds that fit all my trips into the view.\n\nUnfortunately, I won't be able to visit Toronto later this month, so I'm going to delete this trip.\n\nThe ResultsObserver will notice the change and the MapCameraController will recalculate the camera bounds of the map.\n\nResultsObserver is a powerful tool if your code needs to react to changes in your data store - anywhere in your app.\n\nBut we didn't stop there. In Apple's 2027 releases, we're also supporting observing history.\n\nFirst, a quick history lesson. When data in your store changes, SwiftData keeps a record of everything that changed. You can use this history to build features like syncing with external servers, or reacting to changes made outside of your app, like in an app extension.\n\nEvery time your data store is saved, SwiftData records a history transaction. The history transaction contains information about what changed, and where the change was coming from - and a token that uniquely identifies the transaction in the history. This token can be used with the ModelContext.fetchHistory API to fetch newer transactions. To learn more about persistent history, watch \"Track Model Changes with SwiftData History\" from WWDC 2024.\n\nNew in Apple's 2027 releases is HistoryObserver. HistoryObserver makes it easy to react to any changes in your store. Similar to ResultsObserver observing fetch results, HistoryObserver can observe the persistent history and let your code react when new transactions are added.\n\nAnd if you only need to know about certain kinds of changes, HistoryObserver lets you filter by model type and transaction author. Observing history is useful when your app needs to keep parts of the data store in sync with other systems, like an external server.\n\nHistoryObserver has a single observable property - eventCounter. When new transactions are available in the persistent history, the eventCounter increments.\n\nYour code can observe the eventCounter and when it increments, use ModelContext.fetchHistory API to fetch the latest changes.\n\nHere's an example of how you could use HistoryObserver to synchronize changes, made in the app with an external server.\n\nFirst, I set up a HistoryObserver for my modelContainer.\n\nIn this case, I'm only interested in changes made by the app so I'm passing \"App\" as authors. So that I'm not replaying changes that came from the server back to the server.\n\nNext, I'm using withContinuousObservation. Like the MapCameraController, I store the observation tracking token on the class so that tracking remains active for the lifetime of my class. Within the observation closure I need to access eventCounter so that Swift Observation knows what to track.\n\nAnd finally, I call my processChanges function. In processChanges I can use the ModelContext.fetchHistory API to fetch history and upload changes to my server.\n\nI hope you are as excited as I am about the new features in SwiftData in our 2027 releases.\n\nTailor SwiftData fetches with sections. Use codable attributes when storing types from other frameworks. Use ResultsObserver to react to changes of query results outside of SwiftUI views. And finally, use HistoryObserver to react to changes in SwiftData's persistent history.\n\nThanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi I'm Thomas, an Engineer on the SwiftData team. In this session, I'm going to show you some of the new SwiftData features in Apple's 2027 releases."
+      },
+      {
+        "timestamp": "0:18",
+        "text": "If you're just starting on your SwiftData journey, make sure to watch the code-along \"Add persistence with SwiftData\" and learn how to adopt SwiftData in a new app."
+      },
+      {
+        "timestamp": "0:28",
+        "text": "Apple's 2027 releases bring exciting new features to SwiftData. First, I'm going to show how to use Query to fetch your data in sections in SwiftUI views. Next, I'm going to cover enhancements on how you can store custom types in your model."
+      },
+      {
+        "timestamp": "0:45",
+        "text": "And finally, I'll cover some great new APIs for observing model and history changes in your SwiftData store. Let's have a look at sectioning."
+      },
+      {
+        "timestamp": "0:55",
+        "text": "Over the last years, we've been working on an App \"SampleTrips\" to let me track all the adventures I have planned."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "SampleTrips uses SwiftData for Persistence and SwiftUI for the User Interface. SwiftUI and SwiftData work great together."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Reading from SwiftData in SwiftUI is as easy as adding a Query to the view. Here Query fetches all trips from SwiftData, sorted by the start date."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "The results of this query can then be used in the view body to create a list of trips."
+      },
+      {
+        "timestamp": "1:27",
+        "text": "In SampleTrips I want to add the option to group trips by destination. So when I have several trips planned to the same place, I can see them next to each other."
+      },
+      {
+        "timestamp": "1:36",
+        "text": "In Apple's 2027 releases, Query adds support for sectioning."
+      },
+      {
+        "timestamp": "1:41",
+        "text": "To create a sectioned query, I can pass a KeyPath that starts from the root of the Trip model and leads to a string to the new sectionBy parameter of Query. Here I'm using a KeyPath to the Trips destination property to create a section for each destination."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "The wrapped value of Query is still an array of Trip. So right now the list looks like before. To section the list, I'll wrap the current ForEach in a section and add a second ForEach."
+      },
+      {
+        "timestamp": "2:10",
+        "text": "To get to the sections, I access the query from the property wrapper, using the underscore-prefixed name \"_trips\". The query has a sections property that returns a list of sections. Then I can use SwiftUI's ForEach to iterate through all sections."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "Each section has an ID property. The ID is the value of my model from the KeyPath I passed to the SectionBy parameter of Query."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "So here in my TripListView the ID will be the destination of all trips in the section."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "I use ID as the Section's header label."
+      },
+      {
+        "timestamp": "2:46",
+        "text": "The section itself is a collection of trips - so I change the inner ForEach to iterate though them and create a TripListItem for each trip in the section."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "Now, that I can see all my trips grouped by their destination, let's move to the next section."
+      },
+      {
+        "timestamp": "3:02",
+        "text": "And have a closer look at some enhancements on storing custom types in your model."
+      },
+      {
+        "timestamp": "3:07",
+        "text": "At the center of the SampleTrips app is the Trip model. It stores information like name, destination, and the start and end dates. Right now the destination is stored as a String in the Trip Model. I want add the ability to find locations from MapKit. I've already built a picker in the App that lets me search for destinations using MapKits search API."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "For each location, the MapKit API provides a lot of metadata, such as the name, geographic coordinates and a MKMapItem.Identifier. This MKMapItem.Identifier uniquely identifies the location in MapKit and can be used to look up more metadata about the location and open the location in the Maps app."
+      },
+      {
+        "timestamp": "3:50",
+        "text": "I want to store the coordinates and the MKMapItem.Identifier in the trip model. So I'm adding them to the Trip class."
+      },
+      {
+        "timestamp": "3:59",
+        "text": "But now, when I launch the app, SwiftData raises a Fatal Error - \"Class property within Persisted Struct/Enum is not supported\" - pointing at MKMapItem.Identifier as the cause. When SwiftData loads, it automatically generates a schema for the models. The schema defines a mapping between the Model classes and the entities and properties a DataStore can persist. For most types this works automatically. But classes that are not annotated with the Model macro can't be automatically inspected and SwiftData fails to generate a schema."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "Since MKMapItem.Identifier comes from MapKit, I don't have access to its implementation. I can't modify it and mark it as @Model, and SwiftData can't inspect it because it's a class. But it does conform to Codable. Codable types know how to serialize themselves into data and instantiate themselves back from it."
+      },
+      {
+        "timestamp": "4:52",
+        "text": "In Apple's 2027 releases, you can mark a model attribute as .codable to tell SwiftData to delegate serialization to the type and store the serialized representation."
+      },
+      {
+        "timestamp": "5:04",
+        "text": "Let's mark the mapItemIdentifier attribute as codable. Now, SampleTrips launches without any error. Great."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "The codable attribute tells SwiftData to persist the encoded representation instead of inferring a schema for the type. Like transformable attributes, codable comes with a few things to keep in mind. The contents of codable attributes are opaque to SwiftData. This means they can't be used in Predicates to filter results or for sorting - using Sort Descriptors. Also, if the shape of the codable type changes, like adding or removing properties, they will not trigger a migration. The Codable implementation of the type must be able to encode and decode in a forward- and backward-compatible way."
+      },
+      {
+        "timestamp": "5:51",
+        "text": "Using Codable attributes can be thought of as an \"escape hatch\" to persist types that SwiftData does not support natively."
+      },
+      {
+        "timestamp": "5:59",
+        "text": "You should avoid using codable for Types that you define. Modeling them as SwiftData models or supported values types, allows you to harness the full power of SwiftData, like Sorting, Filtering, and Indexing. But for types that you don't own, codable lets you store them alongside your other attributes. Now I can pick locations from MapKit in SampleTrips and persist the destination's MKMapItem.Identifier alongside the other properties in the trip model. Now, let's look at how you can monitor your store and be notified when data changes."
+      },
+      {
+        "timestamp": "6:32",
+        "text": "Earlier we used the query macro in the TripListView to make trips from the SwiftData store available to SwiftUI."
+      },
+      {
+        "timestamp": "6:41",
+        "text": "@Query is a powerful tool. When the view appears, it fetches models from the SwiftData store so they can be used in the view body."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "Then, it continuously monitors the store for changes that would affect its results. For example, when a trip is removed from the store, Query will notice the change and the view re-renders to reflect the new results of the query."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "Query is great and should be your first choice in a SwiftUI view. But what about parts of your app that are not SwiftUI? Maybe you have a state object that derives values from your SwiftData store and needs to recompute when the data changes. Or your app doesn't use SwiftUI at all like a game written in SceneKit? In Apple's 2027 releases, we're introducing ResultsObserver."
+      },
+      {
+        "timestamp": "7:26",
+        "text": "Like Query in SwiftUI views, ResultsObserver fetches data from your SwiftData store and then observes your store for changes. But it works anywhere in your app - independent of SwiftUI views - using Swift Observation."
+      },
+      {
+        "timestamp": "7:40",
+        "text": "It supports the same query primitives that you already know - filtering, sorting, and the sectioning we covered earlier."
+      },
+      {
+        "timestamp": "7:48",
+        "text": "Here's the data flow diagram I shared earlier, but with the Query replaced with ResultsObserver and the View replaced with any code you like. The ResultsObserver fetches data and observes your store for changes. Your code can use Swift Observation to react to these changes."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "Earlier I've added location information in the SampleTrips app. I want to add a map to see all the places I have trips planned to. I am using SwiftUIs MapKit integration. But I want to customize what area of the map is shown. To do this, I've added a new MapCameraController, which calculates a fitting MapCameraBounds for the map. It uses ResultsObserver to know when to recalculate the MapCameraBounds."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "To do this, I create a ResultsObserver for trips. For the map, I always want to show all trips, so I'm not going to pass in a predicate to filter or a sectioning key path."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "Then, I'm using withContinuousObservation with the didSet option to get a callback every time a trip changes."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "And when the results are changing, I'm re-calculating the bounds of the map."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "withContinuousObservation returns an ObservationTracking token. This token defines the lifetime of the observation. I'll store this token on my class to receive updates for the entire lifetime of my MapCameraController."
+      },
+      {
+        "timestamp": "9:11",
+        "text": "Here it is in action. When I launch SampleTrips, MapCameraController picked the map camera bounds that fit all my trips into the view."
+      },
+      {
+        "timestamp": "9:19",
+        "text": "Unfortunately, I won't be able to visit Toronto later this month, so I'm going to delete this trip."
+      },
+      {
+        "timestamp": "9:25",
+        "text": "The ResultsObserver will notice the change and the MapCameraController will recalculate the camera bounds of the map."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "ResultsObserver is a powerful tool if your code needs to react to changes in your data store - anywhere in your app."
+      },
+      {
+        "timestamp": "9:39",
+        "text": "But we didn't stop there. In Apple's 2027 releases, we're also supporting observing history."
+      },
+      {
+        "timestamp": "9:46",
+        "text": "First, a quick history lesson. When data in your store changes, SwiftData keeps a record of everything that changed. You can use this history to build features like syncing with external servers, or reacting to changes made outside of your app, like in an app extension."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "Every time your data store is saved, SwiftData records a history transaction. The history transaction contains information about what changed, and where the change was coming from - and a token that uniquely identifies the transaction in the history. This token can be used with the ModelContext.fetchHistory API to fetch newer transactions. To learn more about persistent history, watch \"Track Model Changes with SwiftData History\" from WWDC 2024."
+      },
+      {
+        "timestamp": "10:30",
+        "text": "New in Apple's 2027 releases is HistoryObserver. HistoryObserver makes it easy to react to any changes in your store. Similar to ResultsObserver observing fetch results, HistoryObserver can observe the persistent history and let your code react when new transactions are added."
+      },
+      {
+        "timestamp": "10:49",
+        "text": "And if you only need to know about certain kinds of changes, HistoryObserver lets you filter by model type and transaction author. Observing history is useful when your app needs to keep parts of the data store in sync with other systems, like an external server."
+      },
+      {
+        "timestamp": "11:05",
+        "text": "HistoryObserver has a single observable property - eventCounter. When new transactions are available in the persistent history, the eventCounter increments."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "Your code can observe the eventCounter and when it increments, use ModelContext.fetchHistory API to fetch the latest changes."
+      },
+      {
+        "timestamp": "11:24",
+        "text": "Here's an example of how you could use HistoryObserver to synchronize changes, made in the app with an external server."
+      },
+      {
+        "timestamp": "11:32",
+        "text": "First, I set up a HistoryObserver for my modelContainer."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "In this case, I'm only interested in changes made by the app so I'm passing \"App\" as authors. So that I'm not replaying changes that came from the server back to the server."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "Next, I'm using withContinuousObservation. Like the MapCameraController, I store the observation tracking token on the class so that tracking remains active for the lifetime of my class. Within the observation closure I need to access eventCounter so that Swift Observation knows what to track."
+      },
+      {
+        "timestamp": "12:08",
+        "text": "And finally, I call my processChanges function. In processChanges I can use the ModelContext.fetchHistory API to fetch history and upload changes to my server."
+      },
+      {
+        "timestamp": "12:19",
+        "text": "I hope you are as excited as I am about the new features in SwiftData in our 2027 releases."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "Tailor SwiftData fetches with sections. Use codable attributes when storing types from other frameworks. Use ResultsObserver to react to changes of query results outside of SwiftUI views. And finally, use HistoryObserver to react to changes in SwiftData's persistent history."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -40,6 +279,38 @@
       "title": "// Using HistoryObserver to sync with a server",
       "language": "swift",
       "code": "// Using HistoryObserver to sync with a server\n\n@SyncActor final class ServerSync {\n    private let observer: HistoryObserver\n    private var token: ObservationTracking.Token?\n\n    func start() throws {\n        self.observer = try HistoryObserver(authors: [\"App\"], modelContainer: modelContainer)\n        token = withContinuousObservation(options: .didSet) {[weak self] _ in\n            _ = self?.observer.eventCounter\n            self?.processChanges()\n        }\n    }\n\n    private func processChanges() {\n        // Fetch and process history transactions\n    }\n}"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "0:53"
+    },
+    {
+      "timestamp": "0:53",
+      "title": "Sectioning your fetches",
+      "duration": "2:03"
+    },
+    {
+      "timestamp": "2:56",
+      "title": "Using custom types",
+      "duration": "3:30"
+    },
+    {
+      "timestamp": "6:26",
+      "title": "Observing data stores with ResultsObserver",
+      "duration": "3:15"
+    },
+    {
+      "timestamp": "9:41",
+      "title": "Observing history with HistoryObserver",
+      "duration": "2:39"
+    },
+    {
+      "timestamp": "12:20",
+      "title": "Next steps",
+      "duration": "0:33"
     }
   ],
   "resources": {
@@ -70,5 +341,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2024/10075"
     }
   ],
-  "extractedAt": "2026-10-11T16:33:01.288Z"
+  "extractedAt": "2026-10-17T18:42:54.648Z"
 }

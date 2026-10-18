@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110947/",
   "title": "Meet The Presenter: What's new in AppKit",
-  "speakers": [],
   "duration": "",
   "topics": [
     "SwiftUI & UI Frameworks"
@@ -21,5 +20,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10074"
     }
   ],
-  "extractedAt": "2026-10-11T16:39:41.187Z"
+  "extractedAt": "2026-10-17T18:49:38.626Z"
 }

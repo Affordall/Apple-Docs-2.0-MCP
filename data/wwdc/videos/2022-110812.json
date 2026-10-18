@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/110812/",
   "title": "Study Hall: Go big or go home",
-  "speakers": [],
   "duration": "",
   "topics": [
     "SwiftUI & UI Frameworks"
@@ -39,5 +38,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10009"
     }
   ],
-  "extractedAt": "2026-10-11T16:40:31.241Z"
+  "extractedAt": "2026-10-17T18:50:33.014Z"
 }

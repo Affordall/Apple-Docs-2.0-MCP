@@ -3,8 +3,7 @@
  */
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-import { httpClient, RequestError } from '../../src/utils/http-client.js';
-import { logger } from '../../src/utils/logger.js';
+import { httpClient, HttpStatusError, RequestFailedError } from '../../src/utils/http-client.js';
 
 const answer = (status: number, body: string) => new Response(body, { status });
 
@@ -17,7 +16,7 @@ describe('httpClient', () => {
   });
 
   it('retries a server error with a warning, then returns the answer', async () => {
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'error').mockImplementation(() => {});
     fetchMock.mockResolvedValueOnce(answer(503, 'busy')).mockResolvedValueOnce(answer(200, '{"ok":true}'));
 
     await expect(httpClient.getJson<{ ok: boolean }>('https://developer.apple.com/x.json')).resolves.toEqual({ ok: true });
@@ -29,31 +28,32 @@ describe('httpClient', () => {
     warn.mockRestore();
   });
 
-  it('fails at once on a missing page, with an Error that callers can read', async () => {
+  it('fails at once on a missing page, with the request and the status Apple answered', async () => {
     fetchMock.mockResolvedValue(answer(404, 'missing'));
 
     const failure = httpClient.get('https://developer.apple.com/missing.json');
 
-    await expect(failure).rejects.toBeInstanceOf(RequestError);
+    await expect(failure).rejects.toBeInstanceOf(HttpStatusError);
     await expect(failure).rejects.toMatchObject({
-      type: 'NOT_FOUND',
-      cause: { status: 404, url: 'https://developer.apple.com/missing.json' },
+      method: 'GET', url: 'https://developer.apple.com/missing.json', status: 404,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('retries a network error, and reports it as one when every attempt fails', async () => {
-    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+  it('retries a network error, and reports it with the request when every attempt fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
 
-    await expect(httpClient.get('https://developer.apple.com/x.json', { retries: 1 }))
-      .rejects.toMatchObject({ type: 'NETWORK_ERROR' });
+    const failure = httpClient.get('https://developer.apple.com/x.json', { retries: 1 });
+
+    await expect(failure).rejects.toBeInstanceOf(RequestFailedError);
+    await expect(failure).rejects.toThrow('GET https://developer.apple.com/x.json: fetch failed');
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('gives each attempt a timeout of its own', async () => {
-    vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     fetchMock.mockResolvedValueOnce(answer(500, 'x')).mockResolvedValueOnce(answer(200, 'done'));
 
     await httpClient.postText('https://example.com/api', { text: 'q' }, 'application/jsonl');

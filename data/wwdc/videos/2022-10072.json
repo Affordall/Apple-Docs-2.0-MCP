@@ -3,7 +3,6 @@
   "year": "2022",
   "url": "https://developer.apple.com/videos/play/wwdc2022/10072/",
   "title": "Use SwiftUI with UIKit",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Essentials",
@@ -12,8 +11,808 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop music ♪ ♪ Hello, I'm Sara Frederixon, an engineer on the Health app, and I'm here to talk to you about using SwiftUI with UIKit.\n\nLike many of you, I work on an existing UIKit app.\n\nFor me, this is the Health app.\n\nThe Health app has many visualizations to help people understand their health data, but building these views can be quite complex.\n\nI've been interested in taking advantage of SwiftUI, so I worked with the UIKit and SwiftUI teams to learn how to integrate both into the same app.\n\nIn this video, I will teach you how easy it is to start using SwiftUI in your own UIKit apps.\n\nFirst I'll cover the existing UIHostingController, which has some new updates that add even more flexibility.\n\nNext I'll dive into populating SwiftUI views with data that already exist in your app, and how to ensure the SwiftUI views update when that data changes.\n\nThen, I'll talk about some exciting new functionality that lets you build UICollectionView and UITableView cells using SwiftUI.\n\nFinally, I'll walk through the unique aspects of data flow with collection and table views when you're using SwiftUI inside cells.\n\nLet's get started by talking about UIHostingController.\n\nUIHostingController is a UIViewController that contains a SwiftUI view hierarchy.\n\nYou can use a hosting controller anywhere you can use a view controller in UIKit.\n\nThis makes UIHostingController an easy way to start using SwiftUI.\n\nLet's examine how a hosting controller works.\n\nA hosting controller is a view controller, which means it has a UIView stored in its view property.\n\nAnd inside that view is where your SwiftUI content is rendered.\n\nLet's go through an example of how to use a hosting controller.\n\nHere, we create a HeartRateView, a SwiftUI view.\n\nWe then create a hosting controller with HeartRateView as its root view, and present it.\n\nUIHostingController works with all of the UIKit view controller APIs.\n\nLet's go through another example.\n\nWe have the same HeartRateView and hosting controller as before.\n\nHere we add the hosting controller as a child view controller.\n\nThen we can position and size the hosting controller's view.\n\nWhen your SwiftUI content inside UIHostingController changes, it may cause the view to need to be resized.\n\nNew in iOS 16, UIHostingController allows you to enable automatic updates of the view controller's preferred content size and the view's intrinsic content size.\n\nYou can enable this using the new sizingOptions property on UIHostingController.\n\nLet's go through an example.\n\nTo start, we make our HeartRateView, and create the hostingController.\n\nWe use the new sizingOptions API to tell the hostingController to automatically update its preferredContentSize.\n\nThen, we set the modalPresentationStyle to popover.\n\nUsing the new sizingOptions API ensures that the popover is always sized appropriately to fit the SwiftUI content.\n\nNow that you're familiar with UIHostingController, let's talk about how to get data into SwiftUI from other parts of your UIKit app, and ensure that your SwiftUI views update when that data changes.\n\nHere's a diagram of your UIKit app, It contains an existing model layer that owns and manages your app's data model objects.\n\nYour app also contains a number of view controllers.\n\nIf you want start using SwiftUI, you'll need a hosting controller with a SwiftUI view inside one of the view controllers.\n\nYou will want to populate this SwiftUI view with data that is still owned by your existing model layer.\n\nIn this section, we're going to focus on how to bridge data across the boundary between UIKit and SwiftUI.\n\nSwiftUI offers a variety of data flow primitives to help you manage the data in your app.\n\nLet's go through the different options.\n\nTo store data that is created and owned by a SwiftUI view, SwiftUI provides the @State and @StateObject property wrappers.\n\nSince we're focused on data owned outside of SwiftUI, these property wrappers aren't the right choice.\n\nSo, I'm not going to cover these in this video.\n\nWatch \"Data Essentials in SwiftUI\" to learn more about data owned by a SwiftUI view.\n\nOne way to handle data external to SwiftUI is to pass values directly when you initialize your views.\n\nBecause you are just passing raw data that is not owned or managed by SwiftUI, you are responsible for manually updating the UIHostingController when the data changes.\n\nLet's go through an example.\n\nHere is a SwiftUI view named HeartRateView.\n\nThis view has a single property -- the heart rate beatsPerMinute stored as an integer -- and it displays the value as text.\n\nWe're displaying this HeartRateView by embedding a UIHostingController inside an existing view controller named HeartRateViewController.\n\nWe save a reference to the hosting controller so we can update its root view later.\n\nRemember, the SwiftUI HeartRateView is a value type, so storing it by itself would create a separate copy, and wouldn't allow us to update the UI.\n\nThe HeartRateViewController owns the data used to populate the HeartRateView.\n\nThis data is stored in the beatsPerMinute property, and when the beatsPerMinute value changes, we call a method to update the view.\n\nInside of the update method, we create a new HeartRateView using the latest beatsPerMinute value, and then assign that view as the rootView of our hosting controller.\n\nThis is a simple way to get data from UIKit into SwiftUI, but it requires manually updating the rootView of the hosting controller any time the data changes.\n\nLet's go through some other SwiftUI data primitives to make these updates happen automatically.\n\nThe @ObservedObject and @EnvironmentObject property wrappers allow you to reference an external model object that conforms to the ObservableObject protocol.\n\nWhen you use these property wrappers, SwiftUI automatically updates your view when the data changes.\n\nWe're going to focus on the @ObservedObject property wrapper in this video, but you can learn more about EnvironmentObject in the \"Data Essentials in SwiftUI\" video mentioned earlier.\n\nLet's go through how to create an @ObservedObject.\n\nThe first step is to take a model object that is owned by an existing part of your app and make it conform to the ObservableObject protocol.\n\nNext, we store the model as an @ObservedObject property in our SwiftUI view.\n\nConnecting the ObservableObject to SwiftUI allows it to update the view when one of its properties change.\n\nLet's go back to our HeartRateView example and wire this up.\n\nOur app has a class named HeartData that contains the property beatsPerMinute.\n\nWe make it an ObservableObject by conforming to the protocol.\n\nThen we add the @Published property wrapper to the beatsPerMinute property.\n\nThis property wrapper is what triggers SwiftUI to update our views on changes.\n\nIn the HeartRateView, we store the HeartData in a property annotated with the @ObservedObject property wrapper.\n\nIn the body of the view, we display the beatsPerMinute directly from the HeartData.\n\nNow, let's use these together in our view controller.\n\nHere is our HeartRateViewController.\n\nIt stores the HeartData ObservableObject in a property.\n\nBecause this property is not inside a SwiftUI view, we don't need to use a property wrapper here.\n\nThe HeartRateViewController is initialized with a HeartData instance, which is used to create a HeartRateView that becomes the rootView of the hosting controller.\n\nThe diagram illustrates how this comes together.\n\nWe fetch the current HeartData instance, which contains a heart rate of 78 beat per minute.\n\nThen we create a new HeartRateViewController with that HeartData instance, which wires it up to the SwiftUI HeartRateView.\n\nAfter a few seconds, when the next heart rate data sample arrives, the heart data's beatsPerMinute property is updated to 94.\n\nBecause this changes a published property on an ObservableObject, the HeartRateView is automatically updated to display the new value.\n\nWe no longer need to manually update the hosting controller when the data changes.\n\nThis is why ObservableObject is a great way to bridge data from UIKit to SwiftUI.\n\nNext, let's talk about using SwiftUI in collection view and table view cells.\n\nNew in iOS 16 is UIHostingConfiguration, which lets you harness the power of SwiftUI inside your existing UIKit, collection, and table views.\n\nUIHostingConfiguration makes it easy to implement custom cells using SwiftUI, without needing to worry about embedding an extra view or view controller.\n\nBefore we dive deeper on UIHostingConfiguration, let's review cell configurations in UIKit.\n\nCell configurations are a modern way to define the content, styling, and behavior of cells in UIKit.\n\nUnlike a UIView or UIViewController, a configuration is just a lightweight struct.\n\nIt's inexpensive to create.\n\nA configuration is only a description of a cell's appearance, so it needs to be applied to a cell to have an effect.\n\nConfigurations are composable, and work with both UICollectionView and UITableView cells.\n\nFor more details, you can watch \"Modern cell configuration.\" With that in mind, let's dive in and start using UIHostingConfiguration! UIHostingConfiguration is a content configuration that is initialized with a SwiftUI ViewBuilder.\n\nThat means we can start writing SwiftUI code to create views directly inside it.\n\nIn order to render the hosting configuration, we set it to the contentConfiguration property of the UICollectionView or UITableView cell.\n\nLet's start writing some SwiftUI code in this hosting configuration to build a custom heart rate cell.\n\nWe'll start by creating a label with the text \"Heart Rate\" and the image of a heart.\n\nSwiftUI views receive default styling based on the context they are used in.\n\nBut we can start customizing the styling using standard SwiftUI view modifiers.\n\nLet's make the image and text pink with a bold font, by adding the foregroundStyle and font modifiers to our label.\n\nSince we're just writing regular SwiftUI code, we can factor out our code into a standalone view anytime we want.\n\nHere, we create a new SwiftUI view named HeartRateTitleView, moved the code we had into its body, and then used that HeartRateTitleView in the hosting configuration.\n\nAs shown in the cell, it produces the exact same result.\n\nNow we can start adding more views inside the HeartRateTitleView.\n\nI've put the label inside of an HStack with a spacer, then added the current time in a Text view next to it.\n\nThat's looking pretty good so far.\n\nLet's add some more content to this custom cell below the HeartRateTitleView.\n\nTo do this, we'll insert a VStack inside the hosting configuration so we can add more content below the HeartRateTitleView.\n\nThen we'll put two Text views together in a HStack to display 90 BPM and then apply a few modifiers to style them the way we want.\n\nJust like we did before with the HeartRateTitleView, we can move this new code into its own SwiftUI view.\n\nNow the same code is extracted into the body of the HeartRateBPMView.\n\nOur cell is looking great, but I have an idea for another thing we could add.\n\nNew in iOS 16 is the Swift Charts framework, which lets you visualize data with beautiful graphs in only a few lines of code.\n\nLet's try using it to display a small line chart right inside the cell.\n\nUsing the new Chart view, we create a small line chart that visualizes recent heart rate samples and display that next to the BPM view in the cell.\n\nTo generate the chart, we pass in a collection of heart rate samples, and draw a LineMark that connects all of the samples.\n\nWe can add a circle symbol to indicate each sample on the line and apply a pink foreground style, to tint the chart to match the HeartRateTitleView.\n\nWe're only scratching the surface of what you can do with the new Swift Charts framework, so be sure to check out the video \"Hello Swift Charts\" to learn more about it.\n\nNot only does our finished heart rate cell look awesome, but it was easy to make in just a couple of minutes.\n\nThat's how easy it is to start building custom cells with UIHostingConfiguration and SwiftUI.\n\nLet's talk about four special features that UIHostingConfiguration supports.\n\nBy default, the root-level SwiftUI content is inset from the edges of the cell, based on the cell's layout margins in UIKit.\n\nThis ensures that the cell content is properly aligned with the content of adjacent cells and other UI elements, such as the navigation bar.\n\nSometimes, you may want to use different margins, or have the content extend to the edges of the cell.\n\nFor these cases, you can change the default margins by using the margins modifier on UIHostingConfiguration.\n\nIf you want to customize a cell's background appearance using SwiftUI, you can use the background modifier on the UIHostingConfiguration.\n\nThere are a few key differences between a UIHostingConfiguration's background and its content.\n\nThe background is hosted at the the back of the cell, underneath your SwiftUI content in the cell's content view.\n\nAdditionally, while content is typically inset from the cell's edges, backgrounds extend edge to edge in the cell.\n\nFinally, when using self-sizing cells, only the cell content influences the size of the cell.\n\nNext, let's examine two more special features of UIHostingConfiguration that you can use when you have a cell inside a collection view list or table view.\n\nIn a list, the separator below the cell is automatically aligned to the SwiftUI text in your hosting configuration by default.\n\nIn this example, notice how the leading edge of the separator is inset past the image so that it aligns with the text in the cell.\n\nIf you need to align the separator to a different SwiftUI view in your hosting configuration, use the alignmentGuide modifier.\n\nWhen inside a collection view list or table view, you can configure swipe actions for a row directly with SwiftUI.\n\nBy creating your buttons inside the swipeActions modifier, you'll be able to swipe the cell to reveal and perform your custom actions.\n\nDownload the sample code for this video to find a complete example.\n\nWhen defining swipe actions, make sure your buttons perform their actions using a stable identifier for the item represented.\n\nDo not use the index path, as it may change while the cell is visible, causing the swipe actions to act on the wrong item.\n\nWhen you're using UIHostingConfiguration in a cell, keep in mind that the cell interactions such as tap handling, highlighting, and selection will still be handled by the collection view or table view.\n\nIf you need to customize your SwiftUI views for any of these UIKit cell states, you can create your hosting configuration inside of the cell's configurationUpdateHandler, and use the state provided in your SwiftUI code.\n\nThe configurationUpdateHandler runs again any time the cell's state changes, creating a new UIHostingConfiguration for the new state and applying it to the cell.\n\nIn this example, we use the state to add a checkmark image when the cell is selected.\n\nNow that you're familiar with UIHostingConfiguration, let's discuss how to manage data flow from your model layer to a UICollectionView or UITableView filled with cells using SwiftUI.\n\nOur goal is to build this list of medical conditions.\n\nIn this example, we're using a UICollectionView, but everything we discuss applies equally to UITableView.\n\nLet's go through the components involved.\n\nOur app has a collection of MedicalCondition model objects, which we are going to display in the collection view.\n\nFor each item in this collection, we want to create a cell in the collection view to display that medical condition.\n\nIn order to do this, we'll create a diffable data source connected to the collection view.\n\nThen, we need to populate a diffable data source snapshot with the identifiers of the MedicalCondition model objects in the data collection.\n\nIt's important that the diffable data source snapshot contains the unique identifier of each MedicalCondition, and not the MedicalCondition objects themselves.\n\nThis ensures that the diffable data source can accurately track the identity of each item, and compute the correct changes when new snapshots are applied later.\n\nBy applying a snapshot with these item identifiers to the diffable data source, it will automatically update the collection view, which will create a new cell for each item.\n\nEach cell is configured to display one MedicalCondition, using a SwiftUI view in a UIHostingConfiguration.\n\nNow that we're displaying cells built with SwiftUI, we need to handle updating the UI when the data changes.\n\nThere are two different types of changes that we need to handle separately.\n\nThe first type is when the data collection itself changes.\n\nFor example, when items are inserted, reordered, or deleted.\n\nThese changes are handled by applying a new snapshot to the diffable data source.\n\nDiffable data source will diff the old and new snapshots, and perform the necessary updates to the collection view, causing cells to be inserted, moved, or deleted.\n\nBecause changes to the collection of data itself don't affect anything inside of cells, you handle these types of changes the same, whether you build your cells using UIKit or SwiftUI.\n\nThe second type of change we need to handle are when the properties of individual model objects change.\n\nThese changes often require updating the views in existing cells.\n\nBecause the diffable data source only contains item identifiers in its snapshot, it doesn't know when the properties of existing items change.\n\nTraditionally, when using UIKit, you would need to manually tell the diffable data source about these changes by reconfiguring or reloading items in the snapshot.\n\nBut when using SwiftUI in cells, this isn't necessary anymore.\n\nBy storing the ObservableObject model in an ObservedObject property in our SwiftUI view, changes to published properties of the model will automatically trigger SwiftUI to refresh the view.\n\nThis establishes a direct connection between the model and the SwiftUI view inside of the cell.\n\nWhen a change is made, the SwiftUI views in the cell are updated directly, without going through the diffable data source or the UICollectionView.\n\nWhen a cell's data changes, it may cause the cell to need to grow or shrink to fit the new content.\n\nBut if the SwiftUI cell content is being updated directly without going through UIKit, how does the collection view know to resize the cell? UIHostingConfiguration takes advantage of a brand-new feature in UIKit to make this work.\n\nIn iOS 16, self-sizing cells in UICollectionView and UITableView are now also self-resizing! This is enabled by default, so that when you're using UIHostingConfiguration and the SwiftUI content changes, the containing cell is automatically resized if necessary.\n\nYou can learn more about how this new feature works in the \"What's New in UIKit\" video from WWDC 2022.\n\nThere's one more aspect of data flow that you may need to handle, and that's sending data out from a SwiftUI view back to other parts of your app.\n\nOnce again, ObservableObject has got you covered! You can create a two-way binding to a published property of an ObservableObject.\n\nNot only will data flow from the ObservableObject into SwiftUI, but SwiftUI can write back changes to the property on the model object.\n\nLet's go through a simple example of creating a two-way binding by making the text in our MedicalCondition cell editable.\n\nHere is our ObservableObject, MedicalCondition.\n\nIt stores a unique identifier in an ID property.\n\nThis is the identifier used to populate the diffable data source snapshot.\n\nAnd this published property stores the text of the medical condition.\n\nHere's the MedicalConditionView that displays the medical condition text inside each cell.\n\nRight now this text is read-only, so let's make it editable.\n\nAll we need to do is to change the Text view to a TextField and create a binding to the text property of our MedicalCondition by adding a dollar sign prefix.\n\nWhen you type into the text field, this binding allows SwiftUI to write back changes directly to the ObservableObject.\n\nThat's really how simple it is to set up two-way data flow with SwiftUI.\n\nUIHostingController is a powerful way to embed SwiftUI content into your UIKit app.\n\nYour SwiftUI view is rendered inside the hosting controller's view, and you can use the hosting controller anywhere that you can use a view controller in UIKit.\n\nWhen using UIHostingController, make sure to always add the view controller together with the view to your app.\n\nMany SwiftUI features, such as toolbars, keyboard shortcuts, and views that use UIViewControllerRepresentable, require a connection to the view controller hierarchy in UIKit to integrate properly, so never separate a hosting controller's view from the hosting controller itself.\n\nFor comparison, when you apply a UIHostingConfiguration to a cell, your SwiftUI view is hosted in the cell without a UIViewController.\n\nUIHostingConfiguration supports the vast majority of SwiftUI features.\n\nBut keep in mind that SwiftUI views that depend on UIViewControllerRepresentable can't be used inside of cells.\n\nWith UIHostingController and UIHostingConfiguration, you have two great ways to incorporate SwiftUI into your UIKit app.\n\nSwiftUI integrates seamlessly into existing UIKit apps Use UIHostingController to add SwiftUI throughout your app.\n\nCreate custom cells in your collection and table view using UIHostingConfiguration.\n\nAnd take advantage of ObservableObject, so your data and UI is always in sync.\n\nAdd SwiftUI to your app today! Thank you for watching! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop music ♪ ♪ Hello, I'm Sara Frederixon, an engineer on the Health app, and I'm here to talk to you about using SwiftUI with UIKit."
+      },
+      {
+        "timestamp": "0:18",
+        "text": "Like many of you, I work on an existing UIKit app."
+      },
+      {
+        "timestamp": "0:22",
+        "text": "For me, this is the Health app."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "The Health app has many visualizations to help people understand their health data, but building these views can be quite complex."
+      },
+      {
+        "timestamp": "0:33",
+        "text": "I've been interested in taking advantage of SwiftUI, so I worked with the UIKit and SwiftUI teams to learn how to integrate both into the same app."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "In this video, I will teach you how easy it is to start using SwiftUI in your own UIKit apps."
+      },
+      {
+        "timestamp": "0:50",
+        "text": "First I'll cover the existing UIHostingController, which has some new updates that add even more flexibility."
+      },
+      {
+        "timestamp": "0:58",
+        "text": "Next I'll dive into populating SwiftUI views with data that already exist in your app, and how to ensure the SwiftUI views update when that data changes."
+      },
+      {
+        "timestamp": "1:11",
+        "text": "Then, I'll talk about some exciting new functionality that lets you build UICollectionView and UITableView cells using SwiftUI."
+      },
+      {
+        "timestamp": "1:20",
+        "text": "Finally, I'll walk through the unique aspects of data flow with collection and table views when you're using SwiftUI inside cells."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "Let's get started by talking about UIHostingController."
+      },
+      {
+        "timestamp": "1:33",
+        "text": "UIHostingController is a UIViewController that contains a SwiftUI view hierarchy."
+      },
+      {
+        "timestamp": "1:39",
+        "text": "You can use a hosting controller anywhere you can use a view controller in UIKit."
+      },
+      {
+        "timestamp": "1:45",
+        "text": "This makes UIHostingController an easy way to start using SwiftUI."
+      },
+      {
+        "timestamp": "1:50",
+        "text": "Let's examine how a hosting controller works."
+      },
+      {
+        "timestamp": "1:53",
+        "text": "A hosting controller is a view controller, which means it has a UIView stored in its view property."
+      },
+      {
+        "timestamp": "2:01",
+        "text": "And inside that view is where your SwiftUI content is rendered."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "Let's go through an example of how to use a hosting controller."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "Here, we create a HeartRateView, a SwiftUI view."
+      },
+      {
+        "timestamp": "2:14",
+        "text": "We then create a hosting controller with HeartRateView as its root view, and present it."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "UIHostingController works with all of the UIKit view controller APIs."
+      },
+      {
+        "timestamp": "2:26",
+        "text": "Let's go through another example."
+      },
+      {
+        "timestamp": "2:30",
+        "text": "We have the same HeartRateView and hosting controller as before."
+      },
+      {
+        "timestamp": "2:34",
+        "text": "Here we add the hosting controller as a child view controller."
+      },
+      {
+        "timestamp": "2:39",
+        "text": "Then we can position and size the hosting controller's view."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "When your SwiftUI content inside UIHostingController changes, it may cause the view to need to be resized."
+      },
+      {
+        "timestamp": "2:51",
+        "text": "New in iOS 16, UIHostingController allows you to enable automatic updates of the view controller's preferred content size and the view's intrinsic content size."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "You can enable this using the new sizingOptions property on UIHostingController."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "Let's go through an example."
+      },
+      {
+        "timestamp": "3:12",
+        "text": "To start, we make our HeartRateView, and create the hostingController."
+      },
+      {
+        "timestamp": "3:18",
+        "text": "We use the new sizingOptions API to tell the hostingController to automatically update its preferredContentSize."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "Then, we set the modalPresentationStyle to popover."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "Using the new sizingOptions API ensures that the popover is always sized appropriately to fit the SwiftUI content."
+      },
+      {
+        "timestamp": "3:41",
+        "text": "Now that you're familiar with UIHostingController, let's talk about how to get data into SwiftUI from other parts of your UIKit app, and ensure that your SwiftUI views update when that data changes."
+      },
+      {
+        "timestamp": "3:55",
+        "text": "Here's a diagram of your UIKit app, It contains an existing model layer that owns and manages your app's data model objects."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "Your app also contains a number of view controllers."
+      },
+      {
+        "timestamp": "4:07",
+        "text": "If you want start using SwiftUI, you'll need a hosting controller with a SwiftUI view inside one of the view controllers."
+      },
+      {
+        "timestamp": "4:15",
+        "text": "You will want to populate this SwiftUI view with data that is still owned by your existing model layer."
+      },
+      {
+        "timestamp": "4:22",
+        "text": "In this section, we're going to focus on how to bridge data across the boundary between UIKit and SwiftUI."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "SwiftUI offers a variety of data flow primitives to help you manage the data in your app."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "Let's go through the different options."
+      },
+      {
+        "timestamp": "4:39",
+        "text": "To store data that is created and owned by a SwiftUI view, SwiftUI provides the @State and @StateObject property wrappers."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "Since we're focused on data owned outside of SwiftUI, these property wrappers aren't the right choice."
+      },
+      {
+        "timestamp": "4:56",
+        "text": "So, I'm not going to cover these in this video."
+      },
+      {
+        "timestamp": "4:58",
+        "text": "Watch \"Data Essentials in SwiftUI\" to learn more about data owned by a SwiftUI view."
+      },
+      {
+        "timestamp": "5:06",
+        "text": "One way to handle data external to SwiftUI is to pass values directly when you initialize your views."
+      },
+      {
+        "timestamp": "5:12",
+        "text": "Because you are just passing raw data that is not owned or managed by SwiftUI, you are responsible for manually updating the UIHostingController when the data changes."
+      },
+      {
+        "timestamp": "5:25",
+        "text": "Let's go through an example."
+      },
+      {
+        "timestamp": "5:27",
+        "text": "Here is a SwiftUI view named HeartRateView."
+      },
+      {
+        "timestamp": "5:31",
+        "text": "This view has a single property -- the heart rate beatsPerMinute stored as an integer -- and it displays the value as text."
+      },
+      {
+        "timestamp": "5:39",
+        "text": "We're displaying this HeartRateView by embedding a UIHostingController inside an existing view controller named HeartRateViewController."
+      },
+      {
+        "timestamp": "5:48",
+        "text": "We save a reference to the hosting controller so we can update its root view later."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "Remember, the SwiftUI HeartRateView is a value type, so storing it by itself would create a separate copy, and wouldn't allow us to update the UI."
+      },
+      {
+        "timestamp": "6:04",
+        "text": "The HeartRateViewController owns the data used to populate the HeartRateView."
+      },
+      {
+        "timestamp": "6:09",
+        "text": "This data is stored in the beatsPerMinute property, and when the beatsPerMinute value changes, we call a method to update the view."
+      },
+      {
+        "timestamp": "6:19",
+        "text": "Inside of the update method, we create a new HeartRateView using the latest beatsPerMinute value, and then assign that view as the rootView of our hosting controller."
+      },
+      {
+        "timestamp": "6:31",
+        "text": "This is a simple way to get data from UIKit into SwiftUI, but it requires manually updating the rootView of the hosting controller any time the data changes."
+      },
+      {
+        "timestamp": "6:43",
+        "text": "Let's go through some other SwiftUI data primitives to make these updates happen automatically."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "The @ObservedObject and @EnvironmentObject property wrappers allow you to reference an external model object that conforms to the ObservableObject protocol."
+      },
+      {
+        "timestamp": "6:59",
+        "text": "When you use these property wrappers, SwiftUI automatically updates your view when the data changes."
+      },
+      {
+        "timestamp": "7:07",
+        "text": "We're going to focus on the @ObservedObject property wrapper in this video, but you can learn more about EnvironmentObject in the \"Data Essentials in SwiftUI\" video mentioned earlier."
+      },
+      {
+        "timestamp": "7:18",
+        "text": "Let's go through how to create an @ObservedObject."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "The first step is to take a model object that is owned by an existing part of your app and make it conform to the ObservableObject protocol."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "Next, we store the model as an @ObservedObject property in our SwiftUI view."
+      },
+      {
+        "timestamp": "7:38",
+        "text": "Connecting the ObservableObject to SwiftUI allows it to update the view when one of its properties change."
+      },
+      {
+        "timestamp": "7:46",
+        "text": "Let's go back to our HeartRateView example and wire this up."
+      },
+      {
+        "timestamp": "7:51",
+        "text": "Our app has a class named HeartData that contains the property beatsPerMinute."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "We make it an ObservableObject by conforming to the protocol."
+      },
+      {
+        "timestamp": "8:01",
+        "text": "Then we add the @Published property wrapper to the beatsPerMinute property."
+      },
+      {
+        "timestamp": "8:06",
+        "text": "This property wrapper is what triggers SwiftUI to update our views on changes."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "In the HeartRateView, we store the HeartData in a property annotated with the @ObservedObject property wrapper."
+      },
+      {
+        "timestamp": "8:20",
+        "text": "In the body of the view, we display the beatsPerMinute directly from the HeartData."
+      },
+      {
+        "timestamp": "8:26",
+        "text": "Now, let's use these together in our view controller."
+      },
+      {
+        "timestamp": "8:30",
+        "text": "Here is our HeartRateViewController."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "It stores the HeartData ObservableObject in a property."
+      },
+      {
+        "timestamp": "8:37",
+        "text": "Because this property is not inside a SwiftUI view, we don't need to use a property wrapper here."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "The HeartRateViewController is initialized with a HeartData instance, which is used to create a HeartRateView that becomes the rootView of the hosting controller."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "The diagram illustrates how this comes together."
+      },
+      {
+        "timestamp": "8:57",
+        "text": "We fetch the current HeartData instance, which contains a heart rate of 78 beat per minute."
+      },
+      {
+        "timestamp": "9:04",
+        "text": "Then we create a new HeartRateViewController with that HeartData instance, which wires it up to the SwiftUI HeartRateView."
+      },
+      {
+        "timestamp": "9:14",
+        "text": "After a few seconds, when the next heart rate data sample arrives, the heart data's beatsPerMinute property is updated to 94."
+      },
+      {
+        "timestamp": "9:24",
+        "text": "Because this changes a published property on an ObservableObject, the HeartRateView is automatically updated to display the new value."
+      },
+      {
+        "timestamp": "9:33",
+        "text": "We no longer need to manually update the hosting controller when the data changes."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "This is why ObservableObject is a great way to bridge data from UIKit to SwiftUI."
+      },
+      {
+        "timestamp": "9:44",
+        "text": "Next, let's talk about using SwiftUI in collection view and table view cells."
+      },
+      {
+        "timestamp": "9:52",
+        "text": "New in iOS 16 is UIHostingConfiguration, which lets you harness the power of SwiftUI inside your existing UIKit, collection, and table views."
+      },
+      {
+        "timestamp": "10:03",
+        "text": "UIHostingConfiguration makes it easy to implement custom cells using SwiftUI, without needing to worry about embedding an extra view or view controller."
+      },
+      {
+        "timestamp": "10:13",
+        "text": "Before we dive deeper on UIHostingConfiguration, let's review cell configurations in UIKit."
+      },
+      {
+        "timestamp": "10:20",
+        "text": "Cell configurations are a modern way to define the content, styling, and behavior of cells in UIKit."
+      },
+      {
+        "timestamp": "10:28",
+        "text": "Unlike a UIView or UIViewController, a configuration is just a lightweight struct."
+      },
+      {
+        "timestamp": "10:34",
+        "text": "It's inexpensive to create."
+      },
+      {
+        "timestamp": "10:36",
+        "text": "A configuration is only a description of a cell's appearance, so it needs to be applied to a cell to have an effect."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "Configurations are composable, and work with both UICollectionView and UITableView cells."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "For more details, you can watch \"Modern cell configuration.\" With that in mind, let's dive in and start using UIHostingConfiguration! UIHostingConfiguration is a content configuration that is initialized with a SwiftUI ViewBuilder."
+      },
+      {
+        "timestamp": "11:08",
+        "text": "That means we can start writing SwiftUI code to create views directly inside it."
+      },
+      {
+        "timestamp": "11:15",
+        "text": "In order to render the hosting configuration, we set it to the contentConfiguration property of the UICollectionView or UITableView cell."
+      },
+      {
+        "timestamp": "11:23",
+        "text": "Let's start writing some SwiftUI code in this hosting configuration to build a custom heart rate cell."
+      },
+      {
+        "timestamp": "11:30",
+        "text": "We'll start by creating a label with the text \"Heart Rate\" and the image of a heart."
+      },
+      {
+        "timestamp": "11:36",
+        "text": "SwiftUI views receive default styling based on the context they are used in."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "But we can start customizing the styling using standard SwiftUI view modifiers."
+      },
+      {
+        "timestamp": "11:47",
+        "text": "Let's make the image and text pink with a bold font, by adding the foregroundStyle and font modifiers to our label."
+      },
+      {
+        "timestamp": "11:55",
+        "text": "Since we're just writing regular SwiftUI code, we can factor out our code into a standalone view anytime we want."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "Here, we create a new SwiftUI view named HeartRateTitleView, moved the code we had into its body, and then used that HeartRateTitleView in the hosting configuration."
+      },
+      {
+        "timestamp": "12:16",
+        "text": "As shown in the cell, it produces the exact same result."
+      },
+      {
+        "timestamp": "12:22",
+        "text": "Now we can start adding more views inside the HeartRateTitleView."
+      },
+      {
+        "timestamp": "12:27",
+        "text": "I've put the label inside of an HStack with a spacer, then added the current time in a Text view next to it."
+      },
+      {
+        "timestamp": "12:36",
+        "text": "That's looking pretty good so far."
+      },
+      {
+        "timestamp": "12:38",
+        "text": "Let's add some more content to this custom cell below the HeartRateTitleView."
+      },
+      {
+        "timestamp": "12:44",
+        "text": "To do this, we'll insert a VStack inside the hosting configuration so we can add more content below the HeartRateTitleView."
+      },
+      {
+        "timestamp": "12:53",
+        "text": "Then we'll put two Text views together in a HStack to display 90 BPM and then apply a few modifiers to style them the way we want."
+      },
+      {
+        "timestamp": "13:05",
+        "text": "Just like we did before with the HeartRateTitleView, we can move this new code into its own SwiftUI view."
+      },
+      {
+        "timestamp": "13:14",
+        "text": "Now the same code is extracted into the body of the HeartRateBPMView."
+      },
+      {
+        "timestamp": "13:20",
+        "text": "Our cell is looking great, but I have an idea for another thing we could add."
+      },
+      {
+        "timestamp": "13:25",
+        "text": "New in iOS 16 is the Swift Charts framework, which lets you visualize data with beautiful graphs in only a few lines of code."
+      },
+      {
+        "timestamp": "13:35",
+        "text": "Let's try using it to display a small line chart right inside the cell."
+      },
+      {
+        "timestamp": "13:41",
+        "text": "Using the new Chart view, we create a small line chart that visualizes recent heart rate samples and display that next to the BPM view in the cell."
+      },
+      {
+        "timestamp": "13:52",
+        "text": "To generate the chart, we pass in a collection of heart rate samples, and draw a LineMark that connects all of the samples."
+      },
+      {
+        "timestamp": "14:01",
+        "text": "We can add a circle symbol to indicate each sample on the line and apply a pink foreground style, to tint the chart to match the HeartRateTitleView."
+      },
+      {
+        "timestamp": "14:11",
+        "text": "We're only scratching the surface of what you can do with the new Swift Charts framework, so be sure to check out the video \"Hello Swift Charts\" to learn more about it."
+      },
+      {
+        "timestamp": "14:22",
+        "text": "Not only does our finished heart rate cell look awesome, but it was easy to make in just a couple of minutes."
+      },
+      {
+        "timestamp": "14:29",
+        "text": "That's how easy it is to start building custom cells with UIHostingConfiguration and SwiftUI."
+      },
+      {
+        "timestamp": "14:35",
+        "text": "Let's talk about four special features that UIHostingConfiguration supports."
+      },
+      {
+        "timestamp": "14:40",
+        "text": "By default, the root-level SwiftUI content is inset from the edges of the cell, based on the cell's layout margins in UIKit."
+      },
+      {
+        "timestamp": "14:50",
+        "text": "This ensures that the cell content is properly aligned with the content of adjacent cells and other UI elements, such as the navigation bar."
+      },
+      {
+        "timestamp": "14:59",
+        "text": "Sometimes, you may want to use different margins, or have the content extend to the edges of the cell."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "For these cases, you can change the default margins by using the margins modifier on UIHostingConfiguration."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "If you want to customize a cell's background appearance using SwiftUI, you can use the background modifier on the UIHostingConfiguration."
+      },
+      {
+        "timestamp": "15:24",
+        "text": "There are a few key differences between a UIHostingConfiguration's background and its content."
+      },
+      {
+        "timestamp": "15:31",
+        "text": "The background is hosted at the the back of the cell, underneath your SwiftUI content in the cell's content view."
+      },
+      {
+        "timestamp": "15:39",
+        "text": "Additionally, while content is typically inset from the cell's edges, backgrounds extend edge to edge in the cell."
+      },
+      {
+        "timestamp": "15:48",
+        "text": "Finally, when using self-sizing cells, only the cell content influences the size of the cell."
+      },
+      {
+        "timestamp": "15:56",
+        "text": "Next, let's examine two more special features of UIHostingConfiguration that you can use when you have a cell inside a collection view list or table view."
+      },
+      {
+        "timestamp": "16:06",
+        "text": "In a list, the separator below the cell is automatically aligned to the SwiftUI text in your hosting configuration by default."
+      },
+      {
+        "timestamp": "16:14",
+        "text": "In this example, notice how the leading edge of the separator is inset past the image so that it aligns with the text in the cell."
+      },
+      {
+        "timestamp": "16:23",
+        "text": "If you need to align the separator to a different SwiftUI view in your hosting configuration, use the alignmentGuide modifier."
+      },
+      {
+        "timestamp": "16:32",
+        "text": "When inside a collection view list or table view, you can configure swipe actions for a row directly with SwiftUI."
+      },
+      {
+        "timestamp": "16:40",
+        "text": "By creating your buttons inside the swipeActions modifier, you'll be able to swipe the cell to reveal and perform your custom actions."
+      },
+      {
+        "timestamp": "16:49",
+        "text": "Download the sample code for this video to find a complete example."
+      },
+      {
+        "timestamp": "16:53",
+        "text": "When defining swipe actions, make sure your buttons perform their actions using a stable identifier for the item represented."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "Do not use the index path, as it may change while the cell is visible, causing the swipe actions to act on the wrong item."
+      },
+      {
+        "timestamp": "17:10",
+        "text": "When you're using UIHostingConfiguration in a cell, keep in mind that the cell interactions such as tap handling, highlighting, and selection will still be handled by the collection view or table view."
+      },
+      {
+        "timestamp": "17:24",
+        "text": "If you need to customize your SwiftUI views for any of these UIKit cell states, you can create your hosting configuration inside of the cell's configurationUpdateHandler, and use the state provided in your SwiftUI code."
+      },
+      {
+        "timestamp": "17:40",
+        "text": "The configurationUpdateHandler runs again any time the cell's state changes, creating a new UIHostingConfiguration for the new state and applying it to the cell."
+      },
+      {
+        "timestamp": "17:51",
+        "text": "In this example, we use the state to add a checkmark image when the cell is selected."
+      },
+      {
+        "timestamp": "17:57",
+        "text": "Now that you're familiar with UIHostingConfiguration, let's discuss how to manage data flow from your model layer to a UICollectionView or UITableView filled with cells using SwiftUI."
+      },
+      {
+        "timestamp": "18:10",
+        "text": "Our goal is to build this list of medical conditions."
+      },
+      {
+        "timestamp": "18:14",
+        "text": "In this example, we're using a UICollectionView, but everything we discuss applies equally to UITableView."
+      },
+      {
+        "timestamp": "18:22",
+        "text": "Let's go through the components involved."
+      },
+      {
+        "timestamp": "18:25",
+        "text": "Our app has a collection of MedicalCondition model objects, which we are going to display in the collection view."
+      },
+      {
+        "timestamp": "18:33",
+        "text": "For each item in this collection, we want to create a cell in the collection view to display that medical condition."
+      },
+      {
+        "timestamp": "18:41",
+        "text": "In order to do this, we'll create a diffable data source connected to the collection view."
+      },
+      {
+        "timestamp": "18:47",
+        "text": "Then, we need to populate a diffable data source snapshot with the identifiers of the MedicalCondition model objects in the data collection."
+      },
+      {
+        "timestamp": "18:58",
+        "text": "It's important that the diffable data source snapshot contains the unique identifier of each MedicalCondition, and not the MedicalCondition objects themselves."
+      },
+      {
+        "timestamp": "19:08",
+        "text": "This ensures that the diffable data source can accurately track the identity of each item, and compute the correct changes when new snapshots are applied later."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "By applying a snapshot with these item identifiers to the diffable data source, it will automatically update the collection view, which will create a new cell for each item."
+      },
+      {
+        "timestamp": "19:32",
+        "text": "Each cell is configured to display one MedicalCondition, using a SwiftUI view in a UIHostingConfiguration."
+      },
+      {
+        "timestamp": "19:42",
+        "text": "Now that we're displaying cells built with SwiftUI, we need to handle updating the UI when the data changes."
+      },
+      {
+        "timestamp": "19:49",
+        "text": "There are two different types of changes that we need to handle separately."
+      },
+      {
+        "timestamp": "19:54",
+        "text": "The first type is when the data collection itself changes."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "For example, when items are inserted, reordered, or deleted."
+      },
+      {
+        "timestamp": "20:04",
+        "text": "These changes are handled by applying a new snapshot to the diffable data source."
+      },
+      {
+        "timestamp": "20:10",
+        "text": "Diffable data source will diff the old and new snapshots, and perform the necessary updates to the collection view, causing cells to be inserted, moved, or deleted."
+      },
+      {
+        "timestamp": "20:23",
+        "text": "Because changes to the collection of data itself don't affect anything inside of cells, you handle these types of changes the same, whether you build your cells using UIKit or SwiftUI."
+      },
+      {
+        "timestamp": "20:35",
+        "text": "The second type of change we need to handle are when the properties of individual model objects change."
+      },
+      {
+        "timestamp": "20:43",
+        "text": "These changes often require updating the views in existing cells."
+      },
+      {
+        "timestamp": "20:48",
+        "text": "Because the diffable data source only contains item identifiers in its snapshot, it doesn't know when the properties of existing items change."
+      },
+      {
+        "timestamp": "20:57",
+        "text": "Traditionally, when using UIKit, you would need to manually tell the diffable data source about these changes by reconfiguring or reloading items in the snapshot."
+      },
+      {
+        "timestamp": "21:08",
+        "text": "But when using SwiftUI in cells, this isn't necessary anymore."
+      },
+      {
+        "timestamp": "21:13",
+        "text": "By storing the ObservableObject model in an ObservedObject property in our SwiftUI view, changes to published properties of the model will automatically trigger SwiftUI to refresh the view."
+      },
+      {
+        "timestamp": "21:27",
+        "text": "This establishes a direct connection between the model and the SwiftUI view inside of the cell."
+      },
+      {
+        "timestamp": "21:34",
+        "text": "When a change is made, the SwiftUI views in the cell are updated directly, without going through the diffable data source or the UICollectionView."
+      },
+      {
+        "timestamp": "21:44",
+        "text": "When a cell's data changes, it may cause the cell to need to grow or shrink to fit the new content."
+      },
+      {
+        "timestamp": "21:51",
+        "text": "But if the SwiftUI cell content is being updated directly without going through UIKit, how does the collection view know to resize the cell? UIHostingConfiguration takes advantage of a brand-new feature in UIKit to make this work."
+      },
+      {
+        "timestamp": "22:07",
+        "text": "In iOS 16, self-sizing cells in UICollectionView and UITableView are now also self-resizing! This is enabled by default, so that when you're using UIHostingConfiguration and the SwiftUI content changes, the containing cell is automatically resized if necessary."
+      },
+      {
+        "timestamp": "22:28",
+        "text": "You can learn more about how this new feature works in the \"What's New in UIKit\" video from WWDC 2022."
+      },
+      {
+        "timestamp": "22:37",
+        "text": "There's one more aspect of data flow that you may need to handle, and that's sending data out from a SwiftUI view back to other parts of your app."
+      },
+      {
+        "timestamp": "22:48",
+        "text": "Once again, ObservableObject has got you covered! You can create a two-way binding to a published property of an ObservableObject."
+      },
+      {
+        "timestamp": "22:57",
+        "text": "Not only will data flow from the ObservableObject into SwiftUI, but SwiftUI can write back changes to the property on the model object."
+      },
+      {
+        "timestamp": "23:08",
+        "text": "Let's go through a simple example of creating a two-way binding by making the text in our MedicalCondition cell editable."
+      },
+      {
+        "timestamp": "23:16",
+        "text": "Here is our ObservableObject, MedicalCondition."
+      },
+      {
+        "timestamp": "23:21",
+        "text": "It stores a unique identifier in an ID property."
+      },
+      {
+        "timestamp": "23:25",
+        "text": "This is the identifier used to populate the diffable data source snapshot."
+      },
+      {
+        "timestamp": "23:30",
+        "text": "And this published property stores the text of the medical condition."
+      },
+      {
+        "timestamp": "23:35",
+        "text": "Here's the MedicalConditionView that displays the medical condition text inside each cell."
+      },
+      {
+        "timestamp": "23:42",
+        "text": "Right now this text is read-only, so let's make it editable."
+      },
+      {
+        "timestamp": "23:47",
+        "text": "All we need to do is to change the Text view to a TextField and create a binding to the text property of our MedicalCondition by adding a dollar sign prefix."
+      },
+      {
+        "timestamp": "23:59",
+        "text": "When you type into the text field, this binding allows SwiftUI to write back changes directly to the ObservableObject."
+      },
+      {
+        "timestamp": "24:07",
+        "text": "That's really how simple it is to set up two-way data flow with SwiftUI."
+      },
+      {
+        "timestamp": "24:14",
+        "text": "UIHostingController is a powerful way to embed SwiftUI content into your UIKit app."
+      },
+      {
+        "timestamp": "24:21",
+        "text": "Your SwiftUI view is rendered inside the hosting controller's view, and you can use the hosting controller anywhere that you can use a view controller in UIKit."
+      },
+      {
+        "timestamp": "24:33",
+        "text": "When using UIHostingController, make sure to always add the view controller together with the view to your app."
+      },
+      {
+        "timestamp": "24:41",
+        "text": "Many SwiftUI features, such as toolbars, keyboard shortcuts, and views that use UIViewControllerRepresentable, require a connection to the view controller hierarchy in UIKit to integrate properly, so never separate a hosting controller's view from the hosting controller itself."
+      },
+      {
+        "timestamp": "25:01",
+        "text": "For comparison, when you apply a UIHostingConfiguration to a cell, your SwiftUI view is hosted in the cell without a UIViewController."
+      },
+      {
+        "timestamp": "25:11",
+        "text": "UIHostingConfiguration supports the vast majority of SwiftUI features."
+      },
+      {
+        "timestamp": "25:16",
+        "text": "But keep in mind that SwiftUI views that depend on UIViewControllerRepresentable can't be used inside of cells."
+      },
+      {
+        "timestamp": "25:23",
+        "text": "With UIHostingController and UIHostingConfiguration, you have two great ways to incorporate SwiftUI into your UIKit app."
+      },
+      {
+        "timestamp": "25:32",
+        "text": "SwiftUI integrates seamlessly into existing UIKit apps Use UIHostingController to add SwiftUI throughout your app."
+      },
+      {
+        "timestamp": "25:42",
+        "text": "Create custom cells in your collection and table view using UIHostingConfiguration."
+      },
+      {
+        "timestamp": "25:49",
+        "text": "And take advantage of ObservableObject, so your data and UI is always in sync."
+      },
+      {
+        "timestamp": "25:55",
+        "text": "Add SwiftUI to your app today! Thank you for watching! ♪"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -209,5 +1008,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10027"
     }
   ],
-  "extractedAt": "2026-10-11T16:41:22.780Z"
+  "extractedAt": "2026-10-17T18:51:19.559Z"
 }

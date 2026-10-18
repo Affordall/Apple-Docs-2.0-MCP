@@ -3,91 +3,46 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fetchAppleDocJson } from '../../src/tools/doc-fetcher.js';
 import { mockData } from '../helpers/test-helpers.js';
 
-// Mock dependencies
-vi.mock('../../src/utils/cache.js', () => ({
-  apiCache: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
-  generateEnhancedCacheKey: vi.fn((url) => `cache-key-${url}`),
-}));
-
 vi.mock('../../src/utils/http-client.js', () => ({
   httpClient: {
     getJson: vi.fn(),
   },
 }));
 
-vi.mock('../../src/utils/url-converter.js', () => ({
-  convertToJsonApiUrl: vi.fn(),
-}));
-
-import { apiCache } from '../../src/utils/cache.js';
 import { httpClient } from '../../src/utils/http-client.js';
-import { convertToJsonApiUrl } from '../../src/utils/url-converter.js';
 
 describe('fetchAppleDocJson', () => {
   const mockDocUrl = 'https://developer.apple.com/documentation/uikit/uiview';
   const mockJsonUrl = 'https://developer.apple.com/tutorials/data/documentation/uikit/uiview.json';
+  const swift = 'swift';
+  // Every page names itself and its language; the Objective-C version names "occ"
+  const swiftPage = { identifier: { url: 'doc://com.apple.uikit/documentation/UIKit/UIView', interfaceLanguage: 'swift' } };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (convertToJsonApiUrl as Mock).mockReturnValue(mockJsonUrl);
   });
 
   describe('successful fetching', () => {
     it('should fetch and format documentation', async () => {
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(mockData.docJsonData);
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
 
-      expect(convertToJsonApiUrl).toHaveBeenCalledWith(mockDocUrl);
       expect(httpClient.getJson).toHaveBeenCalledWith(mockJsonUrl);
       expect(result.content[0].text).toContain('# UIView');
       expect(result.content[0].text).toContain('**Class**');
       expect(result.content[0].text).toContain('class UIView');
-      expect(apiCache.set).toHaveBeenCalled();
-    });
-
-    it('should use cache when available', async () => {
-      const cachedContent = {
-        content: [{ type: 'text', text: '# Cached Documentation' }]
-      };
-      (apiCache.get as Mock).mockReturnValue(cachedContent);
-
-      const result = await fetchAppleDocJson(mockDocUrl);
-
-      expect(result.content[0].text).toBe('# Cached Documentation');
-      expect(httpClient.getJson).not.toHaveBeenCalled();
-    });
-
-    it('should include related APIs when requested', async () => {
-      (apiCache.get as Mock).mockReturnValue(null);
-      (httpClient.getJson as Mock).mockResolvedValue({
-        ...mockData.docJsonData,
-        relationshipsSections: [
-          {
-            type: 'inheritsFrom',
-            title: 'Inherits From',
-            identifiers: ['doc://com.apple.documentation/documentation/uikit/uiresponder'],
-          },
-        ],
-      });
-
-      const result = await fetchAppleDocJson(mockDocUrl, { includeRelatedApis: true });
-
-      expect(result.content[0].text).toContain('# UIView');
-      // Note: The actual implementation would include related APIs if the handler was called
     });
 
     it('should handle complex documentation structure', async () => {
       const complexDoc = {
+        ...swiftPage,
         primaryContentSections: [
           {
             kind: 'declarations',
             declarations: [
               {
+                platforms: [],
                 tokens: [
                   { text: '@MainActor', kind: 'attribute' },
                   { text: ' ' },
@@ -135,10 +90,9 @@ describe('fetchAppleDocJson', () => {
         ],
       };
 
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(complexDoc);
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
       const text = result.content[0].text;
 
       expect(text).toContain('@MainActor class UIView : UIResponder');
@@ -154,8 +108,9 @@ describe('fetchAppleDocJson', () => {
     it('should render code in language tabs, notes and lists', async () => {
       // The shape of UNCalendarNotificationTrigger's page: its only code listing sits in Swift and Objective-C tabs.
       const doc = {
+        ...swiftPage,
         primaryContentSections: [
-          { kind: 'declarations', declarations: [{ tokens: [{ text: 'class UNCalendarNotificationTrigger' }, { text: '\n' }] }] },
+          { kind: 'declarations', declarations: [{ platforms: [], tokens: [{ text: 'class UNCalendarNotificationTrigger' }, { text: '\n' }] }] },
           {
             kind: 'content',
             content: [
@@ -188,10 +143,9 @@ describe('fetchAppleDocJson', () => {
         metadata: { roleHeading: 'Class', title: 'UNCalendarNotificationTrigger' },
       };
 
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(doc);
 
-      const text = (await fetchAppleDocJson(mockDocUrl)).content[0].text;
+      const text = (await fetchAppleDocJson(mockDocUrl, swift)).content[0].text;
 
       expect(text).toContain('```swift\nclass UNCalendarNotificationTrigger\n```');
       expect(text).toContain('**Swift**\n\n```swift\nvar date = DateComponents()\ndate.hour = 8\n```');
@@ -205,6 +159,7 @@ describe('fetchAppleDocJson', () => {
     it('should render an article in full: headings, bold rules, link titles, columns, tables and code', async () => {
       // The shape of a Human Interface Guidelines page, which opens with paragraphs and has no declaration
       const doc = {
+        ...swiftPage,
         primaryContentSections: [{
           kind: 'content',
           content: [
@@ -248,10 +203,9 @@ describe('fetchAppleDocJson', () => {
         metadata: { role: 'article', title: 'Tab bars' },
       };
 
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(doc);
 
-      const text = (await fetchAppleDocJson(mockDocUrl)).content[0].text;
+      const text = (await fetchAppleDocJson(mockDocUrl, swift)).content[0].text;
 
       expect(text).toContain('## Overview\n\nA tab bar lets people navigate.');
       expect(text).toContain('## Best practices');
@@ -266,40 +220,34 @@ describe('fetchAppleDocJson', () => {
   });
 
   describe('error handling', () => {
+    it('throws for a URL off developer.apple.com', async () => {
+      await expect(fetchAppleDocJson('invalid-url', swift)).rejects.toThrow('invalid-url is not on developer.apple.com');
+    });
+
     it('should handle network errors', async () => {
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockRejectedValue(new Error('Network error'));
 
-      const result = await fetchAppleDocJson(mockDocUrl);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Error: Failed to get Apple doc content: Network error');
+      await expect(fetchAppleDocJson(mockDocUrl, swift)).rejects.toThrow('Network error');
     });
 
     it('should handle 404 errors', async () => {
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockRejectedValue(new Error('404 Not Found'));
 
-      const result = await fetchAppleDocJson(mockDocUrl);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Error: Failed to get Apple doc content: 404 Not Found');
+      await expect(fetchAppleDocJson(mockDocUrl, swift)).rejects.toThrow('404 Not Found');
     });
 
     it('should handle malformed JSON', async () => {
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue({});
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
 
-      // Should still return something even with empty data
       expect(result.content[0].text).toContain('# Documentation');
       expect(result.content[0].text).toContain('[View full documentation on Apple Developer]');
     });
 
     it('should handle missing metadata', async () => {
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue({
+        ...swiftPage,
         primaryContentSections: [
           {
             kind: 'content',
@@ -313,7 +261,7 @@ describe('fetchAppleDocJson', () => {
         ],
       });
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
 
       expect(result.content[0].text).toContain('Some content without metadata');
       expect(result.content[0].text).not.toContain('**Type:**');
@@ -324,6 +272,7 @@ describe('fetchAppleDocJson', () => {
   describe('special features', () => {
     it('should handle beta and deprecated flags', async () => {
       const betaDoc = {
+        ...swiftPage,
         ...mockData.docJsonData,
         metadata: {
           ...mockData.docJsonData.metadata,
@@ -335,20 +284,18 @@ describe('fetchAppleDocJson', () => {
         },
       };
 
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(betaDoc);
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
       const text = result.content[0].text;
 
-      // The beta/deprecated status appears to be handled differently
-      // Let's just check that we get some output
       expect(text).toContain('# UIView');
       expect(text).toContain('**Class**');
     });
 
     it('should handle availability information', async () => {
       const availabilityDoc = {
+        ...swiftPage,
         ...mockData.docJsonData,
         metadata: {
           ...mockData.docJsonData.metadata,
@@ -361,14 +308,14 @@ describe('fetchAppleDocJson', () => {
         },
       };
 
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(availabilityDoc);
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
       const text = result.content[0].text;
 
       expect(text).toContain('# UIView');
-      expect(text).toContain('**Beta**');
+      // Apple tags the title Beta only when every platform is
+      expect(text).not.toContain('**Beta**');
       expect(text).toContain('Platform Availability');
       expect(text).toContain('iOS');
       expect(text).toContain('13.0+');
@@ -376,6 +323,7 @@ describe('fetchAppleDocJson', () => {
 
     it('should handle code samples', async () => {
       const codeSampleDoc = {
+        ...swiftPage,
         ...mockData.docJsonData,
         sampleCodeDownload: {
           url: 'https://docs-assets.developer.apple.com/published/sample.zip',
@@ -400,18 +348,14 @@ describe('fetchAppleDocJson', () => {
         ],
       };
 
-      (apiCache.get as Mock).mockReturnValue(null);
       (httpClient.getJson as Mock).mockResolvedValue(codeSampleDoc);
 
-      const result = await fetchAppleDocJson(mockDocUrl);
+      const result = await fetchAppleDocJson(mockDocUrl, swift);
       const text = result.content[0].text;
 
-      // The code samples appear in a different format
       expect(text).toContain('# UIView');
       expect(text).toContain('**Class**');
       expect(text).toContain('## Overview');
-      // Download link would only appear if sample code download was present
-      // Just verify we get the basic structure
     });
   });
 });

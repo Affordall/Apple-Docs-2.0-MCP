@@ -5,7 +5,7 @@
  */
 import Bottleneck from 'bottleneck';
 
-import { APPLE_URLS, RATE_LIMIT } from '../utils/constants.js';
+import { APPLE_PATHS, APPLE_URLS, RATE_LIMIT } from '../utils/constants.js';
 import { httpClient } from '../utils/http-client.js';
 
 /**
@@ -16,41 +16,34 @@ const searchLimiter = new Bottleneck({ maxConcurrent: 1, minTime: RATE_LIMIT.SEA
 
 const developerPath = (pathPrefix: string) => ({
   kind: 'and',
-  scopes: [{ kind: 'hostname', value: 'developer.apple.com' }, { kind: 'pathPrefix', value: pathPrefix }],
+  scopes: [{ kind: 'hostname', value: new URL(APPLE_URLS.BASE).hostname }, { kind: 'pathPrefix', value: pathPrefix }],
 });
 
 /**
  * Search scopes by `type`, built the way Apple's search page builds its filters
- * (developer.apple.com/search/scripts/search.js); `all` joins the documentation and the design guidelines
+ * (developer.apple.com/search/scripts/search.js); the types search_apple_docs takes are these keys. With no `type`, the
+ * search goes unscoped, as the page sends it with no filter. `video` keeps the WWDC sessions, which the bundled WWDC data
+ * holds in full.
  */
-const SEARCH_SCOPES: Record<string, object> = {
-  documentation: developerPath('/documentation/'),
-  design: developerPath('/design/human-interface-guidelines/'),
+export const SEARCH_SCOPES = {
+  documentation: developerPath(APPLE_PATHS.DOCUMENTATION),
+  design: developerPath(APPLE_PATHS.DESIGN),
   sample: { kind: 'documentationRole', value: 'sampleCode' },
-  help: developerPath('/help/app-store-connect/'),
-  all: {
-    kind: 'or',
-    scopes: [developerPath('/documentation/'), developerPath('/design/human-interface-guidelines/')],
-  },
+  help: developerPath(APPLE_PATHS.HELP),
+  video: developerPath(APPLE_PATHS.SESSIONS),
 };
 
-/**
- * The videos, whose WWDC sessions the bundled WWDC data holds in full. `all` sends the search developer.apple.com/search
- * sends unfiltered, and asks for the videos on their own: mixed in, they came back in 0 to 7 of 20 results (2026-10-06).
- */
-const VIDEOS_SCOPE = developerPath('/videos/play/');
+export type SearchType = keyof typeof SEARCH_SCOPES;
 
 /**
- * The response streams for one search, each read to its end: `all` sends two requests, every other type one
+ * The response stream of one search, read to its end
  */
-export function searchStreams(query: string, type: string): Promise<string[]> {
-  const search = (includedResponses: string[], searchScope?: object): Promise<string> => httpClient.postText(APPLE_URLS.SEARCH_API, {
+export function searchStream(query: string, type: SearchType | undefined): Promise<string> {
+  const searchScope = type === undefined ? undefined : SEARCH_SCOPES[type];
+  return httpClient.postText(APPLE_URLS.SEARCH_API, {
     text: query,
     targetResultLocale: 'en',
-    includedResponses,
+    includedResponses: ['search'],
     ...(searchScope && { searchScope }),
   }, 'application/jsonl', { limiter: searchLimiter });
-  return Promise.all(type === 'all'
-    ? [search(['search']), search(['search'], VIDEOS_SCOPE)]
-    : [search(['search'], SEARCH_SCOPES[type] ?? SEARCH_SCOPES.all)]);
 }

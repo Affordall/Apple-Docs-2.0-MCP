@@ -3,7 +3,6 @@
   "year": "2020",
   "url": "https://developer.apple.com/videos/play/wwdc2020/10672/",
   "title": "What's new in ClassKit",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Business & Education"
@@ -11,8 +10,536 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hello and welcome to WWDC.\n\nHello, I'm Baskaran. I'm an engineer on the Apple Education team. Today, my coworker Daniel and I would like to update you on the latest changes to ClassKit. First, I'll show you enhancements we have made to ClassKit, enhancements that will enable you to provide rich details about content in your apps.\n\nThen I will go over some recommended best practices for adopting ClassKit.\n\nAfter that, Daniel will introduce you to a new way to report your content using a service called ClassKit Catalog API.\n\nAnd finally, he will go over some recommended best practices for adopting ClassKit Catalog API.\n\nLet me begin with a brief overview of ClassKit. It's a core component of Apple education ecosystem.\n\nIt's a framework that enables you to surface educational content in your apps as activities that teachers can use in assignments for their students. ClassKit enables your app to report progress as students work on their assignments. And most importantly, it does this while protecting the privacy of the students by only reporting progress on assigned activities. For example, if a teacher assigns students to read a chapter from Fun with Science and a student also reads a chapter from Basic Arithmetic, the student and the teacher will see progress only on Fun with Science because that was assigned reading. ClassKit was introduced in 2018. Now it's also available on macOS for creating native and Catalyst apps.\n\nFor more information on ClassKit, check out our 2019 session \"What's New in ClassKit\" and our 2018 session \"Introducing ClassKit.\" Before I go into the enhancements, let's take a quick look at how content in your app appears as assignable activities in Schoolwork. Your app defines the content and describes it as activities using ClassKit, which can be browsed using Schoolwork.\n\nWith Schoolwork, it's easy to share class materials, get students to a specific activity in an app, collaborate with students and view student progress.\n\nWhen you open Schoolwork, you'll land on this view which serves as home base for all content teachers assign to their students.\n\nYou tap on the New Handout button on the top right to create a new handout.\n\nLet me zoom in to make it easier to see.\n\nNow, tap on the App Activities to show the app activity chooser.\n\nThe app activity chooser shows ClassKit-enabled apps with App Activities. Here, we see three apps with activities. I'm going to use the Book Reader app as an example for this presentation. Let's look at the activities within Book Reader.\n\nWe see a book, Fun with Science, with activities.\n\nLet's browse the activities in Fun with Science.\n\nThere are several activities in Fun with Science organized by chapters. Let's see what's in the first chapter titled \"Inquiry.\" This chapter has one activity, Science Investigation. Let's look at that activity.\n\nAt the end of the section on Science Investigation, we see a quiz.\n\nBy the way, did you notice the rich details shown for the activities? We see here a thumbnail, a summary describing the activity, suggested age and suggested completion time and the types of progress reported by the app for the activity. These details help teachers to decide if they want to use this activity in an assignment or not. Now let me show you how we can add these details to activities in our app. Before we do that, let's take a brief look at App Activities.\n\nAn app activity is any assigned content in your app. This could be a chapter in a book, a media stream in a podcast, a test, a quiz and so on.\n\nThey are defined by your app and are structured hierarchically.\n\nLet's look at our example. We saw a hierarchy of activities in a book titled Fun with Science.\n\nAt the top level of that hierarchy is the book Fun with Science. The children of the book are the chapters in the book, and their children are the sections in the chapters and so on. You may be wondering how we surface these activities in Schoolwork. We use the CLSContext class in ClassKit and create an instance of CLSContext to represent each activity. ClassKit provides a root context for your app called the Main App Context. This is the parent of your activity hierarchy.\n\nGet the Main App Context...\n\ncreate a CLSContext for the topmost activity Fun with Science and add it as a child of the Main App Context.\n\nThen go down the activity hierarchy...\n\ncreate a context for each activity and add it to its parent's context. Now I'm going to use the measurements quiz activity as an example and show you how to add rich details to that activity. As we saw earlier, there are several details here.\n\nLet me walk you through, in steps, and show you how to add these details to the quiz context. So, first, let me show you how you can add a thumbnail and summary to the quiz context. First, create a context for the activity. In this case, it is a measurements quiz. Then add a summary to the context. You say what the quiz is about. Then add a thumbnail. Remember, ClassKit limits the size of thumbnails to 330 by 330 pixels.\n\nIt will downsize if needed. In this example, we are creating a thumbnail from an image asset, measurements_quiz.jpg. Notice that we are using a function, thumbnailFromImage, to get a thumbnail from a file URL. Let's take a look at this function.\n\nThis function shows you how to create a thumbnail from a file URL in a memory-efficient way using CoreGraphics.\n\nFirst create an image source from the file...\n\nthen set some options for creating a thumbnail.\n\nWe are choosing to always create a thumbnail from an image with a maximum size of 330 pixels.\n\nThen create the thumbnail and return it. This is just one way of creating a thumbnail.\n\nIf UIImage is more readily available to you, you can get its CGImage property and use it as thumbnail. But keep in mind, doing it that way may significantly increase the memory used by your app. Okay. Let's add some more properties to the quiz context. Let's add suggested age and suggested completion time.\n\nIt is very simple to add these properties. They are both expressed as ranges. Let's set the suggested age as nine to 11 years and the suggested completion time as 15 to 20 minutes. Next we will add the type of progress data reported for the quiz activity.\n\nIn this example, we see four kinds of progress data being reported-- percentage of progress, correct/incorrect score for each question...\n\nthe number of hints used by the student when taking the quiz and an overall score. I'm going to show you how to add a couple of these to the quiz context. First, create a capability for reporting progress percent.\n\nThe CLSProgressReportingCapability class has two properties-- \"kind\" and \"details.\" You set the kind to percent kind and set the details to a descriptive text. Next create a capability to report the number of hints used when taking the quiz. You can see how simple it is to create each reporting capability. Finally, we add these capabilities to the quiz context. In this example, I have set the capability details in English, but these text strings are visible to users, so please localize them at run time based on the current locale. Remember, this is similar to what you have been doing when setting the user visible title of the activity. Okay. Now you know how to add the new properties to your app activities.\n\nThis is how you make your app activities rich. Now I would like to go over some recommended best practices for creating and managing context for your app.\n\nThe newly introduced properties on CLSContext adds valuable metadata that informs the teacher about the rich set of activities in your app.\n\nSo, when you create a context, please create a full-featured context with as much metadata as you can provide.\n\nIf you find context saved by an older version of your app, update any missing properties.\n\nIf your app no longer supports an older context, then delete the context so it does not show in the list of activities supported by your app.\n\nIf your app uses a context provider app extension to create context, please update that app extension as well.\n\nI'm almost done here, and Daniel is itching to tell you all about the brand-new ClassKit Catalog APIs. However, I want to tell you about a few more enhancements we have added to CLSContext that many of you requested.\n\nLike a read-only property identifierPath.\n\nThis returns you the full identifierPath of the context. And a new context type \"course,\" and a new context type \"custom.\" Use this in case none of the predefined types is suitable for your app's content. And an optional settable property to give a name to your custom context, your new property to mark a context as a nonassignable activity. Let's see where this property is very useful.\n\nIn our example, we created context for a book. You see the entire book, Fun with Science, is an assignable activity indicated by a plus. But I don't think your teacher would assign that entire book. In fact, as a developer, you did not intend to make a book an assignable activity.\n\nYou were just using a CLSContext for the book as a container to hold its chapters.\n\nNow, by setting the new isAssignable property of the context to \"false,\" you can make it clear that the book is not an assignable activity. I encourage you to review the updated developer documentation to learn about all the enhancements we have made to ClassKit.\n\nThese are the latest enhancements to ClassKit.\n\nWith that, let me invite Daniel to introduce you to the new and exciting ClassKit Catalog API. Here you go, Daniel. Thanks, Baskaran. Today, we'd like to introduce a new web service called ClassKit Catalog API.\n\nOur motivation behind this service was to provide an even better experience for our developers who build ClassKit-enabled apps and for the teachers who use them. We built this to help you with several things in mind. First, we wanted to improve your content's discoverability within Schoolwork. Consumers of your app should see the rich repository of content you've made available to them without having to work through each piece first.\n\nNext, we wanted to give you support to provide an even wider array of ClassKit-enabled content than otherwise possible, using the native approach of CLSContext creation.\n\nLastly, we wanted to decouple the management of your content from the management of your application.\n\nYour content is subject to change, and you should be able to make those modifications without changing your app.\n\nHow do we achieve this? Currently, the CLSContexts are defined natively in your app. As teachers use it, it delegates to ClassKit to generate the necessary contexts that get saved on the teacher's device and eventually on the students' devices too.\n\nClassKit Catalog API prescribes a different way to report your content.\n\nTo use this new service, begin by translating your existing CLSContext hierarchy into a JSON structure.\n\nNext, take the payload and upload it using the ClassKit Catalog API.\n\nFrom there, using the data that you've provided, we'll handle the generation of CLSContext on the teacher or students' devices whenever your app is referenced in Schoolwork. Before I move on, it's important to note that ClassKit Catalog API is intended for content you'd like to display publicly in Schoolwork. Private content, such as dynamically generated or user-specific CLSContexts should continue to be reported to ClassKit using the native API.\n\nWe have a new address to which you can make requests: api.classkit-catalog.apple.com.\n\nThis is suffixed with \"v1\" in order to version our API to support any changes we may introduce in the future.\n\nThe API itself is comprised of two main components, one to manage contexts and one to manage thumbnails.\n\nContexts are the fundamental unit that describe your content and that the catalog operates on.\n\nYou can think of them as the CLSContexts that Baskaran presented earlier, but with a couple of more bells and whistles. We'll take a closer look at them a little later.\n\nThumbnails are images you associate with your contexts. In the first part of this presentation, we saw how this is done natively using ClassKit.\n\nWell, with the API, we'll use the thumbnail endpoint, which we'll see later as well. Today, we'll focus on the POST requests. Let's begin by looking at one for contexts.\n\nHere's an example of a POST request with the required fields you'll be expected to provide. First is a query parameter labeled \"environment.\" It determines whether the changes you make target a development environment or are made live to production.\n\nWe'll see how to take advantage of this a little later. Next, a couple of headers are expected. Content-Type and Authorization.\n\nContent-Type describes what sort of payload you'll be delivering. For this endpoint, it should be application/json.\n\nAuthorization describes the credential with which you'll authenticate with our service.\n\nFor ClassKit Catalog API, we decided to adopt the use of JSON Web Tokens. This is an industry-standard approach to authentication that's used across several of Apple's web services.\n\nWe'll detail how to generate these tokens later in the presentation.\n\nThe body of this request should contain a JSON-formatted list of contexts to be created or updated.\n\nThese contexts represent the CLSContexts in your application, and in order for your application's capabilities to be properly represented, the entire context tree associated with your ClassKit-enabled app will have to be reported.\n\nA single context consists of two fields, data and metadata. Let's take a closer look at how these two fields are constructed.\n\nThe data object is comprised of fields taken directly from a CLSContext, including the new fields added to the latest update of ClassKit, which Baskaran mentioned earlier.\n\nWhen you create this data object, use the values of the fields from the CLSContext that your app already creates.\n\nMake sure that they match the contexts your app natively creates, so that your content can be properly represented in the catalog.\n\nThe metadata field is meant to capture info that's not represented in CLSContext.\n\nIt contains three fields.\n\nLocale, which is meant to distinguish your content between different languages and regions of your application, minimumBundleVersion, which acts as a hit for the client to determine whether this context is supported by a version of your app, and keywords, which represent tags that you believe accurately describes your content. Metadata is a sparse object, but we expect it to grow along with the API.\n\nThat was an example of a POST request for contexts.\n\nMore details on this endpoint, along with the GET and DELETE methods for contexts, will be available in Apple Developer documentation.\n\nFor now, let me highlight a couple of guidelines on the context endpoint. First, there's a limit of 200 contexts per POST request. If you have more, split them up across multiple requests.\n\nIf you do, make sure that the children contexts are submitted after their ancestors. Aside from your main app context, child contexts are considered invalid if their parent does not exist. Lastly, should you decide to delete a context, be aware that any of its descendants will be deleted as well. This is done to ensure the integrity of your app's context hierarchy. Moving on, let's take a look at the POST method to upload a thumbnail.\n\nHere's an example of one with the fields expected in a request.\n\nIt begins with a thumbnail reference, which is used to associate the thumbnail to one or more contexts.\n\nThis is done by matching against the thumbnail field on a context object.\n\nThe rest of this request should be similar to the first one we saw. For instance, we must also target an environment using the \"environment\" query parameter...\n\nprovide credentials using the Authorization header, as well as a Content-Type to describe the image being uploaded.\n\nUnlike our previous POST request, we have the addition of a Content-Length to describe the size of the thumbnail to be uploaded in bytes and a body that consists of the bytes representing the image.\n\nDuring the Handout creation flow, this image is used to represent an Activity. So keep that in mind as you decide how best to represent your content.\n\nThat was a look at the POST endpoint for a thumbnail. The corresponding GET and DELETE endpoints are structured similarly, and more details can be found in Apple Developer documentation. Before I move on, let me highlight some guidelines for the thumbnail endpoints. First, use PNG or JPEG to represent your thumbnails.\n\nNext, format your thumbnails to be 330 by 330 pixels. That's the resolution we'll use for Schoolwork.\n\nLastly, upload your contexts first, followed by your thumbnails.\n\nThis is to prevent thumbnails to be orphaned. Upload requests will be rejected if the thumbnail isn't referenced by any context.\n\nThis also means if the last context to reference a thumbnail were to be deleted, then the thumbnail would be deleted too.\n\nBefore I move on, let's talk about how the API would respond when something goes wrong.\n\nHere is an example of a response you might get back from trying to POST a thumbnail that's reporting an error.\n\nAside from an expected HTTP status code, a response reporting an error should also contain a JSON body to provide more details on the problem.\n\nThe ID field provides a unique identifier which we can use to identify and track this error.\n\nWe can tell from the code field that there's a problem with authentication...\n\nand upon inspecting the message field, we find a human-readable explanation of the problem, as well as the way to resolve it. A full list of error codes and their respective messages will be available in Apple Developer documentation. As for this authentication error, how do we get past this? As promised, let's talk about authentication. We mentioned earlier that authentication in ClassKit Catalog API is handled with the use of JSON Web Tokens, or JWT.\n\nThis is an industry standard that's used across several of Apple's web services.\n\nTo begin, log into the Apple Developer portal and provision a ClassKit Catalog API key for your team.\n\nThis private key will be used to create the JWT used to authenticate with ClassKit Catalog API, and must be provided with all the requests you make as part of the Authorization header we mentioned earlier.\n\nThe JWT consists of three parts, a header, a payload and a signature.\n\nTo form the header and payload, provide the key ID and team ID found in the Apple Developer portal.\n\nThis will associate the credential to your developer team.\n\nAdditionally, generate a UUID to identify this token and two UNIX time stamps, one to represent when the token was issued and one to represent when the token expires.\n\nWhat we see here are the raw fields.\n\nTo form the eventual token, these fields will have to be Base64 encoded.\n\nTo complete the JWT, a signature is required, which is generated using encoded header and encoded payload.\n\nThe algorithm to be used to sign this is ECDSASHA256.\n\nThere are plenty of public libraries across programming languages that should make it easy to do so.\n\nAltogether, the fully formed JWT will look like this.\n\nThis token must be included in the Authorization header and prefixed with the word \"Bearer.\" Now that we have all the pieces, how would you test the content you've uploaded before it's shown to your users? We have two environments to which you can push your content, development and production.\n\nTo test your changes, use the \"environment\" query parameter to upload your content to development, like we showed earlier in the presentation.\n\nOnce you've done that, open Settings and navigate to the Developer tab on your device that's running a development build of iOS.\n\nTap on ClassKit API to see more options.\n\nUnder ClassKit Catalog Environment, select the Development environment.\n\nOnce it's set, ClassKit will change where it pulls data from and display the appropriate content in Schoolwork based on the environment you have chosen.\n\nTake note that content pushed to development will be available to all ClassKit Apple developers who are also using the Development environment.\n\nTo wrap up, I'd like to highlight some best practices to keep in mind while using the API.\n\nFirst and most importantly, as you define new content or remove old content, report this using ClassKit Catalog API. This ensures that your app and its Activities are properly represented in Schoolwork.\n\nNext, take advantage of locale support provided for contexts.\n\nDoing so helps your app reach the widest audience possible.\n\nLastly, you'll want to provide as much detail as you can in the contexts you report and have thumbnails associated with them. This will provide more detail to users in Schoolwork as well as a more compelling reason for them to assign content from your app. That's all for ClassKit Catalog API. It will be available for ClassKit developers this summer.\n\nThis also concludes our presentation of \"What's New in ClassKit.\" Thanks.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:03",
+        "text": "Hello and welcome to WWDC."
+      },
+      {
+        "timestamp": "0:08",
+        "text": "Hello, I'm Baskaran. I'm an engineer on the Apple Education team. Today, my coworker Daniel and I would like to update you on the latest changes to ClassKit. First, I'll show you enhancements we have made to ClassKit, enhancements that will enable you to provide rich details about content in your apps."
+      },
+      {
+        "timestamp": "0:32",
+        "text": "Then I will go over some recommended best practices for adopting ClassKit."
+      },
+      {
+        "timestamp": "0:39",
+        "text": "After that, Daniel will introduce you to a new way to report your content using a service called ClassKit Catalog API."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "And finally, he will go over some recommended best practices for adopting ClassKit Catalog API."
+      },
+      {
+        "timestamp": "0:55",
+        "text": "Let me begin with a brief overview of ClassKit. It's a core component of Apple education ecosystem."
+      },
+      {
+        "timestamp": "1:04",
+        "text": "It's a framework that enables you to surface educational content in your apps as activities that teachers can use in assignments for their students. ClassKit enables your app to report progress as students work on their assignments. And most importantly, it does this while protecting the privacy of the students by only reporting progress on assigned activities. For example, if a teacher assigns students to read a chapter from Fun with Science and a student also reads a chapter from Basic Arithmetic, the student and the teacher will see progress only on Fun with Science because that was assigned reading. ClassKit was introduced in 2018. Now it's also available on macOS for creating native and Catalyst apps."
+      },
+      {
+        "timestamp": "2:02",
+        "text": "For more information on ClassKit, check out our 2019 session \"What's New in ClassKit\" and our 2018 session \"Introducing ClassKit.\" Before I go into the enhancements, let's take a quick look at how content in your app appears as assignable activities in Schoolwork. Your app defines the content and describes it as activities using ClassKit, which can be browsed using Schoolwork."
+      },
+      {
+        "timestamp": "2:32",
+        "text": "With Schoolwork, it's easy to share class materials, get students to a specific activity in an app, collaborate with students and view student progress."
+      },
+      {
+        "timestamp": "2:44",
+        "text": "When you open Schoolwork, you'll land on this view which serves as home base for all content teachers assign to their students."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "You tap on the New Handout button on the top right to create a new handout."
+      },
+      {
+        "timestamp": "2:59",
+        "text": "Let me zoom in to make it easier to see."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "Now, tap on the App Activities to show the app activity chooser."
+      },
+      {
+        "timestamp": "3:09",
+        "text": "The app activity chooser shows ClassKit-enabled apps with App Activities. Here, we see three apps with activities. I'm going to use the Book Reader app as an example for this presentation. Let's look at the activities within Book Reader."
+      },
+      {
+        "timestamp": "3:27",
+        "text": "We see a book, Fun with Science, with activities."
+      },
+      {
+        "timestamp": "3:31",
+        "text": "Let's browse the activities in Fun with Science."
+      },
+      {
+        "timestamp": "3:34",
+        "text": "There are several activities in Fun with Science organized by chapters. Let's see what's in the first chapter titled \"Inquiry.\" This chapter has one activity, Science Investigation. Let's look at that activity."
+      },
+      {
+        "timestamp": "3:52",
+        "text": "At the end of the section on Science Investigation, we see a quiz."
+      },
+      {
+        "timestamp": "3:56",
+        "text": "By the way, did you notice the rich details shown for the activities? We see here a thumbnail, a summary describing the activity, suggested age and suggested completion time and the types of progress reported by the app for the activity. These details help teachers to decide if they want to use this activity in an assignment or not. Now let me show you how we can add these details to activities in our app. Before we do that, let's take a brief look at App Activities."
+      },
+      {
+        "timestamp": "4:36",
+        "text": "An app activity is any assigned content in your app. This could be a chapter in a book, a media stream in a podcast, a test, a quiz and so on."
+      },
+      {
+        "timestamp": "4:49",
+        "text": "They are defined by your app and are structured hierarchically."
+      },
+      {
+        "timestamp": "4:56",
+        "text": "Let's look at our example. We saw a hierarchy of activities in a book titled Fun with Science."
+      },
+      {
+        "timestamp": "5:03",
+        "text": "At the top level of that hierarchy is the book Fun with Science. The children of the book are the chapters in the book, and their children are the sections in the chapters and so on. You may be wondering how we surface these activities in Schoolwork. We use the CLSContext class in ClassKit and create an instance of CLSContext to represent each activity. ClassKit provides a root context for your app called the Main App Context. This is the parent of your activity hierarchy."
+      },
+      {
+        "timestamp": "5:41",
+        "text": "Get the Main App Context..."
+      },
+      {
+        "timestamp": "5:44",
+        "text": "create a CLSContext for the topmost activity Fun with Science and add it as a child of the Main App Context."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "Then go down the activity hierarchy..."
+      },
+      {
+        "timestamp": "5:57",
+        "text": "create a context for each activity and add it to its parent's context. Now I'm going to use the measurements quiz activity as an example and show you how to add rich details to that activity. As we saw earlier, there are several details here."
+      },
+      {
+        "timestamp": "6:16",
+        "text": "Let me walk you through, in steps, and show you how to add these details to the quiz context. So, first, let me show you how you can add a thumbnail and summary to the quiz context. First, create a context for the activity. In this case, it is a measurements quiz. Then add a summary to the context. You say what the quiz is about. Then add a thumbnail. Remember, ClassKit limits the size of thumbnails to 330 by 330 pixels."
+      },
+      {
+        "timestamp": "6:49",
+        "text": "It will downsize if needed. In this example, we are creating a thumbnail from an image asset, measurements_quiz.jpg. Notice that we are using a function, thumbnailFromImage, to get a thumbnail from a file URL. Let's take a look at this function."
+      },
+      {
+        "timestamp": "7:08",
+        "text": "This function shows you how to create a thumbnail from a file URL in a memory-efficient way using CoreGraphics."
+      },
+      {
+        "timestamp": "7:17",
+        "text": "First create an image source from the file..."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "then set some options for creating a thumbnail."
+      },
+      {
+        "timestamp": "7:25",
+        "text": "We are choosing to always create a thumbnail from an image with a maximum size of 330 pixels."
+      },
+      {
+        "timestamp": "7:32",
+        "text": "Then create the thumbnail and return it. This is just one way of creating a thumbnail."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "If UIImage is more readily available to you, you can get its CGImage property and use it as thumbnail. But keep in mind, doing it that way may significantly increase the memory used by your app. Okay. Let's add some more properties to the quiz context. Let's add suggested age and suggested completion time."
+      },
+      {
+        "timestamp": "8:04",
+        "text": "It is very simple to add these properties. They are both expressed as ranges. Let's set the suggested age as nine to 11 years and the suggested completion time as 15 to 20 minutes. Next we will add the type of progress data reported for the quiz activity."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "In this example, we see four kinds of progress data being reported-- percentage of progress, correct/incorrect score for each question..."
+      },
+      {
+        "timestamp": "8:36",
+        "text": "the number of hints used by the student when taking the quiz and an overall score. I'm going to show you how to add a couple of these to the quiz context. First, create a capability for reporting progress percent."
+      },
+      {
+        "timestamp": "8:54",
+        "text": "The CLSProgressReportingCapability class has two properties-- \"kind\" and \"details.\" You set the kind to percent kind and set the details to a descriptive text. Next create a capability to report the number of hints used when taking the quiz. You can see how simple it is to create each reporting capability. Finally, we add these capabilities to the quiz context. In this example, I have set the capability details in English, but these text strings are visible to users, so please localize them at run time based on the current locale. Remember, this is similar to what you have been doing when setting the user visible title of the activity. Okay. Now you know how to add the new properties to your app activities."
+      },
+      {
+        "timestamp": "9:51",
+        "text": "This is how you make your app activities rich. Now I would like to go over some recommended best practices for creating and managing context for your app."
+      },
+      {
+        "timestamp": "10:06",
+        "text": "The newly introduced properties on CLSContext adds valuable metadata that informs the teacher about the rich set of activities in your app."
+      },
+      {
+        "timestamp": "10:17",
+        "text": "So, when you create a context, please create a full-featured context with as much metadata as you can provide."
+      },
+      {
+        "timestamp": "10:27",
+        "text": "If you find context saved by an older version of your app, update any missing properties."
+      },
+      {
+        "timestamp": "10:35",
+        "text": "If your app no longer supports an older context, then delete the context so it does not show in the list of activities supported by your app."
+      },
+      {
+        "timestamp": "10:46",
+        "text": "If your app uses a context provider app extension to create context, please update that app extension as well."
+      },
+      {
+        "timestamp": "10:55",
+        "text": "I'm almost done here, and Daniel is itching to tell you all about the brand-new ClassKit Catalog APIs. However, I want to tell you about a few more enhancements we have added to CLSContext that many of you requested."
+      },
+      {
+        "timestamp": "11:12",
+        "text": "Like a read-only property identifierPath."
+      },
+      {
+        "timestamp": "11:16",
+        "text": "This returns you the full identifierPath of the context. And a new context type \"course,\" and a new context type \"custom.\" Use this in case none of the predefined types is suitable for your app's content. And an optional settable property to give a name to your custom context, your new property to mark a context as a nonassignable activity. Let's see where this property is very useful."
+      },
+      {
+        "timestamp": "11:48",
+        "text": "In our example, we created context for a book. You see the entire book, Fun with Science, is an assignable activity indicated by a plus. But I don't think your teacher would assign that entire book. In fact, as a developer, you did not intend to make a book an assignable activity."
+      },
+      {
+        "timestamp": "12:11",
+        "text": "You were just using a CLSContext for the book as a container to hold its chapters."
+      },
+      {
+        "timestamp": "12:18",
+        "text": "Now, by setting the new isAssignable property of the context to \"false,\" you can make it clear that the book is not an assignable activity. I encourage you to review the updated developer documentation to learn about all the enhancements we have made to ClassKit."
+      },
+      {
+        "timestamp": "12:38",
+        "text": "These are the latest enhancements to ClassKit."
+      },
+      {
+        "timestamp": "12:42",
+        "text": "With that, let me invite Daniel to introduce you to the new and exciting ClassKit Catalog API. Here you go, Daniel. Thanks, Baskaran. Today, we'd like to introduce a new web service called ClassKit Catalog API."
+      },
+      {
+        "timestamp": "12:57",
+        "text": "Our motivation behind this service was to provide an even better experience for our developers who build ClassKit-enabled apps and for the teachers who use them. We built this to help you with several things in mind. First, we wanted to improve your content's discoverability within Schoolwork. Consumers of your app should see the rich repository of content you've made available to them without having to work through each piece first."
+      },
+      {
+        "timestamp": "13:21",
+        "text": "Next, we wanted to give you support to provide an even wider array of ClassKit-enabled content than otherwise possible, using the native approach of CLSContext creation."
+      },
+      {
+        "timestamp": "13:31",
+        "text": "Lastly, we wanted to decouple the management of your content from the management of your application."
+      },
+      {
+        "timestamp": "13:37",
+        "text": "Your content is subject to change, and you should be able to make those modifications without changing your app."
+      },
+      {
+        "timestamp": "13:43",
+        "text": "How do we achieve this? Currently, the CLSContexts are defined natively in your app. As teachers use it, it delegates to ClassKit to generate the necessary contexts that get saved on the teacher's device and eventually on the students' devices too."
+      },
+      {
+        "timestamp": "14:00",
+        "text": "ClassKit Catalog API prescribes a different way to report your content."
+      },
+      {
+        "timestamp": "14:05",
+        "text": "To use this new service, begin by translating your existing CLSContext hierarchy into a JSON structure."
+      },
+      {
+        "timestamp": "14:12",
+        "text": "Next, take the payload and upload it using the ClassKit Catalog API."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "From there, using the data that you've provided, we'll handle the generation of CLSContext on the teacher or students' devices whenever your app is referenced in Schoolwork. Before I move on, it's important to note that ClassKit Catalog API is intended for content you'd like to display publicly in Schoolwork. Private content, such as dynamically generated or user-specific CLSContexts should continue to be reported to ClassKit using the native API."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "We have a new address to which you can make requests: api.classkit-catalog.apple.com."
+      },
+      {
+        "timestamp": "14:54",
+        "text": "This is suffixed with \"v1\" in order to version our API to support any changes we may introduce in the future."
+      },
+      {
+        "timestamp": "15:02",
+        "text": "The API itself is comprised of two main components, one to manage contexts and one to manage thumbnails."
+      },
+      {
+        "timestamp": "15:10",
+        "text": "Contexts are the fundamental unit that describe your content and that the catalog operates on."
+      },
+      {
+        "timestamp": "15:17",
+        "text": "You can think of them as the CLSContexts that Baskaran presented earlier, but with a couple of more bells and whistles. We'll take a closer look at them a little later."
+      },
+      {
+        "timestamp": "15:26",
+        "text": "Thumbnails are images you associate with your contexts. In the first part of this presentation, we saw how this is done natively using ClassKit."
+      },
+      {
+        "timestamp": "15:35",
+        "text": "Well, with the API, we'll use the thumbnail endpoint, which we'll see later as well. Today, we'll focus on the POST requests. Let's begin by looking at one for contexts."
+      },
+      {
+        "timestamp": "15:46",
+        "text": "Here's an example of a POST request with the required fields you'll be expected to provide. First is a query parameter labeled \"environment.\" It determines whether the changes you make target a development environment or are made live to production."
+      },
+      {
+        "timestamp": "16:00",
+        "text": "We'll see how to take advantage of this a little later. Next, a couple of headers are expected. Content-Type and Authorization."
+      },
+      {
+        "timestamp": "16:08",
+        "text": "Content-Type describes what sort of payload you'll be delivering. For this endpoint, it should be application/json."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "Authorization describes the credential with which you'll authenticate with our service."
+      },
+      {
+        "timestamp": "16:21",
+        "text": "For ClassKit Catalog API, we decided to adopt the use of JSON Web Tokens. This is an industry-standard approach to authentication that's used across several of Apple's web services."
+      },
+      {
+        "timestamp": "16:32",
+        "text": "We'll detail how to generate these tokens later in the presentation."
+      },
+      {
+        "timestamp": "16:36",
+        "text": "The body of this request should contain a JSON-formatted list of contexts to be created or updated."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "These contexts represent the CLSContexts in your application, and in order for your application's capabilities to be properly represented, the entire context tree associated with your ClassKit-enabled app will have to be reported."
+      },
+      {
+        "timestamp": "16:57",
+        "text": "A single context consists of two fields, data and metadata. Let's take a closer look at how these two fields are constructed."
+      },
+      {
+        "timestamp": "17:06",
+        "text": "The data object is comprised of fields taken directly from a CLSContext, including the new fields added to the latest update of ClassKit, which Baskaran mentioned earlier."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "When you create this data object, use the values of the fields from the CLSContext that your app already creates."
+      },
+      {
+        "timestamp": "17:23",
+        "text": "Make sure that they match the contexts your app natively creates, so that your content can be properly represented in the catalog."
+      },
+      {
+        "timestamp": "17:30",
+        "text": "The metadata field is meant to capture info that's not represented in CLSContext."
+      },
+      {
+        "timestamp": "17:35",
+        "text": "It contains three fields."
+      },
+      {
+        "timestamp": "17:37",
+        "text": "Locale, which is meant to distinguish your content between different languages and regions of your application, minimumBundleVersion, which acts as a hit for the client to determine whether this context is supported by a version of your app, and keywords, which represent tags that you believe accurately describes your content. Metadata is a sparse object, but we expect it to grow along with the API."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "That was an example of a POST request for contexts."
+      },
+      {
+        "timestamp": "18:05",
+        "text": "More details on this endpoint, along with the GET and DELETE methods for contexts, will be available in Apple Developer documentation."
+      },
+      {
+        "timestamp": "18:12",
+        "text": "For now, let me highlight a couple of guidelines on the context endpoint. First, there's a limit of 200 contexts per POST request. If you have more, split them up across multiple requests."
+      },
+      {
+        "timestamp": "18:24",
+        "text": "If you do, make sure that the children contexts are submitted after their ancestors. Aside from your main app context, child contexts are considered invalid if their parent does not exist. Lastly, should you decide to delete a context, be aware that any of its descendants will be deleted as well. This is done to ensure the integrity of your app's context hierarchy. Moving on, let's take a look at the POST method to upload a thumbnail."
+      },
+      {
+        "timestamp": "18:50",
+        "text": "Here's an example of one with the fields expected in a request."
+      },
+      {
+        "timestamp": "18:54",
+        "text": "It begins with a thumbnail reference, which is used to associate the thumbnail to one or more contexts."
+      },
+      {
+        "timestamp": "19:00",
+        "text": "This is done by matching against the thumbnail field on a context object."
+      },
+      {
+        "timestamp": "19:05",
+        "text": "The rest of this request should be similar to the first one we saw. For instance, we must also target an environment using the \"environment\" query parameter..."
+      },
+      {
+        "timestamp": "19:14",
+        "text": "provide credentials using the Authorization header, as well as a Content-Type to describe the image being uploaded."
+      },
+      {
+        "timestamp": "19:21",
+        "text": "Unlike our previous POST request, we have the addition of a Content-Length to describe the size of the thumbnail to be uploaded in bytes and a body that consists of the bytes representing the image."
+      },
+      {
+        "timestamp": "19:32",
+        "text": "During the Handout creation flow, this image is used to represent an Activity. So keep that in mind as you decide how best to represent your content."
+      },
+      {
+        "timestamp": "19:42",
+        "text": "That was a look at the POST endpoint for a thumbnail. The corresponding GET and DELETE endpoints are structured similarly, and more details can be found in Apple Developer documentation. Before I move on, let me highlight some guidelines for the thumbnail endpoints. First, use PNG or JPEG to represent your thumbnails."
+      },
+      {
+        "timestamp": "20:02",
+        "text": "Next, format your thumbnails to be 330 by 330 pixels. That's the resolution we'll use for Schoolwork."
+      },
+      {
+        "timestamp": "20:10",
+        "text": "Lastly, upload your contexts first, followed by your thumbnails."
+      },
+      {
+        "timestamp": "20:14",
+        "text": "This is to prevent thumbnails to be orphaned. Upload requests will be rejected if the thumbnail isn't referenced by any context."
+      },
+      {
+        "timestamp": "20:21",
+        "text": "This also means if the last context to reference a thumbnail were to be deleted, then the thumbnail would be deleted too."
+      },
+      {
+        "timestamp": "20:28",
+        "text": "Before I move on, let's talk about how the API would respond when something goes wrong."
+      },
+      {
+        "timestamp": "20:33",
+        "text": "Here is an example of a response you might get back from trying to POST a thumbnail that's reporting an error."
+      },
+      {
+        "timestamp": "20:38",
+        "text": "Aside from an expected HTTP status code, a response reporting an error should also contain a JSON body to provide more details on the problem."
+      },
+      {
+        "timestamp": "20:48",
+        "text": "The ID field provides a unique identifier which we can use to identify and track this error."
+      },
+      {
+        "timestamp": "20:53",
+        "text": "We can tell from the code field that there's a problem with authentication..."
+      },
+      {
+        "timestamp": "20:58",
+        "text": "and upon inspecting the message field, we find a human-readable explanation of the problem, as well as the way to resolve it. A full list of error codes and their respective messages will be available in Apple Developer documentation. As for this authentication error, how do we get past this? As promised, let's talk about authentication. We mentioned earlier that authentication in ClassKit Catalog API is handled with the use of JSON Web Tokens, or JWT."
+      },
+      {
+        "timestamp": "21:27",
+        "text": "This is an industry standard that's used across several of Apple's web services."
+      },
+      {
+        "timestamp": "21:32",
+        "text": "To begin, log into the Apple Developer portal and provision a ClassKit Catalog API key for your team."
+      },
+      {
+        "timestamp": "21:40",
+        "text": "This private key will be used to create the JWT used to authenticate with ClassKit Catalog API, and must be provided with all the requests you make as part of the Authorization header we mentioned earlier."
+      },
+      {
+        "timestamp": "21:51",
+        "text": "The JWT consists of three parts, a header, a payload and a signature."
+      },
+      {
+        "timestamp": "21:58",
+        "text": "To form the header and payload, provide the key ID and team ID found in the Apple Developer portal."
+      },
+      {
+        "timestamp": "22:05",
+        "text": "This will associate the credential to your developer team."
+      },
+      {
+        "timestamp": "22:08",
+        "text": "Additionally, generate a UUID to identify this token and two UNIX time stamps, one to represent when the token was issued and one to represent when the token expires."
+      },
+      {
+        "timestamp": "22:20",
+        "text": "What we see here are the raw fields."
+      },
+      {
+        "timestamp": "22:23",
+        "text": "To form the eventual token, these fields will have to be Base64 encoded."
+      },
+      {
+        "timestamp": "22:28",
+        "text": "To complete the JWT, a signature is required, which is generated using encoded header and encoded payload."
+      },
+      {
+        "timestamp": "22:35",
+        "text": "The algorithm to be used to sign this is ECDSASHA256."
+      },
+      {
+        "timestamp": "22:40",
+        "text": "There are plenty of public libraries across programming languages that should make it easy to do so."
+      },
+      {
+        "timestamp": "22:45",
+        "text": "Altogether, the fully formed JWT will look like this."
+      },
+      {
+        "timestamp": "22:50",
+        "text": "This token must be included in the Authorization header and prefixed with the word \"Bearer.\" Now that we have all the pieces, how would you test the content you've uploaded before it's shown to your users? We have two environments to which you can push your content, development and production."
+      },
+      {
+        "timestamp": "23:07",
+        "text": "To test your changes, use the \"environment\" query parameter to upload your content to development, like we showed earlier in the presentation."
+      },
+      {
+        "timestamp": "23:15",
+        "text": "Once you've done that, open Settings and navigate to the Developer tab on your device that's running a development build of iOS."
+      },
+      {
+        "timestamp": "23:22",
+        "text": "Tap on ClassKit API to see more options."
+      },
+      {
+        "timestamp": "23:25",
+        "text": "Under ClassKit Catalog Environment, select the Development environment."
+      },
+      {
+        "timestamp": "23:31",
+        "text": "Once it's set, ClassKit will change where it pulls data from and display the appropriate content in Schoolwork based on the environment you have chosen."
+      },
+      {
+        "timestamp": "23:39",
+        "text": "Take note that content pushed to development will be available to all ClassKit Apple developers who are also using the Development environment."
+      },
+      {
+        "timestamp": "23:48",
+        "text": "To wrap up, I'd like to highlight some best practices to keep in mind while using the API."
+      },
+      {
+        "timestamp": "23:53",
+        "text": "First and most importantly, as you define new content or remove old content, report this using ClassKit Catalog API. This ensures that your app and its Activities are properly represented in Schoolwork."
+      },
+      {
+        "timestamp": "24:07",
+        "text": "Next, take advantage of locale support provided for contexts."
+      },
+      {
+        "timestamp": "24:12",
+        "text": "Doing so helps your app reach the widest audience possible."
+      },
+      {
+        "timestamp": "24:16",
+        "text": "Lastly, you'll want to provide as much detail as you can in the contexts you report and have thumbnails associated with them. This will provide more detail to users in Schoolwork as well as a more compelling reason for them to assign content from your app. That's all for ClassKit Catalog API. It will be available for ClassKit developers this summer."
+      },
+      {
+        "timestamp": "24:35",
+        "text": "This also concludes our presentation of \"What's New in ClassKit.\" Thanks."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -58,5 +585,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2020/10658"
     }
   ],
-  "extractedAt": "2026-10-11T16:45:56.422Z"
+  "extractedAt": "2026-10-17T18:55:50.933Z"
 }

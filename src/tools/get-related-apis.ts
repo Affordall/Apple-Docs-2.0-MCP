@@ -1,211 +1,36 @@
-import { formatInlineContent } from './doc-formatter.js';
+import { formatIdentifierLine, isLinkable } from './doc-formatter.js';
 import type { RenderNode } from '../types/docc.js';
-import { isTopicReference } from '../types/docc.js';
-import { convertToJsonApiUrl } from '../utils/url-converter.js';
-import { httpClient } from '../utils/http-client.js';
-import { logger } from '../utils/logger.js';
+import { jsonApiUrlOf } from '../utils/url-converter.js';
+import { cachedJson, pageCache } from '../utils/cache.js';
 import { PROCESSING_LIMITS } from '../utils/constants.js';
 
 /**
- * 关联API信息接口
+ * The APIs one API relates to: what it inherits and conforms to and what inherits from it and conforms to it, its See
+ * Also list, and the first members of each Topics group; each once, under the first group that lists it
  */
-interface RelatedAPI {
-  title: string;
-  url: string;
-  identifier: string;
-  type: string;
-  relationship: string;
-  abstract?: string;
-}
-
-type References = RenderNode['references'];
-
-/**
- * 获取相关API
- */
-export async function handleGetRelatedApis(
-  apiUrl: string,
-  includeInherited: boolean = true,
-  includeConformance: boolean = true,
-  includeSeeAlso: boolean = true,
-): Promise<string> {
-  try {
-    logger.info(`Fetching related APIs for: ${apiUrl}`);
-
-    // 将网页URL转换为JSON API URL
-    const jsonApiUrl = convertToJsonApiUrl(apiUrl);
-
-    if (!jsonApiUrl) {
-      throw new Error('Invalid Apple Developer Documentation URL');
-    }
-
-    const data = await httpClient.getJson<RenderNode>(jsonApiUrl);
-
-    // 收集所有相关API
-    const relatedApis: RelatedAPI[] = [];
-
-    // 处理关系部分（继承、一致性等）
-    if (data.relationshipsSections) {
-      for (const section of data.relationshipsSections) {
-        const shouldInclude =
-          (includeInherited && (section.type === 'inheritsFrom' || section.type === 'inheritedBy')) ||
-          (includeConformance && (section.type === 'conformsTo' || section.type === 'conformingTypes'));
-
-        if (shouldInclude && section.identifiers) {
-          for (const identifier of section.identifiers) {
-            const api = extractApiFromIdentifier(identifier, section.title, data.references);
-            if (api) {
-              relatedApis.push(api);
-            }
-          }
-        }
-      }
-    }
-
-    // 处理"另请参阅"部分
-    if (includeSeeAlso && data.seeAlsoSections) {
-      for (const section of data.seeAlsoSections) {
-        if (section.identifiers) {
-          for (const identifier of section.identifiers) {
-            const api = extractApiFromIdentifier(identifier, `See Also: ${section.title ?? ''}`, data.references);
-            if (api) {
-              relatedApis.push(api);
-            }
-          }
-        }
-      }
-    }
-
-    // 处理主题部分的相关API
-    if (data.topicSections) {
-      for (const section of data.topicSections) {
-        if (section.identifiers && section.identifiers.length > 0) {
-          // 只取前3个，避免过多
-          const limitedIdentifiers = section.identifiers.slice(0, PROCESSING_LIMITS.MAX_RELATED_APIS_PER_SECTION);
-          for (const identifier of limitedIdentifiers) {
-            const api = extractApiFromIdentifier(identifier, `Related: ${section.title ?? ''}`, data.references);
-            if (api) {
-              relatedApis.push(api);
-            }
-          }
-        }
-      }
-    }
-
-    // 去重
-    const uniqueApis = deduplicateApis(relatedApis);
-
-    // 格式化输出
-    return formatRelatedApis(apiUrl, uniqueApis);
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return `Error: Failed to get related APIs: ${errorMessage}`;
-  }
-}
-
-
-
-/**
- * 从标识符提取API信息
- */
-function extractApiFromIdentifier(
-  identifier: string,
-  relationship: string,
-  references: References,
-): RelatedAPI | null {
-  // 先从references中查找
-  const ref = references?.[identifier];
-  if (isTopicReference(ref)) {
-    return {
-      title: ref.title,
-      url: `https://developer.apple.com${ref.url}`,
-      identifier,
-      type: ref.kind,
-      relationship,
-      abstract: ref.abstract ? formatInlineContent(ref.abstract, references).trim() : undefined,
-    };
+export async function handleGetRelatedApis(apiUrl: string): Promise<string> {
+  const data = await cachedJson<RenderNode>(pageCache, jsonApiUrlOf(apiUrl));
+  const listings = [
+    ...(data.relationshipsSections ?? []).map((section) => ({ group: section.title, identifiers: section.identifiers })),
+    ...(data.seeAlsoSections ?? []).map((section) => ({ group: `See Also: ${section.title ?? ''}`, identifiers: section.identifiers })),
+    ...(data.topicSections ?? []).map((section) => ({
+      group: `Related: ${section.title ?? ''}`,
+      identifiers: section.identifiers.slice(0, PROCESSING_LIMITS.MAX_RELATED_APIS_PER_SECTION),
+    })),
+  ].flatMap(({ group, identifiers }) => identifiers
+    .filter((identifier) => isLinkable(identifier, data.references))
+    .map((identifier) => ({ group, identifier })));
+  const related = listings.filter((listing, index) => listings.findIndex((other) => other.identifier === listing.identifier) === index);
+  if (related.length === 0) {
+    return `No related APIs found for: ${apiUrl}`;
   }
 
-  // 如果references中没有，尝试解析标识符
-  if (identifier.startsWith('doc://')) {
-    const parts = identifier.split('/');
-    const apiName = parts[parts.length - 1] || 'Unknown';
-    const pathPart = identifier.replace(/^doc:\/\/[^\/]+\/documentation\//, '');
-
-    return {
-      title: apiName,
-      url: `https://developer.apple.com/documentation/${pathPart}`,
-      identifier,
-      type: 'symbol',
-      relationship,
-    };
-  }
-
-  return null;
-}
-
-/**
- * 去重API列表
- */
-function deduplicateApis(apis: RelatedAPI[]): RelatedAPI[] {
-  const seen = new Set<string>();
-  return apis.filter(api => {
-    if (seen.has(api.identifier)) {
-      return false;
-    }
-    seen.add(api.identifier);
-    return true;
-  });
-}
-
-/**
- * 格式化相关API输出
- */
-function formatRelatedApis(originalUrl: string, relatedApis: RelatedAPI[]): string {
-  if (relatedApis.length === 0) {
-    return `No related APIs found for: ${originalUrl}`;
-  }
-
-  const apiName = new URL(originalUrl).pathname.split('/').pop() || 'API';
-  let content = `# Related APIs for ${apiName}\n\n`;
-  content += `**Source:** [${originalUrl}](${originalUrl})\n\n`;
-  content += `**Found ${relatedApis.length} related APIs:**\n\n`;
-
-  // 按关系类型分组
-  const groupedApis = groupApisByRelationship(relatedApis);
-
-  for (const [relationship, apis] of Object.entries(groupedApis)) {
-    content += `## ${relationship}\n\n`;
-
-    for (const api of apis) {
-      content += `### [${api.title}](${api.url})\n`;
-
-      if (api.abstract) {
-        content += `${api.abstract}\n\n`;
-      }
-
-      content += `*Type: ${api.type}*\n\n`;
-    }
-  }
-
-  content += `---\n\n*Total: ${relatedApis.length} related APIs*`;
-
-  return content;
-}
-
-/**
- * 按关系类型分组API
- */
-function groupApisByRelationship(apis: RelatedAPI[]): Record<string, RelatedAPI[]> {
-  const groups: Record<string, RelatedAPI[]> = {};
-
-  for (const api of apis) {
-    if (!groups[api.relationship]) {
-      groups[api.relationship] = [];
-    }
-    groups[api.relationship].push(api);
-  }
-
-  return groups;
+  const apiName = new URL(apiUrl).pathname.split('/').pop() || 'API';
+  return [
+    `# Related APIs for ${apiName}`,
+    `**Source:** [${apiUrl}](${apiUrl})`,
+    `**Found ${related.length} related APIs:**`,
+    ...[...Map.groupBy(related, (listing) => listing.group)].map(([group, members]) =>
+      `## ${group}\n\n${members.map((listing) => formatIdentifierLine(listing.identifier, data.references)).join('').trimEnd()}`),
+  ].join('\n\n');
 }

@@ -1,7 +1,4 @@
 import { describe, it, expect } from 'vitest';
-/**
- * Tests for URL converter utilities
- */
 
 import { convertToJsonApiUrl, isValidAppleDeveloperUrl, extractApiNameFromUrl } from '../../src/utils/url-converter.js';
 
@@ -35,10 +32,10 @@ describe('URL Converter', () => {
       expect(convertToJsonApiUrl(webUrl)).toBe(expected);
     });
 
-    it('should return original URL if not recognized format', () => {
+    it('should return null if not recognized format', () => {
       const webUrl = 'https://developer.apple.com/news/some-article';
       
-      expect(convertToJsonApiUrl(webUrl)).toBe(webUrl);
+      expect(convertToJsonApiUrl(webUrl)).toBeNull();
     });
   });
 

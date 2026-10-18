@@ -3,7 +3,6 @@
   "year": "2023",
   "url": "https://developer.apple.com/videos/play/wwdc2023/10091/",
   "title": "Evolve your ARKit app for spatial experiences",
-  "speakers": [],
   "duration": "",
   "topics": [
     "Spatial Computing",
@@ -12,8 +11,916 @@
   "hasTranscript": true,
   "hasCode": false,
   "transcript": {
-    "fullText": "♪ Mellow instrumental hip-hop ♪ ♪ Omid Khalili: Hello! My name is Omid.\n\nOliver and I are engineers on the ARKit team and we are thrilled to review the concepts -- some familiar and some new -- that you'll need know about when bringing your iOS AR app to our new platform.\n\nARKit was introduced on iOS in 2017 and with it, we introduced three key concepts to building augmented reality applications.\n\nWith world tracking, ARKit is able to track your device's position in the world with six degrees of freedom.\n\nThis allows anchoring virtual content with a position and orientation to the real world.\n\nScene understanding provides insight about the real world around you.\n\nUsing the provided geometry and semantic knowledge, your content can be intelligently placed and realistically interact with surroundings.\n\nFinally, rendering engines can correctly register and composite your virtual content over captured images utilizing camera transforms and intrinsics provided by ARKit.\n\nInitially, we started with a SceneKit view to use ARKit's camera transforms and render 3D content on iOS.\n\nWe then introduced RealityKit, laying out the foundation for an engine capable of highly realistic physically-based rendering and accurate object simulation with your surroundings.\n\nTo enable spatial computing, ARKit and RealityKit have matured and are deeply integrated into the operating system.\n\nFor example, ARKit's tracking and Scene Understanding are now running as system services, backing everything from window placement to spatial audio.\n\nThe system takes on responsibilities that used to belong to applications.\n\nCamera pass-through and matting of the user's hands are now built-in, so your application gets these capabilities for free.\n\nAnother built-in capability is that ARKit world maps are continuously persisted by a system service, so your application doesn't need to do it anymore.\n\nWe believe that this will free you up to focus on building the best application and content possible for this platform.\n\nHere is an example demonstrating these capabilities, along with new ones introduced with this platform.\n\nFor example, ARKit now provides hand tracking to your app, which allows people to reach out and directly interact with virtual content that can then interact with their surroundings.\n\nIn order to take advantage of all the new capabilities and immersive experiences this new platform offers, you'll need to update your iOS ARKit-based experience.\n\nThis is a great opportunity to reimagine your app and AR experience for spatial computing.\n\nAs a part of this transition, you'll be using familiar concepts that we've introduced with ARKit and RealityKit.\n\nWe're going to cover how these concepts have carried over, how they've evolved, and how you can take advantage of them.\n\nLet's get started! First, we'll explore some new ways you can present your app for spatial computing, and introduce new content tools available to you.\n\nNext, we will talk about Reality Kit, which is the engine to use to render and interact with your content.\n\nWe'll see how RealityView lets your app leverage spatial computing similar to ARView on iOS.\n\nThen, we'll talk about the different ways your app can bring content into people's surroundings.\n\nRaycasting is something many iOS applications use to place content.\n\nWe'll show an example of how to combine ARKit data and RealityKit to enable raycasting for spatial computing.\n\nAnd finally, we'll review the updates to ARKit and see the new ways to utilize familiar concepts from iOS.\n\nLets get into preparing to migrate your experience for spatial computing.\n\nSpatial computing allows you to take your iOS AR experience and expand it beyond the window.\n\nThis platform offers new ways to present your application that you'll want to consider as you bring your iOS experience over.\n\nHere is an example from our Hello World sample app.\n\nYou can now display UI, including windows and three-dimensional content, anywhere around you.\n\nBy default, applications on this platform launch into the Shared Space.\n\nThe Shared Space is where apps exist side by side, much like multiple apps on a Mac desktop.\n\nInside a Shared Space, your app can open one or more windows to display content.\n\nAdditionally, your app can create a three-dimensional volume.\n\nFor example, now you can show a list of available board games in one window, the rules in another, and open the selected game in its own volume.\n\nThe game can be played while keeping a Safari window open to read up on winning strategies.\n\nThe content you add to the window and volume stays contained within its bounds to allow sharing the space with other applications.\n\nIn some cases, you may want your app to have more control over the level of immersion in your experience -- maybe to play a game that interacts with your room.\n\nFor this, your app can open a dedicated Full Space in which only your app's windows, volumes, and 3D objects appear.\n\nOnce in a Full Space, your application has access to more features.\n\nUsing RealityKit's anchor entities, you can target and attach objects to the surroundings like tables, floors, and even parts of your hands like the palm or wrist.\n\nAnchor entities work without requiring user permission.\n\nARKit data is something else your app can only access in a Full Space.\n\nWith permission, ARKit will provide data about the real-world surfaces, scene geometry, and skeletal hand tracking, expanding your app's ability for realistic physics and natural interactions.\n\nWindows, volumes, and spaces are all SwiftUI scene types.\n\nThere's so much more for you to learn about these.\n\nFor starters, you can go to the session mentioned here.\n\nNext, let's review the main steps needed to prepare your content for bringing it to spatial computing.\n\nMemorable AR experiences on iOS begin with great 3D content; the same is true for spatial experiences on this platform.\n\nAnd when it comes to 3D content, it's great to rely on an open standard like Universal Scene Description, or USD for short.\n\nUSD is production proven, and scales from creators making single assets to large studios working on AAA games and films.\n\nApple was an early adopter of USD, adding it to our platforms in 2017 and growing support since.\n\nToday, USD is at the heart of 3D content for spatial computing.\n\nWith USD assets ready, you can bring them into our new developer tool, Reality Composer Pro, to compose, edit, and preview your 3D content.\n\nIf you're using CustomMaterials for your 3D content on iOS, then you will need to rebuild them using its shader graph.\n\nYou also have the ability to edit your RealityKit components directly through the UI.\n\nAnd finally, you can import your Reality Composer Pro project directly into Xcode, allowing you to easily bundle all of your USD assets, materials, and custom components into your Xcode project.\n\nWe have some great sessions to help you learn more about Reality Composer Pro and how to build your own custom materials for spatial computing.\n\nNow that we've seen the different ways to present your application, let's learn more about the features RealityView offers as you bring your experience over.\n\nWe just saw how spatial computing allows apps to display content in your space.\n\nOne of the key differences coming from iOS is how different elements can be presented side by side.\n\nNotice how your 3D content and 2D elements can appear and work along side each other.\n\nComing from iOS, you're going to use familiar frameworks to create each of these.\n\nYou'll use SwiftUI to build the best 2D UI and get system gestures events like the ones on iOS.\n\nAnd you'll use RealityKit to render your 3D content for spatial experiences.\n\nThe way to interface with both of these at the same time is through RealityView - a new SwiftUI view that we're introducing to cater to the unique needs of spatial computing.\n\nRealityView truly bridges SwiftUI and RealityKit, allowing you to combine 2D and 3D elements and create a memorable spatial experience.\n\nYou'll be using the RealityView to hold all the entities you wish to display and interact with.\n\nYou can get gesture events and connect them to the entities in your view to control them.\n\nAnd with access to ARKit's scene understanding, you can enable realistic simulations with people's surroundings and even their hands using RealityKit's collision components.\n\nBefore we look at how using RealityKit carries over from iOS, let's do a quick refresher on how to work with RealityKit's Entity Component System.\n\nIn the Reality Kit Entity Component System, each entity is a container for 3D content.\n\nDifferent components are added to an entity to define its look and behavior.\n\nThis can include a model component for how it should render; a collision component, for how it can collide with other entities; and many more.\n\nYou can use RealityComposer Pro to prepare RealityKit components like collision components and get them added to your entities.\n\nSystems contain code to act on entities that have the required components.\n\nFor example, the system required for gesture support only operates on entities that have a CollisionComponent and InputTargetComponent.\n\nA lot of the concepts used by RealityView for spatial computing carry over from those of ARView on iOS.\n\nLets see how these two stack up.\n\nBoth views are event-aware containers to hold the entities you wish to display in your app.\n\nYou can add Gesture Support to your views to enable selection and interaction with entities.\n\nWith SwiftUI for spatial computing, you can reach out to select or drag your entities.\n\nBoth ARView and RealityView provide a collection of your entities.\n\nARView uses a Scene for this.\n\nRealityView has a Content to add your entities to.\n\nYou can add AnchorEntities to them, allowing you to anchor your content to the real world.\n\nOn both platforms, you create an entity to load your content model and an AnchorEntity to place it.\n\nOne main difference between the platforms is in the behavior of anchor entities.\n\nARView on iOS uses an ARSession and your app must receive permission to run scene understanding algorithms necessary for anchor entities to work.\n\nRealityView is using System Services to enable anchorEntities.\n\nThis means that spatial experiences can anchor content to your surroundings without requiring permissions.\n\nApps using this approach do not receive the underlying scene understanding data or transforms.\n\nNot having transform data for your app to place content has some implications that Oliver will talk about later in his section.\n\nAs we've seen, there are many familiar concepts that carry over coming from iOS, but there are also new capabilities that RealityKit provides for spatial computing.\n\nWe've only scratched the surface of what's possible with RealityKit on this new platform, and you may want to check out the session below to follow up on more.\n\nNow over to Oliver, who will talk more about RealityView and how to bring in your content from iOS.\n\nOliver Dunkley: Thanks, Omid! Let's continue by exploring the different ways you can bring in your existing content to spatial computing.\n\nLets start in the Shared Space.\n\nWe can add 3D content to a window or volume, and use system gestures to interact with it.\n\nTo display your assets, you just add them directly to RealityView's Content.\n\nYou do this by creating an entity to hold your model component and position it by setting the transform component.\n\nYou can also set up gesture support to modify the transform component.\n\nNote that all entities added to the view's content exist in the same space relative to the space's origin and can therefore interact with one another.\n\nIn the Shared Space, content cannot be anchored to your surroundings.\n\nLet's consider our options if we transition our app to a Full Space.\n\nOne of the key differences coming from the Shared Space is that apps can now additionally anchor content to people's surroundings.\n\nAnchoring your content here can happen in two ways.\n\nLets first look at using RealityKit's AnchorEntity to place content without requiring permissions to use ARKit data in your app.\n\nRealityKit's AnchorEntities allow you to specify a target for the system to find and automatically anchor your content to.\n\nSo for example, in order to place a 3D model on a table surface in front of you, you can use a RealityKit AnchorEntity with a target set to table.\n\nDifferent from iOS, AnchorEntities can be used without having to prompt for user permissions.\n\nPeople's privacy is preserved by not sharing the underlying transforms of the AnchorEntity with your application.\n\nNote: this implies children of different anchor entities are not aware of one another.\n\nNew to anchorEntities, you can target hands, which opens up a whole new realm of interesting interaction opportunities.\n\nFor example, you could anchor content to a person's palm and have it follow their hands as they move them.\n\nThis is all done by the system, without telling your app where the persons hands actually are.\n\nAnchorEntitys provide a quick, privacy-friendly way for your app to anchor content to people's surroundings.\n\nComing back to a Full Space, we can also leverage ARKit to incorporate system-level knowledge of the people's surroundings.\n\nThis enables you to build your own custom placement logic.\n\nLet's take a look at how this works.\n\nSimilar to iOS, your application receives anchoring updates for scene understanding data.\n\nYou can integrate this anchor data into your app logic to achieve all sorts of amazing experiences.\n\nFor example, you could use the bounds of a plane to center and distribute your content onto.\n\nOr, you could use planes and their classifications to find the corner of a room by looking for the intersection of two walls and a floor.\n\nOnce you've decided where to place your content, you add a world anchor for ARKit to track and use it to update your entity's transform component.\n\nThis not only allows your content to remain anchored to the real world, as the underlying world map is updated, but it also opens the door to anchor persistence, which we will explore shortly.\n\nAll the entities added to your space can interact with one another as well as with the surroundings.\n\nThis all works because scene understanding anchors are delivered with transforms relative to the space's origin.\n\nUser Permission is required to use ARKit capabilities.\n\nYou just saw how integrating ARKit data into your app logic can enable more advanced features.\n\nSo far we have talked about letting your app place content.\n\nLet's explore how we can let people guide placement.\n\nOn iOS, you can use raycasting to translate 2D input to a 3D position.\n\nBut with this new platform, we don't need this 2D-3D bridge anymore, as we can use hands to naturally interact with experiences directly.\n\nRaycasting remains powerful; it lets people reach out beyond arms length.\n\nThere are various ways to set up raycasting.\n\nFundamentally, you need to setup RealityKit's collision components to raycast against.\n\nCollision components can also be created from ARKit's mesh anchors to raycast against people's surroundings.\n\nLet's explore two examples of how to raycast for spatial computing: first, using system gestures, and the second using hands data.\n\nAfter obtaining a position, we can place an ARKit worldAnchor to keep our content anchored.\n\nLet's consider the following example.\n\nImagine our app revolves around placing inspirational 3D assets for modelers.\n\nMaybe in this particular scenario, a person wants to use our app to place a virtual ship on their workbench for some modeling project.\n\nHere is our workbench we want to place our ship on.\n\nWe'll start with an empty RealityView.\n\nARKit's scene understanding provides mesh anchors that we'll use to represent the surroundings.\n\nThey provide geometry and semantic information we can use.\n\nRemember that meshes for scene reconstruction data are delivered as a series of chunks.\n\nWe'll create an entity to represent this mesh chunk, and we'll correctly place this entity in a full space using the mesh anchor's transform.\n\nOur entity then needs a collision component to hit test against.\n\nWe'll use RealityKit's ShapeResources method to generate a collision shape from the meshAnchor for our entity.\n\nWe'll then add our correctly placed entity which supports hit testing.\n\nWe'll build an entity and collision component for each mesh chunk we receive to represent all the surroundings.\n\nAs scene reconstruction is refined, we may get updates to meshes or have chunks removed.\n\nWe should be ready to update our entities on these changes as well.\n\nWe now have a collection of entities representing the surroundings.\n\nAll these entities have collision components and can support a raycast test.\n\nLet's first explore raycasting using system gestures, and then continue the example using hands data.\n\nWe can raycast and get a position to place our ship using system gestures.\n\nGestures can only interact with entities that have both Collision and InputTarget components, so we add one to each of our mesh entities.\n\nBy adding a SpatialTapGesture to the RealityView, people can raycast by looking at entities and tapping.\n\nThis resulting event holds a position in world space representing the place people looked at when tapping.\n\nInstead of using system gestures, we could also have used ARKit's hand anchors to build a ray.\n\nLets take a step back and explore this option.\n\nTo know where people point, we first need a representation of the person's hand.\n\nARkit's new hand anchors gives us everything we need.\n\nWe can use finger joint information to build the origin and direction of the ray for our query.\n\nNow that we have the origin and direction of our ray, we can do a raycast against the entities in our scene.\n\nThe resulting CollisionCastHit provides the entity that was hit, along with its position and a surface normal.\n\nOnce we identify a position in the world to place our content, we'll add a world anchor for ARKit to continuously track this position for us.\n\nARKit will update this world anchor's transform as the world map is refined.\n\nWe can create a new entity to load our ship's model, and set its transform using the world anchor update, positioning it where the user wanted.\n\nFinally, we can add the entity to our content to render it over the workbench.\n\nWhenever ARKit updates the world anchor we added, we update the transform component of our ship entity, making sure it stays anchored to the real world.\n\nAnd that's it! We used our hands to point to a location in our surroundings and placed content there.\n\nRaycasting is not only useful for placing content, but also for interacting with it.\n\nLet's see what it takes to raycast against our virtual ship.\n\nRealityKit collision components are very powerful.\n\nWe can let the ship entity participate in collisions by simply adding an appropriate collision component to it, which Reality Composer Pro can help us with.\n\nAfter enabling the ship's collision component and building a new ray from the latest hand joint positions, we can do another raycast and tell if the user is pointing at the ship or the table.\n\nThe previous examples demonstrated the power and versatility of combining RealityKit's features with ARKit's scene understanding to build truly compelling experiences.\n\nLets see how using ARkit has changed for spatial computing.\n\nFundamentally, just as on iOS, ARKit still works by running a session to receive anchor updates.\n\nHow you configure and run your session, receive anchors updates, and persist world anchors has changed on this new platform.\n\nLet's take a look! On iOS, ARKit provides different configurations to chose from.\n\nEach configuration bundles capabilities necessary for your experience.\n\nHere, for example, we selected ARWorldTrackingConfiguration, and will enable sceneReconstruction for meshes and planeDetection for planes.\n\nWe can then create our ARSession and run it with the selected configuration.\n\nOn this new platform, ARKit now exposes a data provider for each scene understanding capability.\n\nHand tracking is a new capability offered by ARKit and gets its own provider as well.\n\nEach data provider's initializer takes the parameters needed to configure that provider instance.\n\nNow instead of choosing from a catalogue of preset configurations, you get an à la carte selection of the providers you need for your application.\n\nHere for example, we choose a SceneReconstructionProvider to receive mesh anchors and a PlaneDetectionProvider to receive plane anchors.\n\nWe create the providers and initialize the mesh classification and plane types we wish to receive.\n\nThen we create an ARKitSession and run it with the instantiated providers.\n\nNow that we have seen how configuring your session has been simplified, let's go and understand which way these new data providers change the way your app actually receives ARKit data.\n\nOn iOS, a single delegate receives anchor and frame updates.\n\nAnchors are aggregated and delivered with ARFrames to keep camera frames and anchors in sync.\n\nApplications are responsible for displaying the camera pixel buffer, and using camera transforms to register and render tracked virtual content.\n\nMesh and plane anchors are delivered as base anchors, and it is up to you to disambiguate them to figure out which is which.\n\nOn our new platform, it is the data providers that deliver anchor updates.\n\nHere are the providers we previously configured.\n\nOnce you run an ARKitSession, each provider will immediately begin asynchronously publishing anchor updates.\n\nThe SceneReconstructionProvider gives meshAnchors, and the planeDetectionProvider gives us PlaneAnchors.\n\nNo disambiguation is necessary! Anchor updates come as soon as they're available, and are decoupled from updates of other data providers.\n\nIt is important to note that ARFrames are no longer provided.\n\nSpatial computing applications do not need frame or camera data to display content, since this is now done automatically by the system.\n\nWithout having to package anchor updates with an ARFrame, ARKit can now deliver them immediately, reducing latency, allowing your application to quickly react to updates in the person's surroundings.\n\nNext, let's talk about worldAnchor persistence.\n\nYou will love these changes! In our raycasting examples, we used world anchors to place and anchor virtual content to real-world positions.\n\nYour app can persist these anchors, enabling it to automatically receive them again, when the device returns to the same surroundings.\n\nLet's first quickly recap how persistence worked on iOS.\n\nOn iOS, it is the application's responsibility to handle world map and anchor persistence.\n\nThis included requesting and saving ARKit's world map with your added anchor, adding logic to reload the correct world map at the right time, then waiting for relocalization to finish before receiving previously persisted anchors and continuing the application experience.\n\nOn this new platform, the system continuously persists the world map in the background, seamlessly loading, unloading, creating, and relocalizing to existing maps as people move around.\n\nYour application does not have to handle maps anymore, the system now does it for you! You simply focus on using world anchors to persist locations of virtual content.\n\nWhen placing content, you'll be using the new WorldTrackingProvider to add WorldAnchors to the world map.\n\nThe system will automatically save these for you.\n\nThe WorldTrackingProvider will update the tracking status and transforms of these world anchors.\n\nYou can use the WorldAnchor identifier to load or unload the corresponding virtual content.\n\nWe just highlighted a few updates to the ARKit principles that you knew from iOS, but there is so much more to explore! For a deeper dive, with code examples, we recommend you watch \"Meet ARKit for spatial computing.\" Let's conclude this session! In this session, we provided a high-level understanding of how ARKit and RealityKit concepts have evolved from iOS, the changes you need to consider, and which sessions to watch for more details.\n\nThis platform takes on many tasks your iOS app had to handle, allowing you to really focus on building beautiful content and experiences using frameworks and concepts you're already familiar with.\n\nWe are thrilled to see how you leverage spatial computing and all of its amazing capabilities to evolve your app! Thank you for watching! ♪",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:00",
+        "text": "♪ Mellow instrumental hip-hop ♪ ♪ Omid Khalili: Hello! My name is Omid."
+      },
+      {
+        "timestamp": "0:12",
+        "text": "Oliver and I are engineers on the ARKit team and we are thrilled to review the concepts -- some familiar and some new -- that you'll need know about when bringing your iOS AR app to our new platform."
+      },
+      {
+        "timestamp": "0:25",
+        "text": "ARKit was introduced on iOS in 2017 and with it, we introduced three key concepts to building augmented reality applications."
+      },
+      {
+        "timestamp": "0:35",
+        "text": "With world tracking, ARKit is able to track your device's position in the world with six degrees of freedom."
+      },
+      {
+        "timestamp": "0:42",
+        "text": "This allows anchoring virtual content with a position and orientation to the real world."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Scene understanding provides insight about the real world around you."
+      },
+      {
+        "timestamp": "0:52",
+        "text": "Using the provided geometry and semantic knowledge, your content can be intelligently placed and realistically interact with surroundings."
+      },
+      {
+        "timestamp": "1:02",
+        "text": "Finally, rendering engines can correctly register and composite your virtual content over captured images utilizing camera transforms and intrinsics provided by ARKit."
+      },
+      {
+        "timestamp": "1:14",
+        "text": "Initially, we started with a SceneKit view to use ARKit's camera transforms and render 3D content on iOS."
+      },
+      {
+        "timestamp": "1:22",
+        "text": "We then introduced RealityKit, laying out the foundation for an engine capable of highly realistic physically-based rendering and accurate object simulation with your surroundings."
+      },
+      {
+        "timestamp": "1:34",
+        "text": "To enable spatial computing, ARKit and RealityKit have matured and are deeply integrated into the operating system."
+      },
+      {
+        "timestamp": "1:42",
+        "text": "For example, ARKit's tracking and Scene Understanding are now running as system services, backing everything from window placement to spatial audio."
+      },
+      {
+        "timestamp": "1:53",
+        "text": "The system takes on responsibilities that used to belong to applications."
+      },
+      {
+        "timestamp": "1:59",
+        "text": "Camera pass-through and matting of the user's hands are now built-in, so your application gets these capabilities for free."
+      },
+      {
+        "timestamp": "2:09",
+        "text": "Another built-in capability is that ARKit world maps are continuously persisted by a system service, so your application doesn't need to do it anymore."
+      },
+      {
+        "timestamp": "2:20",
+        "text": "We believe that this will free you up to focus on building the best application and content possible for this platform."
+      },
+      {
+        "timestamp": "2:29",
+        "text": "Here is an example demonstrating these capabilities, along with new ones introduced with this platform."
+      },
+      {
+        "timestamp": "2:35",
+        "text": "For example, ARKit now provides hand tracking to your app, which allows people to reach out and directly interact with virtual content that can then interact with their surroundings."
+      },
+      {
+        "timestamp": "2:47",
+        "text": "In order to take advantage of all the new capabilities and immersive experiences this new platform offers, you'll need to update your iOS ARKit-based experience."
+      },
+      {
+        "timestamp": "2:56",
+        "text": "This is a great opportunity to reimagine your app and AR experience for spatial computing."
+      },
+      {
+        "timestamp": "3:03",
+        "text": "As a part of this transition, you'll be using familiar concepts that we've introduced with ARKit and RealityKit."
+      },
+      {
+        "timestamp": "3:11",
+        "text": "We're going to cover how these concepts have carried over, how they've evolved, and how you can take advantage of them."
+      },
+      {
+        "timestamp": "3:18",
+        "text": "Let's get started! First, we'll explore some new ways you can present your app for spatial computing, and introduce new content tools available to you."
+      },
+      {
+        "timestamp": "3:30",
+        "text": "Next, we will talk about Reality Kit, which is the engine to use to render and interact with your content."
+      },
+      {
+        "timestamp": "3:38",
+        "text": "We'll see how RealityView lets your app leverage spatial computing similar to ARView on iOS."
+      },
+      {
+        "timestamp": "3:46",
+        "text": "Then, we'll talk about the different ways your app can bring content into people's surroundings."
+      },
+      {
+        "timestamp": "3:53",
+        "text": "Raycasting is something many iOS applications use to place content."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "We'll show an example of how to combine ARKit data and RealityKit to enable raycasting for spatial computing."
+      },
+      {
+        "timestamp": "4:09",
+        "text": "And finally, we'll review the updates to ARKit and see the new ways to utilize familiar concepts from iOS."
+      },
+      {
+        "timestamp": "4:19",
+        "text": "Lets get into preparing to migrate your experience for spatial computing."
+      },
+      {
+        "timestamp": "4:25",
+        "text": "Spatial computing allows you to take your iOS AR experience and expand it beyond the window."
+      },
+      {
+        "timestamp": "4:32",
+        "text": "This platform offers new ways to present your application that you'll want to consider as you bring your iOS experience over."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "Here is an example from our Hello World sample app."
+      },
+      {
+        "timestamp": "4:44",
+        "text": "You can now display UI, including windows and three-dimensional content, anywhere around you."
+      },
+      {
+        "timestamp": "4:51",
+        "text": "By default, applications on this platform launch into the Shared Space."
+      },
+      {
+        "timestamp": "4:56",
+        "text": "The Shared Space is where apps exist side by side, much like multiple apps on a Mac desktop."
+      },
+      {
+        "timestamp": "5:02",
+        "text": "Inside a Shared Space, your app can open one or more windows to display content."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "Additionally, your app can create a three-dimensional volume."
+      },
+      {
+        "timestamp": "5:13",
+        "text": "For example, now you can show a list of available board games in one window, the rules in another, and open the selected game in its own volume."
+      },
+      {
+        "timestamp": "5:24",
+        "text": "The game can be played while keeping a Safari window open to read up on winning strategies."
+      },
+      {
+        "timestamp": "5:30",
+        "text": "The content you add to the window and volume stays contained within its bounds to allow sharing the space with other applications."
+      },
+      {
+        "timestamp": "5:39",
+        "text": "In some cases, you may want your app to have more control over the level of immersion in your experience -- maybe to play a game that interacts with your room."
+      },
+      {
+        "timestamp": "5:49",
+        "text": "For this, your app can open a dedicated Full Space in which only your app's windows, volumes, and 3D objects appear."
+      },
+      {
+        "timestamp": "5:59",
+        "text": "Once in a Full Space, your application has access to more features."
+      },
+      {
+        "timestamp": "6:05",
+        "text": "Using RealityKit's anchor entities, you can target and attach objects to the surroundings like tables, floors, and even parts of your hands like the palm or wrist."
+      },
+      {
+        "timestamp": "6:17",
+        "text": "Anchor entities work without requiring user permission."
+      },
+      {
+        "timestamp": "6:22",
+        "text": "ARKit data is something else your app can only access in a Full Space."
+      },
+      {
+        "timestamp": "6:26",
+        "text": "With permission, ARKit will provide data about the real-world surfaces, scene geometry, and skeletal hand tracking, expanding your app's ability for realistic physics and natural interactions."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "Windows, volumes, and spaces are all SwiftUI scene types."
+      },
+      {
+        "timestamp": "6:47",
+        "text": "There's so much more for you to learn about these."
+      },
+      {
+        "timestamp": "6:50",
+        "text": "For starters, you can go to the session mentioned here."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "Next, let's review the main steps needed to prepare your content for bringing it to spatial computing."
+      },
+      {
+        "timestamp": "7:03",
+        "text": "Memorable AR experiences on iOS begin with great 3D content; the same is true for spatial experiences on this platform."
+      },
+      {
+        "timestamp": "7:12",
+        "text": "And when it comes to 3D content, it's great to rely on an open standard like Universal Scene Description, or USD for short."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "USD is production proven, and scales from creators making single assets to large studios working on AAA games and films."
+      },
+      {
+        "timestamp": "7:31",
+        "text": "Apple was an early adopter of USD, adding it to our platforms in 2017 and growing support since."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "Today, USD is at the heart of 3D content for spatial computing."
+      },
+      {
+        "timestamp": "7:44",
+        "text": "With USD assets ready, you can bring them into our new developer tool, Reality Composer Pro, to compose, edit, and preview your 3D content."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "If you're using CustomMaterials for your 3D content on iOS, then you will need to rebuild them using its shader graph."
+      },
+      {
+        "timestamp": "8:03",
+        "text": "You also have the ability to edit your RealityKit components directly through the UI."
+      },
+      {
+        "timestamp": "8:08",
+        "text": "And finally, you can import your Reality Composer Pro project directly into Xcode, allowing you to easily bundle all of your USD assets, materials, and custom components into your Xcode project."
+      },
+      {
+        "timestamp": "8:24",
+        "text": "We have some great sessions to help you learn more about Reality Composer Pro and how to build your own custom materials for spatial computing."
+      },
+      {
+        "timestamp": "8:34",
+        "text": "Now that we've seen the different ways to present your application, let's learn more about the features RealityView offers as you bring your experience over."
+      },
+      {
+        "timestamp": "8:44",
+        "text": "We just saw how spatial computing allows apps to display content in your space."
+      },
+      {
+        "timestamp": "8:48",
+        "text": "One of the key differences coming from iOS is how different elements can be presented side by side."
+      },
+      {
+        "timestamp": "8:55",
+        "text": "Notice how your 3D content and 2D elements can appear and work along side each other."
+      },
+      {
+        "timestamp": "9:03",
+        "text": "Coming from iOS, you're going to use familiar frameworks to create each of these."
+      },
+      {
+        "timestamp": "9:08",
+        "text": "You'll use SwiftUI to build the best 2D UI and get system gestures events like the ones on iOS."
+      },
+      {
+        "timestamp": "9:15",
+        "text": "And you'll use RealityKit to render your 3D content for spatial experiences."
+      },
+      {
+        "timestamp": "9:21",
+        "text": "The way to interface with both of these at the same time is through RealityView - a new SwiftUI view that we're introducing to cater to the unique needs of spatial computing."
+      },
+      {
+        "timestamp": "9:34",
+        "text": "RealityView truly bridges SwiftUI and RealityKit, allowing you to combine 2D and 3D elements and create a memorable spatial experience."
+      },
+      {
+        "timestamp": "9:45",
+        "text": "You'll be using the RealityView to hold all the entities you wish to display and interact with."
+      },
+      {
+        "timestamp": "9:52",
+        "text": "You can get gesture events and connect them to the entities in your view to control them."
+      },
+      {
+        "timestamp": "9:57",
+        "text": "And with access to ARKit's scene understanding, you can enable realistic simulations with people's surroundings and even their hands using RealityKit's collision components."
+      },
+      {
+        "timestamp": "10:09",
+        "text": "Before we look at how using RealityKit carries over from iOS, let's do a quick refresher on how to work with RealityKit's Entity Component System."
+      },
+      {
+        "timestamp": "10:20",
+        "text": "In the Reality Kit Entity Component System, each entity is a container for 3D content."
+      },
+      {
+        "timestamp": "10:27",
+        "text": "Different components are added to an entity to define its look and behavior."
+      },
+      {
+        "timestamp": "10:31",
+        "text": "This can include a model component for how it should render; a collision component, for how it can collide with other entities; and many more."
+      },
+      {
+        "timestamp": "10:41",
+        "text": "You can use RealityComposer Pro to prepare RealityKit components like collision components and get them added to your entities."
+      },
+      {
+        "timestamp": "10:50",
+        "text": "Systems contain code to act on entities that have the required components."
+      },
+      {
+        "timestamp": "10:55",
+        "text": "For example, the system required for gesture support only operates on entities that have a CollisionComponent and InputTargetComponent."
+      },
+      {
+        "timestamp": "11:05",
+        "text": "A lot of the concepts used by RealityView for spatial computing carry over from those of ARView on iOS."
+      },
+      {
+        "timestamp": "11:14",
+        "text": "Lets see how these two stack up."
+      },
+      {
+        "timestamp": "11:17",
+        "text": "Both views are event-aware containers to hold the entities you wish to display in your app."
+      },
+      {
+        "timestamp": "11:24",
+        "text": "You can add Gesture Support to your views to enable selection and interaction with entities."
+      },
+      {
+        "timestamp": "11:30",
+        "text": "With SwiftUI for spatial computing, you can reach out to select or drag your entities."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "Both ARView and RealityView provide a collection of your entities."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "ARView uses a Scene for this."
+      },
+      {
+        "timestamp": "11:46",
+        "text": "RealityView has a Content to add your entities to."
+      },
+      {
+        "timestamp": "11:50",
+        "text": "You can add AnchorEntities to them, allowing you to anchor your content to the real world."
+      },
+      {
+        "timestamp": "11:56",
+        "text": "On both platforms, you create an entity to load your content model and an AnchorEntity to place it."
+      },
+      {
+        "timestamp": "12:03",
+        "text": "One main difference between the platforms is in the behavior of anchor entities."
+      },
+      {
+        "timestamp": "12:09",
+        "text": "ARView on iOS uses an ARSession and your app must receive permission to run scene understanding algorithms necessary for anchor entities to work."
+      },
+      {
+        "timestamp": "12:21",
+        "text": "RealityView is using System Services to enable anchorEntities."
+      },
+      {
+        "timestamp": "12:26",
+        "text": "This means that spatial experiences can anchor content to your surroundings without requiring permissions."
+      },
+      {
+        "timestamp": "12:34",
+        "text": "Apps using this approach do not receive the underlying scene understanding data or transforms."
+      },
+      {
+        "timestamp": "12:41",
+        "text": "Not having transform data for your app to place content has some implications that Oliver will talk about later in his section."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "As we've seen, there are many familiar concepts that carry over coming from iOS, but there are also new capabilities that RealityKit provides for spatial computing."
+      },
+      {
+        "timestamp": "13:01",
+        "text": "We've only scratched the surface of what's possible with RealityKit on this new platform, and you may want to check out the session below to follow up on more."
+      },
+      {
+        "timestamp": "13:12",
+        "text": "Now over to Oliver, who will talk more about RealityView and how to bring in your content from iOS."
+      },
+      {
+        "timestamp": "13:19",
+        "text": "Oliver Dunkley: Thanks, Omid! Let's continue by exploring the different ways you can bring in your existing content to spatial computing."
+      },
+      {
+        "timestamp": "13:26",
+        "text": "Lets start in the Shared Space."
+      },
+      {
+        "timestamp": "13:28",
+        "text": "We can add 3D content to a window or volume, and use system gestures to interact with it."
+      },
+      {
+        "timestamp": "13:34",
+        "text": "To display your assets, you just add them directly to RealityView's Content."
+      },
+      {
+        "timestamp": "13:39",
+        "text": "You do this by creating an entity to hold your model component and position it by setting the transform component."
+      },
+      {
+        "timestamp": "13:46",
+        "text": "You can also set up gesture support to modify the transform component."
+      },
+      {
+        "timestamp": "13:51",
+        "text": "Note that all entities added to the view's content exist in the same space relative to the space's origin and can therefore interact with one another."
+      },
+      {
+        "timestamp": "14:01",
+        "text": "In the Shared Space, content cannot be anchored to your surroundings."
+      },
+      {
+        "timestamp": "14:05",
+        "text": "Let's consider our options if we transition our app to a Full Space."
+      },
+      {
+        "timestamp": "14:09",
+        "text": "One of the key differences coming from the Shared Space is that apps can now additionally anchor content to people's surroundings."
+      },
+      {
+        "timestamp": "14:16",
+        "text": "Anchoring your content here can happen in two ways."
+      },
+      {
+        "timestamp": "14:19",
+        "text": "Lets first look at using RealityKit's AnchorEntity to place content without requiring permissions to use ARKit data in your app."
+      },
+      {
+        "timestamp": "14:28",
+        "text": "RealityKit's AnchorEntities allow you to specify a target for the system to find and automatically anchor your content to."
+      },
+      {
+        "timestamp": "14:36",
+        "text": "So for example, in order to place a 3D model on a table surface in front of you, you can use a RealityKit AnchorEntity with a target set to table."
+      },
+      {
+        "timestamp": "14:46",
+        "text": "Different from iOS, AnchorEntities can be used without having to prompt for user permissions."
+      },
+      {
+        "timestamp": "14:52",
+        "text": "People's privacy is preserved by not sharing the underlying transforms of the AnchorEntity with your application."
+      },
+      {
+        "timestamp": "15:00",
+        "text": "Note: this implies children of different anchor entities are not aware of one another."
+      },
+      {
+        "timestamp": "15:05",
+        "text": "New to anchorEntities, you can target hands, which opens up a whole new realm of interesting interaction opportunities."
+      },
+      {
+        "timestamp": "15:12",
+        "text": "For example, you could anchor content to a person's palm and have it follow their hands as they move them."
+      },
+      {
+        "timestamp": "15:19",
+        "text": "This is all done by the system, without telling your app where the persons hands actually are."
+      },
+      {
+        "timestamp": "15:25",
+        "text": "AnchorEntitys provide a quick, privacy-friendly way for your app to anchor content to people's surroundings."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Coming back to a Full Space, we can also leverage ARKit to incorporate system-level knowledge of the people's surroundings."
+      },
+      {
+        "timestamp": "15:39",
+        "text": "This enables you to build your own custom placement logic."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "Let's take a look at how this works."
+      },
+      {
+        "timestamp": "15:46",
+        "text": "Similar to iOS, your application receives anchoring updates for scene understanding data."
+      },
+      {
+        "timestamp": "15:51",
+        "text": "You can integrate this anchor data into your app logic to achieve all sorts of amazing experiences."
+      },
+      {
+        "timestamp": "15:58",
+        "text": "For example, you could use the bounds of a plane to center and distribute your content onto."
+      },
+      {
+        "timestamp": "16:03",
+        "text": "Or, you could use planes and their classifications to find the corner of a room by looking for the intersection of two walls and a floor."
+      },
+      {
+        "timestamp": "16:11",
+        "text": "Once you've decided where to place your content, you add a world anchor for ARKit to track and use it to update your entity's transform component."
+      },
+      {
+        "timestamp": "16:20",
+        "text": "This not only allows your content to remain anchored to the real world, as the underlying world map is updated, but it also opens the door to anchor persistence, which we will explore shortly."
+      },
+      {
+        "timestamp": "16:31",
+        "text": "All the entities added to your space can interact with one another as well as with the surroundings."
+      },
+      {
+        "timestamp": "16:37",
+        "text": "This all works because scene understanding anchors are delivered with transforms relative to the space's origin."
+      },
+      {
+        "timestamp": "16:43",
+        "text": "User Permission is required to use ARKit capabilities."
+      },
+      {
+        "timestamp": "16:48",
+        "text": "You just saw how integrating ARKit data into your app logic can enable more advanced features."
+      },
+      {
+        "timestamp": "16:54",
+        "text": "So far we have talked about letting your app place content."
+      },
+      {
+        "timestamp": "16:57",
+        "text": "Let's explore how we can let people guide placement."
+      },
+      {
+        "timestamp": "17:01",
+        "text": "On iOS, you can use raycasting to translate 2D input to a 3D position."
+      },
+      {
+        "timestamp": "17:07",
+        "text": "But with this new platform, we don't need this 2D-3D bridge anymore, as we can use hands to naturally interact with experiences directly."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "Raycasting remains powerful; it lets people reach out beyond arms length."
+      },
+      {
+        "timestamp": "17:22",
+        "text": "There are various ways to set up raycasting."
+      },
+      {
+        "timestamp": "17:25",
+        "text": "Fundamentally, you need to setup RealityKit's collision components to raycast against."
+      },
+      {
+        "timestamp": "17:30",
+        "text": "Collision components can also be created from ARKit's mesh anchors to raycast against people's surroundings."
+      },
+      {
+        "timestamp": "17:37",
+        "text": "Let's explore two examples of how to raycast for spatial computing: first, using system gestures, and the second using hands data."
+      },
+      {
+        "timestamp": "17:47",
+        "text": "After obtaining a position, we can place an ARKit worldAnchor to keep our content anchored."
+      },
+      {
+        "timestamp": "17:54",
+        "text": "Let's consider the following example."
+      },
+      {
+        "timestamp": "17:56",
+        "text": "Imagine our app revolves around placing inspirational 3D assets for modelers."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "Maybe in this particular scenario, a person wants to use our app to place a virtual ship on their workbench for some modeling project."
+      },
+      {
+        "timestamp": "18:10",
+        "text": "Here is our workbench we want to place our ship on."
+      },
+      {
+        "timestamp": "18:13",
+        "text": "We'll start with an empty RealityView."
+      },
+      {
+        "timestamp": "18:17",
+        "text": "ARKit's scene understanding provides mesh anchors that we'll use to represent the surroundings."
+      },
+      {
+        "timestamp": "18:22",
+        "text": "They provide geometry and semantic information we can use."
+      },
+      {
+        "timestamp": "18:26",
+        "text": "Remember that meshes for scene reconstruction data are delivered as a series of chunks."
+      },
+      {
+        "timestamp": "18:32",
+        "text": "We'll create an entity to represent this mesh chunk, and we'll correctly place this entity in a full space using the mesh anchor's transform."
+      },
+      {
+        "timestamp": "18:42",
+        "text": "Our entity then needs a collision component to hit test against."
+      },
+      {
+        "timestamp": "18:46",
+        "text": "We'll use RealityKit's ShapeResources method to generate a collision shape from the meshAnchor for our entity."
+      },
+      {
+        "timestamp": "18:54",
+        "text": "We'll then add our correctly placed entity which supports hit testing."
+      },
+      {
+        "timestamp": "18:59",
+        "text": "We'll build an entity and collision component for each mesh chunk we receive to represent all the surroundings."
+      },
+      {
+        "timestamp": "19:06",
+        "text": "As scene reconstruction is refined, we may get updates to meshes or have chunks removed."
+      },
+      {
+        "timestamp": "19:11",
+        "text": "We should be ready to update our entities on these changes as well."
+      },
+      {
+        "timestamp": "19:16",
+        "text": "We now have a collection of entities representing the surroundings."
+      },
+      {
+        "timestamp": "19:20",
+        "text": "All these entities have collision components and can support a raycast test."
+      },
+      {
+        "timestamp": "19:25",
+        "text": "Let's first explore raycasting using system gestures, and then continue the example using hands data."
+      },
+      {
+        "timestamp": "19:32",
+        "text": "We can raycast and get a position to place our ship using system gestures."
+      },
+      {
+        "timestamp": "19:37",
+        "text": "Gestures can only interact with entities that have both Collision and InputTarget components, so we add one to each of our mesh entities."
+      },
+      {
+        "timestamp": "19:46",
+        "text": "By adding a SpatialTapGesture to the RealityView, people can raycast by looking at entities and tapping."
+      },
+      {
+        "timestamp": "19:53",
+        "text": "This resulting event holds a position in world space representing the place people looked at when tapping."
+      },
+      {
+        "timestamp": "20:00",
+        "text": "Instead of using system gestures, we could also have used ARKit's hand anchors to build a ray."
+      },
+      {
+        "timestamp": "20:05",
+        "text": "Lets take a step back and explore this option."
+      },
+      {
+        "timestamp": "20:08",
+        "text": "To know where people point, we first need a representation of the person's hand."
+      },
+      {
+        "timestamp": "20:12",
+        "text": "ARkit's new hand anchors gives us everything we need."
+      },
+      {
+        "timestamp": "20:16",
+        "text": "We can use finger joint information to build the origin and direction of the ray for our query."
+      },
+      {
+        "timestamp": "20:23",
+        "text": "Now that we have the origin and direction of our ray, we can do a raycast against the entities in our scene."
+      },
+      {
+        "timestamp": "20:30",
+        "text": "The resulting CollisionCastHit provides the entity that was hit, along with its position and a surface normal."
+      },
+      {
+        "timestamp": "20:37",
+        "text": "Once we identify a position in the world to place our content, we'll add a world anchor for ARKit to continuously track this position for us."
+      },
+      {
+        "timestamp": "20:46",
+        "text": "ARKit will update this world anchor's transform as the world map is refined."
+      },
+      {
+        "timestamp": "20:51",
+        "text": "We can create a new entity to load our ship's model, and set its transform using the world anchor update, positioning it where the user wanted."
+      },
+      {
+        "timestamp": "21:00",
+        "text": "Finally, we can add the entity to our content to render it over the workbench."
+      },
+      {
+        "timestamp": "21:05",
+        "text": "Whenever ARKit updates the world anchor we added, we update the transform component of our ship entity, making sure it stays anchored to the real world."
+      },
+      {
+        "timestamp": "21:15",
+        "text": "And that's it! We used our hands to point to a location in our surroundings and placed content there."
+      },
+      {
+        "timestamp": "21:21",
+        "text": "Raycasting is not only useful for placing content, but also for interacting with it."
+      },
+      {
+        "timestamp": "21:26",
+        "text": "Let's see what it takes to raycast against our virtual ship."
+      },
+      {
+        "timestamp": "21:30",
+        "text": "RealityKit collision components are very powerful."
+      },
+      {
+        "timestamp": "21:33",
+        "text": "We can let the ship entity participate in collisions by simply adding an appropriate collision component to it, which Reality Composer Pro can help us with."
+      },
+      {
+        "timestamp": "21:42",
+        "text": "After enabling the ship's collision component and building a new ray from the latest hand joint positions, we can do another raycast and tell if the user is pointing at the ship or the table."
+      },
+      {
+        "timestamp": "21:53",
+        "text": "The previous examples demonstrated the power and versatility of combining RealityKit's features with ARKit's scene understanding to build truly compelling experiences."
+      },
+      {
+        "timestamp": "22:03",
+        "text": "Lets see how using ARkit has changed for spatial computing."
+      },
+      {
+        "timestamp": "22:08",
+        "text": "Fundamentally, just as on iOS, ARKit still works by running a session to receive anchor updates."
+      },
+      {
+        "timestamp": "22:15",
+        "text": "How you configure and run your session, receive anchors updates, and persist world anchors has changed on this new platform."
+      },
+      {
+        "timestamp": "22:21",
+        "text": "Let's take a look! On iOS, ARKit provides different configurations to chose from."
+      },
+      {
+        "timestamp": "22:28",
+        "text": "Each configuration bundles capabilities necessary for your experience."
+      },
+      {
+        "timestamp": "22:33",
+        "text": "Here, for example, we selected ARWorldTrackingConfiguration, and will enable sceneReconstruction for meshes and planeDetection for planes."
+      },
+      {
+        "timestamp": "22:43",
+        "text": "We can then create our ARSession and run it with the selected configuration."
+      },
+      {
+        "timestamp": "22:49",
+        "text": "On this new platform, ARKit now exposes a data provider for each scene understanding capability."
+      },
+      {
+        "timestamp": "22:56",
+        "text": "Hand tracking is a new capability offered by ARKit and gets its own provider as well."
+      },
+      {
+        "timestamp": "23:02",
+        "text": "Each data provider's initializer takes the parameters needed to configure that provider instance."
+      },
+      {
+        "timestamp": "23:08",
+        "text": "Now instead of choosing from a catalogue of preset configurations, you get an à la carte selection of the providers you need for your application."
+      },
+      {
+        "timestamp": "23:18",
+        "text": "Here for example, we choose a SceneReconstructionProvider to receive mesh anchors and a PlaneDetectionProvider to receive plane anchors."
+      },
+      {
+        "timestamp": "23:26",
+        "text": "We create the providers and initialize the mesh classification and plane types we wish to receive."
+      },
+      {
+        "timestamp": "23:32",
+        "text": "Then we create an ARKitSession and run it with the instantiated providers."
+      },
+      {
+        "timestamp": "23:40",
+        "text": "Now that we have seen how configuring your session has been simplified, let's go and understand which way these new data providers change the way your app actually receives ARKit data."
+      },
+      {
+        "timestamp": "23:50",
+        "text": "On iOS, a single delegate receives anchor and frame updates."
+      },
+      {
+        "timestamp": "23:54",
+        "text": "Anchors are aggregated and delivered with ARFrames to keep camera frames and anchors in sync."
+      },
+      {
+        "timestamp": "24:00",
+        "text": "Applications are responsible for displaying the camera pixel buffer, and using camera transforms to register and render tracked virtual content."
+      },
+      {
+        "timestamp": "24:09",
+        "text": "Mesh and plane anchors are delivered as base anchors, and it is up to you to disambiguate them to figure out which is which."
+      },
+      {
+        "timestamp": "24:17",
+        "text": "On our new platform, it is the data providers that deliver anchor updates."
+      },
+      {
+        "timestamp": "24:22",
+        "text": "Here are the providers we previously configured."
+      },
+      {
+        "timestamp": "24:25",
+        "text": "Once you run an ARKitSession, each provider will immediately begin asynchronously publishing anchor updates."
+      },
+      {
+        "timestamp": "24:33",
+        "text": "The SceneReconstructionProvider gives meshAnchors, and the planeDetectionProvider gives us PlaneAnchors."
+      },
+      {
+        "timestamp": "24:39",
+        "text": "No disambiguation is necessary! Anchor updates come as soon as they're available, and are decoupled from updates of other data providers."
+      },
+      {
+        "timestamp": "24:48",
+        "text": "It is important to note that ARFrames are no longer provided."
+      },
+      {
+        "timestamp": "24:52",
+        "text": "Spatial computing applications do not need frame or camera data to display content, since this is now done automatically by the system."
+      },
+      {
+        "timestamp": "25:00",
+        "text": "Without having to package anchor updates with an ARFrame, ARKit can now deliver them immediately, reducing latency, allowing your application to quickly react to updates in the person's surroundings."
+      },
+      {
+        "timestamp": "25:12",
+        "text": "Next, let's talk about worldAnchor persistence."
+      },
+      {
+        "timestamp": "25:16",
+        "text": "You will love these changes! In our raycasting examples, we used world anchors to place and anchor virtual content to real-world positions."
+      },
+      {
+        "timestamp": "25:24",
+        "text": "Your app can persist these anchors, enabling it to automatically receive them again, when the device returns to the same surroundings."
+      },
+      {
+        "timestamp": "25:32",
+        "text": "Let's first quickly recap how persistence worked on iOS."
+      },
+      {
+        "timestamp": "25:37",
+        "text": "On iOS, it is the application's responsibility to handle world map and anchor persistence."
+      },
+      {
+        "timestamp": "25:43",
+        "text": "This included requesting and saving ARKit's world map with your added anchor, adding logic to reload the correct world map at the right time, then waiting for relocalization to finish before receiving previously persisted anchors and continuing the application experience."
+      },
+      {
+        "timestamp": "26:00",
+        "text": "On this new platform, the system continuously persists the world map in the background, seamlessly loading, unloading, creating, and relocalizing to existing maps as people move around."
+      },
+      {
+        "timestamp": "26:13",
+        "text": "Your application does not have to handle maps anymore, the system now does it for you! You simply focus on using world anchors to persist locations of virtual content."
+      },
+      {
+        "timestamp": "26:24",
+        "text": "When placing content, you'll be using the new WorldTrackingProvider to add WorldAnchors to the world map."
+      },
+      {
+        "timestamp": "26:31",
+        "text": "The system will automatically save these for you."
+      },
+      {
+        "timestamp": "26:34",
+        "text": "The WorldTrackingProvider will update the tracking status and transforms of these world anchors."
+      },
+      {
+        "timestamp": "26:40",
+        "text": "You can use the WorldAnchor identifier to load or unload the corresponding virtual content."
+      },
+      {
+        "timestamp": "26:47",
+        "text": "We just highlighted a few updates to the ARKit principles that you knew from iOS, but there is so much more to explore! For a deeper dive, with code examples, we recommend you watch \"Meet ARKit for spatial computing.\" Let's conclude this session! In this session, we provided a high-level understanding of how ARKit and RealityKit concepts have evolved from iOS, the changes you need to consider, and which sessions to watch for more details."
+      },
+      {
+        "timestamp": "27:14",
+        "text": "This platform takes on many tasks your iOS app had to handle, allowing you to really focus on building beautiful content and experiences using frameworks and concepts you're already familiar with."
+      },
+      {
+        "timestamp": "27:26",
+        "text": "We are thrilled to see how you leverage spatial computing and all of its amazing capabilities to evolve your app! Thank you for watching! ♪"
+      }
+    ]
   },
   "resources": {
     "resourceLinks": [],
@@ -46,5 +953,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2023/10090"
     }
   ],
-  "extractedAt": "2026-10-11T16:37:05.507Z"
+  "extractedAt": "2026-10-17T18:47:05.990Z"
 }

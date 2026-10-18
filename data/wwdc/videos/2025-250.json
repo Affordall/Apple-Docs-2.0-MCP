@@ -3,16 +3,347 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/250/",
   "title": "Use structured concurrency with Network framework",
-  "speakers": [],
-  "duration": "",
+  "duration": "21:10",
   "topics": [
     "System Services"
   ],
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi - I’m Scott, and I’m really excited to share some improvements that make your networking code even more fun and easy to write than it’s ever been. If you’ve never written a line of networking code, you’re in the right place. And if you have, I have some exciting new APIs to share with you.\n\nI'll start with how to create connections. Then, I’ll dive deep into using those connections to send and receive data.\n\nNext, I’ll discuss how to listen for incoming connections. And finally, I’ll cover how to find and connect to other devices on your network. Let’s get started with making connections.\n\nNetwork framework enables you to make secure, composable and modern connections in your app.\n\nGone are the days of sockets and sockaddrs and tough-to-remember ioctls and blocking operations. Network framework has Connect by Name, meaning it will do the work of resolving names so you don’t have to. Once it resolves that name, it has something called Happy Eyeballs, which ensures that it efficiently picks the best resolved address to connect you dynamically.\n\nSecurity via TLS is baked right in, so you don’t have to integrate yet another library, usually with a completely different kind of API, into your application just to protect your users’ privacy. It also supports network interface transitions and proxies, enabling things like Wi-Fi Assist and multi-path protocols without you having to do anything at all.\n\nIt supports modern transports like QUIC, and it even lets you mix and match your own protocols with the built-in ones, enabling you to spend time on your business logic and user experience instead of debugging why messages aren’t getting from point A to point B.\n\nFor those of you who support both native apps and web apps, Network framework also has robust support for web sockets, allowing one server to service the gamut of client applications.\n\nNetwork framework was built from the ground up to be composable. What that means for you is that when you reach for Network framework, you will be rewarded with a familiar set of APIs, even as network protocols evolve over time, improving performance and privacy.\n\nIf you’ve ever written networking code using TCP with the BSD socket API, you’ll know that switching to something like QUIC would entail a major rewrite. With Network framework, switching over to QUIC could be accomplished during a working lunch. In iOS and macOS 26, Network framework integrates tightly with Swift's robust support for asynchronous operations and structured concurrency. Now, your networking code will fit in smoothly with the rest of your Swift code, making your apps easier to build and maintain. For those of you who are new to networking, I'll be introducing some concepts in this example that might be unfamiliar, but don’t worry, it will all make sense in the end.\n\nLet's say you're writing your app, and you want to talk to a server at www.example.com on port 1029. You want to use TLS, and you only want to make this connection on an unconstrained network.\n\nYour endpoint is where you want to connect. Your protocol stack is how you want to connect. Your parameters help refine how you get there.\n\nYou combine these to make a NetworkConnection.\n\nLet’s go through an example of how this works in practice.\n\nI make a connection by initializing my NetworkConnection with the endpoint and the protocol stack that I want. In this example, I specify that my protocol stack is TLS. Note that TCP and IP are inferred for me. I only have to specify them if I want to customize something but the defaults are good almost all of the time.\n\nWhen I want to modify the defaults, I still do it in a declarative way. I’m going to turn off IP fragmentation for this connection as an example.\n\nFirst, I need to specify the TCP and IP protocols below TLS. And then, I can customize the options that are set for IP to turn fragmentation off.\n\nIf someone enables low data mode to minimize network usage, I want to modify the behavior of my connection so that it prohibits using those constrained network interfaces.\n\nI update the code so I can modify the parameters for the connection because I will no longer be using the default parameters that were created for me automatically.\n\nThe protocol stack remains the same but I add my custom parameters, which allows me to specify that for this specific connection, I would like Network framework to only consider using network interfaces that are not in low data mode. Cool! And with the same declarative style that has made SwiftUI so popular, now my networking code has a similar feel to my user interface code.\n\nWhile it would be great if the network was always available, Network conditions change all the time.\n\nUnlike sockets, NetworkConnection will respond to these changing states for you.\n\nWhen your connection is started, it will transition into the preparing state while any protocol handshakes are performed. And when those are complete, it will go to the ready state.\n\nIf there is no connectivity, the connection will instead go from preparing into a waiting state.\n\nWhen Network framework detects that network conditions have changed, it will go back to preparing while it tries to connect to the remote endpoint. When your connection state becomes ready, it can send and receive data.\n\nOnce your connection is in the ready state, if it encounters an error or connectivity is lost, it will transition to the failed state with an error to let you know what happened.\n\nExiting or canceling the task associated with the connection will move it to the canceled state.\n\nThe great thing about this is that you don’t need to be aware of any of the connection states if you don’t want to be. You can call send and receive, and NetworkConnection will wait until its state becomes ready to complete those operations. But if you do want to know what state your connection is in, maybe to update your user interface, you can install a handler that will be called when your connection changes state.\n\nOkay, now you know how to make a connection. So let’s start using it to send and receive data on the network.\n\nSend and receive are both asynchronous functions, and both will start the connection if it hasn’t already been started.\n\nSend takes a data object and suspends the task until Network framework has processed the data.\n\nTLS and TCP are both stream protocols, so when you receive data, you have to specify how many bytes you want.\n\nIn this example, I’m specifying exactly the number of bytes I want to read. Receive returns a tuple of content and metadata but in this example, I specify I only want the content.\n\nBoth of these functions will throw errors if the connection encounters an error. For example, if the network is lost because Airplane Mode is turned on, you can use the associated error to explain why the transfer was interrupted.\n\nSometimes you don’t know how many bytes of data to receive.\n\nIn this example, I’m loading an image from the network. A 32-bit integer that I receive on my connection tells me how many bytes remaining of image data there are to receive. Using that value, I call receive repeatedly until the image is complete.\n\nIn the last example, I used the version of receive that specifies an exact number of bytes. In this example, I use the version of receive that allows me to specify a minimum and a maximum number of bytes to receive.\n\nDoing it this way allows the code to parse the image as bytes come in from the network and not have to wait for the whole thing. Byte stream protocols like TLS are great but often times you’ll want to frame the bytes you’re sending and receiving, so you work with messages instead of bytes. In the example where I found out how big the image was by reading a 32-bit value from the byte stream ahead of the image contents, that was framing the image with the length to delineate it from neighboring images. I had to do this because streaming protocols don’t preserve message boundaries. What that means is that the number of bytes passed to an individual send operation will not necessarily be the number of bytes passed back from receive operations on the other end of the connection.\n\nFor example, if you call send with three chunks of data, the other side might receive those one byte at a time, all at once, or anything in between.\n\nThis can complicate writing robust, networked applications significantly.\n\nFortunately, Network framework can help. New in iOS and macOS 26 is a built-in type, length, value, or TLV framer that frames messages so what you send on one end of a connection is exactly what you receive on the other end.\n\nTLV is a simple message protocol that encodes a type, which can be used to describe the data contained in the message, and a length, which is the size of the data in the message. Following that is the actual content of the message. Common network protocols use TLV, so this may be a format your server already speaks. Let's try it out. For this example, I’m going to send and receive game message types. GameMessage is an enum, which I will use as the type of the message. The content of the message will be either a game character or a game move.\n\nAdding TLV is as simple as adding it to my protocol stack.\n\nBecause TLV will frame my messages for me, the interface for sending and receiving is slightly different.\n\nI’m going to encode my GameCharacter struct using JSONEncoder and send it.\n\nNotice that I’m specifying the type of the message along with the encoded data.\n\nNow let’s look at how I receive messages using TLV.\n\nUnlike the previous example using byte stream protocols, when I use TLV, I don't have to specify the number of bytes to receive because TLV will parse the message for me. Because I want to know the type of message I received, I received the tuple of the content and the metadata associated with the message. For TLV, the metadata includes the type.\n\nI use the type to determine what kind of content I received, and using that information, I decode the data and print what I received. This is really powerful, especially when interoperating with existing servers and protocols that I don’t control. So now I’ve got my bytes framed without too much trouble, and I’m able to send and receive messages. This is a nice improvement over using byte stream protocols directly.\n\nBut what if I could just send my objects directly? New in iOS and macOS 26 is support for directly sending and receiving codable types, which can help simplify some of this boilerplate code.\n\nI can collapse the character and move structs into the GameMessage enum itself.\n\nCoder is a protocol that I can add to my protocol stack that will frame messages for me and allow me to send and receive codable types without having to serialize and deserialize them myself.\n\nIn this code, I’m sending game messages back and forth. So I'll initialize the coder with the type that I'm sending and receiving and with how I want Coder to format the data.\n\nNetwork framework has built-in support for JSON and property list formats. I'll choose JSON for this example.\n\nNow, I can send game messages without doing any of the encoding myself.\n\nCalling receive on my connection will return a game message directly, without having to do any intermediate decoding to go from a data object to a GameMessage object.\n\nNow, I can send and receive game messages without doing any extra work myself. I can concentrate on the business logic and user interface of my app without cluttering things up with a bunch of bespoke networking code.\n\nSo now you know how to create a connection to an endpoint and send and receive data on the connection. You learned about byte stream protocols like TCP and TLS and how to add framing protocols to your protocol stack so you work with messages instead of byte streams. But what about applications that listen for incoming connections? Incoming connections are handled by NetworkListener.\n\nJust like NetworkConnection, I initialize it by declaring a protocol stack. Unlike a connection, a listener doesn’t have a send or receive method.\n\nThis is because a listener listens for new connections and then delivers them to the caller.\n\nNetworkListener has a run method that will deliver new connections to the handler that is passed in. Let’s see how that works. I create my NetworkListener declaratively by specifying a protocol stack. In this example, my incoming connections will be able to send and receive GameMessage objects that are encrypted by TLS.\n\nCalling run  on NetworkListener will begin delivering new incoming connections to the handler I passed in to run.\n\nNetworkListener will start a new subtask for me for every new connection. So I can perform async operations in my closure without worrying that I’ll be preventing the listener from continuing to deliver new incoming connections. When I get a new connection, I use the messages property on NetworkConnection to handle the incoming messages from the client.\n\nSo now I’ve created a NetworkConnection to an endpoint that I already had, and I’ve coded up listening for new connections. But now I want to create a NetworkConnection whose endpoint I don’t know ahead of time. NetworkBrowser enables me to discover endpoints that I can use when I create my connections.\n\nNew this year in iOS 26 is Wi-Fi Aware, a cross-platform peer-to-peer networking technology that will allow you to discover and connect to a wide range of compatible devices. You can use the DeviceDiscoveryUI framework to find and pair with nearby devices using Wi-Fi Aware. Alternatively, you can browse for Bonjour-advertised services. To learn more about Wi-Fi Aware, watch “Supercharge device connectivity with Wi-Fi Aware.” When you want to find devices on your network, either nearby with Wi-Fi Aware or via Bonjour, you use NetworkBrowser. NetworkBrowser takes browse descriptors, which describe what you're trying to find.\n\nLike NetworkConnection, it also takes parameters, which describe how you want to find it. But unlike NetworkConnection and NetworkListener, NetworkBrowser doesn’t take a protocol stack.\n\nThat’s because NetworkBrowser's only job is to return endpoints which can be used to make connections.\n\nIn this example, I create my NetworkBrowser to search for nearby devices using the  Wi-Fi Aware service, Tic-Tac-Toe. Calling run on the browser will cause it to start and begin to vend sets of endpoints to the handler I passed in to run.\n\nIn my app, I don’t have a preference for which endpoint to use, so I choose the first endpoint that is returned from the browser.\n\nReturning .finish with the endpoint will cause the browser to stop running and the endpoint to be returned from run.\n\nI can then use that endpoint to initialize a NetworkConnection in exactly the same way that I used an endpoint to initialize a NetworkConnection in the previous examples.\n\nThe neat thing about this endpoint, though, is that the browser discovered it for me, so I didn’t have to know about it ahead of time.\n\nWith all these new protocols, you might wonder how to choose which protocol to use in your app. That's a great question. The answer is not as complicated as you might think. If you’re talking to a server or some other device that you don’t control, your choice of protocol has already been made for you. For example, you might be talking to a printer via IPP over TCP.\n\nIf you’re talking to your own app on another device, you can’t go wrong with Coder over TLS or QUIC.\n\nNote that if you're doing HTTP networking and are currently using URLSession, you don't need to change any of your code. And if you’re using Network framework C API or are working in Swift and you prefer using completion handlers, you don’t need to change any of your code either. You’ll still get first-class connect-by-name support, composability, mobility, and built-in security whenever you use URLSession or Network framework in any form.\n\nLet's do a quick recap.\n\nNew in iOS and macOS 26 are NetworkConnection, NetworkListener, and NetworkBrowser.\n\nYou learned about using a NetworkConnection with TLV framing and support for sending and receiving codable types with the Coder protocol.\n\nNetworkListener can be used to listen for incoming connections. And NetworkBrowser can be used to browse for endpoints on the network. All of this makes writing networked apps easier than ever.\n\nSo that’s it. These new APIs are built from the ground up for Swift's structured concurrency. They are created declaratively, much like laying out a user interface in SwiftUI.\n\nThey run in tasks and will be cancelled for you automatically when the task they are running in is cancelled.\n\nTry out these new APIs to take full advantage of structured concurrency in Swift to make your code cleaner and eliminate tons of boilerplate.\n\nAll of that with all the same power and flexibility the Network framework gives you to use in your apps. Thanks for watching.",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi - I’m Scott, and I’m really excited to share some improvements that make your networking code even more fun and easy to write than it’s ever been. If you’ve never written a line of networking code, you’re in the right place. And if you have, I have some exciting new APIs to share with you."
+      },
+      {
+        "timestamp": "0:27",
+        "text": "I'll start with how to create connections. Then, I’ll dive deep into using those connections to send and receive data."
+      },
+      {
+        "timestamp": "0:36",
+        "text": "Next, I’ll discuss how to listen for incoming connections. And finally, I’ll cover how to find and connect to other devices on your network. Let’s get started with making connections."
+      },
+      {
+        "timestamp": "0:48",
+        "text": "Network framework enables you to make secure, composable and modern connections in your app."
+      },
+      {
+        "timestamp": "0:55",
+        "text": "Gone are the days of sockets and sockaddrs and tough-to-remember ioctls and blocking operations. Network framework has Connect by Name, meaning it will do the work of resolving names so you don’t have to. Once it resolves that name, it has something called Happy Eyeballs, which ensures that it efficiently picks the best resolved address to connect you dynamically."
+      },
+      {
+        "timestamp": "1:21",
+        "text": "Security via TLS is baked right in, so you don’t have to integrate yet another library, usually with a completely different kind of API, into your application just to protect your users’ privacy. It also supports network interface transitions and proxies, enabling things like Wi-Fi Assist and multi-path protocols without you having to do anything at all."
+      },
+      {
+        "timestamp": "1:48",
+        "text": "It supports modern transports like QUIC, and it even lets you mix and match your own protocols with the built-in ones, enabling you to spend time on your business logic and user experience instead of debugging why messages aren’t getting from point A to point B."
+      },
+      {
+        "timestamp": "2:06",
+        "text": "For those of you who support both native apps and web apps, Network framework also has robust support for web sockets, allowing one server to service the gamut of client applications."
+      },
+      {
+        "timestamp": "2:21",
+        "text": "Network framework was built from the ground up to be composable. What that means for you is that when you reach for Network framework, you will be rewarded with a familiar set of APIs, even as network protocols evolve over time, improving performance and privacy."
+      },
+      {
+        "timestamp": "2:40",
+        "text": "If you’ve ever written networking code using TCP with the BSD socket API, you’ll know that switching to something like QUIC would entail a major rewrite. With Network framework, switching over to QUIC could be accomplished during a working lunch. In iOS and macOS 26, Network framework integrates tightly with Swift's robust support for asynchronous operations and structured concurrency. Now, your networking code will fit in smoothly with the rest of your Swift code, making your apps easier to build and maintain. For those of you who are new to networking, I'll be introducing some concepts in this example that might be unfamiliar, but don’t worry, it will all make sense in the end."
+      },
+      {
+        "timestamp": "3:28",
+        "text": "Let's say you're writing your app, and you want to talk to a server at www.example.com on port 1029. You want to use TLS, and you only want to make this connection on an unconstrained network."
+      },
+      {
+        "timestamp": "3:44",
+        "text": "Your endpoint is where you want to connect. Your protocol stack is how you want to connect. Your parameters help refine how you get there."
+      },
+      {
+        "timestamp": "3:56",
+        "text": "You combine these to make a NetworkConnection."
+      },
+      {
+        "timestamp": "4:00",
+        "text": "Let’s go through an example of how this works in practice."
+      },
+      {
+        "timestamp": "4:04",
+        "text": "I make a connection by initializing my NetworkConnection with the endpoint and the protocol stack that I want. In this example, I specify that my protocol stack is TLS. Note that TCP and IP are inferred for me. I only have to specify them if I want to customize something but the defaults are good almost all of the time."
+      },
+      {
+        "timestamp": "4:30",
+        "text": "When I want to modify the defaults, I still do it in a declarative way. I’m going to turn off IP fragmentation for this connection as an example."
+      },
+      {
+        "timestamp": "4:41",
+        "text": "First, I need to specify the TCP and IP protocols below TLS. And then, I can customize the options that are set for IP to turn fragmentation off."
+      },
+      {
+        "timestamp": "4:55",
+        "text": "If someone enables low data mode to minimize network usage, I want to modify the behavior of my connection so that it prohibits using those constrained network interfaces."
+      },
+      {
+        "timestamp": "5:08",
+        "text": "I update the code so I can modify the parameters for the connection because I will no longer be using the default parameters that were created for me automatically."
+      },
+      {
+        "timestamp": "5:19",
+        "text": "The protocol stack remains the same but I add my custom parameters, which allows me to specify that for this specific connection, I would like Network framework to only consider using network interfaces that are not in low data mode. Cool! And with the same declarative style that has made SwiftUI so popular, now my networking code has a similar feel to my user interface code."
+      },
+      {
+        "timestamp": "5:47",
+        "text": "While it would be great if the network was always available, Network conditions change all the time."
+      },
+      {
+        "timestamp": "5:55",
+        "text": "Unlike sockets, NetworkConnection will respond to these changing states for you."
+      },
+      {
+        "timestamp": "6:01",
+        "text": "When your connection is started, it will transition into the preparing state while any protocol handshakes are performed. And when those are complete, it will go to the ready state."
+      },
+      {
+        "timestamp": "6:13",
+        "text": "If there is no connectivity, the connection will instead go from preparing into a waiting state."
+      },
+      {
+        "timestamp": "6:20",
+        "text": "When Network framework detects that network conditions have changed, it will go back to preparing while it tries to connect to the remote endpoint. When your connection state becomes ready, it can send and receive data."
+      },
+      {
+        "timestamp": "6:36",
+        "text": "Once your connection is in the ready state, if it encounters an error or connectivity is lost, it will transition to the failed state with an error to let you know what happened."
+      },
+      {
+        "timestamp": "6:48",
+        "text": "Exiting or canceling the task associated with the connection will move it to the canceled state."
+      },
+      {
+        "timestamp": "6:55",
+        "text": "The great thing about this is that you don’t need to be aware of any of the connection states if you don’t want to be. You can call send and receive, and NetworkConnection will wait until its state becomes ready to complete those operations. But if you do want to know what state your connection is in, maybe to update your user interface, you can install a handler that will be called when your connection changes state."
+      },
+      {
+        "timestamp": "7:22",
+        "text": "Okay, now you know how to make a connection. So let’s start using it to send and receive data on the network."
+      },
+      {
+        "timestamp": "7:30",
+        "text": "Send and receive are both asynchronous functions, and both will start the connection if it hasn’t already been started."
+      },
+      {
+        "timestamp": "7:39",
+        "text": "Send takes a data object and suspends the task until Network framework has processed the data."
+      },
+      {
+        "timestamp": "7:47",
+        "text": "TLS and TCP are both stream protocols, so when you receive data, you have to specify how many bytes you want."
+      },
+      {
+        "timestamp": "7:56",
+        "text": "In this example, I’m specifying exactly the number of bytes I want to read. Receive returns a tuple of content and metadata but in this example, I specify I only want the content."
+      },
+      {
+        "timestamp": "8:12",
+        "text": "Both of these functions will throw errors if the connection encounters an error. For example, if the network is lost because Airplane Mode is turned on, you can use the associated error to explain why the transfer was interrupted."
+      },
+      {
+        "timestamp": "8:28",
+        "text": "Sometimes you don’t know how many bytes of data to receive."
+      },
+      {
+        "timestamp": "8:33",
+        "text": "In this example, I’m loading an image from the network. A 32-bit integer that I receive on my connection tells me how many bytes remaining of image data there are to receive. Using that value, I call receive repeatedly until the image is complete."
+      },
+      {
+        "timestamp": "8:52",
+        "text": "In the last example, I used the version of receive that specifies an exact number of bytes. In this example, I use the version of receive that allows me to specify a minimum and a maximum number of bytes to receive."
+      },
+      {
+        "timestamp": "9:08",
+        "text": "Doing it this way allows the code to parse the image as bytes come in from the network and not have to wait for the whole thing. Byte stream protocols like TLS are great but often times you’ll want to frame the bytes you’re sending and receiving, so you work with messages instead of bytes. In the example where I found out how big the image was by reading a 32-bit value from the byte stream ahead of the image contents, that was framing the image with the length to delineate it from neighboring images. I had to do this because streaming protocols don’t preserve message boundaries. What that means is that the number of bytes passed to an individual send operation will not necessarily be the number of bytes passed back from receive operations on the other end of the connection."
+      },
+      {
+        "timestamp": "10:01",
+        "text": "For example, if you call send with three chunks of data, the other side might receive those one byte at a time, all at once, or anything in between."
+      },
+      {
+        "timestamp": "10:14",
+        "text": "This can complicate writing robust, networked applications significantly."
+      },
+      {
+        "timestamp": "10:19",
+        "text": "Fortunately, Network framework can help. New in iOS and macOS 26 is a built-in type, length, value, or TLV framer that frames messages so what you send on one end of a connection is exactly what you receive on the other end."
+      },
+      {
+        "timestamp": "10:40",
+        "text": "TLV is a simple message protocol that encodes a type, which can be used to describe the data contained in the message, and a length, which is the size of the data in the message. Following that is the actual content of the message. Common network protocols use TLV, so this may be a format your server already speaks. Let's try it out. For this example, I’m going to send and receive game message types. GameMessage is an enum, which I will use as the type of the message. The content of the message will be either a game character or a game move."
+      },
+      {
+        "timestamp": "11:23",
+        "text": "Adding TLV is as simple as adding it to my protocol stack."
+      },
+      {
+        "timestamp": "11:29",
+        "text": "Because TLV will frame my messages for me, the interface for sending and receiving is slightly different."
+      },
+      {
+        "timestamp": "11:37",
+        "text": "I’m going to encode my GameCharacter struct using JSONEncoder and send it."
+      },
+      {
+        "timestamp": "11:43",
+        "text": "Notice that I’m specifying the type of the message along with the encoded data."
+      },
+      {
+        "timestamp": "11:49",
+        "text": "Now let’s look at how I receive messages using TLV."
+      },
+      {
+        "timestamp": "11:54",
+        "text": "Unlike the previous example using byte stream protocols, when I use TLV, I don't have to specify the number of bytes to receive because TLV will parse the message for me. Because I want to know the type of message I received, I received the tuple of the content and the metadata associated with the message. For TLV, the metadata includes the type."
+      },
+      {
+        "timestamp": "12:20",
+        "text": "I use the type to determine what kind of content I received, and using that information, I decode the data and print what I received. This is really powerful, especially when interoperating with existing servers and protocols that I don’t control. So now I’ve got my bytes framed without too much trouble, and I’m able to send and receive messages. This is a nice improvement over using byte stream protocols directly."
+      },
+      {
+        "timestamp": "12:50",
+        "text": "But what if I could just send my objects directly? New in iOS and macOS 26 is support for directly sending and receiving codable types, which can help simplify some of this boilerplate code."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "I can collapse the character and move structs into the GameMessage enum itself."
+      },
+      {
+        "timestamp": "13:13",
+        "text": "Coder is a protocol that I can add to my protocol stack that will frame messages for me and allow me to send and receive codable types without having to serialize and deserialize them myself."
+      },
+      {
+        "timestamp": "13:27",
+        "text": "In this code, I’m sending game messages back and forth. So I'll initialize the coder with the type that I'm sending and receiving and with how I want Coder to format the data."
+      },
+      {
+        "timestamp": "13:40",
+        "text": "Network framework has built-in support for JSON and property list formats. I'll choose JSON for this example."
+      },
+      {
+        "timestamp": "13:48",
+        "text": "Now, I can send game messages without doing any of the encoding myself."
+      },
+      {
+        "timestamp": "13:54",
+        "text": "Calling receive on my connection will return a game message directly, without having to do any intermediate decoding to go from a data object to a GameMessage object."
+      },
+      {
+        "timestamp": "14:07",
+        "text": "Now, I can send and receive game messages without doing any extra work myself. I can concentrate on the business logic and user interface of my app without cluttering things up with a bunch of bespoke networking code."
+      },
+      {
+        "timestamp": "14:23",
+        "text": "So now you know how to create a connection to an endpoint and send and receive data on the connection. You learned about byte stream protocols like TCP and TLS and how to add framing protocols to your protocol stack so you work with messages instead of byte streams. But what about applications that listen for incoming connections? Incoming connections are handled by NetworkListener."
+      },
+      {
+        "timestamp": "14:49",
+        "text": "Just like NetworkConnection, I initialize it by declaring a protocol stack. Unlike a connection, a listener doesn’t have a send or receive method."
+      },
+      {
+        "timestamp": "15:01",
+        "text": "This is because a listener listens for new connections and then delivers them to the caller."
+      },
+      {
+        "timestamp": "15:07",
+        "text": "NetworkListener has a run method that will deliver new connections to the handler that is passed in. Let’s see how that works. I create my NetworkListener declaratively by specifying a protocol stack. In this example, my incoming connections will be able to send and receive GameMessage objects that are encrypted by TLS."
+      },
+      {
+        "timestamp": "15:32",
+        "text": "Calling run on NetworkListener will begin delivering new incoming connections to the handler I passed in to run."
+      },
+      {
+        "timestamp": "15:40",
+        "text": "NetworkListener will start a new subtask for me for every new connection. So I can perform async operations in my closure without worrying that I’ll be preventing the listener from continuing to deliver new incoming connections. When I get a new connection, I use the messages property on NetworkConnection to handle the incoming messages from the client."
+      },
+      {
+        "timestamp": "16:05",
+        "text": "So now I’ve created a NetworkConnection to an endpoint that I already had, and I’ve coded up listening for new connections. But now I want to create a NetworkConnection whose endpoint I don’t know ahead of time. NetworkBrowser enables me to discover endpoints that I can use when I create my connections."
+      },
+      {
+        "timestamp": "16:25",
+        "text": "New this year in iOS 26 is Wi-Fi Aware, a cross-platform peer-to-peer networking technology that will allow you to discover and connect to a wide range of compatible devices. You can use the DeviceDiscoveryUI framework to find and pair with nearby devices using Wi-Fi Aware. Alternatively, you can browse for Bonjour-advertised services. To learn more about Wi-Fi Aware, watch “Supercharge device connectivity with Wi-Fi Aware.” When you want to find devices on your network, either nearby with Wi-Fi Aware or via Bonjour, you use NetworkBrowser. NetworkBrowser takes browse descriptors, which describe what you're trying to find."
+      },
+      {
+        "timestamp": "17:16",
+        "text": "Like NetworkConnection, it also takes parameters, which describe how you want to find it. But unlike NetworkConnection and NetworkListener, NetworkBrowser doesn’t take a protocol stack."
+      },
+      {
+        "timestamp": "17:31",
+        "text": "That’s because NetworkBrowser's only job is to return endpoints which can be used to make connections."
+      },
+      {
+        "timestamp": "17:39",
+        "text": "In this example, I create my NetworkBrowser to search for nearby devices using the Wi-Fi Aware service, Tic-Tac-Toe. Calling run on the browser will cause it to start and begin to vend sets of endpoints to the handler I passed in to run."
+      },
+      {
+        "timestamp": "17:59",
+        "text": "In my app, I don’t have a preference for which endpoint to use, so I choose the first endpoint that is returned from the browser."
+      },
+      {
+        "timestamp": "18:08",
+        "text": "Returning .finish with the endpoint will cause the browser to stop running and the endpoint to be returned from run."
+      },
+      {
+        "timestamp": "18:16",
+        "text": "I can then use that endpoint to initialize a NetworkConnection in exactly the same way that I used an endpoint to initialize a NetworkConnection in the previous examples."
+      },
+      {
+        "timestamp": "18:29",
+        "text": "The neat thing about this endpoint, though, is that the browser discovered it for me, so I didn’t have to know about it ahead of time."
+      },
+      {
+        "timestamp": "18:38",
+        "text": "With all these new protocols, you might wonder how to choose which protocol to use in your app. That's a great question. The answer is not as complicated as you might think. If you’re talking to a server or some other device that you don’t control, your choice of protocol has already been made for you. For example, you might be talking to a printer via IPP over TCP."
+      },
+      {
+        "timestamp": "19:05",
+        "text": "If you’re talking to your own app on another device, you can’t go wrong with Coder over TLS or QUIC."
+      },
+      {
+        "timestamp": "19:13",
+        "text": "Note that if you're doing HTTP networking and are currently using URLSession, you don't need to change any of your code. And if you’re using Network framework C API or are working in Swift and you prefer using completion handlers, you don’t need to change any of your code either. You’ll still get first-class connect-by-name support, composability, mobility, and built-in security whenever you use URLSession or Network framework in any form."
+      },
+      {
+        "timestamp": "19:49",
+        "text": "Let's do a quick recap."
+      },
+      {
+        "timestamp": "19:51",
+        "text": "New in iOS and macOS 26 are NetworkConnection, NetworkListener, and NetworkBrowser."
+      },
+      {
+        "timestamp": "19:58",
+        "text": "You learned about using a NetworkConnection with TLV framing and support for sending and receiving codable types with the Coder protocol."
+      },
+      {
+        "timestamp": "20:08",
+        "text": "NetworkListener can be used to listen for incoming connections. And NetworkBrowser can be used to browse for endpoints on the network. All of this makes writing networked apps easier than ever."
+      },
+      {
+        "timestamp": "20:21",
+        "text": "So that’s it. These new APIs are built from the ground up for Swift's structured concurrency. They are created declaratively, much like laying out a user interface in SwiftUI."
+      },
+      {
+        "timestamp": "20:35",
+        "text": "They run in tasks and will be cancelled for you automatically when the task they are running in is cancelled."
+      },
+      {
+        "timestamp": "20:43",
+        "text": "Try out these new APIs to take full advantage of structured concurrency in Swift to make your code cleaner and eliminate tons of boilerplate."
+      },
+      {
+        "timestamp": "20:53",
+        "text": "All of that with all the same power and flexibility the Network framework gives you to use in your apps. Thanks for watching."
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -94,6 +425,33 @@
       "code": "// Browse for nearby paired Wi-Fi Aware devices\n\nimport Network\nimport WiFiAware\n\npublic func findNearbyDevice() async throws {\n  let endpoint = try await NetworkBrowser(for: .wifiAware(.connecting(to: .allPairedDevices, from: .ticTacToeService))).run { endpoints in\n    .finish(endpoints.first!)\n  }\n\n  // Make a connection to the endpoint\n}"
     }
   ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Welcome",
+      "duration": "0:45"
+    },
+    {
+      "timestamp": "0:45",
+      "title": "Make connections",
+      "duration": "6:37"
+    },
+    {
+      "timestamp": "7:22",
+      "title": "Send and receive",
+      "duration": "7:00"
+    },
+    {
+      "timestamp": "14:22",
+      "title": "Accept incoming connections",
+      "duration": "1:43"
+    },
+    {
+      "timestamp": "16:05",
+      "title": "Find other devices",
+      "duration": "5:05"
+    }
+  ],
   "resources": {
     "resourceLinks": [
       {
@@ -140,5 +498,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2018/715"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:22.527Z"
+  "extractedAt": "2026-10-17T18:44:17.291Z"
 }

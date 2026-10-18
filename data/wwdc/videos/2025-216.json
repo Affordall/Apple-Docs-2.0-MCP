@@ -3,8 +3,7 @@
   "year": "2025",
   "url": "https://developer.apple.com/videos/play/wwdc2025/216/",
   "title": "Turbocharge your app for CarPlay",
-  "speakers": [],
-  "duration": "",
+  "duration": "22:09",
   "topics": [
     "App Services",
     "System Services"
@@ -12,8 +11,312 @@
   "hasTranscript": true,
   "hasCode": true,
   "transcript": {
-    "fullText": "Hi! I’m Olivia. I’m an engineer on the Car Experience team, and I’m so excited to talk to you today about CarPlay in iOS 26. CarPlay is the smarter, safer way to use iPhone in the car, and we are introducing a wealth of new ways to turbocharge your apps in CarPlay.\n\nStaying connected while driving is now easier than ever with tapbacks in Messages, pinned conversations, and a compact incoming call UI, so you can still keep an eye on your navigation destination.\n\nAnd, there are even more ways to see important information from your favorite apps, with helpful, glanceable widgets, and realtime updates from Live Activities.\n\nVehicle screens come in many shapes and sizes. In iOS 26, some screen configurations allow drivers to adjust their display scale with Smart Display Zoom configurable within Settings in CarPlay. When Smart Display Zoom is enabled, your CarPlay app will be automatically resized to the new display scale.\n\nAnd also in iOS 26, your CarPlay apps automatically get an updated appearance, without any additional work on your end.\n\nCarPlay Ultra is the best of your iPhone, and the best of the car, together in a unified, consistent, and personalized experience, across all of the driver displays. Everything that you just saw, including the apps you know and love from driving in CarPlay today, are also available in CarPlay Ultra. With iOS 26, there are more ways than ever to bring your app to drivers on the road. If your app supports widgets or Live Activities, you can make them available to drivers in CarPlay, even if you don’t have a CarPlay App.\n\nAnd for CarPlay apps, there are new APIs in the CarPlay framework to allow drivers to seamlessly perform common scenarios while in the car.\n\nLet’s start with widgets in CarPlay.\n\nDrivers are able to navigate left of the CarPlay Dashboard to see your app’s supported widgets, even if you don’t have a CarPlay app. Widgets can launch apps in CarPlay, and on touchscreen vehicles, widgets support interaction. Drivers can customize which widgets they want to see in CarPlay by going to Settings → General → CarPlay on iPhone, and selecting their vehicle.\n\nThe good news is that bringing your widget to CarPlay is incredibly easy. All you need to do is support the systemSmall widget family.\n\nWidgets can appear in different contexts on many different platforms. For example, a systemSmall widget can be added to your iPhone’s Home Screen, the lock screen, in StandBy, and now, in CarPlay. However, some widgets may not work well in certain contexts. For example, a widget that relies on high density text or information that isn’t relevant to a driver, may not be well suited as a widget in CarPlay. For these situations, you can take advantage of the disfavoredLocations modifier. By setting disfavoredLocations to include carPlay, your widget will be automatically grouped in CarPlay Settings with an indication that your widget is not optimized for CarPlay. If a driver does choose to include a disfavored widget in their CarPlay experience, interaction will be disabled.\n\nWe recommend setting CarPlay as a disfavored location if your widget is a game or requires extensive user interaction.\n\nAn example of this could be if your widget refreshes itself with new content each time it's tapped. It's also best to set CarPlay as a disfavored location if your widget doesn’t work in the car. If your widget relies on data protection classes A or B, it likely won’t work in CarPlay because most people use CarPlay while iPhone is locked. When a widget has an associated CarPlay app, that app can be launched by tapping on the widget. However, if your widget's primary purpose is to launch an app that isn’t available in CarPlay, consider using disfavoredLocation.\n\nGreat widgets on iPhone provide simple, glanceable information, and the same is true in CarPlay. Here are some best practices to consider as part of your development.\n\nYour widgets are optimized for every vehicle, so widgetContentMargins are tailored for presentation in CarPlay. And, the widget background is removed when the containerBackgroundRemovable modifier is set to true. It’s also best to use system fonts and colors to make sure your text is legible in different contexts.\n\nYour app may already be providing timely updates through Live Activities. In iOS 26, that experience comes to CarPlay.\n\nWhen a supported Live Activity begins on iPhone, it automatically shows up in CarPlay Dashboard. And if CarPlay Dashboard is not visible, CarPlay ensures drivers don’t miss an important alert by showing it as a notification at the bottom of the display.\n\nAnd, like iPhone, users can turn off Live Activities in Settings, or control alerts by enabling a focus mode.\n\nTo provide the most helpful, glanceable information to drivers, CarPlay uses the activity family small size class to display your Live Activity.\n\nThis is the same size class used for Live Activities in the watchOS Smart Stack.\n\nIf you don’t yet implement activity family small, CarPlay will fall back to showing the compact leading and trailing views from your Dynamic Island configuration. For the best experience, your app should only communicate the most significant states of the Live Activity, and consider that Live Activities in CarPlay are non-interactive. Testing your widgets or Live Activities is easy and you don’t even need a car! The CarPlay Simulator app for macOS lets you connect your iPhone to your Mac using a USB cable to recreate a full CarPlay experience. CarPlay Simulator is included in the “Additional Tools for Xcode” package available for download.\n\nTo learn more about designing your widgets and Live Activities, check out the “What’s new in Widgets” video. Lets steer our focus onto full app experiences in the car. The CarPlay framework enables you to present a version of your app in CarPlay, so people can seamlessly perform common tasks while driving. It allows you to support a variety of categories. You can create experiences for audio playback, communication via SiriKit, driving tasks, EV charging and fueling, turn-by-turn route guidance, parking, and quick food ordering.\n\nIf your app meets the criteria for one of these categories, you can request an entitlement, which lets your app take advantage of the CarPlay framework. The CarPlay framework includes many templates APIs. Each CarPlay app category has access to a set of templates that are designed specifically for that category. These template APIs provide UI optimized for use in the car, and give your app the ability to configure and respond to interactions.\n\nThey also insulate your app from details of each car model, such as the display configuration or input hardware. Let’s check out some of the enhancements to CarPlay templates in iOS 26, including specific updates for audio and navigation apps.\n\nThe list template is available to all CarPlay apps and lets your app show a list of items, such as a set of music tracks.\n\nThe CPListImageRowItem is a type of item that can appear as a row in the list.\n\nIt can be used to show a series of images, for example, to show unique album artwork. In iOS 26, we have new ways to customize the image row in your list template. There’s also new support to disable individual elements within the row item, as well as to allow the elements in your row item to span across multiple lines.\n\nIf your app already uses CPListImageRowItem, you can now configure it with a “Row Element” to use the same presentation style, as well as take advantage of the new multiline, and disabling capabilities.\n\n“Card Element” is a different presentation style that shows a series of portrait-style cards. You can choose whether you’d like an image to fill the entire card, or to be displayed as a square at the top of the card. Title, subtitle, and a tint color can be optionally provided to enhance the look and feel of this element. For a more compact appearance, use “Condensed Element.” This style shows a title and an image configurable in either a rounded square, or circular shape. You can optionally show a subtitle and SF Symbol on the trailing side of the element.\n\nYou can also express your content with a full image by using “Grid Element.” This is great for unique playlists or contact images.\n\nAnd finally, “Image Grid Element” can be used to show an image configurable in either a rounded square or circular shape, as well as an optional title and SF Symbol below the image. The List template also gets a new API to show pinned elements. Assign the headerGridButtons property on the CPListTemplate to present important elements at the top of your list, before the first list section.\n\nThen, create grid buttons with an image, title variants, and an optional handler, which is called when the button is tapped.\n\nFor Communication apps, you can also provide a CPMessageGridItemConfiguration.\n\nThe messageConfiguration allows you to provide a conversation identifier that SiriKit passes back to your app when a grid item is selected. It also allows you to indicate whether or not the item should show an unread indicator.\n\nLet’s switch tracks, and talk about CarPlay audio apps.\n\nIf your app streams audio for sports events, you can now use a variant of the Now playing template to show the status of these events, right on the CarPlay screen.\n\nThe Now playing template with sports mode is available to CarPlay audio apps on iOS 18.4 or later, and is intended for events that consist of 2 teams. It can show metadata such as team logos, team scores, the game clock, and more.\n\nWhen your app streams audio from a live or pre-recorded sporting event, you can transition its existing Now playing template into sports mode by creating a CPNowPlayingSportsEventStatus with information about the event, including the elapsed or remaining time in the eventClock parameter.\n\nThe system will automatically count up or down from the point provided in the eventClock on your behalf.\n\nNext, instantiate a CPNowPlayingModeSports with your newly created event status, as well as information about the teams. Finally, set the nowPlayingMode on the now playing template to your CPNowPlayingModeSports instance.\n\nAt any point during playback, your app can provide a new set of sports mode metadata to adjust scores, possession indicators, standings, and more. If you are streaming a pre-recorded event, your playback controls may allow time-shifting. When time-shifting occurs, ensure your app sends an update with the metadata that corresponds to the new playback position.\n\nNow that we’ve explored the new UI enhancements, let's tune in to some best practices for apps that support audio.\n\nCarPlay is a unique environment, because audio sources are mixed between those coming from iPhone, and those coming from the car. For example, drivers may be listening to a sports game in a CarPlay app, or enjoying FM or satellite radio, at the time they launch your app in CarPlay.\n\nHere’s some tips so that drivers enjoy playback without interruptions, and get the best possible listening experience.\n\nOnly start your audio session when your app is about to start playing audio. When your app is no longer playing audio, be sure to deactivate your audio session.\n\nSpatial Audio and Dolby Atmos provide amazing, immersive ways to experience audio, and vehicles can support these formats for their sound systems. Support AirPlay enhanced audio buffering to bring this incredible experience to your app in CarPlay. For more details, see “Tune up your AirPlay audio experience.” Now, let’s shift gears and explore what’s new for navigation apps. With iOS 26, buttons in the CPMapTemplate automatically get a Liquid Glass appearance. Be sure to test the ways your button icons look with CarPlay Simulator. Many new vehicles support multitouch interactions, including any vehicle that supports CarPlay Ultra. Starting in iOS 26, if a vehicle supports multitouch interactions in CarPlay, drivers can interact with your navigation app using multitouch gestures.\n\nYour CPMapTemplate will receive callbacks that allow you to react accordingly and create a richer, more interactive map experience. Supported gestures include pinch to zoom, including double tap to zoom in, and two-finger double tap to zoom out, two-finger slide up and down to adjust pitch, and two-finger rotate.\n\nIn supported cars, your CarPlay navigation app can display information on multiple screens and surfaces. By default, your app draws its map in the CarPlay display.\n\nIt can appear in the CarPlay Dashboard as well, by declaring support for the dashboard navigation scene, and implementing the required delegates. In iOS 16.4, we introduced support for another map in secondary display areas. Check out the video “Get more mileage out of your app with CarPlay” linked below to learn more.\n\nMost new cars also support showing glanceable turn-by-turn metadata in their instrument cluster or heads up display.\n\nLet’s talk about how navigation metadata works.\n\nWhen your app runs in CarPlay, iPhone is connected to the vehicle.\n\nAs people drive, your app creates a series of upcoming maneuver descriptions, including metadata for maneuver and junction types.\n\nYour metadata is sent to the vehicle, which then maps it to its closest visual type and controls its appearance for rendering on screen.\n\nUse CPManeuver to specify each maneuver. It takes one of 54 maneuver types. Here are some examples.\n\nYou can also specify a junction type which helps describe more complex intersections such as a roundabout. It can include the number of exits, the angle of each exit, and guidance to the driver on which exit to take.\n\nFocus on the semantic meaning of the type, as the car defines how it looks.\n\nI have a navigation app called Coastal Roads, and I’d like to go ahead and add support for metadata.\n\nCarPlay knows my app can support navigation metadata because I return true when the system calls mapTemplateShouldProvideNavigationMetadata. To maximize performance of my app, I provide as many maneuver and lane guidance objects up-front to my CPNavigationSession when route guidance starts.\n\nAnd, if rerouting is needed, I’ll first pause the current trip, and create a CPRouteInformationObject with the updated information for the route. When I resume the trip with the object, the system will display the new route. You can test all of this in CarPlay Simulator, right on your Mac. You can also test it in the many vehicles on the road that support metadata. Lets see how it looks in one of those cars.\n\nHere we are in the car. This car has a large center screen and an instrument cluster display behind the steering wheel. I’ve already paired my iPhone, and CarPlay is up and running.\n\nThis is the CarPlay Dashboard in iOS 26. The new design looks amazing, and it’s immediately familiar because it’s just like your iPhone. I’m currently running the sample navigation app “Coastal Roads” which displays a map on the left, and in the upper right, you can see its dashboard buttons. Dashboard buttons provide useful shortcuts or favorites, and it’s easy to specify them using instances of CPDashboardButton.\n\nEarlier in the video, we introduced widgets for CarPlay. Widgets are a familiar way to get glanceable information from your favorite apps, right here on the car’s screen. I simply swipe to the right and here they are! As you can see, I can quickly choose which widgets I want to have on the screen.\n\nYou can customize which widgets appear in CarPlay by going to Settings → General → CarPlay on iPhone. Now let’s go into the Coastal Roads navigation app.\n\nI made sure to update the CPMapButton and CPBarButton images in my app to look good on top of Liquid Glass.\n\nI've configured one of my bar buttons, to bring up a preview of my favorite drive to the Coastal Roads Ferry. OK, now let’s look at the instrument cluster display.\n\nThis car keeps important driving information in the instrument cluster, so its easily glanceable while driving. If I change the view, I can view turn-by-turn route guidance in a convenient location. Route guidance hasn't started yet, so lets start our route. We’re starting off driving straight for 140 ft. Right now, metadata from Coastal Roads is specifying the maneuver type “straightAhead” which is typically shown as a straight arrow. I can see the remaining distance counting down, and the street name.\n\nNow we’re taking a slight left turn at a -45° angle onto Starfish St, and the maneuver updates. Coastal Roads also set the junctionElementAngles to 80° and -5°, so I can see where else the road leads. We’re now coming up on a sharp left turn, and the app set the turn angle to be -135°. As you can see, the car renders it with a different appearance. Now, I'm going to quickly jump onto Horizon Highway. Where I can see the onRamp maneuver type. And now, the offRamp maneuver type.\n\nI'll take a couple more left turns.\n\nAnd then will keepRight onto Pebble Pier at an exit angle of 20 degrees.\n\nAnd I've finally reached the ferry! Coastal Roads sent the enter_ferry maneuver type and then sent the arriveAtDestination maneuver type.\n\nAs you can see, metadata is a powerful way to show directions in the instrument cluster or in the heads-up display.\n\nCarPlay takes care of communication with the car, sending over your metadata, and managing state, so you can focus on creating a great route guidance experience in your app. To optimize the performance of your navigation app, your app can observe thermal levels, and reduce the detail that your map is drawing, or transition into an overview mode, which may not require as frequent view updates.\n\nKeep in mind that your CADisplayLink frame rates in CarPlay may automatically adapt according to device conditions.\n\nAlso consider that if your app is displaying a map both in the center console and in the instrument cluster, that the two views don’t need to show the same content. Consider placing one of your views in an overview mode to give the driver different navigation perspectives. The additional benefit of this, is that you’ll reduce the amount of animated view updates your app requires. Checkout “Optimize CPU performance with Instruments” for more. That’s it! With widgets and Live Activities, there are more ways than ever to bring your app to drivers on the road.\n\nAnd with updates to the CarPlay framework, your CarPlay apps can be more expressive and capable, and even work inside the instrument cluster or heads-up display. For more information, check out the CarPlay developer link below. Happy driving!",
-    "segments": []
+    "segments": [
+      {
+        "timestamp": "0:07",
+        "text": "Hi! I’m Olivia. I’m an engineer on the Car Experience team, and I’m so excited to talk to you today about CarPlay in iOS 26. CarPlay is the smarter, safer way to use iPhone in the car, and we are introducing a wealth of new ways to turbocharge your apps in CarPlay."
+      },
+      {
+        "timestamp": "0:28",
+        "text": "Staying connected while driving is now easier than ever with tapbacks in Messages, pinned conversations, and a compact incoming call UI, so you can still keep an eye on your navigation destination."
+      },
+      {
+        "timestamp": "0:43",
+        "text": "And, there are even more ways to see important information from your favorite apps, with helpful, glanceable widgets, and realtime updates from Live Activities."
+      },
+      {
+        "timestamp": "0:56",
+        "text": "Vehicle screens come in many shapes and sizes. In iOS 26, some screen configurations allow drivers to adjust their display scale with Smart Display Zoom configurable within Settings in CarPlay. When Smart Display Zoom is enabled, your CarPlay app will be automatically resized to the new display scale."
+      },
+      {
+        "timestamp": "1:19",
+        "text": "And also in iOS 26, your CarPlay apps automatically get an updated appearance, without any additional work on your end."
+      },
+      {
+        "timestamp": "1:29",
+        "text": "CarPlay Ultra is the best of your iPhone, and the best of the car, together in a unified, consistent, and personalized experience, across all of the driver displays. Everything that you just saw, including the apps you know and love from driving in CarPlay today, are also available in CarPlay Ultra. With iOS 26, there are more ways than ever to bring your app to drivers on the road. If your app supports widgets or Live Activities, you can make them available to drivers in CarPlay, even if you don’t have a CarPlay App."
+      },
+      {
+        "timestamp": "2:05",
+        "text": "And for CarPlay apps, there are new APIs in the CarPlay framework to allow drivers to seamlessly perform common scenarios while in the car."
+      },
+      {
+        "timestamp": "2:15",
+        "text": "Let’s start with widgets in CarPlay."
+      },
+      {
+        "timestamp": "2:18",
+        "text": "Drivers are able to navigate left of the CarPlay Dashboard to see your app’s supported widgets, even if you don’t have a CarPlay app. Widgets can launch apps in CarPlay, and on touchscreen vehicles, widgets support interaction. Drivers can customize which widgets they want to see in CarPlay by going to Settings → General → CarPlay on iPhone, and selecting their vehicle."
+      },
+      {
+        "timestamp": "2:43",
+        "text": "The good news is that bringing your widget to CarPlay is incredibly easy. All you need to do is support the systemSmall widget family."
+      },
+      {
+        "timestamp": "2:53",
+        "text": "Widgets can appear in different contexts on many different platforms. For example, a systemSmall widget can be added to your iPhone’s Home Screen, the lock screen, in StandBy, and now, in CarPlay. However, some widgets may not work well in certain contexts. For example, a widget that relies on high density text or information that isn’t relevant to a driver, may not be well suited as a widget in CarPlay. For these situations, you can take advantage of the disfavoredLocations modifier. By setting disfavoredLocations to include carPlay, your widget will be automatically grouped in CarPlay Settings with an indication that your widget is not optimized for CarPlay. If a driver does choose to include a disfavored widget in their CarPlay experience, interaction will be disabled."
+      },
+      {
+        "timestamp": "3:47",
+        "text": "We recommend setting CarPlay as a disfavored location if your widget is a game or requires extensive user interaction."
+      },
+      {
+        "timestamp": "3:55",
+        "text": "An example of this could be if your widget refreshes itself with new content each time it's tapped. It's also best to set CarPlay as a disfavored location if your widget doesn’t work in the car. If your widget relies on data protection classes A or B, it likely won’t work in CarPlay because most people use CarPlay while iPhone is locked. When a widget has an associated CarPlay app, that app can be launched by tapping on the widget. However, if your widget's primary purpose is to launch an app that isn’t available in CarPlay, consider using disfavoredLocation."
+      },
+      {
+        "timestamp": "4:31",
+        "text": "Great widgets on iPhone provide simple, glanceable information, and the same is true in CarPlay. Here are some best practices to consider as part of your development."
+      },
+      {
+        "timestamp": "4:43",
+        "text": "Your widgets are optimized for every vehicle, so widgetContentMargins are tailored for presentation in CarPlay. And, the widget background is removed when the containerBackgroundRemovable modifier is set to true. It’s also best to use system fonts and colors to make sure your text is legible in different contexts."
+      },
+      {
+        "timestamp": "5:07",
+        "text": "Your app may already be providing timely updates through Live Activities. In iOS 26, that experience comes to CarPlay."
+      },
+      {
+        "timestamp": "5:16",
+        "text": "When a supported Live Activity begins on iPhone, it automatically shows up in CarPlay Dashboard. And if CarPlay Dashboard is not visible, CarPlay ensures drivers don’t miss an important alert by showing it as a notification at the bottom of the display."
+      },
+      {
+        "timestamp": "5:34",
+        "text": "And, like iPhone, users can turn off Live Activities in Settings, or control alerts by enabling a focus mode."
+      },
+      {
+        "timestamp": "5:43",
+        "text": "To provide the most helpful, glanceable information to drivers, CarPlay uses the activity family small size class to display your Live Activity."
+      },
+      {
+        "timestamp": "5:53",
+        "text": "This is the same size class used for Live Activities in the watchOS Smart Stack."
+      },
+      {
+        "timestamp": "5:59",
+        "text": "If you don’t yet implement activity family small, CarPlay will fall back to showing the compact leading and trailing views from your Dynamic Island configuration. For the best experience, your app should only communicate the most significant states of the Live Activity, and consider that Live Activities in CarPlay are non-interactive. Testing your widgets or Live Activities is easy and you don’t even need a car! The CarPlay Simulator app for macOS lets you connect your iPhone to your Mac using a USB cable to recreate a full CarPlay experience. CarPlay Simulator is included in the “Additional Tools for Xcode” package available for download."
+      },
+      {
+        "timestamp": "6:42",
+        "text": "To learn more about designing your widgets and Live Activities, check out the “What’s new in Widgets” video. Lets steer our focus onto full app experiences in the car. The CarPlay framework enables you to present a version of your app in CarPlay, so people can seamlessly perform common tasks while driving. It allows you to support a variety of categories. You can create experiences for audio playback, communication via SiriKit, driving tasks, EV charging and fueling, turn-by-turn route guidance, parking, and quick food ordering."
+      },
+      {
+        "timestamp": "7:21",
+        "text": "If your app meets the criteria for one of these categories, you can request an entitlement, which lets your app take advantage of the CarPlay framework. The CarPlay framework includes many templates APIs. Each CarPlay app category has access to a set of templates that are designed specifically for that category. These template APIs provide UI optimized for use in the car, and give your app the ability to configure and respond to interactions."
+      },
+      {
+        "timestamp": "7:50",
+        "text": "They also insulate your app from details of each car model, such as the display configuration or input hardware. Let’s check out some of the enhancements to CarPlay templates in iOS 26, including specific updates for audio and navigation apps."
+      },
+      {
+        "timestamp": "8:08",
+        "text": "The list template is available to all CarPlay apps and lets your app show a list of items, such as a set of music tracks."
+      },
+      {
+        "timestamp": "8:18",
+        "text": "The CPListImageRowItem is a type of item that can appear as a row in the list."
+      },
+      {
+        "timestamp": "8:23",
+        "text": "It can be used to show a series of images, for example, to show unique album artwork. In iOS 26, we have new ways to customize the image row in your list template. There’s also new support to disable individual elements within the row item, as well as to allow the elements in your row item to span across multiple lines."
+      },
+      {
+        "timestamp": "8:46",
+        "text": "If your app already uses CPListImageRowItem, you can now configure it with a “Row Element” to use the same presentation style, as well as take advantage of the new multiline, and disabling capabilities."
+      },
+      {
+        "timestamp": "9:01",
+        "text": "“Card Element” is a different presentation style that shows a series of portrait-style cards. You can choose whether you’d like an image to fill the entire card, or to be displayed as a square at the top of the card. Title, subtitle, and a tint color can be optionally provided to enhance the look and feel of this element. For a more compact appearance, use “Condensed Element.” This style shows a title and an image configurable in either a rounded square, or circular shape. You can optionally show a subtitle and SF Symbol on the trailing side of the element."
+      },
+      {
+        "timestamp": "9:38",
+        "text": "You can also express your content with a full image by using “Grid Element.” This is great for unique playlists or contact images."
+      },
+      {
+        "timestamp": "9:47",
+        "text": "And finally, “Image Grid Element” can be used to show an image configurable in either a rounded square or circular shape, as well as an optional title and SF Symbol below the image. The List template also gets a new API to show pinned elements. Assign the headerGridButtons property on the CPListTemplate to present important elements at the top of your list, before the first list section."
+      },
+      {
+        "timestamp": "10:15",
+        "text": "Then, create grid buttons with an image, title variants, and an optional handler, which is called when the button is tapped."
+      },
+      {
+        "timestamp": "10:24",
+        "text": "For Communication apps, you can also provide a CPMessageGridItemConfiguration."
+      },
+      {
+        "timestamp": "10:30",
+        "text": "The messageConfiguration allows you to provide a conversation identifier that SiriKit passes back to your app when a grid item is selected. It also allows you to indicate whether or not the item should show an unread indicator."
+      },
+      {
+        "timestamp": "10:45",
+        "text": "Let’s switch tracks, and talk about CarPlay audio apps."
+      },
+      {
+        "timestamp": "10:51",
+        "text": "If your app streams audio for sports events, you can now use a variant of the Now playing template to show the status of these events, right on the CarPlay screen."
+      },
+      {
+        "timestamp": "11:01",
+        "text": "The Now playing template with sports mode is available to CarPlay audio apps on iOS 18.4 or later, and is intended for events that consist of 2 teams. It can show metadata such as team logos, team scores, the game clock, and more."
+      },
+      {
+        "timestamp": "11:22",
+        "text": "When your app streams audio from a live or pre-recorded sporting event, you can transition its existing Now playing template into sports mode by creating a CPNowPlayingSportsEventStatus with information about the event, including the elapsed or remaining time in the eventClock parameter."
+      },
+      {
+        "timestamp": "11:41",
+        "text": "The system will automatically count up or down from the point provided in the eventClock on your behalf."
+      },
+      {
+        "timestamp": "11:49",
+        "text": "Next, instantiate a CPNowPlayingModeSports with your newly created event status, as well as information about the teams. Finally, set the nowPlayingMode on the now playing template to your CPNowPlayingModeSports instance."
+      },
+      {
+        "timestamp": "12:07",
+        "text": "At any point during playback, your app can provide a new set of sports mode metadata to adjust scores, possession indicators, standings, and more. If you are streaming a pre-recorded event, your playback controls may allow time-shifting. When time-shifting occurs, ensure your app sends an update with the metadata that corresponds to the new playback position."
+      },
+      {
+        "timestamp": "12:31",
+        "text": "Now that we’ve explored the new UI enhancements, let's tune in to some best practices for apps that support audio."
+      },
+      {
+        "timestamp": "12:40",
+        "text": "CarPlay is a unique environment, because audio sources are mixed between those coming from iPhone, and those coming from the car. For example, drivers may be listening to a sports game in a CarPlay app, or enjoying FM or satellite radio, at the time they launch your app in CarPlay."
+      },
+      {
+        "timestamp": "12:59",
+        "text": "Here’s some tips so that drivers enjoy playback without interruptions, and get the best possible listening experience."
+      },
+      {
+        "timestamp": "13:07",
+        "text": "Only start your audio session when your app is about to start playing audio. When your app is no longer playing audio, be sure to deactivate your audio session."
+      },
+      {
+        "timestamp": "13:18",
+        "text": "Spatial Audio and Dolby Atmos provide amazing, immersive ways to experience audio, and vehicles can support these formats for their sound systems. Support AirPlay enhanced audio buffering to bring this incredible experience to your app in CarPlay. For more details, see “Tune up your AirPlay audio experience.” Now, let’s shift gears and explore what’s new for navigation apps. With iOS 26, buttons in the CPMapTemplate automatically get a Liquid Glass appearance. Be sure to test the ways your button icons look with CarPlay Simulator. Many new vehicles support multitouch interactions, including any vehicle that supports CarPlay Ultra. Starting in iOS 26, if a vehicle supports multitouch interactions in CarPlay, drivers can interact with your navigation app using multitouch gestures."
+      },
+      {
+        "timestamp": "14:17",
+        "text": "Your CPMapTemplate will receive callbacks that allow you to react accordingly and create a richer, more interactive map experience. Supported gestures include pinch to zoom, including double tap to zoom in, and two-finger double tap to zoom out, two-finger slide up and down to adjust pitch, and two-finger rotate."
+      },
+      {
+        "timestamp": "14:41",
+        "text": "In supported cars, your CarPlay navigation app can display information on multiple screens and surfaces. By default, your app draws its map in the CarPlay display."
+      },
+      {
+        "timestamp": "14:52",
+        "text": "It can appear in the CarPlay Dashboard as well, by declaring support for the dashboard navigation scene, and implementing the required delegates. In iOS 16.4, we introduced support for another map in secondary display areas. Check out the video “Get more mileage out of your app with CarPlay” linked below to learn more."
+      },
+      {
+        "timestamp": "15:15",
+        "text": "Most new cars also support showing glanceable turn-by-turn metadata in their instrument cluster or heads up display."
+      },
+      {
+        "timestamp": "15:23",
+        "text": "Let’s talk about how navigation metadata works."
+      },
+      {
+        "timestamp": "15:28",
+        "text": "When your app runs in CarPlay, iPhone is connected to the vehicle."
+      },
+      {
+        "timestamp": "15:33",
+        "text": "As people drive, your app creates a series of upcoming maneuver descriptions, including metadata for maneuver and junction types."
+      },
+      {
+        "timestamp": "15:43",
+        "text": "Your metadata is sent to the vehicle, which then maps it to its closest visual type and controls its appearance for rendering on screen."
+      },
+      {
+        "timestamp": "15:53",
+        "text": "Use CPManeuver to specify each maneuver. It takes one of 54 maneuver types. Here are some examples."
+      },
+      {
+        "timestamp": "16:02",
+        "text": "You can also specify a junction type which helps describe more complex intersections such as a roundabout. It can include the number of exits, the angle of each exit, and guidance to the driver on which exit to take."
+      },
+      {
+        "timestamp": "16:16",
+        "text": "Focus on the semantic meaning of the type, as the car defines how it looks."
+      },
+      {
+        "timestamp": "16:22",
+        "text": "I have a navigation app called Coastal Roads, and I’d like to go ahead and add support for metadata."
+      },
+      {
+        "timestamp": "16:30",
+        "text": "CarPlay knows my app can support navigation metadata because I return true when the system calls mapTemplateShouldProvideNavigationMetadata. To maximize performance of my app, I provide as many maneuver and lane guidance objects up-front to my CPNavigationSession when route guidance starts."
+      },
+      {
+        "timestamp": "16:50",
+        "text": "And, if rerouting is needed, I’ll first pause the current trip, and create a CPRouteInformationObject with the updated information for the route. When I resume the trip with the object, the system will display the new route. You can test all of this in CarPlay Simulator, right on your Mac. You can also test it in the many vehicles on the road that support metadata. Lets see how it looks in one of those cars."
+      },
+      {
+        "timestamp": "17:19",
+        "text": "Here we are in the car. This car has a large center screen and an instrument cluster display behind the steering wheel. I’ve already paired my iPhone, and CarPlay is up and running."
+      },
+      {
+        "timestamp": "17:32",
+        "text": "This is the CarPlay Dashboard in iOS 26. The new design looks amazing, and it’s immediately familiar because it’s just like your iPhone. I’m currently running the sample navigation app “Coastal Roads” which displays a map on the left, and in the upper right, you can see its dashboard buttons. Dashboard buttons provide useful shortcuts or favorites, and it’s easy to specify them using instances of CPDashboardButton."
+      },
+      {
+        "timestamp": "18:01",
+        "text": "Earlier in the video, we introduced widgets for CarPlay. Widgets are a familiar way to get glanceable information from your favorite apps, right here on the car’s screen. I simply swipe to the right and here they are! As you can see, I can quickly choose which widgets I want to have on the screen."
+      },
+      {
+        "timestamp": "18:23",
+        "text": "You can customize which widgets appear in CarPlay by going to Settings → General → CarPlay on iPhone. Now let’s go into the Coastal Roads navigation app."
+      },
+      {
+        "timestamp": "18:36",
+        "text": "I made sure to update the CPMapButton and CPBarButton images in my app to look good on top of Liquid Glass."
+      },
+      {
+        "timestamp": "18:45",
+        "text": "I've configured one of my bar buttons, to bring up a preview of my favorite drive to the Coastal Roads Ferry. OK, now let’s look at the instrument cluster display."
+      },
+      {
+        "timestamp": "18:56",
+        "text": "This car keeps important driving information in the instrument cluster, so its easily glanceable while driving. If I change the view, I can view turn-by-turn route guidance in a convenient location. Route guidance hasn't started yet, so lets start our route. We’re starting off driving straight for 140 ft. Right now, metadata from Coastal Roads is specifying the maneuver type “straightAhead” which is typically shown as a straight arrow. I can see the remaining distance counting down, and the street name."
+      },
+      {
+        "timestamp": "19:29",
+        "text": "Now we’re taking a slight left turn at a -45° angle onto Starfish St, and the maneuver updates. Coastal Roads also set the junctionElementAngles to 80° and -5°, so I can see where else the road leads. We’re now coming up on a sharp left turn, and the app set the turn angle to be -135°. As you can see, the car renders it with a different appearance. Now, I'm going to quickly jump onto Horizon Highway. Where I can see the onRamp maneuver type. And now, the offRamp maneuver type."
+      },
+      {
+        "timestamp": "20:07",
+        "text": "I'll take a couple more left turns."
+      },
+      {
+        "timestamp": "20:10",
+        "text": "And then will keepRight onto Pebble Pier at an exit angle of 20 degrees."
+      },
+      {
+        "timestamp": "20:18",
+        "text": "And I've finally reached the ferry! Coastal Roads sent the enter_ferry maneuver type and then sent the arriveAtDestination maneuver type."
+      },
+      {
+        "timestamp": "20:29",
+        "text": "As you can see, metadata is a powerful way to show directions in the instrument cluster or in the heads-up display."
+      },
+      {
+        "timestamp": "20:36",
+        "text": "CarPlay takes care of communication with the car, sending over your metadata, and managing state, so you can focus on creating a great route guidance experience in your app. To optimize the performance of your navigation app, your app can observe thermal levels, and reduce the detail that your map is drawing, or transition into an overview mode, which may not require as frequent view updates."
+      },
+      {
+        "timestamp": "21:02",
+        "text": "Keep in mind that your CADisplayLink frame rates in CarPlay may automatically adapt according to device conditions."
+      },
+      {
+        "timestamp": "21:10",
+        "text": "Also consider that if your app is displaying a map both in the center console and in the instrument cluster, that the two views don’t need to show the same content. Consider placing one of your views in an overview mode to give the driver different navigation perspectives. The additional benefit of this, is that you’ll reduce the amount of animated view updates your app requires. Checkout “Optimize CPU performance with Instruments” for more. That’s it! With widgets and Live Activities, there are more ways than ever to bring your app to drivers on the road."
+      },
+      {
+        "timestamp": "21:46",
+        "text": "And with updates to the CarPlay framework, your CarPlay apps can be more expressive and capable, and even work inside the instrument cluster or heads-up display. For more information, check out the CarPlay developer link below. Happy driving!"
+      }
+    ]
   },
   "codeExamples": [
     {
@@ -51,6 +354,43 @@
       "title": "Add support for metadata",
       "language": "swift",
       "code": "// Add support for metadata\n\n// Declare support\n\nfunc mapTemplateShouldProvideNavigationMetadata(_ mapTemplate: CPMapTemplate) -> Bool {\n    true\n}\n\n// Provide maneuver information up-front\n\ncpNavigationSession.add(maneuvers)\ncpNavigationSession.add(laneGuidance)\n\n// Reroute\n\ncpNavigationSession.pauseTrip(for: .rerouting, description: \"Rerouting\")\ncpNavigationSession.resumeTrip(updatedRouteInformation: cpRouteInformation)"
+    }
+  ],
+  "chapters": [
+    {
+      "timestamp": "0:00",
+      "title": "Introduction",
+      "duration": "1:27"
+    },
+    {
+      "timestamp": "1:27",
+      "title": "CarPlay Ultra",
+      "duration": "0:47"
+    },
+    {
+      "timestamp": "2:14",
+      "title": "Widgets",
+      "duration": "2:53"
+    },
+    {
+      "timestamp": "5:07",
+      "title": "Live Activities",
+      "duration": "1:42"
+    },
+    {
+      "timestamp": "6:49",
+      "title": "CarPlay framework",
+      "duration": "10:26"
+    },
+    {
+      "timestamp": "17:15",
+      "title": "Demo",
+      "duration": "4:23"
+    },
+    {
+      "timestamp": "21:38",
+      "title": "Next steps",
+      "duration": "0:31"
     }
   ],
   "resources": {
@@ -95,5 +435,5 @@
       "url": "https://developer.apple.com/videos/play/wwdc2022/10016"
     }
   ],
-  "extractedAt": "2026-10-11T16:34:21.644Z"
+  "extractedAt": "2026-10-17T18:44:16.469Z"
 }
